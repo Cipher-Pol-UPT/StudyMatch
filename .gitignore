@@ -1,18 +1,27 @@
-.idea/
-*.iml
+# --- Backend (Spring Boot / Java) ---
 target/
-build/
-.gradle/
-.classpath
-.project
-.settings/
-.DS_Store
-.vscode/
-.mvn/
-.intellij/
-.env*
 *.class
-.metadata/
+*.jar
+*.war
 *.log
 *.tmp
 
+# --- Frontend (React / Node) ---
+node_modules/
+build/
+dist/
+out/
+.env*
+npm-debug.log*
+yarn-error.log*
+
+# --- IDEs & OS ---
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.metadata/
+.intellij/
+.DS_Store
