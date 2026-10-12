@@ -1,0 +1,10 @@
+package com.studymatch.enums;
+
+public enum StatuteType {
+
+  WORKING_STUDENT,
+  HIGH_PERFORMANCE_ATHLETE,
+  STUDENT_ASSOCIATION_LEADER,
+  STUDENT_PARENT,
+  SPECIAL_NEEDS
+}
