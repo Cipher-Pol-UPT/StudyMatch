@@ -1,75 +1,53 @@
-# React + TypeScript + Vite
+# StudyMatch frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19, TypeScript and Vite, with the complete StudyMatch UI 1.0.0 library
+integrated for [issue #86](https://github.com/Cipher-Pol-UPT/StudyMatch/issues/86).
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm ci
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Run `npm run build` for TypeScript validation and a production build, and
+`npm run lint` for ESLint validation.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Using the components
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+The official package is committed in `vendor/studymatch-ui-1.0.0.tgz` and installed
+as a local file dependency. A fresh checkout needs only `npm ci`.
 
+`src/main.tsx` imports the library stylesheet once and wraps the application in
+`StudyMatchProvider`, which supplies base styles and toast notifications.
+Import components and their TypeScript types directly from the package:
+
+```tsx
+import { Button, Card, useToast } from '@studymatch/ui'
+
+export function Example() {
+  const toast = useToast()
+  return (
+    <Card title="StudyMatch">
+      <Button onClick={() => toast.success('Ready!')}>Show notification</Button>
+    </Card>
+  )
+}
 ```
+
+The package includes form controls, navigation, cards, tables, charts, overlays,
+achievements, and blocks for authentication, accounts, profiles, personality tests
+and StudyRooms. The application currently displays a small interactive preview.
+Data-backed blocks still require adapters and backend integration.
+
+- [Component documentation](https://studymatch-ui.vercel.app/)
+- [Installation and requirements](https://studymatch-ui.vercel.app/installation)
+- [Official downloads](https://studymatch-ui.vercel.app/download)
+
+## Updating the vendored package
+
+Download the new official archive, place it in `vendor/`, then run
+`npm install ./vendor/<new-package>.tgz`. Commit the archive, `package.json` and
+`package-lock.json` together, and run the build and lint checks.
+The package declares the MIT license. Its stylesheet loads Geist fonts from
+Google Fonts; system fonts remain available as a fallback.
