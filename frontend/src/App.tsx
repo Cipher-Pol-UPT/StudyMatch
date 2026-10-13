@@ -1,122 +1,30 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import './App.css';
+import type { StudyRoom } from './studymatch-ui';
+import { AchievementGrid,Button,Card,LoginForm,Logo,PersonalityTest,StudyRoomCard,TextField,useToast } from './studymatch-ui';
+import { Achievement } from './types/enums';
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+export default function App() {
+  const { t, i18n } = useTranslation(); const [name, setName] = useState(''); const toast = useToast();
+  const room: StudyRoom = { id:'demo', subject:'StudyMatch', topic:t('rooms.title'),start:'2026-10-20T10:00:00',end:'2026-10-20T11:00:00',
+    tutor:{id:'demo-tutor',name:'Demo'},capacity:8,participants:[],status:'SCHEDULED' };
+  return <main className="component-preview">
+    <header className="component-preview__header"><Logo /><a href="https://studymatch-ui.vercel.app/">{t('demo.docs')}</a>
+      <label>{t('common.language')} <select aria-label={t('common.language')} value={i18n.resolvedLanguage}
+        onChange={event => void i18n.changeLanguage(event.target.value)}><option value="en">English</option><option value="pt">Português</option></select></label>
+    </header>
+    <Card><h1>{t('demo.title')}</h1><p>{t('demo.intro')}</p>
+      <TextField label={t('fields.name')} value={name} onChange={event => setName(event.target.value)} />
+      <Button disabled={!name.trim()} onClick={() => toast.success(t('demo.hello',{name}))}>{t('demo.notify')}</Button>
+    </Card>
+    <section className="component-preview__grid">
+      <Card title={t('demo.validation')}><LoginForm onSubmit={async () => {
+        throw {code:'VALIDATION_FAILED',fieldErrors:[{field:'email',code:'EMAIL'},{field:'password',code:'SIZE',params:{min:8,max:20}}]};
+      }} /></Card>
+      <StudyRoomCard room={room} canJoin joinBlockedCode="STUDYROOM_FULL" onJoin={() => toast.info(t('demo.intro'))} />
+    </section>
+    <PersonalityTest questions={[{id:'demo-question',text:t('personality.title')}]} onSubmit={async () => {toast.success(t('common.submit'));}} />
+    <AchievementGrid achievements={Achievement.map(id => ({id}))} />
+  </main>;
 }
-
-export default App

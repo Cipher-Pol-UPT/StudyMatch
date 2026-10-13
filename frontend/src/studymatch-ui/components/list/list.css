@@ -1,0 +1,60 @@
+/* ─── List & rows ────────────────────────────────────────── */
+.sm-list-section { font-family: var(--sm-font); }
+.sm-list-section__title { padding: 0 4px 10px; }
+.sm-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--sm-white);
+  border-radius: var(--sm-r-lg);
+  overflow: hidden;
+  box-shadow: var(--sm-shadow-sm);
+}
+.sm-list--plain { background: transparent; box-shadow: none; border-radius: 0; }
+.sm-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 72px;
+  padding: 12px 20px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  text-decoration: none;
+  font-family: var(--sm-font);
+  color: var(--sm-text);
+  transition: background var(--sm-dur-1);
+}
+.sm-row--compact { min-height: 56px; padding: 8px 16px; }
+button.sm-row,
+a.sm-row { cursor: pointer; }
+button.sm-row:hover,
+a.sm-row:hover { background: var(--sm-gray-25); }
+button.sm-row:active,
+a.sm-row:active { background: var(--sm-gray-50); }
+button.sm-row:focus-visible,
+a.sm-row:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--sm-violet); }
+.sm-list > li + li > .sm-row::before,
+.sm-list > .sm-row + .sm-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--sm-row-inset, 74px);
+  right: 20px;
+  height: 1px;
+  background: var(--sm-border);
+}
+.sm-row__main { flex: 1; min-width: 0; }
+.sm-row__title { font-size: 16px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-row__sub { margin-top: 2px; font-size: 14px; color: var(--sm-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-row__trail { display: flex; align-items: center; gap: 8px; flex-shrink: 0; text-align: right; }
+.sm-row__value { font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.sm-row__value small { display: block; font-size: 13px; font-weight: 400; color: var(--sm-text-2); }
+.sm-row__chevron { color: var(--sm-gray-300); }
+
+.sm-icon-tile { display: grid; place-items: center; flex-shrink: 0; border-radius: 50%; }
+.sm-icon-tile--square { border-radius: 30%; }

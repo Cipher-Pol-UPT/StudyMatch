@@ -1,0 +1,124 @@
+/* ─────────────────────────────────────────────────────────────
+   StudyMatch UI — design tokens
+   Every component reads these custom properties. Override any of
+   them on :root, or on a wrapper element, to theme the library.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --sm-violet: #4a3df5;            /* StudyMatch Violet, the hero colour */
+  --sm-violet-press: #3b2fe0;
+  --sm-violet-ink: #2c22b8;        /* violet text on light tints */
+  --sm-violet-50: #f0eeff;
+  --sm-violet-100: #e1ddff;
+  --sm-violet-a12: rgba(74, 61, 245, 0.12);
+  --sm-violet-a18: rgba(74, 61, 245, 0.18);
+  --sm-spark: #d9ff3f;             /* high-impact accent, never a full background */
+  --sm-black: #000000;
+  --sm-white: #ffffff;
+  --sm-ink: #0d0b24;               /* deep violet-black for dark surfaces */
+
+  /* Neutrals (warm) */
+  --sm-gray-25: #fafaf9;
+  --sm-gray-50: #f4f4f2;
+  --sm-gray-100: #ebebe8;
+  --sm-gray-200: #dcdcd8;
+  --sm-gray-300: #c4c4bf;
+  --sm-gray-400: #9a9a95;
+  --sm-gray-500: #76766f;
+  --sm-gray-600: #5a5a55;
+  --sm-gray-800: #262624;
+  --sm-gray-900: #111111;
+
+  /* Semantic */
+  --sm-text: #000000;
+  --sm-text-2: #5a5a55;
+  --sm-text-3: #8a8a84;
+  --sm-surface: #ffffff;
+  --sm-surface-2: #f4f4f2;
+  --sm-border: #e6e6e3;
+  --sm-success: #00a650;
+  --sm-success-ink: #007a3b;
+  --sm-success-50: #e3f7ec;
+  --sm-warning: #f2a100;
+  --sm-warning-ink: #8a5a00;
+  --sm-warning-50: #fff4dc;
+  --sm-danger: #e5322d;
+  --sm-danger-ink: #b5221e;
+  --sm-danger-50: #fdeceb;
+
+  /* Tints: soft, colourful canvases (iOS / Stripe inspired) */
+  --sm-tint-lavender: #efecff;
+  --sm-tint-sky: #e4f3ff;
+  --sm-tint-peach: #ffeee4;
+  --sm-tint-mint: #e1f8ee;
+  --sm-tint-lemon: #f7fbd8;
+  --sm-tint-rose: #ffe9f2;
+  --sm-canvas: #f6f6fb;            /* page background, a hint of violet */
+
+  /* Translucent fills: work on any coloured surface (iOS system fills) */
+  --sm-fill: rgba(60, 60, 90, 0.08);
+  --sm-fill-hover: rgba(60, 60, 90, 0.13);
+  --sm-fill-strong: rgba(60, 60, 90, 0.18);
+
+  /* Gradients */
+  --sm-grad-brand: linear-gradient(135deg, #7a6bff 0%, #4a3df5 45%, #2a9fd6 100%);
+  --sm-grad-sunrise: linear-gradient(135deg, #ff8a65 0%, #ff5f9e 50%, #7a6bff 100%);
+  --sm-grad-fresh: linear-gradient(135deg, #d9ff3f 0%, #4fe3a5 50%, #2a9fd6 100%);
+
+  /* Elevation: soft, Stripe-like */
+  --sm-shadow-sm: 0 1px 2px rgba(20, 20, 60, 0.06), 0 2px 6px -2px rgba(20, 20, 60, 0.06);
+  --sm-shadow-md: 0 2px 4px rgba(20, 20, 60, 0.04), 0 12px 32px -12px rgba(30, 25, 90, 0.18);
+  --sm-shadow-lg: 0 4px 8px rgba(20, 20, 60, 0.04), 0 30px 60px -24px rgba(30, 25, 90, 0.28);
+  --sm-shadow-violet: 0 10px 28px -10px rgba(74, 61, 245, 0.55);
+  --sm-focus-ring: 0 0 0 2px var(--sm-white), 0 0 0 4px var(--sm-violet);
+
+  /* Team-role profiles (data palette, CVD-validated) */
+  --sm-lead: #5b4fe0;
+  --sm-tech: #2a9fd6;
+  --sm-creative: #eb6834;
+  --sm-exec: #1baf7a;
+
+  /* Achievement rarity */
+  --sm-rarity-common: #8f8fa3;
+  --sm-rarity-rare: #2a9fd6;
+  --sm-rarity-epic: #8b5cf6;
+  --sm-rarity-legendary: #f2a100;
+
+  /* Shape */
+  --sm-r-xs: 8px;
+  --sm-r-sm: 12px;
+  --sm-r-md: 16px;
+  --sm-r-lg: 24px;
+  --sm-r-xl: 32px;
+  --sm-r-pill: 999px;
+
+  /* Space (4px base) */
+  --sm-s1: 4px;
+  --sm-s2: 8px;
+  --sm-s3: 12px;
+  --sm-s4: 16px;
+  --sm-s5: 20px;
+  --sm-s6: 24px;
+  --sm-s8: 32px;
+  --sm-s10: 40px;
+  --sm-s12: 48px;
+  --sm-s16: 64px;
+
+  /* Type */
+  --sm-font: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sm-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --sm-hand: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+
+  /* Motion: strong and punchy, never soft and indecisive */
+  --sm-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --sm-ease-punch: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --sm-dur-1: 120ms;
+  --sm-dur-2: 220ms;
+  --sm-dur-3: 420ms;
+
+  /* Layers */
+  --sm-z-sticky: 20;
+  --sm-z-popover: 100;
+  --sm-z-overlay: 200;
+  --sm-z-toast: 300;
+}

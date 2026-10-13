@@ -1,0 +1,118 @@
+/* ─── Switch ─────────────────────────────────────────────── */
+.sm-switch {
+  position: relative;
+  width: 52px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--sm-r-pill);
+  background: var(--sm-fill-strong);
+  cursor: pointer;
+  transition: background var(--sm-dur-2) var(--sm-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.sm-switch[aria-checked='true'] { background: var(--sm-violet); }
+.sm-switch i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--sm-white);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transition: transform var(--sm-dur-3) var(--sm-ease-punch), width var(--sm-dur-2);
+}
+.sm-switch:active:not(:disabled) i { width: 32px; }
+.sm-switch[aria-checked='true'] i { transform: translateX(20px); }
+.sm-switch[aria-checked='true']:active:not(:disabled) i { transform: translateX(14px); }
+.sm-switch:disabled { opacity: 0.4; cursor: not-allowed; }
+.sm-switch:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-switch--sm { width: 40px; height: 24px; }
+.sm-switch--sm i { width: 18px; height: 18px; }
+.sm-switch--sm[aria-checked='true'] i { transform: translateX(16px); }
+.sm-switch--sm:active:not(:disabled) i { width: 22px; }
+.sm-switch--sm[aria-checked='true']:active:not(:disabled) i { transform: translateX(12px); }
+
+.sm-switch-label { display: inline-flex; align-items: center; gap: 12px; font: 400 16px var(--sm-font); cursor: pointer; }
+
+/* ─── Checkbox / radio ───────────────────────────────────── */
+.sm-check,
+.sm-radio {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  font: 400 16px/1.4 var(--sm-font);
+  color: var(--sm-text);
+  user-select: none;
+}
+.sm-check--disabled,
+.sm-radio--disabled { opacity: 0.4; cursor: not-allowed; }
+.sm-check input,
+.sm-radio input { position: absolute; opacity: 0; width: 24px; height: 24px; margin: 0; pointer-events: none; }
+.sm-check__box,
+.sm-radio__dot {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  margin-top: -1px;
+  border: 2px solid var(--sm-gray-300);
+  background: var(--sm-white);
+  color: var(--sm-white);
+  transition: background var(--sm-dur-2), border-color var(--sm-dur-2), box-shadow var(--sm-dur-2), transform var(--sm-dur-2) var(--sm-ease-punch);
+}
+.sm-check:hover .sm-check__box,
+.sm-radio:hover .sm-radio__dot { border-color: var(--sm-gray-400); }
+.sm-check__box { border-radius: 8px; }
+.sm-radio__dot { border-radius: 50%; }
+.sm-check input:checked + .sm-check__box,
+.sm-check input:indeterminate + .sm-check__box { background: var(--sm-violet); border-color: var(--sm-violet); }
+.sm-check__box svg { transform: scale(0); transition: transform var(--sm-dur-2) var(--sm-ease-punch); }
+.sm-check input:checked + .sm-check__box svg,
+.sm-check input:indeterminate + .sm-check__box svg { transform: scale(1); }
+.sm-check:active .sm-check__box,
+.sm-radio:active .sm-radio__dot { transform: scale(0.9); }
+.sm-radio__dot::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sm-white);
+  transform: scale(0);
+  transition: transform var(--sm-dur-2) var(--sm-ease-punch);
+}
+.sm-radio input:checked + .sm-radio__dot { background: var(--sm-violet); border-color: var(--sm-violet); }
+.sm-radio input:checked + .sm-radio__dot::after { transform: scale(1); }
+.sm-check input:focus-visible + .sm-check__box,
+.sm-radio input:focus-visible + .sm-radio__dot { box-shadow: 0 0 0 4px var(--sm-violet-100); }
+.sm-check--invalid .sm-check__box { border-color: var(--sm-danger); }
+.sm-choice__text { display: flex; flex-direction: column; gap: 2px; }
+.sm-choice__desc { font-size: 14px; color: var(--sm-text-2); }
+
+.sm-radio-group { display: flex; flex-direction: column; gap: 14px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.sm-radio-group--row { flex-direction: row; flex-wrap: wrap; gap: 24px; }
+.sm-radio-group legend { padding: 0; margin-bottom: 12px; font: 500 15px var(--sm-font); }
+
+/* Choice cards (radio as big tappable cards) */
+.sm-radio-group--cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.sm-radio--card {
+  padding: 16px;
+  border-radius: var(--sm-r-md);
+  background: var(--sm-white);
+  box-shadow: inset 0 0 0 1.5px var(--sm-border);
+  transition: box-shadow var(--sm-dur-2), background var(--sm-dur-2);
+}
+.sm-radio--card:hover { box-shadow: inset 0 0 0 1.5px var(--sm-gray-300); }
+.sm-radio--card:has(input:checked) { background: var(--sm-violet-50); box-shadow: inset 0 0 0 2px var(--sm-violet); }
+
+/* ─── Control row (settings) ─────────────────────────────── */
+.sm-control-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; font-family: var(--sm-font); }
+.sm-control-row + .sm-control-row { border-top: 1px solid var(--sm-border); }
+.sm-control-row__text { flex: 1; min-width: 0; }
+.sm-control-row__title { font-size: 16px; font-weight: 500; letter-spacing: -0.01em; }
+.sm-control-row__desc { font-size: 14px; color: var(--sm-text-2); margin-top: 2px; }

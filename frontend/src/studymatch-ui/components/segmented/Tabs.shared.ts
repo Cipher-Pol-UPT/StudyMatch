@@ -1,0 +1,5 @@
+import './segmented.css';
+
+export function tabPanelProps(idBase: string, value: string) {
+  return { id: `${idBase}-panel-${value}`, role: 'tabpanel' as const, 'aria-labelledby': `${idBase}-tab-${value}`, tabIndex: 0 };
+}

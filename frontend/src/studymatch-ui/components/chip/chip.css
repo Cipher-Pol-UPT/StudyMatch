@@ -1,0 +1,96 @@
+/* ─── Chip ───────────────────────────────────────────────── */
+.sm-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  border-radius: var(--sm-r-pill);
+  background: var(--sm-fill);
+  color: var(--sm-black);
+  font: 500 14px var(--sm-font);
+  transition: background var(--sm-dur-1), color var(--sm-dur-1), box-shadow var(--sm-dur-2), transform var(--sm-dur-2) var(--sm-ease-punch);
+}
+.sm-chip--sm { height: 30px; font-size: 13px; }
+.sm-chip:has(.sm-chip__main:active) { transform: scale(0.95); }
+.sm-chip:hover { background: var(--sm-fill-hover); }
+.sm-chip[data-selected='true'] { background: var(--sm-violet); color: var(--sm-white); box-shadow: var(--sm-shadow-violet); }
+.sm-chip--static { cursor: default; }
+.sm-chip__main {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 14px;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sm-chip--static .sm-chip__main { cursor: default; }
+.sm-chip__main:focus-visible,
+.sm-chip__remove:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-chip--removable .sm-chip__main { padding-right: 6px; }
+.sm-chip__remove {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--sm-fill-strong);
+  color: inherit;
+  cursor: pointer;
+}
+.sm-chip[data-selected='true'] .sm-chip__remove { background: rgba(255, 255, 255, 0.22); }
+.sm-chip__remove:hover { background: rgba(0, 0, 0, 0.22); }
+
+.sm-chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ─── Tag input ──────────────────────────────────────────── */
+.sm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 26px 14px 10px;
+  min-height: 60px;
+  border-radius: var(--sm-r-md);
+  background: var(--sm-fill);
+  cursor: text;
+  position: relative;
+  transition: box-shadow var(--sm-dur-2) var(--sm-ease-out), background var(--sm-dur-1);
+  font-family: var(--sm-font);
+}
+.sm-tags:hover { background: var(--sm-fill-hover); }
+.sm-tags:focus-within { background: var(--sm-white); box-shadow: inset 0 0 0 2px var(--sm-violet); }
+.sm-tags__label { position: absolute; top: 10px; left: 18px; font-size: 13px; color: var(--sm-text-2); }
+.sm-tags:focus-within .sm-tags__label { color: var(--sm-violet-ink); }
+.sm-tags .sm-chip { height: 30px; background: var(--sm-white); box-shadow: var(--sm-shadow-sm); font-size: 14px; }
+.sm-tags:focus-within .sm-chip { background: var(--sm-gray-50); box-shadow: none; }
+.sm-tags input {
+  flex: 1;
+  min-width: 120px;
+  height: 30px;
+  padding: 0 4px;
+  border: 0;
+  outline: 0;
+  background: none;
+  font: 400 16px var(--sm-font);
+  color: var(--sm-text);
+}
+.sm-tags input::placeholder { color: var(--sm-gray-400); }
+.sm-tags__suggest { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 4px 0; }
+.sm-tags__suggest button {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px dashed var(--sm-gray-300);
+  border-radius: var(--sm-r-pill);
+  background: transparent;
+  color: var(--sm-text-2);
+  font: 500 13px var(--sm-font);
+  cursor: pointer;
+}
+.sm-tags__suggest button:hover { border-style: solid; color: var(--sm-black); background: var(--sm-white); }

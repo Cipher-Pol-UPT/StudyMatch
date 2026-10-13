@@ -1,0 +1,80 @@
+/* ─── StudyRoom card ─────────────────────────────────────── */
+.sm-room { display: flex; flex-direction: column; gap: 14px; }
+.sm-room__top { display: flex; align-items: flex-start; gap: 14px; }
+.sm-room__date { flex-shrink: 0; width: 56px; padding: 8px 0; border-radius: 16px; background: var(--sm-tint-lavender); color: var(--sm-violet-ink); text-align: center; line-height: 1; }
+.sm-room__date b { display: block; font-size: 24px; font-weight: 500; letter-spacing: -0.03em; }
+.sm-room__date small { display: block; margin-top: 4px; font: 400 11px var(--sm-mono); text-transform: uppercase; }
+.sm-room__row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sm-room__subject { font: 400 12px var(--sm-mono); text-transform: uppercase; color: var(--sm-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-room__topic { margin: 4px 0 0; font-size: 19px; font-weight: 500; line-height: 1.2; letter-spacing: -0.015em; }
+.sm-room__facts { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; padding: 0; list-style: none; font-size: 14px; color: var(--sm-text-2); }
+.sm-room__facts li { display: inline-flex; align-items: center; gap: 6px; }
+.sm-room__seats { display: flex; flex-direction: column; gap: 6px; }
+.sm-room__seats-text { display: flex; justify-content: space-between; font-size: 13px; color: var(--sm-text-2); font-variant-numeric: tabular-nums; }
+.sm-room__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: 1px solid var(--sm-border); }
+.sm-room__tutor { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sm-room__tutor-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-room__opens { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--sm-text-2); white-space: nowrap; }
+.sm-room--live { box-shadow: inset 0 0 0 2px var(--sm-success), var(--sm-shadow-md); }
+.sm-room--live .sm-room__date { background: var(--sm-success-50); color: var(--sm-success-ink); }
+.sm-room--inactive { opacity: 0.72; }
+.sm-room--cancelled .sm-room__topic { text-decoration: line-through; color: var(--sm-text-2); }
+
+.sm-meet-btn { text-decoration: none; }
+.sm-meet-btn__ext { opacity: 0.7; }
+
+/* ─── Board ──────────────────────────────────────────────── */
+.sm-room-board { display: flex; flex-direction: column; gap: 18px; font-family: var(--sm-font); }
+.sm-room-board__toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sm-room-board__tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sm-room-board__tools .sm-search { min-width: 260px; }
+.sm-room-board__day { display: flex; flex-direction: column; gap: 12px; }
+.sm-room-board__day h3 { margin: 6px 0 0; }
+.sm-room-board__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+
+.sm-room-live {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 16px 16px 22px;
+  border-radius: 24px;
+  color: #fff;
+  background: radial-gradient(60% 140% at 90% 0%, rgba(255, 255, 255, 0.22), transparent 60%), linear-gradient(135deg, #1baf7a, #0f8a8f 60%, #2a7fd6);
+  box-shadow: 0 14px 32px -14px rgba(16, 140, 120, 0.7);
+}
+.sm-room-live b { display: block; font-size: 17px; font-weight: 500; }
+.sm-room-live span { font-size: 14px; opacity: 0.85; }
+.sm-room-live__dot { width: 12px; height: 12px; border-radius: 50%; background: var(--sm-spark); color: var(--sm-spark); flex-shrink: 0; animation: sm-pulse 1.6s var(--sm-ease-out) infinite; }
+.sm-room-live .sm-meet-btn.sm-btn--white,
+.sm-room-live .sm-meet-btn { background: #fff; color: #0b6f4a; box-shadow: none; }
+
+/* ─── Details ────────────────────────────────────────────── */
+.sm-room-details { display: flex; flex-direction: column; gap: 14px; font-family: var(--sm-font); }
+.sm-room-details__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sm-room-details__cta { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 20px; background: var(--sm-gray-25); box-shadow: inset 0 0 0 1px var(--sm-border); }
+.sm-room-details__link { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 14px; border-radius: 14px; background: var(--sm-violet-50); color: var(--sm-violet-ink); font: 400 13px var(--sm-mono); }
+.sm-room-details__link span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-room-details__link button { width: 30px; height: 30px; border: 0; border-radius: 50%; display: grid; place-items: center; background: #fff; color: inherit; cursor: pointer; }
+.sm-room-details__link button:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-room-details__private { display: flex; align-items: center; gap: 6px; margin: 0; }
+.sm-room-details__section { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--sm-border); }
+.sm-room-details__people { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sm-room-details__people li { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.sm-room-details__footer { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 6px; }
+.sm-room-details__footer:empty { display: none; }
+
+/* ─── Create form / attendance ───────────────────────────── */
+.sm-room-form { display: flex; flex-direction: column; gap: 14px; }
+.sm-room-form__row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 10px; }
+.sm-room-form__box { padding: 16px; border-radius: 18px; background: var(--sm-gray-25); box-shadow: inset 0 0 0 1px var(--sm-border); }
+.sm-room-form__actions { display: flex; justify-content: flex-end; gap: 8px; }
+.sm-room-attendance { display: flex; flex-direction: column; gap: 14px; }
+
+@media (max-width: 640px) {
+  .sm-room-form__row { grid-template-columns: minmax(0, 1fr); }
+  .sm-room-board__tools,
+  .sm-room-board__tools .sm-search { width: 100%; min-width: 0; }
+  .sm-room-board__grid { grid-template-columns: minmax(0, 1fr); }
+  .sm-room-live .sm-meet-btn { width: 100%; }
+}
