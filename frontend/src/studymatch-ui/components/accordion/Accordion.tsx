@@ -1,6 +1,6 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence,motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-import { useId, useState, type ReactNode } from 'react';
+import { useId,useState,type ReactNode } from 'react';
 import { cx } from '../../utils/cx';
 import { EASE_OUT } from '../../utils/shared';
 import './accordion.css';

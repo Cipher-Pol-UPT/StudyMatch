@@ -1,4 +1,6 @@
-import { useRef, type ClipboardEvent, type KeyboardEvent } from 'react';
+import { useRef,type ClipboardEvent,type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import { useControllableState } from '../../utils/shared';
 import './inputs.css';
@@ -22,7 +24,8 @@ export interface CodeInputProps {
  * One box per character for verification or 2FA codes.
  * Typing auto-advances, Backspace goes back, and pasting a whole code fills every box.
  */
-export function CodeInput({ length = 6, value, defaultValue = '', onValueChange, onComplete, alphanumeric, label = 'Verification code', error, disabled, className }: CodeInputProps) {
+export function CodeInput({ length = 6, value, defaultValue = '', onValueChange, onComplete, alphanumeric, label = i18n.t('ui.verification_code'), error, disabled, className }: CodeInputProps) {
+  useTranslation();
   const [code, setCode] = useControllableState(value, defaultValue, onValueChange);
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   const allowed = alphanumeric ? /[a-z0-9]/i : /\d/;
@@ -77,7 +80,7 @@ export function CodeInput({ length = 6, value, defaultValue = '', onValueChange,
           autoComplete={i === 0 ? 'one-time-code' : 'off'}
           maxLength={1}
           disabled={disabled}
-          aria-label={`${label}, character ${i + 1} of ${length}`}
+          aria-label={i18n.t('ui.code_character', {label,index:i+1,length})}
           aria-invalid={error || undefined}
           onChange={(e) => {
             const ch = e.target.value.slice(-1);

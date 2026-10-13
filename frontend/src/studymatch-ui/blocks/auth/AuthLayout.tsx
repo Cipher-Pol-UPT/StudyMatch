@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { AchievementBadge } from '../../achievements/Achievement';
 import { Logo } from '../../components/brand/Logo';
 import { cx } from '../../utils/cx';
@@ -24,14 +26,15 @@ export interface AuthLayoutProps {
 /** Split screen for every auth page: a brand panel and a calm form column. Stacks on mobile. */
 export function AuthLayout({
   children,
-  headline = 'Better teams start here.',
-  tagline = 'StudyMatch forms balanced groups from your strengths, grades and attendance, so every project starts on the right foot.',
+  headline = i18n.t('ui.better_teams_start_here'),
+  tagline = i18n.t('ui.studymatch_forms_balanced_groups_from_your_strengths_grades_and_a'),
   art,
   topRight,
   footer,
   embedded,
   className,
 }: AuthLayoutProps) {
+  useTranslation();
   return (
     <div className={cx('sm-auth', embedded && 'sm-auth--embedded', className)}>
       <aside className="sm-auth__brand">
@@ -47,12 +50,12 @@ export function AuthLayout({
         </div>
         {art ?? (
           <div className="sm-auth__art" aria-hidden>
-            <AchievementBadge id="team-player" size={88} />
-            <AchievementBadge id="know-yourself" size={104} />
-            <AchievementBadge id="five-stars" size={80} />
+            <AchievementBadge id="MENTOR" size={88} />
+            <AchievementBadge id="FIRST_STUDYROOM" size={104} />
+            <AchievementBadge id="TOP_RATED" size={80} />
           </div>
         )}
-        <div className="sm-auth__foot">{footer ?? <span>© {new Date().getFullYear()} StudyMatch</span>}</div>
+        <div className="sm-auth__foot">{footer ?? <span>Â© {new Date().getFullYear()} StudyMatch</span>}</div>
       </aside>
       <main className="sm-auth__panel">
         <div className="sm-auth__panel-top">
@@ -73,6 +76,7 @@ export interface AuthHeaderProps {
 }
 
 export function AuthHeader({ title, subtitle }: AuthHeaderProps) {
+  useTranslation();
   return (
     <header>
       <h2 className="sm-auth__title">{title}</h2>

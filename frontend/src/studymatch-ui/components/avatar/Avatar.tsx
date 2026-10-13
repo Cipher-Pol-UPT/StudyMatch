@@ -1,24 +1,12 @@
-import { useState, type CSSProperties } from 'react';
+import { useState,type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import { hashString } from '../../utils/shared';
-import { PROFILES, type ProfileKey } from '../badge/Badge';
+import { type ProfileKey } from '../badge/Badge';
+import { PROFILES } from '../badge/Badge.shared';
 import './avatar.css';
-
-/** Two-stop gradients: colourful but calm, like iOS contact avatars. */
-export const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #8f82ff, #4a3df5)',
-  'linear-gradient(135deg, #6cc6f5, #2a7fd6)',
-  'linear-gradient(135deg, #ffad7a, #eb6834)',
-  'linear-gradient(135deg, #5fe0ad, #139e6c)',
-  'linear-gradient(135deg, #ff8fbf, #d4498b)',
-  'linear-gradient(135deg, #b5a6ff, #7a4cf0)',
-  'linear-gradient(135deg, #4b4b5a, #111118)',
-];
-
-export function initialsOf(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
-}
+import { AVATAR_GRADIENTS,initialsOf } from './Avatar.shared';
 
 export interface AvatarProps {
   name: string;
@@ -36,6 +24,7 @@ export interface AvatarProps {
 
 /** Initials on a deterministic gradient (same name, same colour), or a photo. */
 export function Avatar({ name, src, size = 44, color, profile, presence, shape = 'circle', className }: AvatarProps) {
+  useTranslation();
   const [failed, setFailed] = useState(false);
   const bg = color ?? AVATAR_GRADIENTS[hashString(name) % AVATAR_GRADIENTS.length];
   const P = profile ? PROFILES[profile] : null;
@@ -69,13 +58,14 @@ export interface AvatarStackProps {
 }
 
 export function AvatarStack({ names, size = 36, max = 4, ring, className }: AvatarStackProps) {
+  useTranslation();
   const shown = names.slice(0, max);
   const rest = names.length - shown.length;
   return (
     <span
       className={cx('sm-avatar-stack', className)}
       role="group"
-      aria-label={`${names.length} people: ${names.join(', ')}`}
+      aria-label={i18n.t('ui.people', {count:names.length,names:names.join(', ')})}
       style={ring ? ({ ['--sm-stack-ring' as string]: ring } as CSSProperties) : undefined}
     >
       {shown.map((n, i) => (

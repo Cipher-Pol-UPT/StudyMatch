@@ -1,5 +1,7 @@
-import { ChevronRight, Menu as MenuIcon } from 'lucide-react';
-import { Fragment, useEffect, useState, type ElementType, type ReactNode } from 'react';
+import { ChevronRight,Menu as MenuIcon } from 'lucide-react';
+import { Fragment,useEffect,useState,type ElementType,type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import type { IconComponent } from '../../utils/shared';
 import { Badge } from '../badge/Badge';
@@ -11,6 +13,7 @@ import './navigation.css';
  * StudyMatch passes `href` and also `to` (React Router), so both work.
  */
 function NavLinkEl({ linkAs, href, className, children, current, onClick, label }: { linkAs?: ElementType; href?: string; className: string; children: ReactNode; current?: boolean; onClick?: () => void; label?: string }) {
+  useTranslation();
   if (!href) {
     return (
       <button type="button" className={className} aria-current={current ? 'page' : undefined} onClick={onClick} aria-label={label}>
@@ -49,8 +52,9 @@ export interface TabBarProps {
 
 /** Mobile bottom navigation with an optional central action. */
 export function TabBar({ items, value, onValueChange, linkAs, fixed, className }: TabBarProps) {
+  useTranslation();
   return (
-    <nav className={cx('sm-tabbar', fixed && 'sm-tabbar--fixed', className)} aria-label="Main">
+    <nav className={cx('sm-tabbar', fixed && 'sm-tabbar--fixed', className)} aria-label={i18n.t('ui.main')}>
       {items.map((it) => {
         const active = it.value === value;
         const Icon = it.icon;
@@ -82,9 +86,10 @@ export interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ items, linkAs, className }: BreadcrumbsProps) {
+  useTranslation();
   const As = linkAs ?? 'a';
   return (
-    <nav className={cx('sm-crumbs', className)} aria-label="Breadcrumb">
+    <nav className={cx('sm-crumbs', className)} aria-label={i18n.t('ui.breadcrumb')}>
       <ol>
         {items.map((it, i) => {
           const last = i === items.length - 1;
@@ -145,11 +150,13 @@ export interface AppShellProps {
  * Role-specific navigation (Student, Teacher, Staff, Admin) is just a different `nav`.
  */
 export function AppShell({ brand, nav, title, actions, sidebarFooter, linkAs, routeKey, children, className }: AppShellProps) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => setOpen(false), [routeKey]);
+  useTranslation();
+  const [openRoute, setOpenRoute] = useState<string | null>(null);
+  const open = openRoute === (routeKey ?? '');
+  const setOpen = (value: boolean) => setOpenRoute(value ? routeKey ?? '' : null);
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpenRoute(null);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
@@ -157,9 +164,8 @@ export function AppShell({ brand, nav, title, actions, sidebarFooter, linkAs, ro
   return (
     <div className={cx('sm-shell', open && 'sm-shell--open', className)}>
       <a className="sm-visually-hidden" href="#sm-main">
-        Skip to content
-      </a>
-      <aside className="sm-shell__side" aria-label="Main navigation">
+         {i18n.t('ui.skip_to_content')} </a>
+      <aside className="sm-shell__side" aria-label={i18n.t('ui.main_navigation')}>
         <div className="sm-shell__brand">{brand}</div>
         <nav>
           {nav.map((section, si) => (
@@ -193,7 +199,7 @@ export function AppShell({ brand, nav, title, actions, sidebarFooter, linkAs, ro
       <div className="sm-shell__scrim" onClick={() => setOpen(false)} aria-hidden />
       <div className="sm-shell__main">
         <header className="sm-shell__top">
-          <button type="button" className="sm-icon-btn sm-icon-btn--sm sm-icon-btn--secondary sm-shell__menu" onClick={() => setOpen(true)} aria-label="Open navigation" aria-expanded={open}>
+          <button type="button" className="sm-icon-btn sm-icon-btn--sm sm-icon-btn--secondary sm-shell__menu" onClick={() => setOpen(true)} aria-label={i18n.t('ui.open_navigation')} aria-expanded={open}>
             <MenuIcon size={18} strokeWidth={2.25} />
           </button>
           <div className="sm-shell__title">{title}</div>

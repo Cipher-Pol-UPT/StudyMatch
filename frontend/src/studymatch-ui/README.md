@@ -1,12 +1,6 @@
-# StudyMatch UI 1.0.0 · source
+# StudyMatch UI
 
-Copy this folder into your project (for example `src/studymatch-ui`) and install the two runtime dependencies:
-
-    npm install framer-motion lucide-react
-
-Then import from it:
-
-    import { StudyMatchProvider, Button } from './studymatch-ui';
-
-`index.ts` imports every stylesheet, so Vite bundles the CSS automatically.
-React 18 or 19 is required. All classes use the `sm-` prefix and all tokens the `--sm-` prefix.
+Shared presentational components, styles and application blocks for this frontend.
+Components receive data and permissions through props and report actions through
+callbacks. Backend validation, authentication and business rules belong outside this folder.
+UI text uses the English and European Portuguese resources in `src/i18n`.

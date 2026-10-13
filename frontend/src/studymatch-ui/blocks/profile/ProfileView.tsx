@@ -1,25 +1,30 @@
-import { AtSign, GraduationCap, Languages, Lock, Pencil, Sparkles, Star } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
-import { AchievementBadge, AchievementDialog } from '../../achievements/Achievement';
-import type { AchievementId, AchievementState } from '../../achievements/catalog';
+import { AtSign,GraduationCap,Languages,Lock,Pencil,Sparkles,Star } from 'lucide-react';
+import { useState,type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
+import { AchievementBadge,AchievementDialog } from '../../achievements/Achievement';
+import type { AchievementId,AchievementState } from '../../achievements/catalog';
 import { Avatar } from '../../components/avatar/Avatar';
-import { PROFILES, StatusPill, type ProfileKey } from '../../components/badge/Badge';
+import { StatusPill,type ProfileKey } from '../../components/badge/Badge';
+import { PROFILES } from '../../components/badge/Badge.shared';
 import { Button } from '../../components/button/Button';
 import { Card } from '../../components/card/Card';
 import { ProfileBars } from '../../components/charts/Charts';
-import { Chip, ChipGroup } from '../../components/chip/Chip';
+import { Chip,ChipGroup } from '../../components/chip/Chip';
 import { EmptyState } from '../../components/empty/EmptyState';
 import { Dialog } from '../../components/overlay/Dialog';
 import { ScoreRing } from '../../components/progress/Progress';
 import { Rating } from '../../components/rating/Rating';
 import { cx } from '../../utils/cx';
-import { AvatarUploader, BannerUploader, ProfileBanner, type BannerPreset } from './ProfileMedia';
 import type { CroppedImage } from './ImageCropper';
 import './profile.css';
+import { AvatarUploader,BannerUploader,ProfileBanner,type BannerPreset } from './ProfileMedia';
+import { LEVEL } from './ProfileView.shared';
 
 export type CategoryLevel = 'high' | 'average' | 'developing';
 
 export interface StudentProfile {
+  dominantProfile?: ProfileKey;
   name: string;
   studentNumber: string;
   institutionalEmail: string;
@@ -28,12 +33,12 @@ export interface StudentProfile {
   avatarUrl?: string | null;
   bannerUrl?: string | null;
   bannerPreset?: BannerPreset;
-  /** Up to 500 characters. */
+  /** About text supplied by the caller. */
   aboutMe?: string;
   skills: string[];
   interests: string[];
-  /** At least one (GR4). */
-  languages: string[];
+  /** Backend language codes. */
+  languages: import('../../../types/enums').Language[];
   /** Personality profile for the current academic year (private). */
   personality?: Record<ProfileKey, number>;
   /** Level per course category, from final grades (GR3, private). */
@@ -49,15 +54,9 @@ export interface StudentProfile {
  * (banner, name, about me, skills, interests, languages, badges). Grades, attendance, category
  * levels and the personality profile are visible to the student, their teachers and staff.
  */
-export type ProfileViewer = 'self' | 'public' | 'staff';
+export interface ProfileViewer { showPrivate: boolean; canEdit: boolean }
 
-export const LEVEL: Record<CategoryLevel, { label: string; tone: 'success' | 'info' | 'violet' }> = {
-  high: { label: 'High', tone: 'success' },
-  average: { label: 'Average', tone: 'info' },
-  developing: { label: 'Developing', tone: 'violet' },
-};
-
-// ─── Header ────────────────────────────────────────────────
+// â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export interface ProfileHeaderProps {
   profile: StudentProfile;
   viewer?: ProfileViewer;
@@ -71,8 +70,9 @@ export interface ProfileHeaderProps {
   className?: string;
 }
 
-export function ProfileHeader({ profile: p, viewer = 'self', editable, onAvatarChange, onBannerChange, onBannerPresetChange, actions, className }: ProfileHeaderProps) {
-  const dominant = p.personality && viewer !== 'public' ? (Object.keys(p.personality) as ProfileKey[]).sort((a, b) => p.personality![b] - p.personality![a])[0] : undefined;
+export function ProfileHeader({ profile: p, viewer = { showPrivate: false, canEdit: false }, editable, onAvatarChange, onBannerChange, onBannerPresetChange, actions, className }: ProfileHeaderProps) {
+  useTranslation();
+  const dominant = viewer.showPrivate ? p.dominantProfile : undefined;
   return (
     <header className={cx('sm-profile-head', className)}>
       {editable && onBannerChange ? (
@@ -94,10 +94,10 @@ export function ProfileHeader({ profile: p, viewer = 'self', editable, onAvatarC
           <h1 className="sm-profile-head__name">{p.name}</h1>
           <div className="sm-profile-head__meta">
             <span>
-              <GraduationCap size={15} aria-hidden /> {p.programme} · Year {p.curricularYear}
+              <GraduationCap size={15} aria-hidden /> {p.programme} {i18n.t('ui.curricular_year', {year:p.curricularYear})}
             </span>
             <span className="sm-num">{p.studentNumber}</span>
-            {viewer !== 'public' && (
+            {viewer.showPrivate && (
               <span>
                 <AtSign size={14} aria-hidden /> {p.institutionalEmail}
               </span>
@@ -112,7 +112,7 @@ export function ProfileHeader({ profile: p, viewer = 'self', editable, onAvatarC
               )}
               {p.tutorBadges?.map((t) => (
                 <StatusPill key={t.subject} tone="warning" size="sm">
-                  Tutor · {t.subject}
+                  {i18n.t('ui.tutor_subject', {subject:t.subject})}
                 </StatusPill>
               ))}
             </div>
@@ -124,16 +124,17 @@ export function ProfileHeader({ profile: p, viewer = 'self', editable, onAvatarC
   );
 }
 
-// ─── Sections ──────────────────────────────────────────────
+// â”€â”€â”€ Sections â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function PrivateNote() {
+  useTranslation();
   return (
-    <span className="sm-profile-private" title="Only you, your teachers and staff see this">
-      <Lock size={12} strokeWidth={2.5} aria-hidden /> Private
-    </span>
+    <span className="sm-profile-private" title={i18n.t('ui.only_you_your_teachers_and_staff_see_this')}>
+      <Lock size={12} strokeWidth={2.5} aria-hidden />  {i18n.t('ui.private')} </span>
   );
 }
 
 function Tags({ label, items, icon }: { label: string; items: string[]; icon?: typeof Languages }) {
+  useTranslation();
   return (
     <div className="sm-profile-tags">
       <span className="sm-eyebrow">{label}</span>
@@ -146,7 +147,7 @@ function Tags({ label, items, icon }: { label: string; items: string[]; icon?: t
           ))}
         </ChipGroup>
       ) : (
-        <span className="sm-caption">Nothing added yet.</span>
+        <span className="sm-caption"> {i18n.t('ui.nothing_added_yet')} </span>
       )}
     </div>
   );
@@ -171,11 +172,12 @@ export interface ProfileViewProps {
  * Header with cover and photo, about, skills / interests / languages, personality,
  * category levels and attendance (private), and badges: Tutor per subject and achievements.
  */
-export function ProfileView({ profile: p, viewer = 'self', onEdit, onAvatarChange, onBannerChange, onBannerPresetChange, onExportCertificate, locale = 'en-GB', className }: ProfileViewProps) {
+export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit: false }, onEdit, onAvatarChange, onBannerChange, onBannerPresetChange, onExportCertificate, locale = i18n.language, className }: ProfileViewProps) {
+  useTranslation();
   const [achievement, setAchievement] = useState<AchievementId | null>(null);
   const [tutor, setTutor] = useState<NonNullable<StudentProfile['tutorBadges']>[number] | null>(null);
-  const isSelf = viewer === 'self';
-  const showPrivate = viewer !== 'public';
+  const isSelf = viewer.canEdit;
+  const showPrivate = viewer.showPrivate;
   const earned = (p.achievements ?? []).filter((a) => a.earnedAt);
   const opened = achievement ? p.achievements?.find((a) => a.id === achievement) : undefined;
   const hasHistory = (p.categoryLevels?.length ?? 0) > 0 || p.attendance != null;
@@ -192,30 +194,29 @@ export function ProfileView({ profile: p, viewer = 'self', onEdit, onAvatarChang
         actions={
           isSelf && onEdit ? (
             <Button variant="secondary" icon={Pencil} onClick={onEdit}>
-              Edit profile
-            </Button>
+               {i18n.t('ui.edit_profile')} </Button>
           ) : undefined
         }
       />
 
       <div className="sm-profile__grid">
         <div className="sm-profile__col">
-          <Card title="About">
+          <Card title={i18n.t('ui.about')}>
             {p.aboutMe ? (
               <p className="sm-profile-about">{p.aboutMe}</p>
             ) : (
               <p className="sm-caption" style={{ margin: 0 }}>
-                {isSelf ? 'Tell your classmates what you enjoy working on.' : 'No description yet.'}
+                {isSelf ? i18n.t('ui.tell_your_classmates_what_you_enjoy_working_on') : i18n.t('ui.no_description_yet')}
               </p>
             )}
             <div className="sm-profile-tags-wrap">
-              <Tags label="Skills" items={p.skills} />
-              <Tags label="Interests" items={p.interests} />
-              <Tags label="Languages" items={p.languages} icon={Languages} />
+              <Tags label={i18n.t('ui.skills')} items={p.skills} />
+              <Tags label={i18n.t('ui.interests')} items={p.interests} />
+              <Tags label={i18n.t('ui.languages')} items={p.languages.map(code => i18n.t(`languages.${code}`))} icon={Languages} />
             </div>
           </Card>
 
-          <Card title="Badges" description={earned.length || p.tutorBadges?.length ? 'Select a badge for details.' : undefined}>
+          <Card title={i18n.t('ui.badges')} description={earned.length || p.tutorBadges?.length ? i18n.t('ui.select_a_badge_for_details') : undefined}>
             {p.tutorBadges && p.tutorBadges.length > 0 && (
               <div className="sm-profile-tutor">
                 {p.tutorBadges.map((t) => (
@@ -224,8 +225,8 @@ export function ProfileView({ profile: p, viewer = 'self', onEdit, onAvatarChang
                       <Star size={18} strokeWidth={2.25} />
                     </span>
                     <span style={{ minWidth: 0 }}>
-                      <b>Tutor · {t.subject}</b>
-                      {t.rating !== undefined && <Rating value={t.rating} readOnly size={13} showValue count={t.ratings} label="Tutor rating" />}
+                      <b>{i18n.t('ui.tutor_subject', {subject:t.subject})}</b>
+                      {t.rating !== undefined && <Rating value={t.rating} readOnly size={13} showValue count={t.ratings} label={i18n.t('ui.tutor_rating')} />}
                     </span>
                   </button>
                 ))}
@@ -238,29 +239,29 @@ export function ProfileView({ profile: p, viewer = 'self', onEdit, onAvatarChang
                 ))}
               </div>
             ) : (
-              !p.tutorBadges?.length && <EmptyState compact icon={Sparkles} title="No badges yet" body="Achievements are awarded automatically as you use StudyMatch." />
+              !p.tutorBadges?.length && <EmptyState compact icon={Sparkles} title={i18n.t('ui.no_badges_yet')} body={i18n.t('ui.achievements_are_awarded_automatically_as_you_use_studymatch')} />
             )}
           </Card>
         </div>
 
         {showPrivate && (
           <div className="sm-profile__col">
-            <Card title="Personality profile" action={<PrivateNote />} description="Current academic year">
-              {p.personality ? <ProfileBars values={p.personality} /> : <p className="sm-caption" style={{ margin: 0 }}>The personality test hasn’t been taken this year.</p>}
+            <Card title={i18n.t('ui.personality_profile')} action={<PrivateNote />} description={i18n.t('ui.current_academic_year')}>
+              {p.personality ? <ProfileBars values={p.personality} /> : <p className="sm-caption" style={{ margin: 0 }}> {i18n.t('ui.the_personality_test_hasn_t_been_taken_this_year')} </p>}
             </Card>
-            <Card title="Academic" action={<PrivateNote />}>
+            <Card title={i18n.t('ui.academic')} action={<PrivateNote />}>
               {hasHistory ? (
                 <div className="sm-profile-academic">
                   {p.attendance !== undefined && (
                     <div className="sm-profile-attendance">
                       {p.attendance === null ? (
-                        <span className="sm-caption">Attendance not applicable</span>
+                        <span className="sm-caption"> {i18n.t('ui.attendance_not_applicable')} </span>
                       ) : (
                         <>
-                          <ScoreRing value={p.attendance} size={84} stroke={8} color="var(--sm-exec)" label="Attendance">
+                          <ScoreRing value={p.attendance} size={84} stroke={8} color="var(--sm-exec)" label={i18n.t('ui.attendance')}>
                             {p.attendance}%
                           </ScoreRing>
-                          <span className="sm-caption">Attendance</span>
+                          <span className="sm-caption"> {i18n.t('ui.attendance')} </span>
                         </>
                       )}
                     </div>
@@ -270,7 +271,7 @@ export function ProfileView({ profile: p, viewer = 'self', onEdit, onAvatarChang
                       <li key={c.category}>
                         <span>
                           {c.category}
-                          {c.subjects !== undefined && <small>{c.subjects} subjects</small>}
+                          {c.subjects !== undefined && <small>{i18n.t('ui.subject_count', {count:c.subjects})}</small>}
                         </span>
                         <StatusPill tone={LEVEL[c.level].tone} size="sm">
                           {LEVEL[c.level].label}
@@ -280,7 +281,7 @@ export function ProfileView({ profile: p, viewer = 'self', onEdit, onAvatarChang
                   </ul>
                 </div>
               ) : (
-                <EmptyState compact icon={GraduationCap} title="No academic history yet" body="Category levels and attendance appear after your first final grades." />
+                <EmptyState compact icon={GraduationCap} title={i18n.t('ui.no_academic_history_yet')} body={i18n.t('ui.category_levels_and_attendance_appear_after_your_first_final_grad')} />
               )}
             </Card>
           </div>
@@ -288,13 +289,12 @@ export function ProfileView({ profile: p, viewer = 'self', onEdit, onAvatarChang
       </div>
 
       <AchievementDialog id={achievement} earnedAt={opened?.earnedAt} progress={opened?.progress} onClose={() => setAchievement(null)} onExportCertificate={isSelf ? onExportCertificate : undefined} locale={locale} />
-      <Dialog open={!!tutor} onClose={() => setTutor(null)} title={tutor ? `Tutor · ${tutor.subject}` : ''} icon={Star} iconTone="warning" size="sm">
+      <Dialog open={!!tutor} onClose={() => setTutor(null)} title={tutor ? i18n.t('ui.tutor_subject', {subject:tutor.subject}) : ''} icon={Star} iconTone="warning" size="sm">
         {tutor && (
           <div style={{ display: 'grid', gap: 10 }}>
             <p className="sm-caption" style={{ margin: 0 }}>
-              {p.name.split(' ')[0]} is an approved tutor in {tutor.subject} and hosts StudyRooms for other students.
-            </p>
-            {tutor.rating !== undefined ? <Rating value={tutor.rating} readOnly size={22} showValue count={tutor.ratings} label="Tutor rating" /> : <span className="sm-caption">No ratings yet.</span>}
+              {p.name.split(' ')[0]}  {i18n.t('ui.is_an_approved_tutor_in')} {tutor.subject}  {i18n.t('ui.and_hosts_studyrooms_for_other_students')} </p>
+            {tutor.rating !== undefined ? <Rating value={tutor.rating} readOnly size={22} showValue count={tutor.ratings} label={i18n.t('ui.tutor_rating')} /> : <span className="sm-caption"> {i18n.t('ui.no_ratings_yet')} </span>}
           </div>
         )}
       </Dialog>
@@ -304,6 +304,7 @@ export function ProfileView({ profile: p, viewer = 'self', onEdit, onAvatarChang
 
 /** Small summary for lists and hover cards: photo, name, programme and earned badges. */
 export function ProfileCard({ profile: p, onClick }: { profile: StudentProfile; onClick?: () => void }) {
+  useTranslation();
   const earned = (p.achievements ?? []).filter((a) => a.earnedAt).slice(0, 4);
   return (
     <Card padding="none" onClick={onClick} className="sm-profile-card">
@@ -314,7 +315,7 @@ export function ProfileCard({ profile: p, onClick }: { profile: StudentProfile; 
         </span>
         <b>{p.name}</b>
         <span className="sm-caption">
-          {p.programme} · Year {p.curricularYear}
+          {p.programme} {i18n.t('ui.curricular_year', {year:p.curricularYear})}
         </span>
         {earned.length > 0 && (
           <span className="sm-profile-card__badges">

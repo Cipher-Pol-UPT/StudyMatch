@@ -1,10 +1,14 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { hashString } from '../../utils/shared';
-import { PROFILES, type ProfileKey } from '../badge/Badge';
+import { type ProfileKey } from '../badge/Badge';
+import { PROFILES } from '../badge/Badge.shared';
 import './expressive.css';
 
 function Pattern({ seed, color }: { seed: string; color: string }) {
+  useTranslation();
   let h = hashString(seed) || 7;
   const rows = 6;
   const cols = 10;
@@ -43,6 +47,7 @@ export interface StudentPassProps {
  * and flips to reveal teammates (the "exchange" motion behaviour).
  */
 export function StudentPass({ name, number, year, group, profile, teammates = [], color = 'var(--sm-violet)', programme = 'StudyMatch' }: StudentPassProps) {
+  useTranslation();
   const [flipped, setFlipped] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0, gx: 50, gy: 50 });
   const P = PROFILES[profile];
@@ -64,14 +69,14 @@ export function StudentPass({ name, number, year, group, profile, teammates = []
         animate={{ rotateY: (flipped ? 180 : 0) + tilt.y, rotateX: tilt.x }}
         transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         aria-pressed={flipped}
-        aria-label={`${name}'s student pass. ${flipped ? 'Showing teammates' : 'Showing front'}. Activate to flip.`}
+        aria-label={i18n.t('ui.student_pass', {name,side: flipped ? i18n.t('ui.showing_teammates') : i18n.t('ui.showing_front')})}
       >
         <div className="sm-pass">
           <Pattern seed={name} color={color} />
           <span className="sm-pass__sheen" style={{ background: `radial-gradient(60% 60% at ${tilt.gx}% ${tilt.gy}%, rgba(255,255,255,.55), transparent 70%)` }} />
           <div className="sm-pass__row">
             <span style={{ fontSize: 15, fontWeight: 500, letterSpacing: '-0.01em' }}>{programme}</span>
-            <span className="sm-pass__year">Year {year}</span>
+            <span className="sm-pass__year"> {i18n.t('ui.year')} {year}</span>
           </div>
           <div className="sm-pass__chip" />
           <div className="sm-pass__row" style={{ alignItems: 'flex-end' }}>
@@ -89,20 +94,20 @@ export function StudentPass({ name, number, year, group, profile, teammates = []
         <div className="sm-pass sm-pass--back">
           <div className="sm-pass__row">
             <span className="sm-eyebrow" style={{ color: 'rgba(255,255,255,.6)' }}>
-              {group} · teammates
+              {group} {i18n.t('ui.teammates')}
             </span>
             <span className="sm-eyebrow" style={{ color: 'var(--sm-spark)' }}>
               {P.short}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {(teammates.length ? teammates : ['No group yet']).slice(0, 4).map((t) => (
+            {(teammates.length ? teammates : [i18n.t('ui.no_group_yet')]).slice(0, 4).map((t) => (
               <div key={t} style={{ fontSize: 17, letterSpacing: '-0.01em' }}>
                 {t}
               </div>
             ))}
           </div>
-          <div style={{ fontFamily: 'var(--sm-mono)', fontSize: 11, opacity: 0.5 }}>Tap to flip back</div>
+          <div style={{ fontFamily: 'var(--sm-mono)', fontSize: 11, opacity: 0.5 }}> {i18n.t('ui.tap_to_flip_back')} </div>
         </div>
       </motion.button>
     </div>

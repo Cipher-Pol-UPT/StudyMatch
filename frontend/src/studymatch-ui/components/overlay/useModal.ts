@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect,useRef,type RefObject } from 'react';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -32,7 +32,7 @@ export function focusableIn(root: HTMLElement) {
  */
 export function useModal(open: boolean, onClose: () => void, panel: RefObject<HTMLElement | null>, { dismissible = true, initialFocus }: { dismissible?: boolean; initialFocus?: RefObject<HTMLElement | null> } = {}) {
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   useEffect(() => {
     if (!open) return;

@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import type { CSSProperties, ElementType, ReactNode } from 'react';
+import type { CSSProperties,ElementType,ReactNode } from 'react';
 import { cx } from '../../utils/cx';
 import type { IconComponent } from '../../utils/shared';
 import './list.css';

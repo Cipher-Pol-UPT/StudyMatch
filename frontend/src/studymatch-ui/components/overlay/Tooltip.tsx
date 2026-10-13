@@ -1,5 +1,5 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { cloneElement, isValidElement, useId, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { AnimatePresence,motion } from 'framer-motion';
+import { cloneElement,isValidElement,useId,useRef,useState,type ReactElement,type ReactNode } from 'react';
 import { EASE_OUT } from '../../utils/shared';
 import './overlay.css';
 

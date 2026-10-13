@@ -1,5 +1,7 @@
-import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react';
+import { AlertTriangle,CheckCircle2,Info,X,XCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import type { IconComponent } from '../../utils/shared';
 import './overlay.css';
@@ -23,6 +25,7 @@ export interface BannerProps {
 
 /** Inline message about the page or a form. Danger banners are announced immediately. */
 export function Banner({ tone = 'info', title, children, action, onDismiss, icon, className }: BannerProps) {
+  useTranslation();
   const Icon = icon === null ? null : (icon ?? TONE_ICON[tone]);
   return (
     <div className={cx('sm-banner', `sm-banner--${tone}`, className)} role={tone === 'danger' ? 'alert' : 'status'}>
@@ -33,7 +36,7 @@ export function Banner({ tone = 'info', title, children, action, onDismiss, icon
       </div>
       {action && <div className="sm-banner__action">{action}</div>}
       {onDismiss && (
-        <button type="button" className="sm-banner__close" onClick={onDismiss} aria-label="Dismiss">
+        <button type="button" className="sm-banner__close" onClick={onDismiss} aria-label={i18n.t('ui.dismiss')}>
           <X size={16} strokeWidth={2.5} />
         </button>
       )}

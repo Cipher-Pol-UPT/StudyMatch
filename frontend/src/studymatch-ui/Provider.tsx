@@ -1,4 +1,5 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect,type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ToastProvider } from './components/overlay/Toast';
 
 export interface StudyMatchProviderProps {
@@ -11,6 +12,10 @@ export interface StudyMatchProviderProps {
 
 /** Wrap your app once. Provides toasts and the base page styles. */
 export function StudyMatchProvider({ children, applyBodyClass = true, maxToasts = 3 }: StudyMatchProviderProps) {
+  const { i18n } = useTranslation();
+  useEffect(() => {
+    document.documentElement.lang = i18n.language === 'pt' ? 'pt-PT' : 'en-GB';
+  }, [i18n.language]);
   useEffect(() => {
     if (!applyBodyClass) return;
     document.body.classList.add('sm-body');

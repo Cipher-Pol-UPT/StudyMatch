@@ -1,9 +1,13 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AnimatePresence,motion } from 'framer-motion';
+import { AlertTriangle,CheckCircle2,Info,XCircle } from 'lucide-react';
+import { useCallback,useMemo,useRef,useState,type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { EASE_OUT, type IconComponent } from '../../utils/shared';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
+import { EASE_OUT,type IconComponent } from '../../utils/shared';
+import { useMounted } from '../../utils/useMounted';
 import './overlay.css';
+import { ToastCtx } from './toastContext';
 
 export type ToastTone = 'success' | 'info' | 'warning' | 'danger';
 
@@ -25,6 +29,7 @@ export interface ToastProps {
 
 /** The black pill. Usually shown through `useToast()`, but can be rendered inline. */
 export function Toast({ children, description, tone = 'success', icon, action, onAction }: ToastProps) {
+  useTranslation();
   const Icon = icon ?? TONE[tone].icon;
   return (
     <div className="sm-toast">
@@ -66,7 +71,7 @@ export type ToastFn = ((input: ReactNode | ToastOptions) => number) & {
   dismiss: (id: number) => void;
 };
 
-const ToastCtx = createContext<ToastFn | null>(null);
+
 
 function isOptions(x: unknown): x is ToastOptions {
   return typeof x === 'object' && x !== null && 'message' in x;
@@ -74,10 +79,10 @@ function isOptions(x: unknown): x is ToastOptions {
 
 /** Hosts the toast stack. Already included in <StudyMatchProvider>. */
 export function ToastProvider({ children, max = 3 }: { children: ReactNode; max?: number }) {
+  useTranslation();
   const [items, setItems] = useState<ToastItem[]>([]);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const seq = useRef(0);
-  useEffect(() => setMounted(true), []);
 
   const dismiss = useCallback((id: number) => setItems((xs) => xs.filter((x) => x.id !== id)), []);
 
@@ -104,7 +109,7 @@ export function ToastProvider({ children, max = 3 }: { children: ReactNode; max?
       {children}
       {mounted &&
         createPortal(
-          <div className="sm-toast-region" role="region" aria-label="Notifications" aria-live="polite">
+          <div className="sm-toast-region" role="region" aria-label={i18n.t('ui.notifications')} aria-live="polite">
             <AnimatePresence initial={false}>
               {items.map((t) => (
                 <motion.div
@@ -135,22 +140,4 @@ export function ToastProvider({ children, max = 3 }: { children: ReactNode; max?
         )}
     </ToastCtx.Provider>
   );
-}
-
-/**
- * `const toast = useToast();`
- * `toast('Saved')`, `toast.success('Groups published', { action: 'Undo', onAction })`.
- */
-export function useToast(): ToastFn {
-  const ctx = useContext(ToastCtx);
-  if (!ctx) {
-    const warn = (() => {
-      console.warn('[StudyMatch UI] useToast() needs <ToastProvider> or <StudyMatchProvider> above it.');
-      return -1;
-    }) as unknown as ToastFn;
-    warn.success = warn.info = warn.warning = warn.danger = warn as never;
-    warn.dismiss = () => {};
-    return warn;
-  }
-  return ctx;
 }

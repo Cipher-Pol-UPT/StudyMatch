@@ -1,5 +1,7 @@
 import { X } from 'lucide-react';
-import type { HTMLAttributes, MouseEvent, ReactNode } from 'react';
+import type { HTMLAttributes,MouseEvent,ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import type { IconComponent } from '../../utils/shared';
 import './chip.css';
@@ -21,6 +23,7 @@ export interface ChipProps {
 
 /** Filter chip or removable tag. A chip without `onClick` is static (a label, not a button). */
 export function Chip({ children, selected, onClick, icon: Icon, onRemove, removeLabel, size = 'md', disabled, className }: ChipProps) {
+  useTranslation();
   const interactive = !!onClick;
   const content = (
     <>
@@ -44,7 +47,7 @@ export function Chip({ children, selected, onClick, icon: Icon, onRemove, remove
         <button
           type="button"
           className="sm-chip__remove"
-          aria-label={removeLabel ?? `Remove ${typeof children === 'string' ? children : ''}`.trim()}
+          aria-label={removeLabel ?? i18n.t('ui.remove_item', {item: typeof children === 'string' ? children : ''}).trim()}
           onClick={onRemove}
           disabled={disabled}
         >
@@ -56,5 +59,6 @@ export function Chip({ children, selected, onClick, icon: Icon, onRemove, remove
 }
 
 export function ChipGroup({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
+  useTranslation();
   return <div className={cx('sm-chip-group', className)} {...rest} />;
 }

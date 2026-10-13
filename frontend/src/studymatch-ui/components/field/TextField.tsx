@@ -1,6 +1,7 @@
-import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef,useId,type InputHTMLAttributes,type ReactNode } from 'react';
 import type { IconComponent } from '../../utils/shared';
-import { Field, describedBy } from './Field';
+import { Field } from './Field';
+import { describedBy } from './Field.shared';
 
 export interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix'> {
   label: ReactNode;

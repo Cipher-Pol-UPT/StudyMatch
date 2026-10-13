@@ -1,5 +1,7 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { ChevronLeft,ChevronRight } from 'lucide-react';
+import { useMemo,useRef,useState,type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import './calendar.css';
 
@@ -31,7 +33,8 @@ const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), 
 const toDate = (d: Date | string) => (typeof d === 'string' ? new Date(d.length === 10 ? `${d}T00:00:00` : d) : d);
 
 /** Month calendar with event dots and full keyboard support (arrows, Home/End, PageUp/PageDown). */
-export function Calendar({ value, onValueChange, events = [], min, max, weekStartsOn = 1, locale = 'en-GB', defaultMonth, className }: CalendarProps) {
+export function Calendar({ value, onValueChange, events = [], min, max, weekStartsOn = 1, locale = i18n.language, defaultMonth, className }: CalendarProps) {
+  useTranslation();
   const today = startOfDay(new Date());
   const [month, setMonth] = useState(() => {
     const d = defaultMonth ?? value ?? today;
@@ -100,10 +103,10 @@ export function Calendar({ value, onValueChange, events = [], min, max, weekStar
           {title}
         </span>
         <div className="sm-cal__nav">
-          <button type="button" aria-label="Previous month" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
+          <button type="button" aria-label={i18n.t('ui.previous_month')} onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
             <ChevronLeft size={18} strokeWidth={2.25} />
           </button>
-          <button type="button" aria-label="Next month" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
+          <button type="button" aria-label={i18n.t('ui.next_month')} onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
             <ChevronRight size={18} strokeWidth={2.25} />
           </button>
         </div>
@@ -135,7 +138,7 @@ export function Calendar({ value, onValueChange, events = [], min, max, weekStar
                     data-focus={isFocus}
                     tabIndex={isFocus ? 0 : -1}
                     disabled={off}
-                    aria-label={`${dayLabel.format(d)}${evs.length ? `, ${evs.length} event${evs.length > 1 ? 's' : ''}` : ''}`}
+                    aria-label={i18n.t('ui.calendar_day', {date: dayLabel.format(d),events: evs.length ? i18n.t('ui.events', {count:evs.length}) : ''})}
                     onClick={() => {
                       setFocus(d);
                       if (outside) setMonth(new Date(d.getFullYear(), d.getMonth(), 1));

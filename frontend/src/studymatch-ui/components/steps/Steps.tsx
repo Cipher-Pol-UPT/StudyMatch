@@ -1,5 +1,7 @@
 import { Check } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import './steps.css';
 
@@ -20,6 +22,7 @@ export interface StepsProps {
 
 /** Progress through a multi-step flow: account activation, the personality test, group generation. */
 export function Steps({ steps, current, orientation = 'horizontal', onStepClick, className }: StepsProps) {
+  useTranslation();
   return (
     <ol className={cx('sm-steps', orientation === 'vertical' && 'sm-steps--vertical', className)}>
       {steps.map((raw, i) => {
@@ -46,7 +49,7 @@ export function Steps({ steps, current, orientation = 'horizontal', onStepClick,
             ) : (
               <span className="sm-steps__btn">{inner}</span>
             )}
-            <span className="sm-visually-hidden">{state === 'done' ? '(completed)' : state === 'current' ? '(current step)' : ''}</span>
+            <span className="sm-visually-hidden">{state === 'done' ? '(completed)' : state === 'current' ? i18n.t('ui.current_step') : ''}</span>
           </li>
         );
       })}

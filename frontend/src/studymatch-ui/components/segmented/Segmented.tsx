@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useId,useRef,type KeyboardEvent,type ReactNode } from 'react';
 import { cx } from '../../utils/cx';
-import { nextIndex, SPRING, useControllableState, type IconComponent } from '../../utils/shared';
+import { nextIndex,SPRING,useControllableState,type IconComponent } from '../../utils/shared';
 import './segmented.css';
 
 export interface SegmentedOption<T extends string | number> {

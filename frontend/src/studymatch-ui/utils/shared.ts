@@ -1,4 +1,4 @@
-import { useCallback, useId, useRef, useState, type ElementType } from 'react';
+import { useCallback,useEffect,useId,useRef,useState,type ElementType } from 'react';
 
 /**
  * Any icon component that accepts `size` and `strokeWidth`
@@ -31,7 +31,7 @@ export function useControllableState<T>(value: T | undefined, defaultValue: T, o
   const controlled = value !== undefined;
   const current = controlled ? (value as T) : inner;
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
   const set = useCallback(
     (next: T) => {
       if (!controlled) setInner(next);

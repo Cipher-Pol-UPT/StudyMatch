@@ -1,5 +1,7 @@
-import { Minus, Plus, RotateCcw } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type WheelEvent } from 'react';
+import { Minus,Plus,RotateCcw } from 'lucide-react';
+import { useCallback,useEffect,useLayoutEffect,useRef,useState,type KeyboardEvent,type PointerEvent,type WheelEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { Button } from '../../components/button/Button';
 import { cx } from '../../utils/cx';
 import './profile.css';
@@ -36,7 +38,8 @@ const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(mi
  * Drag to reposition, zoom with the slider, the wheel or +/−, arrows to nudge.
  * Exports a JPEG through a canvas: no dependencies, no upload until you decide.
  */
-export function ImageCropper({ source, aspect = 1, shape = 'circle', outputWidth = 512, quality = 0.9, maxZoom = 3, onApply, onCancel, applyLabel = 'Apply', className }: ImageCropperProps) {
+export function ImageCropper({ source, aspect = 1, shape = 'circle', outputWidth = 512, quality = 0.9, maxZoom = 3, onApply, onCancel, applyLabel = i18n.t('ui.apply'), className }: ImageCropperProps) {
+  useTranslation();
   const frame = useRef<HTMLDivElement>(null);
   const [src, setSrc] = useState<string | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
@@ -48,12 +51,9 @@ export function ImageCropper({ source, aspect = 1, shape = 'circle', outputWidth
 
   useEffect(() => {
     const url = typeof source === 'string' ? source : URL.createObjectURL(source);
-    setSrc(url);
-    setZoom(1);
-    setOffset({ x: 0, y: 0 });
     const image = new Image();
     image.crossOrigin = 'anonymous';
-    image.onload = () => setImg(image);
+    image.onload = () => { setSrc(url); setZoom(1); setOffset({ x: 0, y: 0 }); setImg(image); };
     image.src = url;
     return () => {
       if (typeof source !== 'string') URL.revokeObjectURL(url);
@@ -150,7 +150,7 @@ export function ImageCropper({ source, aspect = 1, shape = 'circle', outputWidth
         onKeyDown={onKey}
         tabIndex={0}
         role="application"
-        aria-label="Image position. Drag or use the arrow keys to move, plus and minus to zoom."
+        aria-label={i18n.t('ui.image_position_drag_or_use_the_arrow_keys_to_move_plus_and_minus_')}
       >
         {src && img && (
           <img
@@ -165,11 +165,11 @@ export function ImageCropper({ source, aspect = 1, shape = 'circle', outputWidth
         <span className="sm-cropper__grid" aria-hidden />
       </div>
       <div className="sm-cropper__zoom">
-        <button type="button" onClick={() => setZoomTo(zoom - 0.2)} aria-label="Zoom out" disabled={zoom <= 1}>
+        <button type="button" onClick={() => setZoomTo(zoom - 0.2)} aria-label={i18n.t('ui.zoom_out')} disabled={zoom <= 1}>
           <Minus size={16} strokeWidth={2.5} />
         </button>
-        <input type="range" min={1} max={maxZoom} step={0.01} value={zoom} onChange={(e) => setZoomTo(Number(e.target.value))} aria-label="Zoom" className="sm-range" style={{ ['--p' as string]: `${((zoom - 1) / (maxZoom - 1)) * 100}%` }} />
-        <button type="button" onClick={() => setZoomTo(zoom + 0.2)} aria-label="Zoom in" disabled={zoom >= maxZoom}>
+        <input type="range" min={1} max={maxZoom} step={0.01} value={zoom} onChange={(e) => setZoomTo(Number(e.target.value))} aria-label={i18n.t('ui.zoom')} className="sm-range" style={{ ['--p' as string]: `${((zoom - 1) / (maxZoom - 1)) * 100}%` }} />
+        <button type="button" onClick={() => setZoomTo(zoom + 0.2)} aria-label={i18n.t('ui.zoom_in')} disabled={zoom >= maxZoom}>
           <Plus size={16} strokeWidth={2.5} />
         </button>
         <button
@@ -178,7 +178,7 @@ export function ImageCropper({ source, aspect = 1, shape = 'circle', outputWidth
             setZoom(1);
             setOffset({ x: 0, y: 0 });
           }}
-          aria-label="Reset position"
+          aria-label={i18n.t('ui.reset_position')}
         >
           <RotateCcw size={15} strokeWidth={2.25} />
         </button>
@@ -186,8 +186,7 @@ export function ImageCropper({ source, aspect = 1, shape = 'circle', outputWidth
       <div className="sm-cropper__actions">
         {onCancel && (
           <Button variant="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
+             {i18n.t('ui.cancel')} </Button>
         )}
         <Button onClick={apply} loading={busy} disabled={!img}>
           {applyLabel}

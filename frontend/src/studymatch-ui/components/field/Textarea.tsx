@@ -1,6 +1,7 @@
-import { forwardRef, useCallback, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { forwardRef,useCallback,useId,useLayoutEffect,useRef,useState,type ChangeEvent,type ReactNode,type TextareaHTMLAttributes } from 'react';
 import { cx } from '../../utils/cx';
-import { Field, describedBy } from './Field';
+import { Field } from './Field';
+import { describedBy } from './Field.shared';
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: ReactNode;
@@ -33,18 +34,16 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
     [ref],
   );
 
-  const fit = () => {
+  const fit = useCallback(() => {
     const el = inner.current;
     if (!el || !autoResize) return;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
-  };
+  }, [autoResize]);
 
   useLayoutEffect(() => {
-    if (value !== undefined) setLength(String(value).length);
     fit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  }, [value, fit]);
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setLength(e.target.value.length);
@@ -52,6 +51,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
     onChange?.(e);
   };
 
+  const visibleLength = value !== undefined ? String(value).length : length;
   const counting = showCount ?? maxLength !== undefined;
   return (
     <Field
@@ -66,7 +66,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       aside={
         counting ? (
           <span className={cx('sm-field__count', maxLength !== undefined && length > maxLength && 'sm-field__count--over')} aria-live="polite">
-            {length}
+            {visibleLength}
             {maxLength !== undefined && ` / ${maxLength}`}
           </span>
         ) : undefined

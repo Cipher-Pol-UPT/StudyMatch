@@ -1,28 +1,17 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { Plus, X } from 'lucide-react';
-import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { AnimatePresence,motion } from 'framer-motion';
+import { Plus,X } from 'lucide-react';
+import { useRef,useState,type KeyboardEvent,type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
-import { hashString } from '../../utils/shared';
 import '../button/button.css';
 import './sticky-note.css';
+import { NOTE_COLORS,NOTE_HEX,tiltFor } from './StickyNote.shared';
 
 export type NoteColor = 'yellow' | 'pink' | 'blue' | 'green' | 'orange' | 'violet';
-export const NOTE_COLORS: NoteColor[] = ['yellow', 'pink', 'blue', 'green', 'orange', 'violet'];
-export const NOTE_HEX: Record<NoteColor, string> = {
-  yellow: '#ffe66d',
-  pink: '#ffb8d2',
-  blue: '#ade0ff',
-  green: '#bff2c6',
-  orange: '#ffca94',
-  violet: '#d9d0ff',
-};
-
-/** Deterministic tilt from an id so notes never look machine-aligned. */
-export function tiltFor(id: string) {
-  return ((hashString(id) % 70) - 35) / 10; // −3.5° … +3.4°
-}
 
 function Check() {
+  useTranslation();
   return (
     <svg className="sm-note__check" viewBox="0 0 60 50" aria-hidden>
       <motion.path
@@ -58,6 +47,7 @@ export interface StickyNoteProps {
  * Clicking toggles it (e.g. done); hovering lifts the corner a little more.
  */
 export function StickyNote({ color = 'yellow', title, children, footer, done, size = 220, rotate = 0, onClick, onRemove, label }: StickyNoteProps) {
+  useTranslation();
   const onKey = (e: KeyboardEvent) => {
     if (onClick && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
@@ -83,7 +73,7 @@ export function StickyNote({ color = 'yellow', title, children, footer, done, si
         <button
           type="button"
           className="sm-note__remove"
-          aria-label="Remove note"
+          aria-label={i18n.t('ui.remove_note')}
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
@@ -97,6 +87,7 @@ export function StickyNote({ color = 'yellow', title, children, footer, done, si
 }
 
 function NoteFace({ color, title, children, footer, done }: { color: NoteColor; title?: ReactNode; children?: ReactNode; footer?: ReactNode; done?: boolean }) {
+  useTranslation();
   return (
     <div className={cx('sm-note', `sm-note--${color}`, done && 'sm-note--done')}>
       <span className="sm-note__grain" aria-hidden />
@@ -129,7 +120,7 @@ export function StickyBoard({
   size = 200,
   composer = true,
   onChange,
-  placeholder = 'Write a note… e.g. Group 04 needs a leader',
+  placeholder = i18n.t('ui.write_note'),
 }: {
   /** Notes on first render. The board manages them afterwards and reports through `onChange`. */
   initial: NoteData[];
@@ -139,6 +130,7 @@ export function StickyBoard({
   onChange?: (notes: NoteData[]) => void;
   placeholder?: string;
 }) {
+  useTranslation();
   const [notes, setNotes] = useState(initial);
   const [stack, setStack] = useState<string[]>(initial.map((n) => n.id));
   const [text, setText] = useState('');
@@ -153,7 +145,7 @@ export function StickyBoard({
   const front = (id: string) => setStack((s) => [...s.filter((x) => x !== id), id]);
   const add = () => {
     if (!text.trim()) return;
-    const n: NoteData = { id: `n${Date.now()}`, text: text.trim(), color, meta: 'Just now' };
+    const n: NoteData = { id: `n${Date.now()}`, text: text.trim(), color, meta: i18n.t('ui.just_now') };
     update([...notes, n]);
     setStack((s) => [...s, n.id]);
     setText('');
@@ -170,15 +162,15 @@ export function StickyBoard({
             add();
           }}
         >
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder} aria-label="New note" maxLength={80} />
-          <div className="sm-note-swatches" role="radiogroup" aria-label="Note colour">
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder} aria-label={i18n.t('ui.new_note')} maxLength={80} />
+          <div className="sm-note-swatches" role="radiogroup" aria-label={i18n.t('ui.note_colour')}>
             {NOTE_COLORS.map((c) => (
               <button
                 key={c}
                 type="button"
                 role="radio"
                 aria-checked={c === color}
-                aria-label={c}
+                aria-label={i18n.t(`colours.${c}`)}
                 onClick={() => setColor(c)}
                 style={{ background: NOTE_HEX[c], boxShadow: c === color ? '0 0 0 2px #fff, 0 0 0 4px var(--sm-black)' : 'inset 0 0 0 1px rgba(0,0,0,.08)' }}
               />
@@ -186,7 +178,7 @@ export function StickyBoard({
           </div>
           <button type="submit" className="sm-btn sm-btn--primary sm-btn--sm" disabled={!text.trim()}>
             <Plus size={16} strokeWidth={2.5} aria-hidden />
-            <span className="sm-btn__label">Stick</span>
+            <span className="sm-btn__label"> {i18n.t('ui.stick')} </span>
           </button>
         </form>
       )}
@@ -226,15 +218,15 @@ export function StickyBoard({
                 role="button"
                 tabIndex={0}
                 aria-pressed={!!n.done}
-                aria-label={`${n.title ? n.title + ': ' : ''}${n.text}${n.done ? ' (done)' : ''}`}
+                aria-label={i18n.t('ui.note_label', {title:n.title ? n.title+': ' : '',text:n.text,done:n.done ? i18n.t('ui.note_done') : ''})}
               >
-                <NoteFace color={n.color} title={n.title} done={n.done} footer={n.meta ? <><span>{n.meta}</span><span>{n.done ? 'Done' : ''}</span></> : undefined}>
+                <NoteFace color={n.color} title={n.title} done={n.done} footer={n.meta ? <><span>{n.meta}</span><span>{n.done ? i18n.t('ui.done') : ''}</span></> : undefined}>
                   {n.text}
                 </NoteFace>
                 <button
                   type="button"
                   className="sm-note__remove"
-                  aria-label="Peel off note"
+                  aria-label={i18n.t('ui.peel_off_note')}
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -248,7 +240,7 @@ export function StickyBoard({
           })}
         </AnimatePresence>
         {notes.length === 0 && (
-          <div className="sm-board__empty">The board is clear ✨</div>
+          <div className="sm-board__empty"> {i18n.t('ui.the_board_is_clear')} </div>
         )}
       </div>
     </div>

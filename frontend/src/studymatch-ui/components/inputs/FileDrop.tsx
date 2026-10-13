@@ -1,5 +1,7 @@
-import { FileText, ImageIcon, UploadCloud, X } from 'lucide-react';
-import { useEffect, useId, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { FileText,ImageIcon,UploadCloud,X } from 'lucide-react';
+import { useEffect,useId,useRef,useState,type DragEvent,type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import { formatBytes } from '../../utils/shared';
 import './inputs.css';
@@ -31,24 +33,17 @@ function matchesAccept(file: File, accept?: string) {
 }
 
 /** Drag-and-drop or click to choose (banner upload, CSV import). Validates type and size. */
-export function FileDrop({ label = 'Drop a file here or click to browse', accept, maxSize, multiple, onFiles, hint, preview = true, disabled, className }: FileDropProps) {
+export function FileDrop({ label = i18n.t('ui.drop_a_file_here_or_click_to_browse'), accept, maxSize, multiple, onFiles, hint, preview = true, disabled, className }: FileDropProps) {
+  useTranslation();
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
 
-  useEffect(() => {
-    const img = files.find((f) => f.type.startsWith('image/'));
-    if (!preview || !img) {
-      setUrl(null);
-      return;
-    }
-    const u = URL.createObjectURL(img);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
-  }, [files, preview]);
+
 
   const take = (list: FileList | null) => {
     if (!list) return;
@@ -57,12 +52,14 @@ export function FileDrop({ label = 'Drop a file here or click to browse', accept
     Array.from(list)
       .slice(0, multiple ? undefined : 1)
       .forEach((f) => {
-        if (!matchesAccept(f, accept)) bad.push(`${f.name}: this file type isn't supported.`);
-        else if (maxSize && f.size > maxSize) bad.push(`${f.name} is ${formatBytes(f.size)}. The limit is ${formatBytes(maxSize)}.`);
+        if (!matchesAccept(f, accept)) bad.push(i18n.t('ui.file_type', {name:f.name}));
+        else if (maxSize && f.size > maxSize) bad.push(i18n.t('ui.file_size', {name:f.name,size:formatBytes(f.size),max:formatBytes(maxSize)}));
         else ok.push(f);
       });
     setErrors(bad);
     setFiles(ok);
+    const image = ok.find(file => file.type.startsWith('image/'));
+    setUrl(preview && image ? URL.createObjectURL(image) : null);
     if (ok.length) onFiles(ok);
   };
 
@@ -85,7 +82,7 @@ export function FileDrop({ label = 'Drop a file here or click to browse', accept
         onDrop={onDrop}
       >
         {url ? (
-          <img className="sm-drop__preview" src={url} alt="Selected image preview" />
+          <img className="sm-drop__preview" src={url} alt={i18n.t('ui.selected_image_preview')} />
         ) : (
           <span className="sm-drop__icon" aria-hidden>
             <UploadCloud size={26} strokeWidth={2} />
@@ -114,7 +111,7 @@ export function FileDrop({ label = 'Drop a file here or click to browse', accept
               {f.type.startsWith('image/') ? <ImageIcon size={16} aria-hidden /> : <FileText size={16} aria-hidden />}
               <span>{f.name}</span>
               <small>{formatBytes(f.size)}</small>
-              <button type="button" aria-label={`Remove ${f.name}`} onClick={() => setFiles((xs) => xs.filter((x) => x !== f))}>
+              <button type="button" aria-label={i18n.t('ui.remove_item', {item:f.name})} onClick={() => { setFiles(xs => xs.filter(x => x !== f)); if (f.type.startsWith('image/')) setUrl(null); }}>
                 <X size={14} strokeWidth={2.5} />
               </button>
             </li>

@@ -1,5 +1,7 @@
-import { Search, X } from 'lucide-react';
-import { forwardRef, useImperativeHandle, useRef, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from 'react';
+import { Search,X } from 'lucide-react';
+import { forwardRef,useImperativeHandle,useRef,type ChangeEvent,type InputHTMLAttributes,type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import { useControllableState } from '../../utils/shared';
 import './field.css';
@@ -18,9 +20,10 @@ export interface SearchFieldProps extends Omit<InputHTMLAttributes<HTMLInputElem
 
 /** Pill search input with a clear button. Escape clears it. */
 export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(function SearchField(
-  { value, defaultValue = '', onValueChange, onChange, placeholder = 'Search', label, size = 'md', shortcut, className, onKeyDown, ...rest },
+  { value, defaultValue = '', onValueChange, onChange, placeholder = i18n.t('ui.search'), label, size = 'md', shortcut, className, onKeyDown, ...rest },
   ref,
 ) {
+  useTranslation();
   const [current, setCurrent] = useControllableState(value, defaultValue, onValueChange);
   const inner = useRef<HTMLInputElement>(null);
   useImperativeHandle(ref, () => inner.current as HTMLInputElement);
@@ -50,7 +53,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
         <button
           type="button"
           className="sm-search__clear"
-          aria-label="Clear search"
+          aria-label={i18n.t('ui.clear_search')}
           onClick={() => {
             setCurrent('');
             inner.current?.focus();

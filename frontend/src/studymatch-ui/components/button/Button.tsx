@@ -1,7 +1,8 @@
-import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes } from 'react';
+import { forwardRef,type ButtonHTMLAttributes,type HTMLAttributes } from 'react';
 import { cx } from '../../utils/cx';
 import type { IconComponent } from '../../utils/shared';
 import './button.css';
+import { buttonClass } from './Button.shared';
 
 export type ButtonVariant =
   | 'primary'
@@ -21,14 +22,6 @@ export interface ButtonStyleOptions {
   size?: ButtonSize;
   block?: boolean;
   className?: string;
-}
-
-/**
- * Class names for anything that should look like a button,
- * e.g. a router link: `<Link className={buttonClass({ variant: 'white' })} />`.
- */
-export function buttonClass({ variant = 'primary', size = 'md', block, className }: ButtonStyleOptions = {}) {
-  return cx('sm-btn', `sm-btn--${variant}`, size !== 'md' && `sm-btn--${size}`, block && 'sm-btn--block', className);
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

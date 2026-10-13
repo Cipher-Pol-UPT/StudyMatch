@@ -1,8 +1,9 @@
 import { ChevronDown } from 'lucide-react';
-import { forwardRef, useId, type ReactNode, type SelectHTMLAttributes } from 'react';
+import { forwardRef,useId,type ReactNode,type SelectHTMLAttributes } from 'react';
 import { cx } from '../../utils/cx';
 import type { IconComponent } from '../../utils/shared';
-import { Field, describedBy } from './Field';
+import { Field } from './Field';
+import { describedBy } from './Field.shared';
 
 export interface SelectOption {
   value: string;

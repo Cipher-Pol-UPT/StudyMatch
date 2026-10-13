@@ -1,4 +1,6 @@
-import type { PointerEvent, ReactNode } from 'react';
+import type { PointerEvent,ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import type { IconComponent } from '../../utils/shared';
 import './field.css';
@@ -30,6 +32,7 @@ export interface FieldShellProps {
  * Use it to wrap any custom control so it matches TextField.
  */
 export function Field({ id, label, hint, error, optional, icon: Icon, suffix, disabled, top, aside, below, className, children }: FieldShellProps) {
+  useTranslation();
   const hintId = `${id}-hint`;
   const focusControl = (e: PointerEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
@@ -48,7 +51,7 @@ export function Field({ id, label, hint, error, optional, icon: Icon, suffix, di
         <span className="sm-field__inner">
           <label className="sm-field__label" htmlFor={id}>
             {label}
-            {optional && <span className="sm-field__optional">Optional</span>}
+            {optional && <span className="sm-field__optional"> {i18n.t('ui.optional')} </span>}
           </label>
           {children}
         </span>
@@ -68,6 +71,3 @@ export function Field({ id, label, hint, error, optional, icon: Icon, suffix, di
     </div>
   );
 }
-
-/** aria-describedby value for a control inside <Field>. */
-export const describedBy = (id: string, hint?: ReactNode, error?: ReactNode) => (hint || error ? `${id}-hint` : undefined);

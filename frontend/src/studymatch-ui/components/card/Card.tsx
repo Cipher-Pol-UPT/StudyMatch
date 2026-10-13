@@ -1,11 +1,10 @@
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
-import { forwardRef, type ElementType, type HTMLAttributes, type KeyboardEvent, type ReactNode } from 'react';
+import { ArrowDownRight,ArrowUpRight } from 'lucide-react';
+import { forwardRef,type ElementType,type HTMLAttributes,type KeyboardEvent,type ReactNode } from 'react';
 import { cx } from '../../utils/cx';
 import './card.css';
+import { isDarkTone } from './Card.shared';
 
 export type CardTone = 'white' | 'gray' | 'lavender' | 'sky' | 'peach' | 'mint' | 'lemon' | 'rose' | 'violet' | 'black' | 'ink' | 'gradient';
-const DARK: CardTone[] = ['violet', 'black', 'ink', 'gradient'];
-export const isDarkTone = (tone: CardTone) => DARK.includes(tone);
 
 export interface CardProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   tone?: CardTone;

@@ -1,5 +1,7 @@
-import { Minus, Plus } from 'lucide-react';
-import { useId, type ReactNode } from 'react';
+import { Minus,Plus } from 'lucide-react';
+import { useId,type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import { useControllableState } from '../../utils/shared';
 import './inputs.css';
@@ -21,6 +23,7 @@ export interface NumberStepperProps {
 
 /** − value + control for small integers: group sizes, seats in a StudyRoom, weights. */
 export function NumberStepper({ label, value, defaultValue = 0, onValueChange, min = -Infinity, max = Infinity, step = 1, unit, hint, disabled, className }: NumberStepperProps) {
+  useTranslation();
   const id = useId();
   const [n, setN] = useControllableState(value, defaultValue, onValueChange);
   const clamp = (x: number) => Math.min(max, Math.max(min, x));
@@ -53,14 +56,14 @@ export function NumberStepper({ label, value, defaultValue = 0, onValueChange, m
           else if (e.key === 'End' && Number.isFinite(max)) setN(max);
         }}
       >
-        <button type="button" tabIndex={-1} aria-label="Decrease" disabled={disabled || n <= min} onClick={() => setN(clamp(n - step))}>
+        <button type="button" tabIndex={-1} aria-label={i18n.t('ui.decrease')} disabled={disabled || n <= min} onClick={() => setN(clamp(n - step))}>
           <Minus size={16} strokeWidth={2.5} />
         </button>
         <span className="sm-stepper__value">
           {n}
           {unit && <small>{unit}</small>}
         </span>
-        <button type="button" tabIndex={-1} aria-label="Increase" disabled={disabled || n >= max} onClick={() => setN(clamp(n + step))}>
+        <button type="button" tabIndex={-1} aria-label={i18n.t('ui.increase')} disabled={disabled || n >= max} onClick={() => setN(clamp(n + step))}>
           <Plus size={16} strokeWidth={2.5} />
         </button>
       </div>

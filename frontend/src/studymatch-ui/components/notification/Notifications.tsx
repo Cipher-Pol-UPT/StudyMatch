@@ -1,5 +1,7 @@
-import { Bell, BellOff } from 'lucide-react';
+import { Bell,BellOff } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import type { IconComponent } from '../../utils/shared';
 import { Badge } from '../badge/Badge';
@@ -37,7 +39,8 @@ const TONE: Record<NonNullable<NotificationItem['tone']>, [string, string]> = {
 };
 
 /** In-app notifications (GR8): groups published, StudyRoom changes, achievements. */
-export function NotificationList({ items, onItemClick, onMarkAllRead, emptyText = 'You’re all caught up.', title = 'Notifications', className }: NotificationListProps) {
+export function NotificationList({ items, onItemClick, onMarkAllRead, emptyText = i18n.t('ui.you_re_all_caught_up'), title = i18n.t('ui.notifications'), className }: NotificationListProps) {
+  useTranslation();
   const unread = items.filter((i) => !i.read).length;
   return (
     <div className={cx('sm-notifs', className)}>
@@ -48,8 +51,7 @@ export function NotificationList({ items, onItemClick, onMarkAllRead, emptyText 
         </span>
         {onMarkAllRead && unread > 0 && (
           <button type="button" className="sm-notifs__link" onClick={onMarkAllRead}>
-            Mark all as read
-          </button>
+             {i18n.t('ui.mark_all_as_read')} </button>
         )}
       </div>
       {items.length === 0 ? (
@@ -72,7 +74,7 @@ export function NotificationList({ items, onItemClick, onMarkAllRead, emptyText 
                   {n.body && <span className="sm-notifs__body">{n.body}</span>}
                   {n.time && <span className="sm-notifs__time">{n.time}</span>}
                 </span>
-                {!n.read && <span className="sm-notifs__dot" aria-label="Unread" />}
+                {!n.read && <span className="sm-notifs__dot" aria-label={i18n.t('ui.unread')} />}
               </>
             );
             return (
@@ -99,15 +101,16 @@ export interface NotificationBellProps extends NotificationListProps {
 
 /** Bell icon with an unread badge that opens the notification list. */
 export function NotificationBell({ align = 'end', ...list }: NotificationBellProps) {
+  useTranslation();
   const unread = list.items.filter((i) => !i.read).length;
   return (
     <span className="sm-bell">
       <Popover
         align={align}
-        label="Notifications"
+        label={i18n.t('ui.notifications')}
         width={380}
         className="sm-notifs-pop"
-        trigger={<IconButton icon={Bell} label={unread ? `Notifications, ${unread} unread` : 'Notifications'} variant="secondary" />}
+        trigger={<IconButton icon={Bell} label={unread ? i18n.t('ui.unread_notifications', {count:unread}) : i18n.t('ui.notifications')} variant="secondary" />}
       >
         <NotificationList {...list} />
       </Popover>

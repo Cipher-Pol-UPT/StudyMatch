@@ -1,5 +1,7 @@
 import { Star } from 'lucide-react';
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useRef,useState,type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import { useControllableState } from '../../utils/shared';
 import './rating.css';
@@ -22,10 +24,12 @@ export interface RatingProps {
   className?: string;
 }
 
-const WORDS = ['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'];
+
 
 /** 1–5 stars (Rate Tutor). Interactive as a radio group, or read-only with partial stars. */
-export function Rating({ value, defaultValue = 0, onValueChange, max = 5, size = 22, readOnly, showValue, count, label = 'Rating', className }: RatingProps) {
+export function Rating({ value, defaultValue = 0, onValueChange, max = 5, size = 22, readOnly, showValue, count, label = i18n.t('ui.rating'), className }: RatingProps) {
+  useTranslation();
+  const WORDS = ['', i18n.t('ui.poor'), i18n.t('ui.fair'), i18n.t('ui.good'), i18n.t('ui.very_good'), i18n.t('ui.excellent')];
   const [current, setCurrent] = useControllableState(value, defaultValue, onValueChange);
   const [hover, setHover] = useState<number | null>(null);
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -41,7 +45,7 @@ export function Rating({ value, defaultValue = 0, onValueChange, max = 5, size =
 
   if (!interactive) {
     return (
-      <span className={cx('sm-rating', className)} role="img" aria-label={`${label}: ${current.toFixed(1)} out of ${max}`}>
+      <span className={cx('sm-rating', className)} role="img" aria-label={i18n.t('ui.rating_value', {label,value:current.toFixed(1),max})}>
         {Array.from({ length: max }).map((_, i) => {
           const fill = Math.max(0, Math.min(1, current - i));
           return (
@@ -84,7 +88,7 @@ export function Rating({ value, defaultValue = 0, onValueChange, max = 5, size =
               type="button"
               role="radio"
               aria-checked={current === n}
-              aria-label={`${n} star${n > 1 ? 's' : ''}${WORDS[n] && max === 5 ? `, ${WORDS[n]}` : ''}`}
+              aria-label={i18n.t('ui.rating_stars', {count:n,word: max===5 && WORDS[n] ? ', '+WORDS[n] : ''})}
               tabIndex={current === n || (current === 0 && n === 1) ? 0 : -1}
               className="sm-rating__btn"
               data-on={on}

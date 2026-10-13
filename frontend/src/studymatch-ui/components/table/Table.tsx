@@ -1,5 +1,7 @@
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { useMemo, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { ArrowDown,ArrowUp,ArrowUpDown } from 'lucide-react';
+import { useMemo,useState,type CSSProperties,type KeyboardEvent,type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import { Skeleton } from '../progress/Progress';
 import './table.css';
@@ -83,6 +85,7 @@ export function Table<T>({
   label,
   className,
 }: TableProps<T>) {
+  useTranslation();
   const [innerSort, setInnerSort] = useState<SortState>(defaultSort);
   const active = sort !== undefined ? sort : innerSort;
 
@@ -166,7 +169,7 @@ export function Table<T>({
               ))}
           {!loading && rows.length === 0 && (
             <tr className="sm-table__empty">
-              <td colSpan={columns.length}>{empty ?? <div style={{ padding: 32, textAlign: 'center', color: 'var(--sm-text-2)' }}>Nothing to show yet.</div>}</td>
+              <td colSpan={columns.length}>{empty ?? <div style={{ padding: 32, textAlign: 'center', color: 'var(--sm-text-2)' }}> {i18n.t('ui.nothing_to_show_yet')} </div>}</td>
             </tr>
           )}
         </tbody>

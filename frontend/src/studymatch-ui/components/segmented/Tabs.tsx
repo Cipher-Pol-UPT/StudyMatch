@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useId,useRef,type KeyboardEvent,type ReactNode } from 'react';
 import { cx } from '../../utils/cx';
-import { nextIndex, useControllableState } from '../../utils/shared';
+import { nextIndex,useControllableState } from '../../utils/shared';
 import './segmented.css';
 
 export interface TabItem<T extends string> {
@@ -67,9 +67,4 @@ export function Tabs<T extends string>({ tabs, value, defaultValue, onValueChang
       })}
     </div>
   );
-}
-
-/** Props for the panel that belongs to a tab: `<div {...tabPanelProps('profile', 'about')}>`. */
-export function tabPanelProps(idBase: string, value: string) {
-  return { id: `${idBase}-panel-${value}`, role: 'tabpanel' as const, 'aria-labelledby': `${idBase}-tab-${value}`, tabIndex: 0 };
 }

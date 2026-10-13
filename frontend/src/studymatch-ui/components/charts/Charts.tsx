@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
-import { useState, type ReactNode } from 'react';
+import { useState,type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import { EASE_OUT } from '../../utils/shared';
-import { PROFILES, PROFILE_KEYS, type ProfileKey } from '../badge/Badge';
+import { type ProfileKey } from '../badge/Badge';
+import { PROFILES,PROFILE_KEYS } from '../badge/Badge.shared';
 import './charts.css';
 
 // ─── Bar chart ─────────────────────────────────────────────
@@ -30,6 +33,7 @@ export interface BarChartProps {
 
 /** Vertical bars with values on top. Accessible as a table for screen readers. */
 export function BarChart({ data, max, height = 220, format = (v) => String(v), highlight, reference, label, className }: BarChartProps) {
+  useTranslation();
   const top = max ?? Math.max(1, ...data.map((d) => d.value), reference?.value ?? 0);
   const [hover, setHover] = useState<string | null>(null);
   return (
@@ -99,10 +103,10 @@ export interface DonutChartProps {
 
 /** Parts of a whole: Passed / Failed / In progress, profile mix of a class. */
 export function DonutChart({ segments, size = 168, thickness = 22, center, centerCaption, legend = true, label, className }: DonutChartProps) {
+  useTranslation();
   const total = segments.reduce((s, x) => s + x.value, 0) || 1;
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
-  let acc = 0;
   return (
     <figure className={cx('sm-chart', 'sm-donut', className)} aria-label={label}>
       <span className="sm-donut__ring" style={{ width: size, height: size }}>
@@ -111,8 +115,7 @@ export function DonutChart({ segments, size = 168, thickness = 22, center, cente
           {segments.map((s, i) => {
             const len = (s.value / total) * c;
             const gap = segments.length > 1 ? Math.min(4, len / 3) : 0;
-            const offset = -acc;
-            acc += len;
+            const offset = -segments.slice(0, i).reduce((sum, segment) => sum + segment.value / total * c, 0);
             return (
               <motion.circle
                 key={s.label}
@@ -163,9 +166,10 @@ export interface ProfileBarsProps {
 
 /** The personality profile as four labelled bars, strongest first. */
 export function ProfileBars({ values, emphasizeTop = true, className }: ProfileBarsProps) {
+  useTranslation();
   const sorted = [...PROFILE_KEYS].sort((a, b) => values[b] - values[a]);
   return (
-    <ul className={cx('sm-profile-bars', className)} aria-label="Personality profile">
+    <ul className={cx('sm-profile-bars', className)} aria-label={i18n.t('ui.personality_profile')}>
       {sorted.map((k, i) => {
         const p = PROFILES[k];
         const Icon = p.icon;

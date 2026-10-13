@@ -1,4 +1,4 @@
-import { forwardRef, useId, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef,useId,type ButtonHTMLAttributes,type ReactNode } from 'react';
 import { cx } from '../../utils/cx';
 import { useControllableState } from '../../utils/shared';
 import './selection.css';
@@ -51,9 +51,6 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
   );
 });
 
-/** @deprecated Use `Switch`. Kept for code written against the first version of the library. */
-export const Toggle = Switch;
-
 export interface ControlRowProps {
   title: ReactNode;
   description?: ReactNode;
@@ -73,3 +70,5 @@ export function ControlRow({ title, description, children, className }: ControlR
     </div>
   );
 }
+
+export const Toggle = Switch;

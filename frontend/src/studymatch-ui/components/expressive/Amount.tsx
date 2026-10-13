@@ -1,6 +1,8 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence,motion } from 'framer-motion';
 import { Delete } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import { EASE_OUT } from '../../utils/shared';
 import '../button/button.css';
@@ -18,6 +20,7 @@ export interface AmountProps {
 
 /** Big numeral where each digit slides up when it changes: the motion rule for numbers. */
 export function Amount({ value, prefix, suffix, color, size, className }: AmountProps) {
+  useTranslation();
   const chars = String(value).split('');
   return (
     <span className={cx('sm-amount', className)} style={{ color, fontSize: size }} aria-live="polite" aria-atomic>
@@ -53,14 +56,15 @@ export interface KeypadProps {
 
 /** 3×4 numeric keypad. Sends "0"–"9", the extra key, and "del". Inherits the surface colour. */
 export function Keypad({ onKey, disabledKeys = [], extraKey, className }: KeypadProps) {
+  useTranslation();
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', extraKey ?? '', '0', 'del'];
   return (
-    <div className={cx('sm-keypad', className)} role="group" aria-label="Keypad">
+    <div className={cx('sm-keypad', className)} role="group" aria-label={i18n.t('ui.keypad')}>
       {keys.map((k, i) =>
         k === '' ? (
           <span key={`blank-${i}`} aria-hidden />
         ) : (
-          <button key={k} type="button" onClick={() => onKey(k)} disabled={disabledKeys.includes(k)} aria-label={k === 'del' ? 'Delete' : k}>
+          <button key={k} type="button" onClick={() => onKey(k)} disabled={disabledKeys.includes(k)} aria-label={k === 'del' ? i18n.t('ui.delete') : k}>
             {k === 'del' ? <Delete size={26} strokeWidth={2} /> : k}
           </button>
         ),
@@ -69,49 +73,16 @@ export function Keypad({ onKey, disabledKeys = [], extraKey, className }: Keypad
   );
 }
 
-export interface GroupSizePadProps {
-  value: number;
-  onValueChange: (n: number) => void;
-  min?: number;
-  max?: number;
-  /** Students in the class, used to preview the number of groups. */
-  students: number;
-  onSubmit?: () => void;
-  submitLabel?: string;
-  title?: ReactNode;
-}
 
-/**
- * Group size picker in the spirit of a payment keypad: one huge number,
- * a full-colour surface and a single action. Out-of-range keys shake.
- */
-export function GroupSizePad({ value, onValueChange, min = 2, max = 6, students, onSubmit, submitLabel = 'Generate groups', title = 'Students per group' }: GroupSizePadProps) {
-  const [shake, setShake] = useState(0);
-  const groups = value ? Math.ceil(students / value) : 0;
-  const press = (k: string) => {
-    if (k === 'del') return onValueChange(0);
-    const n = Number(k);
-    if (n < min || n > max) {
-      setShake((s) => s + 1);
-      return;
-    }
-    onValueChange(n);
-  };
-  return (
-    <div className="sm-sizepad">
-      <span className="sm-eyebrow" style={{ color: 'rgba(255,255,255,.72)' }}>
-        {title}
-      </span>
-      <div key={shake} className={shake ? 'sm-shake' : undefined} style={{ margin: '12px 0 4px' }}>
-        <Amount value={String(value || 0)} />
-      </div>
-      <div className="sm-sizepad__caption sm-num" aria-live="polite">
-        {value ? `${students} students → ${groups} groups` : `Choose ${min}–${max}`}
-      </div>
-      <Keypad onKey={press} className="sm-sizepad__keys" />
-      <button type="button" className="sm-btn sm-btn--white sm-btn--lg sm-btn--block sm-sizepad__submit" disabled={!value} onClick={onSubmit}>
-        <span className="sm-btn__label">{submitLabel}</span>
-      </button>
-    </div>
-  );
+export interface GroupSizePadProps {
+  value: number; onValueChange: (value: number) => void; onSubmit?: () => void;
+  title?: ReactNode; submitLabel?: string; caption?: ReactNode; disabledKeys?: string[];
+}
+export function GroupSizePad({ value, onValueChange, onSubmit, title, submitLabel, caption, disabledKeys }: GroupSizePadProps) {
+  useTranslation();
+  return <div className="sm-sizepad"><span>{title ?? i18n.t('ui.students_per_group')}</span>
+    <Amount value={String(value)} /><div>{caption}</div>
+    <Keypad disabledKeys={disabledKeys} onKey={key => onValueChange(key === 'del' ? 0 : Number(key))} />
+    <button type="button" className="sm-btn" onClick={onSubmit}>{submitLabel ?? i18n.t('common.submit')}</button>
+  </div>;
 }

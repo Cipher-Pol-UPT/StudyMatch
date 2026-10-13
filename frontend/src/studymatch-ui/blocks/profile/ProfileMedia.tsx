@@ -1,39 +1,20 @@
-import { Camera, ImagePlus, Palette, Trash2, Upload } from 'lucide-react';
-import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Camera,ImagePlus,Palette,Trash2,Upload } from 'lucide-react';
+import { useRef,useState,type CSSProperties,type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { Avatar } from '../../components/avatar/Avatar';
 import { Button } from '../../components/button/Button';
 import { Dialog } from '../../components/overlay/Dialog';
-import { Menu, type MenuEntry } from '../../components/overlay/Menu';
+import { Menu,type MenuEntry } from '../../components/overlay/Menu';
 import { Popover } from '../../components/overlay/Popover';
-import { useToast } from '../../components/overlay/Toast';
+import { useToast } from '../../components/overlay/useToast';
 import { cx } from '../../utils/cx';
-import { formatBytes } from '../../utils/shared';
-import { ImageCropper, type CroppedImage } from './ImageCropper';
+import { ImageCropper,type CroppedImage } from './ImageCropper';
 import './profile.css';
-
-/** Edit Profile rule: JPG or PNG, up to 5 MB. */
-export const PROFILE_IMAGE_TYPES = ['image/jpeg', 'image/png'];
-export const PROFILE_IMAGE_MAX = 5 * 1024 * 1024;
-
-export function validateProfileImage(file: File, maxSize = PROFILE_IMAGE_MAX): string | null {
-  if (!PROFILE_IMAGE_TYPES.includes(file.type)) return 'Use a JPG or PNG image.';
-  if (file.size > maxSize) return `This image is ${formatBytes(file.size)}. The limit is ${formatBytes(maxSize)}.`;
-  return null;
-}
+import { BANNER_PRESETS,DEFAULT_IMAGE_MAX,PROFILE_IMAGE_TYPES,validateProfileImage } from './ProfileMedia.shared';
 
 // ─── Banner presets ────────────────────────────────────────
 export type BannerPreset = 'violet' | 'sunrise' | 'fresh' | 'ink' | 'lavender' | 'sky' | 'peach' | 'mint';
-
-export const BANNER_PRESETS: Record<BannerPreset, { label: string; background: string }> = {
-  violet: { label: 'Violet', background: 'radial-gradient(60% 120% at 85% 0%, rgba(255,255,255,.28), transparent 60%), var(--sm-grad-brand)' },
-  sunrise: { label: 'Sunrise', background: 'radial-gradient(60% 120% at 85% 0%, rgba(255,255,255,.3), transparent 60%), var(--sm-grad-sunrise)' },
-  fresh: { label: 'Fresh', background: 'radial-gradient(60% 120% at 85% 0%, rgba(255,255,255,.3), transparent 60%), var(--sm-grad-fresh)' },
-  ink: { label: 'Ink', background: 'radial-gradient(50% 120% at 90% 0%, rgba(122,107,255,.7), transparent 70%), radial-gradient(40% 100% at 0% 100%, rgba(42,159,214,.45), transparent 70%), #0d0b24' },
-  lavender: { label: 'Lavender', background: 'radial-gradient(60% 120% at 90% 0%, #d6ceff, transparent 70%), var(--sm-tint-lavender)' },
-  sky: { label: 'Sky', background: 'radial-gradient(60% 120% at 90% 0%, #bfe3ff, transparent 70%), var(--sm-tint-sky)' },
-  peach: { label: 'Peach', background: 'radial-gradient(60% 120% at 90% 0%, #ffd2bb, transparent 70%), var(--sm-tint-peach)' },
-  mint: { label: 'Mint', background: 'radial-gradient(60% 120% at 90% 0%, #b8edd5, transparent 70%), var(--sm-tint-mint)' },
-};
 
 export interface ProfileBannerProps {
   /** Banner photo. Takes priority over the preset. */
@@ -47,6 +28,7 @@ export interface ProfileBannerProps {
 
 /** The wide cover at the top of a profile: a photo or a colour preset with a soft dot texture. */
 export function ProfileBanner({ src, preset = 'violet', height = 220, children, className }: ProfileBannerProps) {
+  useTranslation();
   const style: CSSProperties = { height, background: src ? `center / cover no-repeat url("${src}")` : BANNER_PRESETS[preset].background };
   return (
     <div className={cx('sm-banner-cover', !src && 'sm-banner-cover--preset', className)} style={style}>
@@ -73,7 +55,7 @@ function useImagePicker(maxSize: number) {
         e.target.value = '';
         if (!f) return;
         const error = validateProfileImage(f, maxSize);
-        if (error) toast.danger(error, { description: 'Accepted: JPG or PNG, up to 5 MB.' });
+        if (error) toast.danger(error, { get description() { return i18n.t('ui.select_an_image_to_preview'); } });
         else setFile(f);
       }}
     />
@@ -97,10 +79,11 @@ export interface AvatarUploaderProps {
 }
 
 /** Profile photo with a camera button: upload, crop to a circle, change or remove. */
-export function AvatarUploader({ name, src, onChange, size = 120, maxSize = PROFILE_IMAGE_MAX, ring = 'var(--sm-white)', disabled, className }: AvatarUploaderProps) {
+export function AvatarUploader({ name, src, onChange, size = 120, maxSize = DEFAULT_IMAGE_MAX, ring = 'var(--sm-white)', disabled, className }: AvatarUploaderProps) {
+  useTranslation();
   const picker = useImagePicker(maxSize);
   const btn = (
-    <button type="button" className="sm-avatar-up__btn" aria-label={src ? 'Change profile photo' : 'Add profile photo'} disabled={disabled}>
+    <button type="button" className="sm-avatar-up__btn" aria-label={src ? i18n.t('ui.change_profile_photo') : i18n.t('ui.add_profile_photo')} disabled={disabled}>
       <Camera size={Math.max(14, size * 0.14)} strokeWidth={2.25} />
     </button>
   );
@@ -113,11 +96,11 @@ export function AvatarUploader({ name, src, onChange, size = 120, maxSize = PROF
             <Menu
               trigger={btn}
               align="start"
-              label="Profile photo"
+              label={i18n.t('ui.profile_photo')}
               items={[
-                { label: 'Upload a new photo', icon: Upload, onSelect: picker.open },
+                { get label() { return i18n.t('ui.upload_a_new_photo'); }, icon: Upload, onSelect: picker.open },
                 { type: 'separator' },
-                { label: 'Remove photo', icon: Trash2, danger: true, onSelect: () => onChange(null) },
+                { get label() { return i18n.t('ui.remove_photo'); }, icon: Trash2, danger: true, onSelect: () => onChange(null) },
               ]}
             />
           ) : (
@@ -126,7 +109,7 @@ export function AvatarUploader({ name, src, onChange, size = 120, maxSize = PROF
         </span>
       )}
       {picker.element}
-      <Dialog open={!!picker.file} onClose={picker.clear} title="Position your photo" description="Drag to move, use the slider to zoom. JPG or PNG, up to 5 MB." size="sm">
+      <Dialog open={!!picker.file} onClose={picker.clear} title={i18n.t('ui.position_your_photo')} description={i18n.t('ui.drag_to_move_and_use_the_slider_to_zoom')} size="sm">
         {picker.file && (
           <ImageCropper
             source={picker.file}
@@ -160,26 +143,26 @@ export interface BannerUploaderProps {
 }
 
 /** Editable cover: upload and crop a 3:1 photo, or pick a colour preset. */
-export function BannerUploader({ src, preset = 'violet', onImageChange, onPresetChange, height = 220, maxSize = PROFILE_IMAGE_MAX, children, className }: BannerUploaderProps) {
+export function BannerUploader({ src, preset = 'violet', onImageChange, onPresetChange, height = 220, maxSize = DEFAULT_IMAGE_MAX, children, className }: BannerUploaderProps) {
+  useTranslation();
   const picker = useImagePicker(maxSize);
-  const items: MenuEntry[] = [{ label: src ? 'Upload a new cover' : 'Upload a cover photo', icon: ImagePlus, onSelect: picker.open }];
-  if (src) items.push({ type: 'separator' }, { label: 'Remove photo', icon: Trash2, danger: true, onSelect: () => onImageChange(null) });
+  const items: MenuEntry[] = [{ label: src ? i18n.t('ui.upload_a_new_cover') : i18n.t('ui.upload_a_cover_photo'), icon: ImagePlus, onSelect: picker.open }];
+  if (src) items.push({ type: 'separator' }, { get label() { return i18n.t('ui.remove_photo'); }, icon: Trash2, danger: true, onSelect: () => onImageChange(null) });
   return (
     <ProfileBanner src={src} preset={preset} height={height} className={cx('sm-banner-cover--editable', className)}>
       <div className="sm-banner-cover__tools">
         {onPresetChange && (
           <Popover
             align="end"
-            label="Cover colour"
+            label={i18n.t('ui.cover_colour')}
             width={248}
             trigger={
               <Button size="sm" variant="white" icon={Palette}>
-                Colour
-              </Button>
+                 {i18n.t('ui.colour')} </Button>
             }
           >
             {(close) => (
-              <div className="sm-preset-grid" role="radiogroup" aria-label="Cover colour">
+              <div className="sm-preset-grid" role="radiogroup" aria-label={i18n.t('ui.cover_colour')}>
                 {(Object.keys(BANNER_PRESETS) as BannerPreset[]).map((p) => (
                   <button
                     key={p}
@@ -203,16 +186,15 @@ export function BannerUploader({ src, preset = 'violet', onImageChange, onPreset
         <Menu
           trigger={
             <Button size="sm" variant="white" icon={Camera}>
-              Cover
-            </Button>
+               {i18n.t('ui.cover')} </Button>
           }
-          label="Cover photo"
+          label={i18n.t('ui.cover_photo')}
           items={items}
         />
       </div>
       {children}
       {picker.element}
-      <Dialog open={!!picker.file} onClose={picker.clear} title="Position your cover" description="It’s shown at 3:1, wider on large screens. JPG or PNG, up to 5 MB." size="lg">
+      <Dialog open={!!picker.file} onClose={picker.clear} title={i18n.t('ui.position_your_cover')} description={i18n.t('ui.drag_to_position_the_cover')} size="lg">
         {picker.file && (
           <ImageCropper
             source={picker.file}

@@ -1,9 +1,13 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, X } from 'lucide-react';
-import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { AnimatePresence,motion } from 'framer-motion';
+import { AlertTriangle,X } from 'lucide-react';
+import { useId,useRef,useState,type ReactNode,type RefObject } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
+import { isBackendError,type FieldError } from '../../../api/errors';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
-import { EASE_OUT, type IconComponent } from '../../utils/shared';
+import { EASE_OUT,type IconComponent } from '../../utils/shared';
+import { useMounted } from '../../utils/useMounted';
 import { Button } from '../button/Button';
 import { Textarea } from '../field/Textarea';
 import './overlay.css';
@@ -37,11 +41,11 @@ const ICON_TONE = {
 
 /** Centred modal with focus trap, scroll lock and labelled title/description. */
 export function Dialog({ open, onClose, title, description, children, footer, size = 'md', icon: Icon, iconTone = 'violet', dismissible = true, initialFocus, className }: DialogProps) {
+  useTranslation();
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descId = useId();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useMounted();
   useModal(open, onClose, panel, { dismissible, initialFocus });
   if (!mounted) return null;
   return createPortal(
@@ -64,7 +68,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
               transition={{ duration: 0.38, ease: EASE_OUT }}
             >
               {dismissible && (
-                <button type="button" data-close className="sm-icon-btn sm-icon-btn--sm sm-icon-btn--secondary sm-dialog__close" onClick={onClose} aria-label="Close">
+                <button type="button" data-close className="sm-icon-btn sm-icon-btn--sm sm-icon-btn--secondary sm-dialog__close" onClick={onClose} aria-label={i18n.t('ui.close')}>
                   <X size={16} strokeWidth={2.5} />
                 </button>
               )}
@@ -93,6 +97,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
 }
 
 export interface ConfirmDialogProps {
+  fieldErrors?: FieldError[];
   open: boolean;
   onClose: () => void;
   /** Can be async: the button shows a spinner until it resolves. Receives the reason when `reason` is set. */
@@ -108,29 +113,29 @@ export interface ConfirmDialogProps {
 }
 
 /** Confirmation for consequential actions: publish groups, block an account, cancel a StudyRoom. */
-export function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLabel = 'Confirm', cancelLabel = 'Cancel', tone = 'primary', reason, icon }: ConfirmDialogProps) {
+function ConfirmDialogContent({ open, onClose, onConfirm, title, description, confirmLabel = i18n.t('ui.confirm'), cancelLabel = i18n.t('ui.cancel'), tone = 'primary', reason, icon, fieldErrors = [] }: ConfirmDialogProps) {
+  useTranslation();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    if (open) {
-      setText('');
-      setError(null);
-      setBusy(false);
-    }
-  }, [open]);
+  const [caughtFields, setCaughtFields] = useState<FieldError[]>([]);
+  const reasonError = [...fieldErrors, ...caughtFields].filter(field => field.field === 'reason')
+    .map(field => i18n.t(`validation.${field.code}`, field.params ?? {})).join(' ');
+
   const missing = !!reason?.required && !text.trim();
   const confirm = async () => {
     if (missing) {
-      setError(`${reason?.label} is required.`);
+      setError(i18n.t('common.required', {field: reason?.label}));
       return;
     }
     try {
       setBusy(true);
+      setCaughtFields([]);
       await onConfirm(text.trim());
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong. Try again.');
+      if (isBackendError(e)) setCaughtFields(e.fieldErrors ?? []);
+      setError(isBackendError(e) ? i18n.t(`errors.${e.code}`, e.params ?? {}) : i18n.t('common.unexpectedError'));
     } finally {
       setBusy(false);
     }
@@ -160,12 +165,12 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, description, co
           label={reason.label}
           placeholder={reason.placeholder}
           value={text}
-          maxLength={reason.maxLength ?? 300}
+          maxLength={reason.maxLength}
           onChange={(e) => {
             setText(e.target.value);
             setError(null);
           }}
-          error={error ?? undefined}
+          error={reasonError || error || undefined}
           data-autofocus
         />
       )}
@@ -188,10 +193,10 @@ export interface SheetProps {
 
 /** Bottom sheet or right-side panel for details that keep the page context. */
 export function Sheet({ open, onClose, title, label, children, side = 'bottom', className }: SheetProps) {
+  useTranslation();
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useMounted();
   useModal(open, onClose, panel);
   if (!mounted) return null;
   const from = side === 'bottom' ? { y: '100%' } : { x: '100%' };
@@ -220,7 +225,7 @@ export function Sheet({ open, onClose, title, label, children, side = 'bottom', 
                 <h2 id={titleId} className="sm-h3">
                   {title}
                 </h2>
-                <button type="button" data-close className="sm-icon-btn sm-icon-btn--sm sm-icon-btn--secondary" onClick={onClose} aria-label="Close">
+                <button type="button" data-close className="sm-icon-btn sm-icon-btn--sm sm-icon-btn--secondary" onClick={onClose} aria-label={i18n.t('ui.close')}>
                   <X size={16} strokeWidth={2.5} />
                 </button>
               </div>
@@ -233,3 +238,5 @@ export function Sheet({ open, onClose, title, label, children, side = 'bottom', 
     document.body,
   );
 }
+
+export function ConfirmDialog(props: ConfirmDialogProps) { return props.open ? <ConfirmDialogContent {...props} /> : null; }

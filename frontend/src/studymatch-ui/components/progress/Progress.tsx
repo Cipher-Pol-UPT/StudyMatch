@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties,ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
 import { EASE_OUT } from '../../utils/shared';
 import './progress.css';
@@ -11,7 +13,8 @@ export interface SpinnerProps {
   label?: string;
 }
 
-export function Spinner({ size = 28, onDark, label = 'Loading' }: SpinnerProps) {
+export function Spinner({ size = 28, onDark, label = i18n.t('ui.loading') }: SpinnerProps) {
+  useTranslation();
   return <span className={cx('sm-spinner', onDark && 'sm-spinner--on-dark')} style={{ width: size, height: size, borderWidth: Math.max(2, size / 9) }} role="status" aria-label={label} />;
 }
 
@@ -33,6 +36,7 @@ export interface ProgressBarProps {
 }
 
 export function ProgressBar({ value = 0, max = 100, indeterminate, label, showLabel, valueText, tone = 'brand', size = 'md', color, className }: ProgressBarProps) {
+  useTranslation();
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   const bar = (
     <div
@@ -71,12 +75,13 @@ export interface ScoreRingProps {
 }
 
 /** Circular score (Balance score, attendance %). Animates from zero on mount. */
-export function ScoreRing({ value, size = 72, stroke = 7, color = 'var(--sm-violet)', track = 'var(--sm-fill)', label = 'Score', children }: ScoreRingProps) {
+export function ScoreRing({ value, size = 72, stroke = 7, color = 'var(--sm-violet)', track = 'var(--sm-fill)', label = i18n.t('ui.score'), children }: ScoreRingProps) {
+  useTranslation();
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const v = Math.max(0, Math.min(100, value));
   return (
-    <span className="sm-ring" style={{ width: size, height: size }} role="img" aria-label={`${label}: ${Math.round(v)} of 100`}>
+    <span className="sm-ring" style={{ width: size, height: size }} role="img" aria-label={i18n.t('ui.score_label', {label,value:Math.round(v)})}>
       <svg width={size} height={size} aria-hidden>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke} />
         <motion.circle
@@ -110,5 +115,6 @@ export interface SkeletonProps {
 
 /** Shimmering placeholder that matches the shape of what is loading. */
 export function Skeleton({ w = '100%', h = 16, r, className }: SkeletonProps) {
+  useTranslation();
   return <span className={cx('sm-skel', className)} style={{ width: w, height: h, borderRadius: r }} aria-hidden />;
 }

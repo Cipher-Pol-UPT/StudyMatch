@@ -1,6 +1,8 @@
-import { useEffect, useRef, type KeyboardEvent, type ReactElement, type ReactNode } from 'react';
+import { useEffect,useRef,type KeyboardEvent,type ReactElement,type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { cx } from '../../utils/cx';
-import { useControllableState, type IconComponent } from '../../utils/shared';
+import { useControllableState,type IconComponent } from '../../utils/shared';
 import { Popover } from './Popover';
 
 export type MenuEntry =
@@ -31,7 +33,8 @@ export interface MenuProps {
  * Dropdown of actions (row "⋯" menus, the user menu).
  * Arrow keys move, Enter selects, Escape closes; focus lands on the first item.
  */
-export function Menu({ trigger, items, align = 'end', side = 'bottom', label = 'Actions', open, onOpenChange, width }: MenuProps) {
+export function Menu({ trigger, items, align = 'end', side = 'bottom', label = i18n.t('ui.actions'), open, onOpenChange, width }: MenuProps) {
+  useTranslation();
   const [isOpen, setOpen] = useControllableState(open, false, onOpenChange);
   const list = useRef<HTMLDivElement>(null);
 
