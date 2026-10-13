@@ -1,0 +1,71 @@
+/* Base: scoped to StudyMatch classes, so the library never resets the host app. */
+[class^='sm-'],
+[class*=' sm-'],
+[class^='sm-']::before,
+[class*=' sm-']::before,
+[class^='sm-']::after,
+[class*=' sm-']::after {
+  box-sizing: border-box;
+}
+
+/* Opt-in page base. Add `sm-body` to <body>, or wrap the app in <StudyMatchProvider>. */
+.sm-body,
+.sm-root {
+  font-family: var(--sm-font);
+  color: var(--sm-text);
+  background: var(--sm-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+.sm-root ::selection,
+.sm-body ::selection {
+  background: var(--sm-spark);
+  color: #000;
+}
+
+/* ─── Type scale ─────────────────────────────────────────── */
+.sm-display { font-family: var(--sm-font); font-weight: 400; font-size: clamp(56px, 8vw, 112px); line-height: 0.88; letter-spacing: -0.035em; margin: 0; }
+.sm-h1 { font-family: var(--sm-font); font-weight: 400; font-size: clamp(40px, 5.6vw, 72px); line-height: 0.92; letter-spacing: -0.03em; margin: 0; }
+.sm-h2 { font-family: var(--sm-font); font-weight: 400; font-size: clamp(30px, 3.4vw, 40px); line-height: 0.98; letter-spacing: -0.025em; margin: 0; }
+.sm-h3 { font-family: var(--sm-font); font-weight: 500; font-size: 24px; line-height: 1.1; letter-spacing: -0.02em; margin: 0; }
+.sm-title { font-family: var(--sm-font); font-weight: 500; font-size: 17px; line-height: 1.25; letter-spacing: -0.01em; margin: 0; }
+.sm-body-lg { font-family: var(--sm-font); font-weight: 400; font-size: 20px; line-height: 1.3; letter-spacing: -0.01em; }
+.sm-text { font-family: var(--sm-font); font-weight: 400; font-size: 16px; line-height: 1.45; }
+.sm-caption { font-family: var(--sm-font); font-weight: 400; font-size: 13px; line-height: 1.4; color: var(--sm-text-2); }
+.sm-eyebrow { font-family: var(--sm-mono); font-weight: 400; font-size: 12px; line-height: 1.2; text-transform: uppercase; color: var(--sm-text-2); }
+.sm-num { font-variant-numeric: tabular-nums; }
+.sm-muted { color: var(--sm-text-2); }
+
+.sm-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Shared focus treatment */
+.sm-focusable:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+
+@keyframes sm-spin { to { transform: rotate(360deg); } }
+@keyframes sm-shimmer { to { transform: translateX(100%); } }
+@keyframes sm-indeterminate { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
+@keyframes sm-shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+@keyframes sm-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes sm-fade-in { from { opacity: 0; } }
+
+.sm-shake { animation: sm-shake 0.4s var(--sm-ease-out); }
+
+@media (prefers-reduced-motion: reduce) {
+  [class^='sm-']:not(.sm-spinner):not(.sm-btn__spin),
+  [class*=' sm-']:not(.sm-spinner):not(.sm-btn__spin) {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

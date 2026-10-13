@@ -1,0 +1,10 @@
+.sm-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 24px; text-align: center; font-family: var(--sm-font); }
+.sm-empty--compact { padding: 24px 16px; gap: 8px; }
+.sm-empty__art { position: relative; width: 96px; height: 96px; margin-bottom: 8px; border-radius: 28px; display: grid; place-items: center; }
+.sm-empty--compact .sm-empty__art { width: 64px; height: 64px; border-radius: 20px; margin-bottom: 4px; }
+.sm-empty__spark { position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: var(--sm-spark); box-shadow: 0 0 0 4px var(--sm-white); }
+.sm-empty--compact .sm-empty__spark { width: 16px; height: 16px; }
+.sm-empty__title { font-size: 24px; font-weight: 500; line-height: 1.1; letter-spacing: -0.02em; }
+.sm-empty--compact .sm-empty__title { font-size: 18px; }
+.sm-empty__body { max-width: 360px; margin: 0; color: var(--sm-text-2); font-size: 16px; line-height: 1.45; }
+.sm-empty__action { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Card, Logo, StatCard, TextField, useToast } from '@studymatch/ui'
+import { Button, Card, Logo, StatCard, TextField, useToast } from './studymatch-ui'
 import './App.css'
 
 function App() {

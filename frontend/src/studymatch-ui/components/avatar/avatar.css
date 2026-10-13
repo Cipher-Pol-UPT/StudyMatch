@@ -1,0 +1,49 @@
+/* ─── Avatar ─────────────────────────────────────────────── */
+.sm-avatar {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-family: var(--sm-font);
+  font-weight: 500;
+  color: var(--sm-white);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  user-select: none;
+}
+.sm-avatar--square { border-radius: 28%; }
+.sm-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+.sm-avatar__badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 40%;
+  height: 40%;
+  min-width: 14px;
+  min-height: 14px;
+  border-radius: 50%;
+  border: 2.5px solid var(--sm-white);
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.sm-avatar__presence {
+  position: absolute;
+  right: 2%;
+  bottom: 2%;
+  width: 26%;
+  height: 26%;
+  min-width: 10px;
+  min-height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--sm-white);
+  background: var(--sm-success);
+}
+.sm-avatar__presence--away { background: var(--sm-warning); }
+.sm-avatar__presence--offline { background: var(--sm-gray-300); }
+
+.sm-avatar-stack { display: inline-flex; align-items: center; }
+.sm-avatar-stack > * { box-shadow: 0 0 0 3px var(--sm-stack-ring, var(--sm-white)); }
+.sm-avatar-stack > * + * { margin-left: -10px; }
+.sm-avatar--more { background: var(--sm-tint-lavender); color: var(--sm-violet-ink); }

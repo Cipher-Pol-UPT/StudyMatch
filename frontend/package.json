@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@studymatch/ui": "file:vendor/studymatch-ui-1.0.0.tgz",
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.460.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

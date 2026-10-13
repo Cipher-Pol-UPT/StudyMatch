@@ -1,0 +1,45 @@
+/* ─── Spinner ────────────────────────────────────────────── */
+.sm-spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 3px solid var(--sm-gray-100);
+  border-top-color: var(--sm-violet);
+  animation: sm-spin 0.75s linear infinite;
+}
+.sm-spinner--on-dark { border-color: rgba(255, 255, 255, 0.2); border-top-color: var(--sm-white); }
+
+/* ─── Progress bar ───────────────────────────────────────── */
+.sm-progress-wrap { display: flex; flex-direction: column; gap: 8px; font-family: var(--sm-font); }
+.sm-progress-head { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.sm-progress-head span:last-child { font-variant-numeric: tabular-nums; color: var(--sm-text-2); }
+.sm-progress { height: 8px; border-radius: var(--sm-r-pill); background: var(--sm-fill); overflow: hidden; }
+.sm-progress--sm { height: 4px; }
+.sm-progress--lg { height: 12px; }
+.sm-progress > i {
+  display: block;
+  height: 100%;
+  border-radius: var(--sm-r-pill);
+  background: var(--sm-grad-brand);
+  transition: width var(--sm-dur-3) var(--sm-ease-out);
+}
+.sm-progress--success > i { background: var(--sm-success); }
+.sm-progress--warning > i { background: var(--sm-warning); }
+.sm-progress--danger > i { background: var(--sm-danger); }
+.sm-progress--indeterminate > i { width: 40% !important; animation: sm-indeterminate 1.2s var(--sm-ease-out) infinite; }
+
+/* ─── Score ring ─────────────────────────────────────────── */
+.sm-ring { position: relative; display: inline-block; flex-shrink: 0; }
+.sm-ring svg { transform: rotate(-90deg); display: block; }
+.sm-ring__value { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--sm-font); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+
+/* ─── Skeleton ───────────────────────────────────────────── */
+.sm-skel { position: relative; display: block; overflow: hidden; background: var(--sm-fill); border-radius: var(--sm-r-sm); }
+.sm-skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  animation: sm-shimmer 1.3s infinite;
+}
