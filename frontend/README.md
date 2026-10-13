@@ -1,12 +1,22 @@
 # StudyMatch frontend
 
-React, TypeScript and Vite. StudyMatch UI source is in `src/studymatch-ui`,
-including components, application blocks, achievements and styles.
+React, TypeScript and Vite. Shared components are in `src/studymatch-ui`.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Import components from `./studymatch-ui`. Run `npm run build` and `npm run lint`
-to check the frontend.
+```tsx
+import { Button } from './studymatch-ui';
+import { useTranslation } from 'react-i18next';
+
+export function SaveButton({ onSave }: { onSave: () => void }) {
+  const { t } = useTranslation();
+  return <Button onClick={onSave}>{t('common.save')}</Button>;
+}
+```
+
+Components receive data and callbacks; the backend owns business rules.
+Use the demo language selector to switch between English and Portuguese.
+Run `npm run build`, `npm run lint` and `npm test` to validate the frontend.
