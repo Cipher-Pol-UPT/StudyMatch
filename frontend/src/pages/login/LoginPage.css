@@ -13,14 +13,14 @@
   left: 48px;
 }
 
-.login-page .sm-auth__brand::before {
-  content: '';
-  position: absolute;
-  inset: -50%;
-  z-index: -1;
-  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.08) 50%, transparent 60%);
-  animation: login-page-sheen 9s ease-in-out infinite;
-  pointer-events: none;
+.login-page__pointer-area {
+  display: contents;
+}
+
+.login-page .sm-auth__mesh::after {
+  inset: -16px;
+  transform: translate(calc(var(--pointer-x, 0) * 12px), calc(var(--pointer-y, 0) * 12px));
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .login-page .sm-auth__brand::after {
@@ -86,17 +86,6 @@
   display: inline-block;
 }
 
-@keyframes login-page-sheen {
-  0%,
-  20% {
-    transform: translateX(-60%);
-  }
-  80%,
-  100% {
-    transform: translateX(60%);
-  }
-}
-
 @keyframes login-page-glow {
   from {
     background-position: 0% 0%;
@@ -151,9 +140,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .login-page .sm-auth__brand::before,
   .login-page .sm-auth__panel::before,
   .login-page .sm-auth__sub {
     animation: none;
+  }
+
+  .login-page .sm-auth__mesh::after {
+    transform: none;
   }
 }
