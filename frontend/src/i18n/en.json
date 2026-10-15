@@ -18,7 +18,9 @@
     "activateAccount": "Activate account",
     "checkEmail": "Check your inbox",
     "resend": "Resend email",
-    "verifyEmail": "Confirm email"
+    "verifyEmail": "Confirm email",
+    "invalidCredentials": "The email or password is incorrect. Please try again.",
+    "accountBlocked": "Your account is blocked, so you cannot log in. Contact the academic services for help."
   },
   "fields": {
     "institutionalEmail": "Institutional email",

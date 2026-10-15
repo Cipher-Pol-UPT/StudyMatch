@@ -18,7 +18,9 @@
     "activateAccount": "Ativar conta",
     "checkEmail": "Verifique a sua caixa de entrada",
     "resend": "Reenviar email",
-    "verifyEmail": "Confirmar email"
+    "verifyEmail": "Confirmar email",
+    "invalidCredentials": "O email ou a palavra-passe estão incorretos. Tente novamente.",
+    "accountBlocked": "A sua conta está bloqueada e não é possível iniciar sessão. Contacte os serviços académicos para obter ajuda."
   },
   "fields": {
     "institutionalEmail": "Email institucional",
