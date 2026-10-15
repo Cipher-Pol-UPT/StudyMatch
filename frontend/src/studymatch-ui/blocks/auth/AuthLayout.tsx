@@ -12,11 +12,11 @@ export interface AuthLayoutProps {
   headline?: ReactNode;
   /** Supporting text on the brand panel. */
   tagline?: ReactNode;
-  /** Replace the decorative art on the brand panel. */
+  /** Replace the decorative art on the brand panel, or pass `null` to hide it. */
   art?: ReactNode;
   /** Top-right of the form panel (e.g. a "Back to login" link or a language switch). */
   topRight?: ReactNode;
-  /** Footer links on the brand panel. */
+  /** Footer links on the brand panel, or pass `null` to hide it. */
   footer?: ReactNode;
   /** Render inside a page (docs, previews) instead of full-screen. */
   embedded?: boolean;
@@ -48,14 +48,16 @@ export function AuthLayout({
           <h1 className="sm-auth__headline">{headline}</h1>
           {tagline && <p className="sm-auth__sub">{tagline}</p>}
         </div>
-        {art ?? (
+        {art === undefined ? (
           <div className="sm-auth__art" aria-hidden>
             <AchievementBadge id="MENTOR" size={88} />
             <AchievementBadge id="FIRST_STUDYROOM" size={104} />
             <AchievementBadge id="TOP_RATED" size={80} />
           </div>
+        ) : art}
+        {footer !== null && (
+          <div className="sm-auth__foot">{footer ?? <span>© {new Date().getFullYear()} StudyMatch</span>}</div>
         )}
-        <div className="sm-auth__foot">{footer ?? <span>Â© {new Date().getFullYear()} StudyMatch</span>}</div>
       </aside>
       <main className="sm-auth__panel">
         <div className="sm-auth__panel-top">

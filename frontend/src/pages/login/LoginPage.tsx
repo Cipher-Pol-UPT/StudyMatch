@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { MotionConfig, motion } from 'framer-motion';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { BackendError } from '../../api/errors';
 import { login } from '../../api/auth';
 import { AuthLayout, Banner, BlockedNotice, LoginForm } from '../../studymatch-ui';
 import type { LoginInput } from '../../types/forms';
 import type { Session } from '../../types/session';
+import { RevealText } from './RevealText';
 import { validateLogin } from './validateLogin';
+import './LoginPage.css';
 
 export interface LoginPageProps {
   onLoggedIn: (session: Session) => void;
@@ -38,18 +41,38 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
     }
   }
 
-  if (accountBlocked) {
-    return (
-      <AuthLayout>
-        <BlockedNotice message={<p>{t('auth.accountBlocked')}</p>} onBack={() => setAccountBlocked(false)} />
-      </AuthLayout>
-    );
-  }
-
   return (
-    <AuthLayout>
-      {credentialsRejected && <Banner tone="danger">{t('auth.invalidCredentials')}</Banner>}
-      <LoginForm onSubmit={handleLogin} />
-    </AuthLayout>
+    <MotionConfig reducedMotion="user">
+      <AuthLayout
+        className="login-page"
+        headline={<RevealText text={t('ui.better_teams_start_here')} />}
+        tagline={t('ui.studymatch_forms_balanced_groups_from_your_strengths_grades_and_a')}
+        art={null}
+        footer={null}
+      >
+        <FadeIn key={accountBlocked ? 'blocked' : 'login'} delay={0.15}>
+          {accountBlocked ? (
+            <BlockedNotice message={<p>{t('auth.accountBlocked')}</p>} onBack={() => setAccountBlocked(false)} />
+          ) : (
+            <>
+              {credentialsRejected && <Banner tone="danger">{t('auth.invalidCredentials')}</Banner>}
+              <LoginForm onSubmit={handleLogin} />
+            </>
+          )}
+        </FadeIn>
+      </AuthLayout>
+    </MotionConfig>
+  );
+}
+
+function FadeIn({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
   );
 }
