@@ -169,6 +169,7 @@
     "PERSONALITY_TEST_REQUIRED": "Take the personality test before continuing.",
     "INSTITUTIONAL_EMAIL_ALREADY_EXISTS": "This institutional email is already in use.",
     "AT_LEAST_ONE_LANGUAGE_REQUIRED": "Select at least one language.",
+    "INVALID_BANNER": "Use a JPG or PNG image up to 5 MB.",
     "STATUTE_END_DATE_IN_PAST": "The statute end date cannot be in the past.",
     "SUBJECT_ALREADY_IN_DEGREE": "This subject is already in the degree.",
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Select at least one teacher.",
