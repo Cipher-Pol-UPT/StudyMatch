@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
 import { LoginForm, PersonalityTest, StudyMatchProvider, StudyRoomCard } from '../src/studymatch-ui';
 import type { StudyRoom } from '../src/studymatch-ui';
-import App from '../src/App';
+import { ComponentPreview } from '../src/ComponentPreview';
 
 afterEach(cleanup);
 beforeEach(async () => { await i18n.changeLanguage('en'); });
@@ -63,7 +63,7 @@ describe('presentational components', () => {
   });
 
   it('switches the demo to European Portuguese', async () => {
-    render(<StudyMatchProvider><App /></StudyMatchProvider>);
+    render(<StudyMatchProvider><ComponentPreview /></StudyMatchProvider>);
     fireEvent.change(screen.getByLabelText('Language'), {target:{value:'pt'}});
     await screen.findByRole('heading', {name:'Componentes StudyMatch'});
     expect(screen.getByRole('button', {name:'Iniciar sessão'})).toBeTruthy();
