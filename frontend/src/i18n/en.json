@@ -147,6 +147,16 @@
     "export": "Export certificate",
     "certificate": "Achievement certificate"
   },
+  "login": {
+    "headline": "Better teams start here.",
+    "tagline": "StudyMatch forms balanced groups from your strengths, grades and attendance, so every project starts on the right foot."
+  },
+  "home": {
+    "greeting": "Hello, {{name}}."
+  },
+  "placeholder": {
+    "comingSoon": "This page is not available yet."
+  },
   "errors": {
     "VALIDATION_FAILED": "Check the highlighted fields.",
     "NOT_FOUND": "We couldn't find what you were looking for.",
@@ -218,8 +228,6 @@
     "testError": "Show sample validation errors"
   },
   "ui": {
-    "better_teams_start_here": "Better teams start here.",
-    "studymatch_forms_balanced_groups_from_your_strengths_grades_and_a": "StudyMatch forms balanced groups from your strengths, grades and attendance, so every project starts on the right foot.",
     "apply": "Apply",
     "image_position_drag_or_use_the_arrow_keys_to_move_plus_and_minus_": "Image position. Drag or use the arrow keys to move, plus and minus to zoom.",
     "zoom_out": "Zoom out",
