@@ -1,6 +1,7 @@
 package com.studymatch.models;
 
 import com.studymatch.enums.AccountStatus;
+import com.studymatch.enums.Role;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -79,11 +80,8 @@ public abstract class User {
     return institutionalEmail;
   }
 
-  public void generateInstitutionalEmail(String domain) {
-    if (number == null) {
-      throw new IllegalStateException("User must be saved before generating the institutional email");
-    }
-    this.institutionalEmail = number + "@" + domain;
+  protected void setInstitutionalEmail(String institutionalEmail) {
+    this.institutionalEmail = institutionalEmail;
   }
 
   public String getName() {
@@ -117,5 +115,15 @@ public abstract class User {
   public void setAccountStatus(AccountStatus accountStatus) {
     this.accountStatus = accountStatus;
   }
+
+  public boolean isBlocked() {
+    return accountStatus == AccountStatus.BLOCKED;
+  }
+
+  public boolean requiresPersonalityTest() {
+    return false;
+  }
+
+  public abstract Role getRole();
 
 }
