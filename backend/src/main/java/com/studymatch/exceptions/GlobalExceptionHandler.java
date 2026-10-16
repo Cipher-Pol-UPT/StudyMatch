@@ -6,10 +6,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.studymatch.dtos.ErrorResponseDTO;
 import com.studymatch.dtos.FieldErrorDTO;
@@ -25,7 +27,19 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(StudyMatchException.class)
   public ResponseEntity<ErrorResponseDTO> handleStudyMatchException(StudyMatchException e) {
-    return ResponseEntity.badRequest().body(ErrorResponseDTO.of(e.getCode(), e.getParams()));
+    return ResponseEntity.status(e.getCode().getStatus()).body(ErrorResponseDTO.of(e.getCode(), e.getParams()));
+  }
+
+  @ExceptionHandler(AuthenticationException.class)
+  public ResponseEntity<ErrorResponseDTO> handleAuthenticationException(AuthenticationException e) {
+    ErrorCode code = ErrorCode.INVALID_CREDENTIALS;
+    return ResponseEntity.status(code.getStatus()).body(ErrorResponseDTO.of(code, Map.of()));
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ErrorResponseDTO> handleUnknownEndpoint(NoResourceFoundException e) {
+    ErrorCode code = ErrorCode.NOT_FOUND;
+    return ResponseEntity.status(code.getStatus()).body(ErrorResponseDTO.of(code, Map.of()));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.studymatch.enums.Language;
+import com.studymatch.enums.Role;
 import com.studymatch.enums.StatuteType;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -64,6 +65,13 @@ public class Student extends User {
     super(personalEmail, name, password);
     this.degree = degree;
     this.curricularYear = curricularYear;
+  }
+
+  public void generateInstitutionalEmail(String domain) {
+    if (getNumber() == null) {
+      throw new IllegalStateException("Student must be saved before generating the institutional email");
+    }
+    setInstitutionalEmail(getNumber() + "@students." + domain);
   }
 
   public Degree getDegree() {
@@ -167,6 +175,16 @@ public class Student extends User {
   public void removeStatute() {
     this.statuteType = null;
     this.statuteEndDate = null;
+  }
+
+  @Override
+  public boolean requiresPersonalityTest() {
+    return personalityProfile == null;
+  }
+
+  @Override
+  public Role getRole() {
+    return Role.STUDENT;
   }
 
 }

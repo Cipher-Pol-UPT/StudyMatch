@@ -5,6 +5,7 @@ target/
 *.war
 *.log
 *.tmp
+data.sql
 
 # --- Frontend (React / Node) ---
 node_modules/
