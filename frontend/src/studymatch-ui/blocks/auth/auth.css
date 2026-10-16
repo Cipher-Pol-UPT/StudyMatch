@@ -36,6 +36,9 @@
 .sm-auth__art > :nth-child(3) { transform: rotate(7deg) translateY(6px); }
 .sm-auth__foot { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: rgba(255, 255, 255, 0.55); }
 
+.sm-auth--centered .sm-auth__brand { justify-content: center; padding-block: 96px; }
+.sm-auth--centered .sm-auth__logo { position: absolute; top: 40px; left: 48px; }
+
 .sm-auth__panel { display: flex; flex-direction: column; padding: 32px 48px; overflow-y: auto; }
 .sm-auth__panel-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 40px; }
 .sm-auth__panel-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 0; }
@@ -87,4 +90,6 @@
   .sm-auth__headline { font-size: 30px; max-width: none; }
   .sm-auth__panel { padding: 20px 16px 32px; }
   .sm-auth__panel-body { padding: 16px 0; align-items: flex-start; }
+  .sm-auth--centered .sm-auth__brand { padding: 24px 20px 28px; }
+  .sm-auth--centered .sm-auth__logo { position: static; }
 }

@@ -1,0 +1,8 @@
+.placeholder-page {
+  min-height: 100svh;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--sm-canvas);
+}

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import './RevealText.css';
 
 export interface RevealTextProps {
   text: string;

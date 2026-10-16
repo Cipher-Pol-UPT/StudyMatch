@@ -1,18 +1,21 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getCurrentUser } from '../src/api/auth';
 import i18n from '../src/i18n';
 import { LoginPage } from '../src/pages/login/LoginPage';
 import { StudyMatchProvider } from '../src/studymatch-ui';
-import type { Session } from '../src/types/session';
+import type { CurrentUser } from '../src/types/currentUser';
 
-const studentSession: Session = {
+const student: CurrentUser = {
+  number: 50001,
   name: 'Maria Costa',
+  institutionalEmail: '50001@students.studymatch.com',
   role: 'STUDENT',
   mustChangePassword: false,
-  personalityTestPending: false,
+  personalityTestRequired: false,
 };
 
-function mockLoginResponse(status: number, body: unknown = {}) {
+function mockBackendResponse(status: number, body: unknown) {
   const fetchMock = vi.fn(async () => new Response(JSON.stringify(body), { status }));
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
@@ -32,6 +35,7 @@ function fillAndSubmit(email: string, password: string) {
 
 beforeEach(async () => {
   await i18n.changeLanguage('en');
+  document.cookie = 'XSRF-TOKEN=test-csrf-token';
 });
 
 afterEach(() => {
@@ -40,56 +44,55 @@ afterEach(() => {
 });
 
 describe('login page', () => {
-  it('highlights empty fields without calling the backend', async () => {
-    const fetchMock = mockLoginResponse(200, studentSession);
-    renderLoginPage();
-
-    fillAndSubmit('', '');
-
-    await screen.findByText('Check the highlighted fields.');
-    expect(screen.getAllByText('This field is required.')).toHaveLength(2);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it('warns about an invalid email format', async () => {
-    mockLoginResponse(200, studentSession);
-    renderLoginPage();
-
-    fillAndSubmit('not-an-email', 'secret123');
-
-    await screen.findByText('Enter a valid email address.');
-  });
-
-  it('sends the credentials and reports the session on success', async () => {
-    const fetchMock = mockLoginResponse(200, studentSession);
+  it('logs in through the backend with the CSRF token and the session cookie', async () => {
+    const fetchMock = mockBackendResponse(200, student);
     const onLoggedIn = renderLoginPage();
 
-    fillAndSubmit('  2410231@students.upt.pt ', 'secret123');
+    fillAndSubmit('50001@students.studymatch.com', 'secret123');
 
-    await waitFor(() => expect(onLoggedIn).toHaveBeenCalledWith(studentSession));
-    expect(fetchMock).toHaveBeenCalledWith('/api/auth/login', expect.objectContaining({
+    await waitFor(() => expect(onLoggedIn).toHaveBeenCalledWith(student));
+    expect(fetchMock).toHaveBeenCalledWith('/api/users/login', {
       method: 'POST',
-      body: JSON.stringify({ email: '2410231@students.upt.pt', password: 'secret123' }),
-    }));
+      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'test-csrf-token' },
+      credentials: 'include',
+      body: JSON.stringify({ email: '50001@students.studymatch.com', password: 'secret123' }),
+    });
   });
 
-  it('shows a generic message when the credentials are wrong', async () => {
-    mockLoginResponse(401);
+  it('shows the backend message for wrong credentials', async () => {
+    mockBackendResponse(401, { code: 'INVALID_CREDENTIALS' });
     const onLoggedIn = renderLoginPage();
 
-    fillAndSubmit('2410231@students.upt.pt', 'wrong-password');
+    fillAndSubmit('50001@students.studymatch.com', 'wrong-password');
 
-    await screen.findByText('The email or password is incorrect. Please try again.');
+    await screen.findByText('Incorrect email or password.');
     expect(onLoggedIn).not.toHaveBeenCalled();
   });
 
+  it('highlights the fields the backend rejected', async () => {
+    mockBackendResponse(400, {
+      code: 'VALIDATION_FAILED',
+      fieldErrors: [
+        { field: 'email', code: 'EMAIL' },
+        { field: 'password', code: 'NOT_BLANK' },
+      ],
+    });
+    renderLoginPage();
+
+    fillAndSubmit('not-an-email', '');
+
+    await screen.findByText('Check the highlighted fields.');
+    expect(screen.getByText('Enter a valid email address.')).toBeTruthy();
+    expect(screen.getByText('This field is required.')).toBeTruthy();
+  });
+
   it('tells the user when the account is blocked', async () => {
-    mockLoginResponse(403);
+    mockBackendResponse(403, { code: 'ACCOUNT_BLOCKED' });
     const onLoggedIn = renderLoginPage();
 
-    fillAndSubmit('2410231@students.upt.pt', 'secret123');
+    fillAndSubmit('50001@students.studymatch.com', 'secret123');
 
-    await screen.findByText(/Your account is blocked/);
+    await screen.findByText('Your account is blocked.');
     expect(onLoggedIn).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
@@ -100,10 +103,28 @@ describe('login page', () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch'); }));
     const onLoggedIn = renderLoginPage();
 
-    fillAndSubmit('2410231@students.upt.pt', 'secret123');
+    fillAndSubmit('50001@students.studymatch.com', 'secret123');
 
     await screen.findByText('Something went wrong. Please try again.');
     expect(onLoggedIn).not.toHaveBeenCalled();
     expect((screen.getByRole('button', { name: 'Log in' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+});
+
+describe('current user', () => {
+  it('returns the logged in user', async () => {
+    const fetchMock = mockBackendResponse(200, student);
+
+    await expect(getCurrentUser()).resolves.toEqual(student);
+    expect(fetchMock).toHaveBeenCalledWith('/api/users/me', expect.objectContaining({
+      method: 'GET',
+      credentials: 'include',
+    }));
+  });
+
+  it('returns no user when there is no session', async () => {
+    mockBackendResponse(401, { code: 'UNAUTHENTICATED' });
+
+    await expect(getCurrentUser()).resolves.toBeNull();
   });
 });

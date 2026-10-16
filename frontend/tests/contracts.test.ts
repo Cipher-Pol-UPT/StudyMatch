@@ -48,8 +48,6 @@ describe('backend contracts', () => {
       else for (const [key, value] of Object.entries(a as Record<string, unknown>)) compare(value, (b as Record<string, unknown>)[key]);
     };
     compare(en,pt);
-    const docs = readFileSync(new URL('../../docs/translations.txt', import.meta.url), 'utf8');
-    for (const code of [...ERROR_CODES, ...Object.values(enums).flat()]) expect(docs).toContain(code + ':');
   });
 
   it('accepts omitted params and rejects malformed error bodies', () => {

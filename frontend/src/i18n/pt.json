@@ -18,9 +18,7 @@
     "activateAccount": "Ativar conta",
     "checkEmail": "Verifique a sua caixa de entrada",
     "resend": "Reenviar email",
-    "verifyEmail": "Confirmar email",
-    "invalidCredentials": "O email ou a palavra-passe estão incorretos. Tente novamente.",
-    "accountBlocked": "A sua conta está bloqueada e não é possível iniciar sessão. Contacte os serviços académicos para obter ajuda."
+    "verifyEmail": "Confirmar email"
   },
   "fields": {
     "institutionalEmail": "Email institucional",
@@ -149,6 +147,16 @@
     "export": "Exportar certificado",
     "certificate": "Certificado de conquista"
   },
+  "login": {
+    "headline": "As melhores equipas começam aqui.",
+    "tagline": "O StudyMatch cria grupos equilibrados com base nas suas competências, notas e assiduidade."
+  },
+  "home": {
+    "greeting": "Olá, {{name}}."
+  },
+  "placeholder": {
+    "comingSoon": "Esta página ainda não está disponível."
+  },
   "errors": {
     "VALIDATION_FAILED": "Verifique os campos assinalados.",
     "NOT_FOUND": "Não foi possível encontrar o que procura.",
@@ -220,8 +228,6 @@
     "testError": "Mostrar erros de validação de exemplo"
   },
   "ui": {
-    "better_teams_start_here": "As melhores equipas começam aqui.",
-    "studymatch_forms_balanced_groups_from_your_strengths_grades_and_a": "O StudyMatch cria grupos equilibrados com base nas suas competências, notas e assiduidade.",
     "apply": "Aplicar",
     "image_position_drag_or_use_the_arrow_keys_to_move_plus_and_minus_": "Posição da imagem. Arraste ou utilize as teclas de direção para mover e mais ou menos para ampliar.",
     "zoom_out": "Reduzir",

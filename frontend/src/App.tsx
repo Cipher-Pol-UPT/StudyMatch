@@ -1,14 +1,38 @@
-import { useState } from 'react';
-import { ComponentPreview } from './ComponentPreview';
+import { Brain, House, KeyRound } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { getCurrentUser } from './api/auth';
 import { LoginPage } from './pages/login/LoginPage';
-import type { Session } from './types/session';
+import { PlaceholderPage } from './pages/placeholder/PlaceholderPage';
+import type { CurrentUser } from './types/currentUser';
 
 export default function App() {
-  const [session, setSession] = useState<Session | null>(null);
+  const { t } = useTranslation();
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
-  if (session === null) {
-    return <LoginPage onLoggedIn={setSession} />;
+  useEffect(() => {
+    getCurrentUser()
+      .then(setCurrentUser)
+      .catch(() => setCurrentUser(null))
+      .finally(() => setIsCheckingSession(false));
+  }, []);
+
+  if (isCheckingSession) {
+    return null;
   }
 
-  return <ComponentPreview />;
+  if (currentUser === null) {
+    return <LoginPage onLoggedIn={setCurrentUser} />;
+  }
+
+  if (currentUser.mustChangePassword) {
+    return <PlaceholderPage icon={KeyRound} title={t('auth.changePassword')} />;
+  }
+
+  if (currentUser.personalityTestRequired) {
+    return <PlaceholderPage icon={Brain} title={t('personality.title')} />;
+  }
+
+  return <PlaceholderPage icon={House} title={t('home.greeting', { name: currentUser.name })} />;
 }
