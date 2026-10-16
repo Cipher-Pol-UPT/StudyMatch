@@ -1,9 +1,12 @@
 package com.studymatch.models;
 
 import java.time.LocalDate;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.studymatch.enums.Language;
 import com.studymatch.enums.Role;
@@ -12,6 +15,7 @@ import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -26,6 +30,10 @@ import jakarta.validation.constraints.Size;
 @Entity
 public class Student extends User {
 
+  public static final int MAX_BANNER_BYTES = 5 * 1024 * 1024;
+
+  private static final Pattern BANNER_DATA_URL = Pattern.compile("^data:image/(png|jpeg);base64,([A-Za-z0-9+/=]+)$");
+
   @ManyToOne
   @NotNull
   private Degree degree;
@@ -36,6 +44,7 @@ public class Student extends User {
   @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
   private PersonalityProfile personalityProfile;
 
+  @Column(columnDefinition = "TEXT")
   private String banner;
 
   @Size(max = 500)
@@ -103,7 +112,22 @@ public class Student extends User {
   }
 
   public void setBanner(String banner) {
+    if (banner != null && !isValidBanner(banner)) {
+      throw new StudyMatchException(ErrorCode.INVALID_BANNER);
+    }
     this.banner = banner;
+  }
+
+  private static boolean isValidBanner(String banner) {
+    Matcher dataUrl = BANNER_DATA_URL.matcher(banner);
+    if (!dataUrl.matches()) {
+      return false;
+    }
+    try {
+      return Base64.getDecoder().decode(dataUrl.group(2)).length <= MAX_BANNER_BYTES;
+    } catch (IllegalArgumentException invalidBase64) {
+      return false;
+    }
   }
 
   public String getAboutMe() {
