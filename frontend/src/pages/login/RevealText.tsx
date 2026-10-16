@@ -3,10 +3,9 @@ import './RevealText.css';
 
 export interface RevealTextProps {
   text: string;
-  delay?: number;
 }
 
-export function RevealText({ text, delay = 0 }: RevealTextProps) {
+export function RevealText({ text }: RevealTextProps) {
   const words = text.split(' ');
 
   return (
@@ -17,7 +16,7 @@ export function RevealText({ text, delay = 0 }: RevealTextProps) {
             className="reveal-text__word"
             initial={{ y: '110%' }}
             animate={{ y: '0%' }}
-            transition={{ duration: 0.7, delay: delay + index * 0.08, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.7, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
           >
             {word}
           </motion.span>

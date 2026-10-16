@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getCurrentUser } from '../src/api/auth';
+import { getCurrentUser, login } from '../src/api/auth';
 import i18n from '../src/i18n';
 import { LoginPage } from '../src/pages/login/LoginPage';
 import { StudyMatchProvider } from '../src/studymatch-ui';
@@ -126,5 +126,24 @@ describe('current user', () => {
     mockBackendResponse(401, { code: 'UNAUTHENTICATED' });
 
     await expect(getCurrentUser()).resolves.toBeNull();
+  });
+
+  it('asks the backend for a CSRF token before the first login', async () => {
+    document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    const fetchMock = vi.fn<typeof fetch>(async url => {
+      if (url === '/api/users/me') {
+        document.cookie = 'XSRF-TOKEN=token-from-backend';
+        return new Response(JSON.stringify({ code: 'UNAUTHENTICATED' }), { status: 401 });
+      }
+      return new Response(JSON.stringify(student), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(login({ email: student.institutionalEmail, password: 'secret123' })).resolves.toEqual(student);
+
+    const [firstUrl, secondUrl] = fetchMock.mock.calls.map(([url]) => url);
+    const loginHeaders = fetchMock.mock.calls[1][1]?.headers as Record<string, string>;
+    expect([firstUrl, secondUrl]).toEqual(['/api/users/me', '/api/users/login']);
+    expect(loginHeaders['X-XSRF-TOKEN']).toBe('token-from-backend');
   });
 });
