@@ -1,6 +1,7 @@
 package com.studymatch.models;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,6 +34,10 @@ public class Student extends User {
   public static final int MAX_BANNER_BYTES = 5 * 1024 * 1024;
 
   private static final Pattern BANNER_DATA_URL = Pattern.compile("^data:image/(png|jpeg);base64,([A-Za-z0-9+/=]+)$");
+
+  private static final byte[] PNG_SIGNATURE = { (byte) 0x89, 0x50, 0x4E, 0x47 };
+
+  private static final byte[] JPEG_SIGNATURE = { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF };
 
   @ManyToOne
   @NotNull
@@ -123,11 +128,21 @@ public class Student extends User {
     if (!dataUrl.matches()) {
       return false;
     }
+
+    byte[] image;
     try {
-      return Base64.getDecoder().decode(dataUrl.group(2)).length <= MAX_BANNER_BYTES;
+      image = Base64.getDecoder().decode(dataUrl.group(2));
     } catch (IllegalArgumentException invalidBase64) {
       return false;
     }
+
+    byte[] expectedSignature = dataUrl.group(1).equals("png") ? PNG_SIGNATURE : JPEG_SIGNATURE;
+    return image.length <= MAX_BANNER_BYTES && startsWith(image, expectedSignature);
+  }
+
+  private static boolean startsWith(byte[] image, byte[] signature) {
+    return image.length >= signature.length
+        && Arrays.equals(image, 0, signature.length, signature, 0, signature.length);
   }
 
   public String getAboutMe() {

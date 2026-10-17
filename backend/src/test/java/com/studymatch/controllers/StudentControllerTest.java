@@ -25,7 +25,7 @@ import com.studymatch.dtos.UpdateProfileRequestDTO;
 import com.studymatch.enums.Language;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
-import com.studymatch.models.Degree;
+import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
 import com.studymatch.services.StudentService;
 import com.studymatch.services.UserService;
@@ -49,7 +49,7 @@ class StudentControllerTest {
     userService = mock(UserService.class);
     controller = new StudentController(studentService, userService);
 
-    student = new Student("student@example.com", "Test Student", "hash", new Degree("Test Degree"), 1);
+    student = ModelTestData.student("Test Student");
     ReflectionTestUtils.setField(student, "number", NUMBER);
     authentication = UsernamePasswordAuthenticationToken.authenticated(EMAIL, null, List.of());
     profile = new StudentProfileDTO(NUMBER, "Test Student", null, null, Set.of(), Set.of(),
@@ -60,10 +60,13 @@ class StudentControllerTest {
   @Test
   @DisplayName("My profile is the logged in student's profile, seen by themselves")
   void myProfileUsesTheLoggedInStudent() {
+    // Arrange
     when(studentService.getProfile(NUMBER, student)).thenReturn(profile);
 
+    // Act
     ResponseEntity<StudentProfileDTO> response = controller.getMyProfile(authentication);
 
+    // Assert
     assertEquals(200, response.getStatusCode().value());
     assertSame(profile, response.getBody());
   }
@@ -71,10 +74,13 @@ class StudentControllerTest {
   @Test
   @DisplayName("Another profile is seen by the logged in user")
   void otherProfileIsSeenByTheLoggedInUser() {
+    // Arrange
     when(studentService.getProfile(50002L, student)).thenReturn(profile);
 
+    // Act
     ResponseEntity<StudentProfileDTO> response = controller.getProfile(50002L, authentication);
 
+    // Assert
     assertEquals(200, response.getStatusCode().value());
     assertSame(profile, response.getBody());
   }
@@ -82,12 +88,15 @@ class StudentControllerTest {
   @Test
   @DisplayName("Editing my profile changes the logged in student's profile")
   void editingUsesTheLoggedInStudent() {
-    UpdateProfileRequestDTO changes = new UpdateProfileRequestDTO(null, "About me", Set.of(), Set.of(),
+    // Arrange
+    UpdateProfileRequestDTO changes = new UpdateProfileRequestDTO(null, "Test about me", Set.of(), Set.of(),
         Set.of(Language.PORTUGUESE));
     when(studentService.updateProfile(NUMBER, changes)).thenReturn(profile);
 
+    // Act
     ResponseEntity<StudentProfileDTO> response = controller.updateMyProfile(changes, authentication);
 
+    // Assert
     assertEquals(200, response.getStatusCode().value());
     assertSame(profile, response.getBody());
   }
@@ -95,10 +104,13 @@ class StudentControllerTest {
   @Test
   @DisplayName("A logged in user that no longer exists gets NOT_FOUND")
   void missingUserGetsNotFound() {
+    // Arrange
     when(userService.getByInstitutionalEmail(EMAIL)).thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
 
+    // Act
     StudyMatchException e = assertThrows(StudyMatchException.class, () -> controller.getMyProfile(authentication));
 
+    // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
     verify(studentService, never()).getProfile(any(), any());
   }

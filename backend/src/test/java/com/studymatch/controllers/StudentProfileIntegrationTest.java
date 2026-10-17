@@ -27,18 +27,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.enums.Language;
 import com.studymatch.models.AcademicYear;
+import com.studymatch.models.Admin;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.PersonalityProfile;
+import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
 import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.models.Teacher;
 import com.studymatch.repositories.AcademicYearRepository;
+import com.studymatch.repositories.AdminRepository;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.EnrolmentRepository;
+import com.studymatch.repositories.StaffRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.SubjectEditionRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -51,6 +55,7 @@ import com.studymatch.repositories.TeacherRepository;
 class StudentProfileIntegrationTest {
 
   private static final String PASSWORD = "Test1234";
+  private static final String PNG_BANNER = "data:image/png;base64,iVBORw0KGgo=";
 
   @Autowired
   private MockMvc mockMvc;
@@ -68,6 +73,12 @@ class StudentProfileIntegrationTest {
   private TeacherRepository teacherRepository;
 
   @Autowired
+  private StaffRepository staffRepository;
+
+  @Autowired
+  private AdminRepository adminRepository;
+
+  @Autowired
   private CategoryRepository categoryRepository;
 
   @Autowired
@@ -83,29 +94,33 @@ class StudentProfileIntegrationTest {
   private EnrolmentRepository enrolmentRepository;
 
   private Degree degree;
-  private Student maria;
-  private Student joao;
-  private Teacher mariasTeacher;
+  private Student student;
+  private Student otherStudent;
+  private Teacher theirTeacher;
   private Teacher otherTeacher;
 
   @BeforeEach
   void setUp() {
     degree = degreeRepository.save(new Degree("Integration Test Degree"));
-    maria = saveStudent("maria.it", "Maria Test");
-    joao = saveStudent("joao.it", "Joao Test");
-    mariasTeacher = saveTeacher("teacher.it");
+    student = saveStudent("student.it", "Test Student");
+    otherStudent = saveStudent("other.student.it", "Other Test Student");
+    theirTeacher = saveTeacher("teacher.it");
     otherTeacher = saveTeacher("other.teacher.it");
-    enrol(maria, mariasTeacher);
+    enrol(student, theirTeacher);
   }
 
   @Test
   @DisplayName("A student gets their whole profile")
   void studentGetsTheirWholeProfile() throws Exception {
-    mockMvc.perform(get("/students/me/profile").session(loginAs(maria.getInstitutionalEmail())))
+    // Arrange
+    MockHttpSession session = loginAs(student.getInstitutionalEmail());
+
+    // Act + Assert
+    mockMvc.perform(get("/students/me/profile").session(session))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.name").value("Maria Test"))
+        .andExpect(jsonPath("$.name").value("Test Student"))
         .andExpect(jsonPath("$.languages[0]").value("PORTUGUESE"))
-        .andExpect(jsonPath("$.privateProfile.institutionalEmail").value(maria.getInstitutionalEmail()))
+        .andExpect(jsonPath("$.privateProfile.institutionalEmail").value(student.getInstitutionalEmail()))
         .andExpect(jsonPath("$.privateProfile.personalityProfile.leadership").value(0.5))
         .andExpect(jsonPath("$.privateProfile.hasAcademicHistory").value(true));
   }
@@ -113,17 +128,24 @@ class StudentProfileIntegrationTest {
   @Test
   @DisplayName("Another student gets only the public part")
   void anotherStudentGetsThePublicPart() throws Exception {
-    mockMvc.perform(get("/students/" + maria.getNumber() + "/profile").session(loginAs(joao.getInstitutionalEmail())))
+    // Arrange
+    MockHttpSession session = loginAs(otherStudent.getInstitutionalEmail());
+
+    // Act + Assert
+    mockMvc.perform(get(profileOf(student)).session(session))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.name").value("Maria Test"))
+        .andExpect(jsonPath("$.name").value("Test Student"))
         .andExpect(jsonPath("$.privateProfile").doesNotExist());
   }
 
   @Test
   @DisplayName("The student's teacher gets the whole profile")
   void theirTeacherGetsTheWholeProfile() throws Exception {
-    mockMvc.perform(get("/students/" + maria.getNumber() + "/profile")
-        .session(loginAs(mariasTeacher.getInstitutionalEmail())))
+    // Arrange
+    MockHttpSession session = loginAs(theirTeacher.getInstitutionalEmail());
+
+    // Act + Assert
+    mockMvc.perform(get(profileOf(student)).session(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.privateProfile.curricularYear").value(1));
   }
@@ -131,16 +153,56 @@ class StudentProfileIntegrationTest {
   @Test
   @DisplayName("A teacher who doesn't teach the student gets only the public part")
   void otherTeacherGetsThePublicPart() throws Exception {
-    mockMvc.perform(get("/students/" + maria.getNumber() + "/profile")
-        .session(loginAs(otherTeacher.getInstitutionalEmail())))
+    // Arrange
+    MockHttpSession session = loginAs(otherTeacher.getInstitutionalEmail());
+
+    // Act + Assert
+    mockMvc.perform(get(profileOf(student)).session(session))
         .andExpect(status().isOk())
+        .andExpect(jsonPath("$.privateProfile").doesNotExist());
+  }
+
+  @Test
+  @DisplayName("Staff get the whole profile")
+  void staffGetTheWholeProfile() throws Exception {
+    // Arrange
+    Staff staff = new Staff("staff.it@example.com", "staff.it@studymatch.com", "Test Staff",
+        passwordEncoder.encode(PASSWORD));
+    staff.setMustChangePassword(false);
+    staffRepository.save(staff);
+    MockHttpSession session = loginAs(staff.getInstitutionalEmail());
+
+    // Act + Assert
+    mockMvc.perform(get(profileOf(student)).session(session))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.privateProfile.institutionalEmail").value(student.getInstitutionalEmail()));
+  }
+
+  @Test
+  @DisplayName("An admin gets only the public part")
+  void adminGetsThePublicPart() throws Exception {
+    // Arrange
+    Admin admin = new Admin("admin.it@example.com", "admin.it@studymatch.com", "Test Admin",
+        passwordEncoder.encode(PASSWORD));
+    admin.setMustChangePassword(false);
+    adminRepository.save(admin);
+    MockHttpSession session = loginAs(admin.getInstitutionalEmail());
+
+    // Act + Assert
+    mockMvc.perform(get(profileOf(student)).session(session))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.name").value("Test Student"))
         .andExpect(jsonPath("$.privateProfile").doesNotExist());
   }
 
   @Test
   @DisplayName("A teacher asking for their own student profile gets 403 ACCESS_DENIED")
   void teacherCannotUseMyProfile() throws Exception {
-    mockMvc.perform(get("/students/me/profile").session(loginAs(mariasTeacher.getInstitutionalEmail())))
+    // Arrange
+    MockHttpSession session = loginAs(theirTeacher.getInstitutionalEmail());
+
+    // Act + Assert
+    mockMvc.perform(get("/students/me/profile").session(session))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
   }
@@ -148,7 +210,11 @@ class StudentProfileIntegrationTest {
   @Test
   @DisplayName("An unknown student number gets 404 NOT_FOUND")
   void unknownStudentGetsNotFound() throws Exception {
-    mockMvc.perform(get("/students/999999/profile").session(loginAs(maria.getInstitutionalEmail())))
+    // Arrange
+    MockHttpSession session = loginAs(student.getInstitutionalEmail());
+
+    // Act + Assert
+    mockMvc.perform(get("/students/999999/profile").session(session))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("NOT_FOUND"));
   }
@@ -156,6 +222,7 @@ class StudentProfileIntegrationTest {
   @Test
   @DisplayName("Without a session the profile gets 401 UNAUTHENTICATED")
   void noSessionGetsUnauthenticated() throws Exception {
+    // Act + Assert
     mockMvc.perform(get("/students/me/profile"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
@@ -164,27 +231,31 @@ class StudentProfileIntegrationTest {
   @Test
   @DisplayName("Editing saves the changes")
   void editingSavesTheChanges() throws Exception {
-    MockHttpSession session = loginAs(maria.getInstitutionalEmail());
+    // Arrange
+    MockHttpSession session = loginAs(student.getInstitutionalEmail());
 
+    // Act
     mockMvc.perform(put("/students/me/profile").session(session).with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
         .content("""
-            {"banner":"data:image/png;base64,iVBORw0KGgo=","aboutMe":"I like databases.",
-             "skills":["Java"],"interests":["Chess"],"languages":["ENGLISH"]}
-            """))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.aboutMe").value("I like databases."));
+            {"banner":"%s","aboutMe":"Test about me",
+             "skills":["Test Skill"],"interests":["Test Interest"],"languages":["ENGLISH"]}
+            """.formatted(PNG_BANNER)))
+        .andExpect(status().isOk());
 
+    // Assert
     mockMvc.perform(get("/students/me/profile").session(session))
-        .andExpect(jsonPath("$.banner").value("data:image/png;base64,iVBORw0KGgo="))
-        .andExpect(jsonPath("$.skills[0]").value("Java"))
-        .andExpect(jsonPath("$.interests[0]").value("Chess"))
+        .andExpect(jsonPath("$.banner").value(PNG_BANNER))
+        .andExpect(jsonPath("$.aboutMe").value("Test about me"))
+        .andExpect(jsonPath("$.skills[0]").value("Test Skill"))
+        .andExpect(jsonPath("$.interests[0]").value("Test Interest"))
         .andExpect(jsonPath("$.languages[0]").value("ENGLISH"));
   }
 
   @Test
   @DisplayName("Editing with no languages gets 400 AT_LEAST_ONE_LANGUAGE_REQUIRED")
   void editingWithoutLanguagesIsRejected() throws Exception {
+    // Act + Assert
     editMyProfile("""
         {"skills":[],"interests":[],"languages":[]}
         """)
@@ -195,6 +266,7 @@ class StudentProfileIntegrationTest {
   @Test
   @DisplayName("Editing with a GIF banner gets 400 INVALID_BANNER")
   void editingWithAGifBannerIsRejected() throws Exception {
+    // Act + Assert
     editMyProfile("""
         {"banner":"data:image/gif;base64,R0lGODlh","skills":[],"interests":[],"languages":["ENGLISH"]}
         """)
@@ -205,6 +277,7 @@ class StudentProfileIntegrationTest {
   @Test
   @DisplayName("Editing with an about me over 500 characters gets 400 VALIDATION_FAILED")
   void editingWithALongAboutMeIsRejected() throws Exception {
+    // Act + Assert
     editMyProfile("{\"aboutMe\":\"" + "a".repeat(501) + "\",\"skills\":[],\"interests\":[],\"languages\":[\"ENGLISH\"]}")
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
@@ -215,7 +288,11 @@ class StudentProfileIntegrationTest {
   @Test
   @DisplayName("Editing without the CSRF token gets 403 CSRF_TOKEN_INVALID")
   void editingWithoutCsrfIsRejected() throws Exception {
-    mockMvc.perform(put("/students/me/profile").session(loginAs(maria.getInstitutionalEmail()))
+    // Arrange
+    MockHttpSession session = loginAs(student.getInstitutionalEmail());
+
+    // Act + Assert
+    mockMvc.perform(put("/students/me/profile").session(session)
         .contentType(MediaType.APPLICATION_JSON)
         .content("{\"skills\":[],\"interests\":[],\"languages\":[\"ENGLISH\"]}"))
         .andExpect(status().isForbidden())
@@ -223,9 +300,13 @@ class StudentProfileIntegrationTest {
   }
 
   private ResultActions editMyProfile(String body) throws Exception {
-    return mockMvc.perform(put("/students/me/profile").session(loginAs(maria.getInstitutionalEmail())).with(csrf())
+    return mockMvc.perform(put("/students/me/profile").session(loginAs(student.getInstitutionalEmail())).with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
         .content(body));
+  }
+
+  private static String profileOf(Student student) {
+    return "/students/" + student.getNumber() + "/profile";
   }
 
   private MockHttpSession loginAs(String email) throws Exception {
@@ -238,13 +319,13 @@ class StudentProfileIntegrationTest {
   }
 
   private Student saveStudent(String emailName, String name) {
-    Student student = new Student(emailName + "@example.com", name, passwordEncoder.encode(PASSWORD), degree, 1);
-    student.setMustChangePassword(false);
-    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
-    student.setLanguages(Set.of(Language.PORTUGUESE));
-    student = studentRepository.save(student);
-    student.generateInstitutionalEmail("studymatch.com");
-    return student;
+    Student newStudent = new Student(emailName + "@example.com", name, passwordEncoder.encode(PASSWORD), degree, 1);
+    newStudent.setMustChangePassword(false);
+    newStudent.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    newStudent.setLanguages(Set.of(Language.PORTUGUESE));
+    newStudent = studentRepository.save(newStudent);
+    newStudent.generateInstitutionalEmail("studymatch.com");
+    return newStudent;
   }
 
   private Teacher saveTeacher(String emailName) {
@@ -254,14 +335,14 @@ class StudentProfileIntegrationTest {
     return teacherRepository.save(teacher);
   }
 
-  private void enrol(Student student, Teacher teacher) {
+  private void enrol(Student enrolledStudent, Teacher teacher) {
     Category category = categoryRepository.save(new Category("Integration Test Category"));
-    Subject subject = subjectRepository.save(new Subject("IT-PROF", "Integration Test Subject", 6, category));
+    Subject subject = subjectRepository.save(new Subject("IT-PROFILE", "Test Subject", 6, category));
     AcademicYear academicYear = academicYearRepository.save(new AcademicYear(2099));
     SubjectEdition edition = new SubjectEdition(subject, academicYear, Set.of(teacher));
     edition.addClassSection("T1");
     edition = subjectEditionRepository.save(edition);
-    enrolmentRepository.save(new Enrolment(student, edition.getClassSections().iterator().next()));
+    enrolmentRepository.save(new Enrolment(enrolledStudent, edition.getClassSections().iterator().next()));
   }
 
 }

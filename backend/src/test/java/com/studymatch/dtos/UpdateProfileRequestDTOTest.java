@@ -36,62 +36,86 @@ class UpdateProfileRequestDTOTest {
   @Test
   @DisplayName("A complete profile is valid")
   void completeProfileIsValid() {
-    UpdateProfileRequestDTO request = new UpdateProfileRequestDTO(null, "About me", Set.of("Java"), Set.of("Chess"),
-        Set.of(Language.PORTUGUESE));
+    // Arrange
+    UpdateProfileRequestDTO request = new UpdateProfileRequestDTO(null, "Test about me", Set.of("Test Skill"),
+        Set.of("Test Interest"), Set.of(Language.PORTUGUESE));
 
-    assertTrue(validator.validate(request).isEmpty());
+    // Act
+    Set<ConstraintViolation<UpdateProfileRequestDTO>> violations = validator.validate(request);
+
+    // Assert
+    assertTrue(violations.isEmpty());
   }
 
   @Test
   @DisplayName("About me can have 499 characters")
   void aboutMeUnderTheLimitIsValid() {
-    assertTrue(validator.validate(withAboutMe(499)).isEmpty());
+    // Act
+    Set<ConstraintViolation<UpdateProfileRequestDTO>> violations = validator.validate(withAboutMe(499));
+
+    // Assert
+    assertTrue(violations.isEmpty());
   }
 
   @Test
   @DisplayName("About me can have exactly 500 characters")
   void aboutMeAtTheLimitIsValid() {
-    assertTrue(validator.validate(withAboutMe(500)).isEmpty());
+    // Act
+    Set<ConstraintViolation<UpdateProfileRequestDTO>> violations = validator.validate(withAboutMe(500));
+
+    // Assert
+    assertTrue(violations.isEmpty());
   }
 
   @Test
   @DisplayName("About me cannot have 501 characters")
   void aboutMeOverTheLimitIsInvalid() {
+    // Act + Assert
     assertOnlyViolation(withAboutMe(501), "aboutMe");
   }
 
   @Test
   @DisplayName("A skill can have exactly 50 characters")
   void skillAtTheLimitIsValid() {
-    assertTrue(validator.validate(withSkill("a".repeat(50))).isEmpty());
+    // Act
+    Set<ConstraintViolation<UpdateProfileRequestDTO>> violations = validator.validate(withSkill("a".repeat(50)));
+
+    // Assert
+    assertTrue(violations.isEmpty());
   }
 
   @Test
   @DisplayName("A skill cannot have 51 characters")
   void skillOverTheLimitIsInvalid() {
+    // Act + Assert
     assertOnlyViolation(withSkill("a".repeat(51)), "skills");
   }
 
   @Test
   @DisplayName("A blank skill is invalid")
   void blankSkillIsInvalid() {
+    // Act + Assert
     assertOnlyViolation(withSkill(" "), "skills");
   }
 
   @Test
   @DisplayName("A blank interest is invalid")
   void blankInterestIsInvalid() {
+    // Arrange
     UpdateProfileRequestDTO request = new UpdateProfileRequestDTO(null, null, Set.of(), Set.of(" "),
         Set.of(Language.PORTUGUESE));
 
+    // Act + Assert
     assertOnlyViolation(request, "interests");
   }
 
   @Test
   @DisplayName("The languages are required")
   void missingLanguagesAreInvalid() {
+    // Arrange
     UpdateProfileRequestDTO request = new UpdateProfileRequestDTO(null, null, Set.of(), Set.of(), null);
 
+    // Act + Assert
     assertOnlyViolation(request, "languages");
   }
 
