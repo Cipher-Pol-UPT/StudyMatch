@@ -33,6 +33,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
 
+import com.studymatch.dtos.ChangePasswordRequestDTO;
 import com.studymatch.dtos.CurrentUserDTO;
 import com.studymatch.dtos.LoginRequestDTO;
 import com.studymatch.enums.AccountStatus;
@@ -185,6 +186,45 @@ class UserControllerTest {
     assertEquals(200, result.getStatusCode().value());
     assertEquals("Test Teacher", result.getBody().name());
     assertTrue(result.getBody().institutionalEmail().endsWith("@test.com"));
+  }
+
+  // change password
+
+  @Test
+  @DisplayName("Changing the password returns the updated user and gives the session a new id")
+  void changePasswordRenewsSession() {
+    // Arrange - logged in, and the (fake) service accepts the change
+    ChangePasswordRequestDTO change = new ChangePasswordRequestDTO(null, "NewPass123");
+    when(userService.changePassword(EMAIL, change)).thenReturn(teacher);
+    MockHttpSession session = new MockHttpSession();
+    request.setSession(session);
+    String idBefore = session.getId();
+
+    // Act
+    ResponseEntity<CurrentUserDTO> result = controller.changePassword(change, authenticated, request);
+
+    // Assert
+    assertEquals(200, result.getStatusCode().value());
+    assertFalse(result.getBody().mustChangePassword());
+    assertNotEquals(idBefore, request.getSession(false).getId());
+  }
+
+  @Test
+  @DisplayName("When the service refuses the change, the session id stays the same")
+  void refusedChangeKeepsSession() {
+    // Arrange
+    ChangePasswordRequestDTO change = new ChangePasswordRequestDTO("WrongPass123", "NewPass123");
+    when(userService.changePassword(EMAIL, change))
+        .thenThrow(new StudyMatchException(ErrorCode.CURRENT_PASSWORD_INCORRECT));
+    MockHttpSession session = new MockHttpSession();
+    request.setSession(session);
+    String idBefore = session.getId();
+
+    // Act
+    assertThrows(StudyMatchException.class, () -> controller.changePassword(change, authenticated, request));
+
+    // Assert
+    assertEquals(idBefore, request.getSession(false).getId());
   }
 
 }

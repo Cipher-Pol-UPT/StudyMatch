@@ -74,7 +74,7 @@ class PersonalityTestIntegrationTest {
     MockHttpSession session = loginAs(student.getInstitutionalEmail());
     mockMvc.perform(get("/users/me").session(session))
         .andExpect(jsonPath("$.personalityTestRequired").value(true));
-    mockMvc.perform(get("/degrees/").session(session))
+    mockMvc.perform(get("/students/me/profile").session(session))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("PERSONALITY_TEST_REQUIRED"));
 
@@ -90,10 +90,10 @@ class PersonalityTestIntegrationTest {
     mockMvc.perform(get("/users/me").session(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.personalityTestRequired").value(false));
-    // past the gate now; 404 only because /degrees/ has no endpoints yet
-    mockMvc.perform(get("/degrees/").session(session))
-        .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+    mockMvc.perform(get("/students/me/profile").session(session))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.privateProfile.personalityProfile.creativity").value(closeTo(0.9375, DELTA),
+            Double.class));
   }
 
   @Test
