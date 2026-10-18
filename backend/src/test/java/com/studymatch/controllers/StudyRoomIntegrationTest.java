@@ -146,7 +146,7 @@ class StudyRoomIntegrationTest {
   }
 
   private ResultActions create(String body) throws Exception {
-    return mockMvc.perform(post("/study-rooms").with(csrf()).session(session)
+    return mockMvc.perform(post("/study-rooms/").with(csrf()).session(session)
         .contentType(MediaType.APPLICATION_JSON)
         .content(body));
   }
@@ -160,6 +160,7 @@ class StudyRoomIntegrationTest {
   @Test
   @DisplayName("A tutor creates a StudyRoom and it starts as SCHEDULED")
   void createsStudyRoom() throws Exception {
+    // Act
     create(body(maths.getId(), tomorrowAt(14), tomorrowAt(16), 5, LINK))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").isNumber())
@@ -170,12 +171,14 @@ class StudyRoomIntegrationTest {
         .andExpect(jsonPath("$.status").value("SCHEDULED"))
         .andExpect(jsonPath("$.participantCount").value(0));
 
+    // Assert
     assertEquals(1, studyRoomRepository.findOverlapping(tutor.getNumber(), tomorrowAt(14), tomorrowAt(16)).size());
   }
 
   @Test
   @DisplayName("Missing required fields are reported one by one")
   void missingFields() throws Exception {
+    // Act + Assert
     create(body(null, null, null, null, null))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
@@ -183,19 +186,20 @@ class StudyRoomIntegrationTest {
   }
 
   @Test
-  @DisplayName("A capacity outside 2-20 is rejected with the allowed range")
-  void capacityOutOfRange() throws Exception {
+  @DisplayName("A capacity over 20 is rejected with the maximum")
+  void capacityOverTheMaximum() throws Exception {
+    // Act + Assert
     create(body(maths.getId(), tomorrowAt(14), tomorrowAt(16), 21, LINK))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[0].field").value("capacity"))
-        .andExpect(jsonPath("$.fieldErrors[0].code").value("RANGE"))
-        .andExpect(jsonPath("$.fieldErrors[0].params.min").value(2))
-        .andExpect(jsonPath("$.fieldErrors[0].params.max").value(20));
+        .andExpect(jsonPath("$.fieldErrors[0].code").value("MAX"))
+        .andExpect(jsonPath("$.fieldErrors[0].params.value").value(20));
   }
 
   @Test
   @DisplayName("Only Google Meet links are accepted")
   void notAMeetLink() throws Exception {
+    // Act + Assert
     create(body(maths.getId(), tomorrowAt(14), tomorrowAt(16), 5, "https://zoom.us/j/123"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[0].field").value("link"))
@@ -205,7 +209,10 @@ class StudyRoomIntegrationTest {
   @Test
   @DisplayName("A StudyRoom in the past is rejected")
   void inThePast() throws Exception {
+    // Arrange
     LocalDateTime yesterday = tomorrowAt(14).minusDays(2);
+
+    // Act + Assert
     create(body(maths.getId(), yesterday, yesterday.plusHours(2), 5, LINK))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("STUDYROOM_IN_PAST"));
@@ -214,6 +221,7 @@ class StudyRoomIntegrationTest {
   @Test
   @DisplayName("A StudyRoom that ends before it starts is rejected")
   void endsBeforeStart() throws Exception {
+    // Act + Assert
     create(body(maths.getId(), tomorrowAt(16), tomorrowAt(14), 5, LINK))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("STUDYROOM_ENDS_BEFORE_START"));
@@ -222,8 +230,10 @@ class StudyRoomIntegrationTest {
   @Test
   @DisplayName("Overlapping another room of the tutor (even in another subject) names the conflicting room")
   void overlapsAnotherRoom() throws Exception {
+    // Arrange
     StudyRoom existing = saveRoom(physicsRole, tomorrowAt(15), tomorrowAt(17));
 
+    // Act + Assert
     create(body(maths.getId(), tomorrowAt(14), tomorrowAt(16), 5, LINK))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("STUDYROOM_OVERLAP"))
@@ -235,8 +245,10 @@ class StudyRoomIntegrationTest {
   @Test
   @DisplayName("Back-to-back rooms don't overlap")
   void backToBack() throws Exception {
+    // Arrange
     saveRoom(mathsRole, tomorrowAt(12), tomorrowAt(14));
 
+    // Act + Assert
     create(body(maths.getId(), tomorrowAt(14), tomorrowAt(16), 5, LINK))
         .andExpect(status().isCreated());
   }
@@ -244,10 +256,12 @@ class StudyRoomIntegrationTest {
   @Test
   @DisplayName("A cancelled room doesn't block its time slot")
   void cancelledRoomDoesNotOverlap() throws Exception {
+    // Arrange
     StudyRoom cancelled = saveRoom(mathsRole, tomorrowAt(14), tomorrowAt(16));
     cancelled.cancel("test reason");
     studyRoomRepository.saveAndFlush(cancelled);
 
+    // Act + Assert
     create(body(maths.getId(), tomorrowAt(14), tomorrowAt(16), 5, LINK))
         .andExpect(status().isCreated());
   }
@@ -255,9 +269,11 @@ class StudyRoomIntegrationTest {
   @Test
   @DisplayName("Another tutor's room at the same time doesn't conflict")
   void otherTutorsRoom() throws Exception {
+    // Arrange
     Student other = saveStudent("it.sr.other@example.com", "Other Tutor");
     saveRoom(saveTutorRole(other, maths), tomorrowAt(14), tomorrowAt(16));
 
+    // Act + Assert
     create(body(maths.getId(), tomorrowAt(14), tomorrowAt(16), 5, LINK))
         .andExpect(status().isCreated());
   }
@@ -265,8 +281,10 @@ class StudyRoomIntegrationTest {
   @Test
   @DisplayName("A student can't create a room for a subject they don't tutor")
   void notTutorOfSubject() throws Exception {
+    // Arrange
     Subject chemistry = subjectRepository.save(new Subject("IT-SR-CHEM", "Test Chemistry", 6, category));
 
+    // Act + Assert
     create(body(chemistry.getId(), tomorrowAt(14), tomorrowAt(16), 5, LINK))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
@@ -275,10 +293,12 @@ class StudyRoomIntegrationTest {
   @Test
   @DisplayName("Only students (tutors) can create StudyRooms")
   void teacherCannotCreate() throws Exception {
+    // Arrange
     teacher.setMustChangePassword(false);
     teacherRepository.saveAndFlush(teacher);
     session = loginAndGetSession(teacher.getInstitutionalEmail());
 
+    // Act + Assert
     create(body(maths.getId(), tomorrowAt(14), tomorrowAt(16), 5, LINK))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));

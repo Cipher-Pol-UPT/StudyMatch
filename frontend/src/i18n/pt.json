@@ -212,7 +212,6 @@
     "EMAIL": "Introduza um endereço de email válido.",
     "MIN": "O mínimo é {{value}}.",
     "MAX": "O máximo é {{value}}.",
-    "RANGE": "Use um valor entre {{min}} e {{max}}.",
     "PATTERN": "Este valor tem um formato inválido.",
     "INVALID": "Este valor é inválido.",
     "POSITIVE": "Introduza um valor positivo.",

@@ -18,7 +18,7 @@ import com.studymatch.services.UserService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/study-rooms")
+@RequestMapping("/study-rooms/")
 public class StudyRoomController {
 
   private final StudyRoomService studyRoomService;
