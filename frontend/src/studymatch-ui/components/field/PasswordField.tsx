@@ -12,13 +12,10 @@ export interface PasswordFieldProps extends Omit<InputHTMLAttributes<HTMLInputEl
   hint?: ReactNode;
   error?: ReactNode;
   icon?: IconComponent;
-  /** Optional translated UX hints supplied by the caller. */
   rules?: PasswordRule[];
   containerClassName?: string;
 }
 
-
-/** Password input with a show/hide toggle, an optional hint checklist . */
 export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(function PasswordField(
   { label = i18n.t('ui.password'), hint, error, icon, rules, id, containerClassName, className, onChange, value, defaultValue, disabled, ...rest },
   ref,

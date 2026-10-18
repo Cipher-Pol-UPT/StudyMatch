@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, useScroll } from 'framer-motion';
 import { MeshBackground } from '../studymatch-ui/components/studentHome/MeshBackground';
-import { LoadingScreen } from '../studymatch-ui/components/studentHome/LoadingScreen';
 import { TopBar } from '../studymatch-ui/components/studentHome/Topbar';
 import { HeroSection } from '../studymatch-ui/components/studentHome/HeroSection';
 import { QuickActions } from '../studymatch-ui/components/studentHome/QuickActions';
@@ -51,7 +50,6 @@ export function StudentHome({ userName = 'user', tasks = DEMO_TASKS, stats = DEM
   return (
     <div className="sm-root sh-root">
       <MeshBackground />
-      <AnimatePresence>{phase === 'loading' && <LoadingScreen key="loading" />}</AnimatePresence>
 
       {phase === 'ready' && <TopBar />}
 

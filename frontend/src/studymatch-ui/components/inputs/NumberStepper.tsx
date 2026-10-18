@@ -14,14 +14,12 @@ export interface NumberStepperProps {
   min?: number;
   max?: number;
   step?: number;
-  /** Text after the number ("students"). */
   unit?: ReactNode;
   hint?: ReactNode;
   disabled?: boolean;
   className?: string;
 }
 
-/** − value + control for small integers: group sizes, seats in a StudyRoom, weights. */
 export function NumberStepper({ label, value, defaultValue = 0, onValueChange, min = -Infinity, max = Infinity, step = 1, unit, hint, disabled, className }: NumberStepperProps) {
   useTranslation();
   const id = useId();

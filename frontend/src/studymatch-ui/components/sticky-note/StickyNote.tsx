@@ -42,10 +42,6 @@ export interface StickyNoteProps {
   label?: string;
 }
 
-/**
- * A paper sticky note: adhesive band, grain, a lifted corner and handwritten ink.
- * Clicking toggles it (e.g. done); hovering lifts the corner a little more.
- */
 export function StickyNote({ color = 'yellow', title, children, footer, done, size = 220, rotate = 0, onClick, onRemove, label }: StickyNoteProps) {
   useTranslation();
   const onKey = (e: KeyboardEvent) => {
@@ -101,7 +97,6 @@ function NoteFace({ color, title, children, footer, done }: { color: NoteColor; 
   );
 }
 
-// ─── Board ─────────────────────────────────────────────────
 export interface NoteData {
   id: string;
   text: string;
@@ -111,10 +106,6 @@ export interface NoteData {
   meta?: string;
 }
 
-/**
- * A dotted board of sticky notes. Drag to rearrange, click to mark done,
- * hover and press × to peel one off. New notes are slapped on top.
- */
 export function StickyBoard({
   initial,
   size = 200,
@@ -122,10 +113,8 @@ export function StickyBoard({
   onChange,
   placeholder = i18n.t('ui.write_note'),
 }: {
-  /** Notes on first render. The board manages them afterwards and reports through `onChange`. */
   initial: NoteData[];
   size?: number;
-  /** Show the "write a note" bar. */
   composer?: boolean;
   onChange?: (notes: NoteData[]) => void;
   placeholder?: string;

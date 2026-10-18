@@ -19,15 +19,11 @@ export interface DialogProps {
   title: ReactNode;
   description?: ReactNode;
   children?: ReactNode;
-  /** Buttons at the bottom. Put the primary action last. */
   footer?: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  /** Icon tile above the title. */
   icon?: IconComponent;
   iconTone?: 'violet' | 'danger' | 'success' | 'warning';
-  /** Escape, scrim click and the × close the dialog. Turn off for blocking flows. */
   dismissible?: boolean;
-  /** Element focused on open. Defaults to the first focusable element or `[data-autofocus]`. */
   initialFocus?: RefObject<HTMLElement>;
   className?: string;
 }
@@ -39,7 +35,6 @@ const ICON_TONE = {
   warning: ['var(--sm-warning-50)', 'var(--sm-warning-ink)'],
 } as const;
 
-/** Centred modal with focus trap, scroll lock and labelled title/description. */
 export function Dialog({ open, onClose, title, description, children, footer, size = 'md', icon: Icon, iconTone = 'violet', dismissible = true, initialFocus, className }: DialogProps) {
   useTranslation();
   const panel = useRef<HTMLDivElement>(null);
@@ -100,19 +95,16 @@ export interface ConfirmDialogProps {
   fieldErrors?: FieldError[];
   open: boolean;
   onClose: () => void;
-  /** Can be async: the button shows a spinner until it resolves. Receives the reason when `reason` is set. */
   onConfirm: (reason: string) => void | Promise<void>;
   title: ReactNode;
   description?: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   tone?: 'danger' | 'primary';
-  /** Ask for a written reason (e.g. Block Account). */
   reason?: { label: string; placeholder?: string; required?: boolean; maxLength?: number };
   icon?: IconComponent;
 }
 
-/** Confirmation for consequential actions: publish groups, block an account, cancel a StudyRoom. */
 function ConfirmDialogContent({ open, onClose, onConfirm, title, description, confirmLabel = i18n.t('ui.confirm'), cancelLabel = i18n.t('ui.cancel'), tone = 'primary', reason, icon, fieldErrors = [] }: ConfirmDialogProps) {
   useTranslation();
   const [text, setText] = useState('');
@@ -183,15 +175,12 @@ export interface SheetProps {
   open: boolean;
   onClose: () => void;
   title?: ReactNode;
-  /** Accessible name when there is no visible title. */
   label?: string;
   children: ReactNode;
-  /** Bottom sheet (mobile-first) or side panel (desktop detail views). */
   side?: 'bottom' | 'right';
   className?: string;
 }
 
-/** Bottom sheet or right-side panel for details that keep the page context. */
 export function Sheet({ open, onClose, title, label, children, side = 'bottom', className }: SheetProps) {
   useTranslation();
   const panel = useRef<HTMLDivElement>(null);
