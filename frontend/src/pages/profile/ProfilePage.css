@@ -1,0 +1,19 @@
+.profile-page {
+  min-height: 100svh;
+  box-sizing: border-box;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.profile-page--centered {
+  display: grid;
+  place-items: center;
+}
+
+.profile-edit {
+  display: grid;
+  gap: 24px;
+}

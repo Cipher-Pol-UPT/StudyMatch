@@ -154,6 +154,11 @@
   "home": {
     "greeting": "Olá, {{name}}."
   },
+  "profile": {
+    "myProfile": "O meu perfil",
+    "saved": "Perfil atualizado.",
+    "tryAgain": "Tentar novamente"
+  },
   "placeholder": {
     "comingSoon": "Esta página ainda não está disponível."
   },

@@ -1,10 +1,14 @@
-import { Brain, House, KeyRound } from 'lucide-react';
+import { Brain, House, KeyRound, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentUser } from './api/auth';
 import { LoginPage } from './pages/login/LoginPage';
 import { PlaceholderPage } from './pages/placeholder/PlaceholderPage';
+import { ProfilePage } from './pages/profile/ProfilePage';
+import { buttonClass } from './studymatch-ui';
 import type { CurrentUser } from './types/currentUser';
+
+const PROFILE_PATH = '/profile';
 
 export default function App() {
   const { t } = useTranslation();
@@ -34,5 +38,24 @@ export default function App() {
     return <PlaceholderPage icon={Brain} title={t('personality.title')} />;
   }
 
-  return <PlaceholderPage icon={House} title={t('home.greeting', { name: currentUser.name })} />;
+  const isStudent = currentUser.role === 'STUDENT';
+
+  if (isStudent && window.location.pathname === PROFILE_PATH) {
+    return <ProfilePage />;
+  }
+
+  const myProfileLink = (
+    <a className={buttonClass({ variant: 'secondary' })} href={PROFILE_PATH}>
+      <UserRound size={18} aria-hidden />
+      {t('profile.myProfile')}
+    </a>
+  );
+
+  return (
+    <PlaceholderPage
+      icon={House}
+      title={t('home.greeting', { name: currentUser.name })}
+      action={isStudent ? myProfileLink : undefined}
+    />
+  );
 }
