@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import com.studymatch.dtos.CategoryRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
@@ -69,6 +70,20 @@ class CategoryServiceTest {
     // Assert
     assertEquals(ErrorCode.CATEGORY_ALREADY_EXISTS, e.getCode());
     verify(categoryRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("If someone else saves the same name first, the unique column's error becomes CATEGORY_ALREADY_EXISTS")
+  void simultaneousDuplicateIsRefused() {
+    // Arrange - the check passed, but by the time we save another Staff already registered it
+    when(categoryRepository.save(any(Category.class))).thenThrow(new DataIntegrityViolationException("unique name"));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> categoryService.registerCategory(new CategoryRequestDTO("Mathematics")));
+
+    // Assert
+    assertEquals(ErrorCode.CATEGORY_ALREADY_EXISTS, e.getCode());
   }
 
 }

@@ -126,6 +126,20 @@ class RegisterCategoryIntegrationTest {
         .andExpect(jsonPath("$.fieldErrors[0].code").value("NOT_BLANK"));
   }
 
+  @Test
+  @DisplayName("A name over 100 characters is a field error, not a database crash")
+  void nameTooLong() throws Exception {
+    // Arrange
+    MockHttpSession staff = loginAsStaff();
+
+    // Act + Assert
+    registerCategory(staff, "{\"name\":\"" + "a".repeat(101) + "\"}")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("name"))
+        .andExpect(jsonPath("$.fieldErrors[0].code").value("SIZE_MAX"));
+  }
+
   // only the staff
 
   @Test

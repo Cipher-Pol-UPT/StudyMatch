@@ -1,5 +1,6 @@
 package com.studymatch.services;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.studymatch.dtos.CategoryRequestDTO;
@@ -23,7 +24,13 @@ public class CategoryService {
     if (categoryRepository.existsByNameIgnoreCase(name)) {
       throw new StudyMatchException(ErrorCode.CATEGORY_ALREADY_EXISTS);
     }
-    return categoryRepository.save(new Category(name));
+
+    // two Staff registering the same name at once both pass the check above, the unique column stops the second
+    try {
+      return categoryRepository.save(new Category(name));
+    } catch (DataIntegrityViolationException e) {
+      throw new StudyMatchException(ErrorCode.CATEGORY_ALREADY_EXISTS);
+    }
   }
 
 }
