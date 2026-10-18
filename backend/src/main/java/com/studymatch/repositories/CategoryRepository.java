@@ -6,4 +6,6 @@ import com.studymatch.models.Category;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
+  boolean existsByNameIgnoreCase(String name);
+
 }
