@@ -42,7 +42,7 @@ public class SecurityConfig {
         .cors(Customizer.withDefaults())
         .securityContext(context -> context.securityContextRepository(securityContextRepository))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
+            .requestMatchers(HttpMethod.POST, "/users/login", "/users/forgot-password", "/users/reset-password").permitAll()
             .anyRequest().authenticated())
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)

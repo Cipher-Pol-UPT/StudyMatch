@@ -170,6 +170,7 @@
     "CURRENT_PASSWORD_INCORRECT": "A palavra-passe atual está incorreta.",
     "NEW_PASSWORD_SAME_AS_CURRENT": "A nova palavra-passe tem de ser diferente da atual.",
     "PASSWORD_TOO_LONG": "Esta palavra-passe é demasiado longa. Utilize menos caracteres ou caracteres mais simples.",
+    "RESET_CODE_INVALID": "Este código é inválido ou expirou. Verifique-o ou peça um novo.",
     "INSTITUTIONAL_EMAIL_ALREADY_EXISTS": "Este email institucional já está a ser utilizado.",
     "AT_LEAST_ONE_LANGUAGE_REQUIRED": "Selecione pelo menos um idioma.",
     "INVALID_BANNER": "Utilize uma imagem JPG ou PNG com até 5 MB.",
