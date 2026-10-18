@@ -31,6 +31,7 @@ export interface StudentProfileData {
   number: number;
   name: string;
   banner: string | null;
+  pfp: string | null;
   aboutMe: string | null;
   skills: string[];
   interests: string[];
@@ -42,6 +43,7 @@ export interface StudentProfileData {
 
 export interface UpdateProfileRequest {
   banner: string | null;
+  pfp: string | null;
   aboutMe: string;
   skills: string[];
   interests: string[];

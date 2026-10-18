@@ -37,7 +37,7 @@ class UpdateProfileRequestDTOTest {
   @DisplayName("A complete profile is valid")
   void completeProfileIsValid() {
     // Arrange
-    UpdateProfileRequestDTO request = new UpdateProfileRequestDTO(null, "Test about me", Set.of("Test Skill"),
+    UpdateProfileRequestDTO request = new UpdateProfileRequestDTO(null, null, "Test about me", Set.of("Test Skill"),
         Set.of("Test Interest"), Set.of(Language.PORTUGUESE));
 
     // Act
@@ -102,7 +102,7 @@ class UpdateProfileRequestDTOTest {
   @DisplayName("A blank interest is invalid")
   void blankInterestIsInvalid() {
     // Arrange
-    UpdateProfileRequestDTO request = new UpdateProfileRequestDTO(null, null, Set.of(), Set.of(" "),
+    UpdateProfileRequestDTO request = new UpdateProfileRequestDTO(null, null, null, Set.of(), Set.of(" "),
         Set.of(Language.PORTUGUESE));
 
     // Act + Assert
@@ -113,7 +113,7 @@ class UpdateProfileRequestDTOTest {
   @DisplayName("The languages are required")
   void missingLanguagesAreInvalid() {
     // Arrange
-    UpdateProfileRequestDTO request = new UpdateProfileRequestDTO(null, null, Set.of(), Set.of(), null);
+    UpdateProfileRequestDTO request = new UpdateProfileRequestDTO(null, null, null, Set.of(), Set.of(), null);
 
     // Act + Assert
     assertOnlyViolation(request, "languages");
@@ -127,11 +127,11 @@ class UpdateProfileRequestDTOTest {
   }
 
   private static UpdateProfileRequestDTO withAboutMe(int length) {
-    return new UpdateProfileRequestDTO(null, "a".repeat(length), Set.of(), Set.of(), Set.of(Language.PORTUGUESE));
+    return new UpdateProfileRequestDTO(null, null, "a".repeat(length), Set.of(), Set.of(), Set.of(Language.PORTUGUESE));
   }
 
   private static UpdateProfileRequestDTO withSkill(String skill) {
-    return new UpdateProfileRequestDTO(null, null, Set.of(skill), Set.of(), Set.of(Language.PORTUGUESE));
+    return new UpdateProfileRequestDTO(null, null, null, Set.of(skill), Set.of(), Set.of(Language.PORTUGUESE));
   }
 
 }

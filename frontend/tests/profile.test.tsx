@@ -7,10 +7,13 @@ import type { StudentProfileData } from '../src/types/studentProfile';
 
 const BANNER = 'data:image/png;base64,iVBORw0KGgo=';
 
+const PFP = 'data:image/jpeg;base64,/9j/4AAQ';
+
 const profile: StudentProfileData = {
   number: 50001,
   name: 'Test Student',
   banner: BANNER,
+  pfp: PFP,
   aboutMe: 'Test about me',
   skills: ['Test Skill'],
   interests: ['Test Interest'],
@@ -72,6 +75,15 @@ describe('profile view', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/students/me/profile', expect.objectContaining({ method: 'GET' }));
   });
 
+  it('shows the profile photo instead of the initials', async () => {
+    mockBackend({});
+    renderProfilePage();
+
+    await screen.findByRole('heading', { name: 'Test Student' });
+
+    expect(document.querySelector(`img[src="${PFP}"]`)).toBeTruthy();
+  });
+
   it('says there is no academic history yet', async () => {
     mockBackend({
       load: [{ status: 200, body: { ...profile, privateProfile: { ...profile.privateProfile, attendance: null, hasAcademicHistory: false } } }],
@@ -92,7 +104,7 @@ describe('profile view', () => {
 });
 
 describe('edit profile', () => {
-  it('saves the changes with the current banner and shows a confirmation', async () => {
+  it('saves the changes with the current banner and profile photo and shows a confirmation', async () => {
     const saved = { ...profile, aboutMe: 'New test about me' };
     const fetchMock = mockBackend({ save: { status: 200, body: saved } });
     renderProfilePage();
@@ -109,6 +121,7 @@ describe('edit profile', () => {
       credentials: 'include',
       body: JSON.stringify({
         banner: BANNER,
+        pfp: PFP,
         aboutMe: 'New test about me',
         skills: ['Test Skill'],
         interests: ['Test Interest'],
@@ -130,6 +143,16 @@ describe('edit profile', () => {
 
   it('shows the backend message for an invalid banner', async () => {
     mockBackend({ save: { status: 400, body: { code: 'INVALID_BANNER' } } });
+    renderProfilePage();
+
+    await openEditProfile();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByText('Use a JPG or PNG image up to 5 MB.')).toBeTruthy();
+  });
+
+  it('shows the backend message for an invalid profile photo', async () => {
+    mockBackend({ save: { status: 400, body: { code: 'INVALID_PROFILE_PHOTO' } } });
     renderProfilePage();
 
     await openEditProfile();

@@ -33,7 +33,9 @@ public class Student extends User {
 
   public static final int MAX_BANNER_BYTES = 5 * 1024 * 1024;
 
-  private static final Pattern BANNER_DATA_URL = Pattern.compile("^data:image/(png|jpeg);base64,([A-Za-z0-9+/=]+)$");
+  public static final int MAX_PFP_BYTES = 5 * 1024 * 1024;
+
+  private static final Pattern IMAGE_DATA_URL = Pattern.compile("^data:image/(png|jpeg);base64,([A-Za-z0-9+/=]+)$");
 
   private static final byte[] PNG_SIGNATURE = { (byte) 0x89, 0x50, 0x4E, 0x47 };
 
@@ -61,6 +63,7 @@ public class Student extends User {
   @ElementCollection
   private Set<@NotBlank @Size(max = 50) String> interests = new HashSet<>();
 
+  @Column(columnDefinition = "TEXT")
   private String pfp;
 
   @ElementCollection
@@ -117,32 +120,32 @@ public class Student extends User {
   }
 
   public void setBanner(String banner) {
-    if (banner != null && !isValidBanner(banner)) {
+    if (banner != null && !isValidImage(banner, MAX_BANNER_BYTES)) {
       throw new StudyMatchException(ErrorCode.INVALID_BANNER);
     }
     this.banner = banner;
   }
 
-  private static boolean isValidBanner(String banner) {
-    Matcher dataUrl = BANNER_DATA_URL.matcher(banner);
+  private static boolean isValidImage(String image, int maxBytes) {
+    Matcher dataUrl = IMAGE_DATA_URL.matcher(image);
     if (!dataUrl.matches()) {
       return false;
     }
 
-    byte[] image;
+    byte[] bytes;
     try {
-      image = Base64.getDecoder().decode(dataUrl.group(2));
+      bytes = Base64.getDecoder().decode(dataUrl.group(2));
     } catch (IllegalArgumentException invalidBase64) {
       return false;
     }
 
     byte[] expectedSignature = dataUrl.group(1).equals("png") ? PNG_SIGNATURE : JPEG_SIGNATURE;
-    return image.length <= MAX_BANNER_BYTES && startsWith(image, expectedSignature);
+    return bytes.length <= maxBytes && startsWith(bytes, expectedSignature);
   }
 
-  private static boolean startsWith(byte[] image, byte[] signature) {
-    return image.length >= signature.length
-        && Arrays.equals(image, 0, signature.length, signature, 0, signature.length);
+  private static boolean startsWith(byte[] bytes, byte[] signature) {
+    return bytes.length >= signature.length
+        && Arrays.equals(bytes, 0, signature.length, signature, 0, signature.length);
   }
 
   public String getAboutMe() {
@@ -176,6 +179,9 @@ public class Student extends User {
   }
 
   public void setPfp(String pfp) {
+    if (pfp != null && !isValidImage(pfp, MAX_PFP_BYTES)) {
+      throw new StudyMatchException(ErrorCode.INVALID_PROFILE_PHOTO);
+    }
     this.pfp = pfp;
   }
 

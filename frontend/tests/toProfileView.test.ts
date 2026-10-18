@@ -6,6 +6,7 @@ const profile: StudentProfileData = {
   number: 50001,
   name: 'Test Student',
   banner: 'data:image/png;base64,iVBORw0KGgo=',
+  pfp: 'data:image/jpeg;base64,/9j/4AAQ',
   aboutMe: 'Test about me',
   skills: ['Test Skill'],
   interests: ['Test Interest'],
@@ -30,6 +31,7 @@ describe('profile view mapping', () => {
     expect(view.programme).toBe('Test Degree');
     expect(view.institutionalEmail).toBe('50001@students.test.com');
     expect(view.bannerUrl).toBe('data:image/png;base64,iVBORw0KGgo=');
+    expect(view.avatarUrl).toBe('data:image/jpeg;base64,/9j/4AAQ');
     expect(view.tutorBadges).toEqual([{ subject: 'Test Subject', rating: 4.5, ratings: 2 }]);
     expect(view.achievements).toEqual([{ id: 'FIRST_STUDYROOM', earnedAt: '2026-10-10T15:00:00' }]);
   });

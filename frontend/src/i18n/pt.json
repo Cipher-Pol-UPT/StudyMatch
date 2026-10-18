@@ -183,6 +183,7 @@
     "EMAIL_NOT_SENT": "Não foi possível enviar o email. Verifique o email pessoal e tente novamente.",
     "AT_LEAST_ONE_LANGUAGE_REQUIRED": "Selecione pelo menos um idioma.",
     "INVALID_BANNER": "Utilize uma imagem JPG ou PNG com até 5 MB.",
+    "INVALID_PROFILE_PHOTO": "Utilize uma imagem JPG ou PNG com até 5 MB.",
     "STATUTE_END_DATE_IN_PAST": "A data de fim do estatuto não pode estar no passado.",
     "SUBJECT_ALREADY_IN_DEGREE": "Esta unidade curricular já faz parte do curso.",
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Selecione pelo menos um docente.",

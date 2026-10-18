@@ -14,6 +14,7 @@ export function toProfileView(data: StudentProfileData): StudentProfile {
     programme: privateProfile?.degree ?? '',
     curricularYear: privateProfile?.curricularYear ?? 0,
     bannerUrl: data.banner,
+    avatarUrl: data.pfp,
     aboutMe: data.aboutMe ?? undefined,
     skills: data.skills,
     interests: data.interests,

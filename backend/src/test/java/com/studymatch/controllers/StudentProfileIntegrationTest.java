@@ -238,14 +238,15 @@ class StudentProfileIntegrationTest {
     mockMvc.perform(put("/students/me/profile").session(session).with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
         .content("""
-            {"banner":"%s","aboutMe":"Test about me",
+            {"banner":"%s","pfp":"%s","aboutMe":"Test about me",
              "skills":["Test Skill"],"interests":["Test Interest"],"languages":["ENGLISH"]}
-            """.formatted(PNG_BANNER)))
+            """.formatted(PNG_BANNER, PNG_BANNER)))
         .andExpect(status().isOk());
 
     // Assert
     mockMvc.perform(get("/students/me/profile").session(session))
         .andExpect(jsonPath("$.banner").value(PNG_BANNER))
+        .andExpect(jsonPath("$.pfp").value(PNG_BANNER))
         .andExpect(jsonPath("$.aboutMe").value("Test about me"))
         .andExpect(jsonPath("$.skills[0]").value("Test Skill"))
         .andExpect(jsonPath("$.interests[0]").value("Test Interest"))
@@ -272,6 +273,17 @@ class StudentProfileIntegrationTest {
         """)
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("INVALID_BANNER"));
+  }
+
+  @Test
+  @DisplayName("Editing with a GIF profile photo gets 400 INVALID_PROFILE_PHOTO")
+  void editingWithAGifProfilePhotoIsRejected() throws Exception {
+    // Act + Assert
+    editMyProfile("""
+        {"pfp":"data:image/gif;base64,R0lGODlh","skills":[],"interests":[],"languages":["ENGLISH"]}
+        """)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_PROFILE_PHOTO"));
   }
 
   @Test

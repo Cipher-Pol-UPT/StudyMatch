@@ -88,7 +88,7 @@ describe('my profile', () => {
     window.history.pushState({}, '', '/profile');
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       const body = url === '/api/users/me' ? student : {
-        number: 50001, name: 'Maria Costa', banner: null, aboutMe: null, skills: [], interests: [],
+        number: 50001, name: 'Maria Costa', banner: null, pfp: null, aboutMe: null, skills: [], interests: [],
         languages: ['PORTUGUESE'], tutorBadges: [], achievements: [], privateProfile: null,
       };
       return new Response(JSON.stringify(body), { status: 200 });

@@ -15,20 +15,20 @@ export interface EditProfileProps {
 export function EditProfile({ profile, onSaved, onCancel }: EditProfileProps) {
   const { t } = useTranslation();
   const [banner, setBanner] = useState(profile.banner);
-  const draft = { ...toProfileView(profile), bannerUrl: banner };
+  const [pfp, setPfp] = useState(profile.pfp);
+  const draft = { ...toProfileView(profile), bannerUrl: banner, avatarUrl: pfp };
 
   async function changeBanner(image: CroppedImage | null) {
-    if (image === null) {
-      setBanner(null);
-      return;
-    }
-    setBanner(await readAsDataUrl(image.blob));
-    URL.revokeObjectURL(image.url);
+    setBanner(await toDataUrl(image));
+  }
+
+  async function changePfp(image: CroppedImage | null) {
+    setPfp(await toDataUrl(image));
   }
 
   async function save(edits: ProfileEdits) {
     try {
-      onSaved(await updateMyProfile({ banner, ...edits }));
+      onSaved(await updateMyProfile({ banner, pfp, ...edits }));
     } catch (error) {
       throw isBackendError(error) ? withFieldNamesOfTheForm(error) : error;
     }
@@ -36,12 +36,27 @@ export function EditProfile({ profile, onSaved, onCancel }: EditProfileProps) {
 
   return (
     <div className="profile-edit">
-      <ProfileHeader profile={draft} viewer={{ showPrivate: true, canEdit: true }} editable onBannerChange={changeBanner} />
+      <ProfileHeader
+        profile={draft}
+        viewer={{ showPrivate: true, canEdit: true }}
+        editable
+        onAvatarChange={changePfp}
+        onBannerChange={changeBanner}
+      />
       <Card title={t('ui.edit_profile')}>
         <EditProfileForm profile={draft} onSubmit={save} onCancel={onCancel} />
       </Card>
     </div>
   );
+}
+
+async function toDataUrl(image: CroppedImage | null): Promise<string | null> {
+  if (image === null) {
+    return null;
+  }
+  const dataUrl = await readAsDataUrl(image.blob);
+  URL.revokeObjectURL(image.url);
+  return dataUrl;
 }
 
 function readAsDataUrl(image: Blob): Promise<string> {

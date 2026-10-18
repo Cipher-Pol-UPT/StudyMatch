@@ -52,7 +52,7 @@ class StudentControllerTest {
     student = ModelTestData.student("Test Student");
     ReflectionTestUtils.setField(student, "number", NUMBER);
     authentication = UsernamePasswordAuthenticationToken.authenticated(EMAIL, null, List.of());
-    profile = new StudentProfileDTO(NUMBER, "Test Student", null, null, Set.of(), Set.of(),
+    profile = new StudentProfileDTO(NUMBER, "Test Student", null, null, null, Set.of(), Set.of(),
         Set.of(Language.PORTUGUESE), List.of(), List.of(), null);
     when(userService.getByInstitutionalEmail(EMAIL)).thenReturn(student);
   }
@@ -89,7 +89,7 @@ class StudentControllerTest {
   @DisplayName("Editing my profile changes the logged in student's profile")
   void editingUsesTheLoggedInStudent() {
     // Arrange
-    UpdateProfileRequestDTO changes = new UpdateProfileRequestDTO(null, "Test about me", Set.of(), Set.of(),
+    UpdateProfileRequestDTO changes = new UpdateProfileRequestDTO(null, null, "Test about me", Set.of(), Set.of(),
         Set.of(Language.PORTUGUESE));
     when(studentService.updateProfile(NUMBER, changes)).thenReturn(profile);
 

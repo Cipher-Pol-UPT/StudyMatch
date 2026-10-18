@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record UpdateProfileRequestDTO(String banner, @Size(max = 500) String aboutMe,
+public record UpdateProfileRequestDTO(String banner, String pfp, @Size(max = 500) String aboutMe,
     @NotNull Set<@NotBlank @Size(max = 50) String> skills, @NotNull Set<@NotBlank @Size(max = 50) String> interests,
     @NotNull Set<Language> languages) {
 
