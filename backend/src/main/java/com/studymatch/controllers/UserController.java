@@ -9,10 +9,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.studymatch.dtos.ChangePasswordRequestDTO;
 import com.studymatch.dtos.CurrentUserDTO;
 import com.studymatch.dtos.LoginRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
@@ -64,6 +66,17 @@ public class UserController {
   @GetMapping("me")
   public ResponseEntity<CurrentUserDTO> me(Authentication authentication) {
     return ResponseEntity.ok(CurrentUserDTO.from(userService.getByInstitutionalEmail(authentication.getName())));
+  }
+
+  @PutMapping("change-password")
+  public ResponseEntity<CurrentUserDTO> changePassword(@Valid @RequestBody ChangePasswordRequestDTO changeRequest,
+      Authentication authentication, HttpServletRequest request) {
+    User user = userService.changePassword(authentication.getName(), changeRequest);
+
+    // new access level (the gate opens), so new session id, same as on login
+    request.changeSessionId();
+
+    return ResponseEntity.ok(CurrentUserDTO.from(user));
   }
 
 }
