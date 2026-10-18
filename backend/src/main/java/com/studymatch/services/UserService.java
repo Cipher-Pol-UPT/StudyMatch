@@ -3,14 +3,21 @@ package com.studymatch.services;
 import java.security.SecureRandom;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.ChangePasswordRequestDTO;
+import com.studymatch.dtos.CreateAccountRequestDTO;
 import com.studymatch.dtos.ResetPasswordRequestDTO;
+import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.mail.EmailSender;
+import com.studymatch.models.Staff;
+import com.studymatch.models.Teacher;
 import com.studymatch.models.User;
 import com.studymatch.repositories.UserRepository;
 import com.studymatch.security.PasswordPolicy;
@@ -20,14 +27,21 @@ public class UserService {
 
   private static final SecureRandom RANDOM = new SecureRandom();
 
+  // no 0/O or 1/l/I, people type this from an email
+  private static final String ONE_TIME_PASSWORD_CHARACTERS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  private static final int ONE_TIME_PASSWORD_LENGTH = 12;
+
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final EmailSender emailSender;
+  private final String institutionDomain;
 
-  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailSender emailSender) {
+  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailSender emailSender,
+      @Value("${studymatch.institution-domain}") String institutionDomain) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.emailSender = emailSender;
+    this.institutionDomain = institutionDomain;
   }
 
   public Optional<User> findByInstitutionalEmail(String institutionalEmail) {
@@ -37,6 +51,44 @@ public class UserService {
   public User getByInstitutionalEmail(String institutionalEmail) {
     return findByInstitutionalEmail(institutionalEmail)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  // account + email are all or nothing: if the email fails, the account is rolled back so the admin can fix it and retry
+  @Transactional
+  public User createAccount(CreateAccountRequestDTO request) {
+    if (request.type() != Role.TEACHER && request.type() != Role.STAFF) {
+      throw new StudyMatchException(ErrorCode.ACCOUNT_TYPE_NOT_ALLOWED);
+    }
+
+    String institutionalEmail = request.username() + "@" + institutionDomain;
+    if (userRepository.existsByInstitutionalEmail(institutionalEmail)) {
+      throw new StudyMatchException(ErrorCode.INSTITUTIONAL_EMAIL_ALREADY_EXISTS);
+    }
+    if (userRepository.existsByPersonalEmail(request.personalEmail())) {
+      throw new StudyMatchException(ErrorCode.PERSONAL_EMAIL_ALREADY_EXISTS);
+    }
+
+    String oneTimePassword = generateOneTimePassword();
+    String hash = passwordEncoder.encode(oneTimePassword);
+    User user = request.type() == Role.TEACHER
+        ? new Teacher(request.personalEmail(), institutionalEmail, request.name(), hash)
+        : new Staff(request.personalEmail(), institutionalEmail, request.name(), hash);
+    user = userRepository.save(user);
+
+    try {
+      emailSender.sendAccountCredentials(user.getPersonalEmail(), user.getName(), institutionalEmail, oneTimePassword);
+    } catch (MailException e) {
+      throw new StudyMatchException(ErrorCode.EMAIL_NOT_SENT);
+    }
+    return user;
+  }
+
+  private static String generateOneTimePassword() {
+    StringBuilder password = new StringBuilder(ONE_TIME_PASSWORD_LENGTH);
+    for (int i = 0; i < ONE_TIME_PASSWORD_LENGTH; i++) {
+      password.append(ONE_TIME_PASSWORD_CHARACTERS.charAt(RANDOM.nextInt(ONE_TIME_PASSWORD_CHARACTERS.length())));
+    }
+    return password.toString();
   }
 
   public User changePassword(String institutionalEmail, ChangePasswordRequestDTO request) {

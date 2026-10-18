@@ -3,6 +3,7 @@ package com.studymatch.mail;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -71,6 +72,33 @@ class EmailSenderTest {
 
     // Act + Assert
     assertDoesNotThrow(() -> emailSender.sendPasswordResetCode("ana@example.com", "123456"));
+  }
+
+  // account credentials
+
+  @Test
+  @DisplayName("The account email has the name, the institutional email and the one-time password")
+  void credentialsEmail() {
+    // Act
+    emailSender.sendAccountCredentials("ana@example.com", "Ana Test", "ana.test@test.com", "Ab3dEf7hJk9m");
+
+    // Assert
+    SimpleMailMessage message = sentMessage();
+    assertArrayEquals(new String[] { "ana@example.com" }, message.getTo());
+    assertTrue(message.getText().contains("Ana Test"));
+    assertTrue(message.getText().contains("ana.test@test.com"));
+    assertTrue(message.getText().contains("Ab3dEf7hJk9m"));
+  }
+
+  @Test
+  @DisplayName("Unlike the reset code, a failed account email is passed on so the admin finds out")
+  void failedCredentialsEmailIsPassedOn() {
+    // Arrange
+    doThrow(new MailSendException("mail server down")).when(mailSender).send(any(SimpleMailMessage.class));
+
+    // Act + Assert
+    assertThrows(MailSendException.class,
+        () -> emailSender.sendAccountCredentials("ana@example.com", "Ana Test", "ana.test@test.com", "Ab3dEf7hJk9m"));
   }
 
 }

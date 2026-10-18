@@ -16,9 +16,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
+
+import com.studymatch.dtos.CreateAccountRequestDTO;
 import com.studymatch.dtos.ErrorResponseDTO;
 import com.studymatch.dtos.FieldErrorDTO;
 import com.studymatch.dtos.LoginRequestDTO;
@@ -98,6 +104,42 @@ class GlobalExceptionHandlerTest {
     // Assert
     assertEquals(404, response.getStatusCode().value());
     assertEquals("NOT_FOUND", response.getBody().code());
+  }
+
+  // bodies that can't even be read
+
+  // what Spring throws when Jackson fails on this body
+  private static HttpMessageNotReadableException unreadable(String json) {
+    try {
+      new JsonMapper().readValue(json, CreateAccountRequestDTO.class);
+    } catch (JacksonException e) {
+      return new HttpMessageNotReadableException("unreadable", e, new MockHttpInputMessage(json.getBytes()));
+    }
+    throw new IllegalStateException("this JSON was supposed to fail");
+  }
+
+  @Test
+  @DisplayName("An unknown enum value is a field error on that field")
+  void unknownEnumValue() {
+    // Act - PRINCIPAL isn't a Role
+    ResponseEntity<ErrorResponseDTO> response = handler.handleUnreadableBody(unreadable("{\"type\":\"PRINCIPAL\"}"));
+
+    // Assert
+    assertEquals(400, response.getStatusCode().value());
+    assertEquals("VALIDATION_FAILED", response.getBody().code());
+    assertEquals(List.of(new FieldErrorDTO("type", "INVALID", Map.of())), response.getBody().fieldErrors());
+  }
+
+  @Test
+  @DisplayName("Broken JSON is VALIDATION_FAILED in our format, with no field to point at")
+  void brokenJson() {
+    // Act
+    ResponseEntity<ErrorResponseDTO> response = handler.handleUnreadableBody(unreadable("{\"type\": "));
+
+    // Assert
+    assertEquals(400, response.getStatusCode().value());
+    assertEquals("VALIDATION_FAILED", response.getBody().code());
+    assertTrue(response.getBody().fieldErrors().isEmpty());
   }
 
   // validation errors -> codes

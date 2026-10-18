@@ -1,6 +1,8 @@
 package com.studymatch.controllers;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -15,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.studymatch.dtos.ChangePasswordRequestDTO;
+import com.studymatch.dtos.CreateAccountRequestDTO;
+import com.studymatch.dtos.CreatedAccountDTO;
 import com.studymatch.dtos.CurrentUserDTO;
 import com.studymatch.dtos.ForgotPasswordRequestDTO;
 import com.studymatch.dtos.LoginRequestDTO;
@@ -63,6 +67,13 @@ public class UserController {
     securityContextRepository.saveContext(context, request, response);
 
     return ResponseEntity.ok(CurrentUserDTO.from(user));
+  }
+
+  @PostMapping
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<CreatedAccountDTO> createAccount(@Valid @RequestBody CreateAccountRequestDTO createRequest) {
+    User user = userService.createAccount(createRequest);
+    return ResponseEntity.status(HttpStatus.CREATED).body(CreatedAccountDTO.from(user));
   }
 
   @GetMapping("me")

@@ -34,6 +34,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
 
 import com.studymatch.dtos.ChangePasswordRequestDTO;
+import com.studymatch.dtos.CreateAccountRequestDTO;
+import com.studymatch.dtos.CreatedAccountDTO;
 import com.studymatch.dtos.CurrentUserDTO;
 import com.studymatch.dtos.ForgotPasswordRequestDTO;
 import com.studymatch.dtos.LoginRequestDTO;
@@ -171,6 +173,24 @@ class UserControllerTest {
     assertEquals(ErrorCode.ACCOUNT_BLOCKED, e.getCode());
     verify(securityContextRepository, never()).saveContext(any(), any(), any());
     assertNull(SecurityContextHolder.getContext().getAuthentication());
+  }
+
+  // create account
+
+  @Test
+  @DisplayName("Creating an account is 201 with the new account's data")
+  void createAccountIs201() {
+    // Arrange - @PreAuthorize isn't active without Spring, the role check is in the integration test
+    CreateAccountRequestDTO create = new CreateAccountRequestDTO(Role.TEACHER, "Test Teacher", "t@example.com", "teacher");
+    when(userService.createAccount(create)).thenReturn(teacher);
+
+    // Act
+    ResponseEntity<CreatedAccountDTO> result = controller.createAccount(create);
+
+    // Assert
+    assertEquals(201, result.getStatusCode().value());
+    assertEquals(EMAIL, result.getBody().institutionalEmail());
+    assertEquals(Role.TEACHER, result.getBody().type());
   }
 
   // current user
