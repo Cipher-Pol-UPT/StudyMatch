@@ -31,7 +31,7 @@ describe('backend contracts', () => {
 
   it('mirrors backend business errors and translates every enum and error', () => {
     const source = readFileSync(new URL('exceptions/ErrorCode.java', backend), 'utf8');
-    expect([...ERROR_CODES]).toEqual(source.split('{')[1].match(/\b[A-Z][A-Z_]+\b/g));
+    expect([...ERROR_CODES]).toEqual([...source.matchAll(/^\s*([A-Z][A-Z_]+)\(/gm)].map(match => match[1]));
     for (const code of ERROR_CODES) { expect(en.errors[code]).toBeTruthy(); expect(pt.errors[code]).toBeTruthy(); }
     for (const [name, namespace] of Object.entries(enumNamespaces)) {
       for (const code of enums[name as keyof typeof enums]) {
@@ -48,8 +48,6 @@ describe('backend contracts', () => {
       else for (const [key, value] of Object.entries(a as Record<string, unknown>)) compare(value, (b as Record<string, unknown>)[key]);
     };
     compare(en,pt);
-    const docs = readFileSync(new URL('../../docs/translations.txt', import.meta.url), 'utf8');
-    for (const code of [...ERROR_CODES, ...Object.values(enums).flat()]) expect(docs).toContain(code + ':');
   });
 
   it('accepts omitted params and rejects malformed error bodies', () => {

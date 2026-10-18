@@ -147,9 +147,37 @@
     "export": "Exportar certificado",
     "certificate": "Certificado de conquista"
   },
+  "login": {
+    "headline": "As melhores equipas começam aqui.",
+    "tagline": "O StudyMatch cria grupos equilibrados com base nas suas competências, notas e assiduidade."
+  },
+  "home": {
+    "greeting": "Olá, {{name}}."
+  },
+  "placeholder": {
+    "comingSoon": "Esta página ainda não está disponível."
+  },
   "errors": {
     "VALIDATION_FAILED": "Verifique os campos assinalados.",
+    "NOT_FOUND": "Não foi possível encontrar o que procura.",
+    "UNAUTHENTICATED": "Inicie sessão para continuar.",
+    "INVALID_CREDENTIALS": "Email ou palavra-passe incorretos.",
+    "ACCOUNT_BLOCKED": "A sua conta está bloqueada.",
+    "ACCESS_DENIED": "Não tem permissão para realizar esta ação.",
+    "CSRF_TOKEN_INVALID": "A sua sessão expirou. Atualize a página e tente novamente.",
+    "PASSWORD_CHANGE_REQUIRED": "Altere a sua palavra-passe antes de continuar.",
+    "PERSONALITY_TEST_REQUIRED": "Realize o teste de personalidade antes de continuar.",
+    "PERSONALITY_TEST_ALREADY_TAKEN": "Já realizou o teste de personalidade neste ano letivo.",
+    "CURRENT_PASSWORD_INCORRECT": "A palavra-passe atual está incorreta.",
+    "NEW_PASSWORD_SAME_AS_CURRENT": "A nova palavra-passe tem de ser diferente da atual.",
+    "PASSWORD_TOO_LONG": "Esta palavra-passe é demasiado longa. Utilize menos caracteres ou caracteres mais simples.",
+    "RESET_CODE_INVALID": "Este código é inválido ou expirou. Verifique-o ou peça um novo.",
+    "INSTITUTIONAL_EMAIL_ALREADY_EXISTS": "Este email institucional já está a ser utilizado.",
+    "PERSONAL_EMAIL_ALREADY_EXISTS": "Este email pessoal já é utilizado por outra conta.",
+    "ACCOUNT_TYPE_NOT_ALLOWED": "Só é possível criar contas de Funcionário e Docente aqui.",
+    "EMAIL_NOT_SENT": "Não foi possível enviar o email. Verifique o email pessoal e tente novamente.",
     "AT_LEAST_ONE_LANGUAGE_REQUIRED": "Selecione pelo menos um idioma.",
+    "INVALID_BANNER": "Utilize uma imagem JPG ou PNG com até 5 MB.",
     "STATUTE_END_DATE_IN_PAST": "A data de fim do estatuto não pode estar no passado.",
     "SUBJECT_ALREADY_IN_DEGREE": "Esta unidade curricular já faz parte do curso.",
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Selecione pelo menos um docente.",
@@ -209,8 +237,6 @@
     "testError": "Mostrar erros de validação de exemplo"
   },
   "ui": {
-    "better_teams_start_here": "As melhores equipas começam aqui.",
-    "studymatch_forms_balanced_groups_from_your_strengths_grades_and_a": "O StudyMatch cria grupos equilibrados com base nas suas competências, notas e assiduidade.",
     "apply": "Aplicar",
     "image_position_drag_or_use_the_arrow_keys_to_move_plus_and_minus_": "Posição da imagem. Arraste ou utilize as teclas de direção para mover e mais ou menos para ampliar.",
     "zoom_out": "Reduzir",

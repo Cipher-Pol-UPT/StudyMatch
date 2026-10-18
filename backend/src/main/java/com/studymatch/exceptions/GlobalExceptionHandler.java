@@ -6,13 +6,18 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.studymatch.dtos.ErrorResponseDTO;
 import com.studymatch.dtos.FieldErrorDTO;
+
+import tools.jackson.core.JacksonException;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -25,7 +30,32 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(StudyMatchException.class)
   public ResponseEntity<ErrorResponseDTO> handleStudyMatchException(StudyMatchException e) {
-    return ResponseEntity.badRequest().body(ErrorResponseDTO.of(e.getCode(), e.getParams()));
+    return ResponseEntity.status(e.getCode().getStatus()).body(ErrorResponseDTO.of(e.getCode(), e.getParams()));
+  }
+
+  @ExceptionHandler(AuthenticationException.class)
+  public ResponseEntity<ErrorResponseDTO> handleAuthenticationException(AuthenticationException e) {
+    ErrorCode code = ErrorCode.INVALID_CREDENTIALS;
+    return ResponseEntity.status(code.getStatus()).body(ErrorResponseDTO.of(code, Map.of()));
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ErrorResponseDTO> handleUnknownEndpoint(NoResourceFoundException e) {
+    ErrorCode code = ErrorCode.NOT_FOUND;
+    return ResponseEntity.status(code.getStatus()).body(ErrorResponseDTO.of(code, Map.of()));
+  }
+
+  // the body couldn't even be read: a wrong type (like an unknown enum value) names its field, broken JSON doesn't
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ErrorResponseDTO> handleUnreadableBody(HttpMessageNotReadableException e) {
+    List<FieldErrorDTO> fieldErrors = List.of();
+    if (e.getCause() instanceof JacksonException jackson && !jackson.getPath().isEmpty()) {
+      String field = jackson.getPath().getLast().getPropertyName();
+      if (field != null) {
+        fieldErrors = List.of(new FieldErrorDTO(field, "INVALID", Map.of()));
+      }
+    }
+    return ResponseEntity.badRequest().body(ErrorResponseDTO.validationFailed(fieldErrors));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

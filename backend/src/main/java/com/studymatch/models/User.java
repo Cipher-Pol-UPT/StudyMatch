@@ -1,6 +1,11 @@
 package com.studymatch.models;
 
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.ColumnDefault;
+
 import com.studymatch.enums.AccountStatus;
+import com.studymatch.enums.Role;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +26,9 @@ import jakarta.validation.constraints.NotNull;
 @Table(name = "users")
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class User {
+
+  public static final int RESET_CODE_VALID_MINUTES = 15;
+  public static final int MAX_RESET_ATTEMPTS = 5;
 
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
@@ -48,6 +56,14 @@ public abstract class User {
   @Enumerated(EnumType.STRING)
   @NotNull
   private AccountStatus accountStatus;
+
+  // forgot password: only the hash of the code is stored, never the code itself
+  private String resetCodeHash;
+
+  private LocalDateTime resetCodeExpiresAt;
+
+  @ColumnDefault("0")
+  private int resetCodeAttempts;
 
   protected User() {
   }
@@ -79,11 +95,8 @@ public abstract class User {
     return institutionalEmail;
   }
 
-  public void generateInstitutionalEmail(String domain) {
-    if (number == null) {
-      throw new IllegalStateException("User must be saved before generating the institutional email");
-    }
-    this.institutionalEmail = number + "@" + domain;
+  protected void setInstitutionalEmail(String institutionalEmail) {
+    this.institutionalEmail = institutionalEmail;
   }
 
   public String getName() {
@@ -117,5 +130,52 @@ public abstract class User {
   public void setAccountStatus(AccountStatus accountStatus) {
     this.accountStatus = accountStatus;
   }
+
+  public boolean isBlocked() {
+    return accountStatus == AccountStatus.BLOCKED;
+  }
+
+  public boolean requiresPersonalityTest() {
+    return false;
+  }
+
+  // a new code replaces any previous one, with a fresh time window and attempt count
+  public void startPasswordReset(String codeHash) {
+    this.resetCodeHash = codeHash;
+    this.resetCodeExpiresAt = LocalDateTime.now().plusMinutes(RESET_CODE_VALID_MINUTES);
+    this.resetCodeAttempts = 0;
+  }
+
+  public boolean hasActiveResetCode() {
+    return resetCodeHash != null && LocalDateTime.now().isBefore(resetCodeExpiresAt);
+  }
+
+  // the code is burned once the attempts run out, so it can't be guessed
+  public void registerFailedResetAttempt() {
+    resetCodeAttempts++;
+    if (resetCodeAttempts >= MAX_RESET_ATTEMPTS) {
+      clearPasswordReset();
+    }
+  }
+
+  public void clearPasswordReset() {
+    this.resetCodeHash = null;
+    this.resetCodeExpiresAt = null;
+    this.resetCodeAttempts = 0;
+  }
+
+  public String getResetCodeHash() {
+    return resetCodeHash;
+  }
+
+  public LocalDateTime getResetCodeExpiresAt() {
+    return resetCodeExpiresAt;
+  }
+
+  public int getResetCodeAttempts() {
+    return resetCodeAttempts;
+  }
+
+  public abstract Role getRole();
 
 }

@@ -147,9 +147,37 @@
     "export": "Export certificate",
     "certificate": "Achievement certificate"
   },
+  "login": {
+    "headline": "Better teams start here.",
+    "tagline": "StudyMatch forms balanced groups from your strengths, grades and attendance, so every project starts on the right foot."
+  },
+  "home": {
+    "greeting": "Hello, {{name}}."
+  },
+  "placeholder": {
+    "comingSoon": "This page is not available yet."
+  },
   "errors": {
     "VALIDATION_FAILED": "Check the highlighted fields.",
+    "NOT_FOUND": "We couldn't find what you were looking for.",
+    "UNAUTHENTICATED": "Please log in to continue.",
+    "INVALID_CREDENTIALS": "Incorrect email or password.",
+    "ACCOUNT_BLOCKED": "Your account is blocked.",
+    "ACCESS_DENIED": "You don't have permission to do this.",
+    "CSRF_TOKEN_INVALID": "Your session expired. Refresh the page and try again.",
+    "PASSWORD_CHANGE_REQUIRED": "Change your password before continuing.",
+    "PERSONALITY_TEST_REQUIRED": "Take the personality test before continuing.",
+    "PERSONALITY_TEST_ALREADY_TAKEN": "You have already taken the personality test this academic year.",
+    "CURRENT_PASSWORD_INCORRECT": "Your current password is incorrect.",
+    "NEW_PASSWORD_SAME_AS_CURRENT": "The new password must be different from the current one.",
+    "PASSWORD_TOO_LONG": "This password is too long. Use fewer or simpler characters.",
+    "RESET_CODE_INVALID": "This code is invalid or has expired. Check it or request a new one.",
+    "INSTITUTIONAL_EMAIL_ALREADY_EXISTS": "This institutional email is already in use.",
+    "PERSONAL_EMAIL_ALREADY_EXISTS": "This personal email is already used by another account.",
+    "ACCOUNT_TYPE_NOT_ALLOWED": "Only Staff and Teacher accounts can be created here.",
+    "EMAIL_NOT_SENT": "We couldn't send the email. Check the personal email and try again.",
     "AT_LEAST_ONE_LANGUAGE_REQUIRED": "Select at least one language.",
+    "INVALID_BANNER": "Use a JPG or PNG image up to 5 MB.",
     "STATUTE_END_DATE_IN_PAST": "The statute end date cannot be in the past.",
     "SUBJECT_ALREADY_IN_DEGREE": "This subject is already in the degree.",
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Select at least one teacher.",
@@ -209,8 +237,6 @@
     "testError": "Show sample validation errors"
   },
   "ui": {
-    "better_teams_start_here": "Better teams start here.",
-    "studymatch_forms_balanced_groups_from_your_strengths_grades_and_a": "StudyMatch forms balanced groups from your strengths, grades and attendance, so every project starts on the right foot.",
     "apply": "Apply",
     "image_position_drag_or_use_the_arrow_keys_to_move_plus_and_minus_": "Image position. Drag or use the arrow keys to move, plus and minus to zoom.",
     "zoom_out": "Zoom out",

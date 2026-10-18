@@ -1,16 +1,22 @@
 package com.studymatch.models;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.studymatch.enums.Language;
+import com.studymatch.enums.Role;
 import com.studymatch.enums.StatuteType;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -25,6 +31,14 @@ import jakarta.validation.constraints.Size;
 @Entity
 public class Student extends User {
 
+  public static final int MAX_BANNER_BYTES = 5 * 1024 * 1024;
+
+  private static final Pattern BANNER_DATA_URL = Pattern.compile("^data:image/(png|jpeg);base64,([A-Za-z0-9+/=]+)$");
+
+  private static final byte[] PNG_SIGNATURE = { (byte) 0x89, 0x50, 0x4E, 0x47 };
+
+  private static final byte[] JPEG_SIGNATURE = { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF };
+
   @ManyToOne
   @NotNull
   private Degree degree;
@@ -35,6 +49,7 @@ public class Student extends User {
   @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
   private PersonalityProfile personalityProfile;
 
+  @Column(columnDefinition = "TEXT")
   private String banner;
 
   @Size(max = 500)
@@ -66,6 +81,13 @@ public class Student extends User {
     this.curricularYear = curricularYear;
   }
 
+  public void generateInstitutionalEmail(String domain) {
+    if (getNumber() == null) {
+      throw new IllegalStateException("Student must be saved before generating the institutional email");
+    }
+    setInstitutionalEmail(getNumber() + "@students." + domain);
+  }
+
   public Degree getDegree() {
     return degree;
   }
@@ -95,7 +117,32 @@ public class Student extends User {
   }
 
   public void setBanner(String banner) {
+    if (banner != null && !isValidBanner(banner)) {
+      throw new StudyMatchException(ErrorCode.INVALID_BANNER);
+    }
     this.banner = banner;
+  }
+
+  private static boolean isValidBanner(String banner) {
+    Matcher dataUrl = BANNER_DATA_URL.matcher(banner);
+    if (!dataUrl.matches()) {
+      return false;
+    }
+
+    byte[] image;
+    try {
+      image = Base64.getDecoder().decode(dataUrl.group(2));
+    } catch (IllegalArgumentException invalidBase64) {
+      return false;
+    }
+
+    byte[] expectedSignature = dataUrl.group(1).equals("png") ? PNG_SIGNATURE : JPEG_SIGNATURE;
+    return image.length <= MAX_BANNER_BYTES && startsWith(image, expectedSignature);
+  }
+
+  private static boolean startsWith(byte[] image, byte[] signature) {
+    return image.length >= signature.length
+        && Arrays.equals(image, 0, signature.length, signature, 0, signature.length);
   }
 
   public String getAboutMe() {
@@ -167,6 +214,16 @@ public class Student extends User {
   public void removeStatute() {
     this.statuteType = null;
     this.statuteEndDate = null;
+  }
+
+  @Override
+  public boolean requiresPersonalityTest() {
+    return personalityProfile == null;
+  }
+
+  @Override
+  public Role getRole() {
+    return Role.STUDENT;
   }
 
 }

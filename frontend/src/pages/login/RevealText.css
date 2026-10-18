@@ -1,0 +1,15 @@
+.reveal-text__mask {
+  display: inline-block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-right: 0.25em;
+  vertical-align: top;
+}
+
+.reveal-text__mask:last-child {
+  margin-right: 0;
+}
+
+.reveal-text__word {
+  display: inline-block;
+}
