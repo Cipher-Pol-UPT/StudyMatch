@@ -14,24 +14,28 @@ export interface AuthLayoutProps {
   topRight?: ReactNode;
   footer?: ReactNode;
   embedded?: boolean;
-  centered?: boolean;
+  centerBrand?: boolean;
+  hideArt?: boolean;
+  hideFooter?: boolean;
   className?: string;
 }
 
 export function AuthLayout({
   children,
-  headline = i18n.t('login.headline'),
-  tagline = i18n.t('login.tagline'),
+  headline = i18n.t('auth.headline'),
+  tagline = i18n.t('auth.tagline'),
   art,
   topRight,
   footer,
   embedded,
-  centered,
+  centerBrand,
+  hideArt,
+  hideFooter,
   className,
 }: AuthLayoutProps) {
   useTranslation();
   return (
-    <div className={cx('sm-auth', embedded && 'sm-auth--embedded', centered && 'sm-auth--centered', className)}>
+    <div className={cx('sm-auth', embedded && 'sm-auth--embedded', centerBrand && 'sm-auth--center-brand', className)}>
       <aside className="sm-auth__brand">
         <div className="sm-auth__mesh" aria-hidden>
           <i />
@@ -45,14 +49,14 @@ export function AuthLayout({
           <h1 className="sm-auth__headline">{headline}</h1>
           {tagline && <p className="sm-auth__sub">{tagline}</p>}
         </div>
-        {!centered && (art ?? (
+        {!hideArt && (art ?? (
           <div className="sm-auth__art" aria-hidden>
             <AchievementBadge id="MENTOR" size={88} />
             <AchievementBadge id="FIRST_STUDYROOM" size={104} />
             <AchievementBadge id="TOP_RATED" size={80} />
           </div>
         ))}
-        {!centered && (
+        {!hideFooter && (
           <div className="sm-auth__foot">{footer ?? <span>© {new Date().getFullYear()} StudyMatch</span>}</div>
         )}
       </aside>

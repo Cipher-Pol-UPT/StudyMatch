@@ -10,6 +10,8 @@
     "required": "{{field}} is required."
   },
   "auth": {
+    "headline": "Better teams start here.",
+    "tagline": "StudyMatch forms balanced groups from your strengths, grades and attendance, so every project starts on the right foot.",
     "login": "Log in",
     "forgotPassword": "Forgot password?",
     "changePassword": "Change password",
@@ -146,10 +148,6 @@
     },
     "export": "Export certificate",
     "certificate": "Achievement certificate"
-  },
-  "login": {
-    "headline": "Better teams start here.",
-    "tagline": "StudyMatch forms balanced groups from your strengths, grades and attendance, so every project starts on the right foot."
   },
   "home": {
     "greeting": "Hello, {{name}}."

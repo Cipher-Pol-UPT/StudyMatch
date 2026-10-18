@@ -30,7 +30,7 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <AuthLayout centered headline={<RevealText text={t('login.headline')} />} tagline={t('login.tagline')}>
+      <AuthLayout centerBrand hideArt hideFooter headline={<RevealText text={t('auth.headline')} />}>
         <FadeIn key={accountBlocked ? 'blocked' : 'login'}>
           {accountBlocked ? (
             <BlockedNotice message={<p>{t('errors.ACCOUNT_BLOCKED')}</p>} onBack={() => setAccountBlocked(false)} />
