@@ -5,11 +5,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.studymatch.dtos.PersonalityProfileDTO;
+import com.studymatch.dtos.PersonalityTestRequestDTO;
 import com.studymatch.dtos.StudentProfileDTO;
 import com.studymatch.dtos.UpdateProfileRequestDTO;
 import com.studymatch.models.User;
@@ -49,6 +52,14 @@ public class StudentController {
   public ResponseEntity<StudentProfileDTO> getProfile(@PathVariable Long number, Authentication authentication) {
     User viewer = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(studentService.getProfile(number, viewer));
+  }
+
+  @PostMapping("personality-test")
+  @PreAuthorize("hasRole('STUDENT')")
+  public ResponseEntity<PersonalityProfileDTO> takePersonalityTest(@Valid @RequestBody PersonalityTestRequestDTO test,
+      Authentication authentication) {
+    User student = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(studentService.takePersonalityTest(student.getNumber(), test.answers()));
   }
 
 }

@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.AchievementBadgeDTO;
+import com.studymatch.dtos.PersonalityProfileDTO;
 import com.studymatch.dtos.StudentProfileDTO;
 import com.studymatch.dtos.TutorBadgeDTO;
 import com.studymatch.dtos.UpdateProfileRequestDTO;
@@ -50,6 +52,7 @@ class StudentServiceTest {
   private static final Long STAFF_NUMBER = 50004L;
   private static final Long ADMIN_NUMBER = 50005L;
   private static final String PNG_BANNER = "data:image/png;base64,iVBORw0KGgo=";
+  private static final List<Integer> NEUTRAL_ANSWERS = Collections.nCopies(PersonalityProfile.QUESTION_COUNT, 3);
 
   private StudentRepository studentRepository;
   private EnrolmentService enrolmentService;
@@ -278,6 +281,52 @@ class StudentServiceTest {
 
     // Assert
     assertEquals(ErrorCode.INVALID_BANNER, e.getCode());
+    verify(studentRepository, never()).save(any());
+  }
+
+  // personality test
+
+  @Test
+  @DisplayName("Taking the test saves the scored profile on the student")
+  void takePersonalityTestSavesProfile() {
+    // Arrange - the shared student already has a profile, this one is still new
+    student.setPersonalityProfile(null);
+    when(studentRepository.save(student)).thenReturn(student);
+
+    // Act
+    PersonalityProfileDTO result = studentService.takePersonalityTest(STUDENT_NUMBER, NEUTRAL_ANSWERS);
+
+    // Assert
+    verify(studentRepository).save(student);
+    assertEquals(new PersonalityProfileDTO(0.5, 0.5, 0.5, 0.5), result);
+    assertEquals(PersonalityProfileDTO.from(student.getPersonalityProfile()), result);
+  }
+
+  @Test
+  @DisplayName("Taking the test for an unknown student throws NOT_FOUND")
+  void takePersonalityTestUnknownStudent() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studentService.takePersonalityTest(99999L, NEUTRAL_ANSWERS));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+    verify(studentRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A student who already has a profile can't retake the test (GR1)")
+  void takePersonalityTestTwiceIsRejected() {
+    // Arrange - the shared student already took the test
+    PersonalityProfile existing = student.getPersonalityProfile();
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studentService.takePersonalityTest(STUDENT_NUMBER, NEUTRAL_ANSWERS));
+
+    // Assert - the old profile is kept untouched
+    assertEquals(ErrorCode.PERSONALITY_TEST_ALREADY_TAKEN, e.getCode());
+    assertSame(existing, student.getPersonalityProfile());
     verify(studentRepository, never()).save(any());
   }
 

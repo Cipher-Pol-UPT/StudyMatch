@@ -167,6 +167,7 @@
     "CSRF_TOKEN_INVALID": "A sua sessão expirou. Atualize a página e tente novamente.",
     "PASSWORD_CHANGE_REQUIRED": "Altere a sua palavra-passe antes de continuar.",
     "PERSONALITY_TEST_REQUIRED": "Realize o teste de personalidade antes de continuar.",
+    "PERSONALITY_TEST_ALREADY_TAKEN": "Já realizou o teste de personalidade neste ano letivo.",
     "CURRENT_PASSWORD_INCORRECT": "A palavra-passe atual está incorreta.",
     "NEW_PASSWORD_SAME_AS_CURRENT": "A nova palavra-passe tem de ser diferente da atual.",
     "PASSWORD_TOO_LONG": "Esta palavra-passe é demasiado longa. Utilize menos caracteres ou caracteres mais simples.",

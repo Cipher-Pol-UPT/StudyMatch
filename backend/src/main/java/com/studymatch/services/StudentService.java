@@ -1,5 +1,7 @@
 package com.studymatch.services;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,6 +12,7 @@ import com.studymatch.dtos.UpdateProfileRequestDTO;
 import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Student;
 import com.studymatch.models.User;
 import com.studymatch.repositories.StudentRepository;
@@ -48,6 +51,17 @@ public class StudentService {
     studentRepository.save(student);
 
     return toProfile(student, getPrivateProfile(student));
+  }
+
+  @Transactional
+  public PersonalityProfileDTO takePersonalityTest(Long studentNumber, List<Integer> answers) {
+    Student student = getByNumber(studentNumber);
+    // GR1: once per academic year, the reset comes with Start Academic Year (#66)
+    if (!student.requiresPersonalityTest()) {
+      throw new StudyMatchException(ErrorCode.PERSONALITY_TEST_ALREADY_TAKEN);
+    }
+    student.setPersonalityProfile(PersonalityProfile.fromAnswers(answers));
+    return PersonalityProfileDTO.from(studentRepository.save(student).getPersonalityProfile());
   }
 
   private Student getByNumber(Long studentNumber) {
