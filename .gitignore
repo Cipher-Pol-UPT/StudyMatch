@@ -7,9 +7,6 @@ target/
 *.tmp
 data.sql
 
-# --- Personal ---
-docs/notes.txt
-
 # --- Frontend (React / Node) ---
 node_modules/
 build/
