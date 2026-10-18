@@ -10,6 +10,8 @@
     "required": "O campo {{field}} é obrigatório."
   },
   "auth": {
+    "headline": "As melhores equipas começam aqui.",
+    "tagline": "O StudyMatch cria grupos equilibrados com base nas suas competências, notas e assiduidade.",
     "login": "Iniciar sessão",
     "forgotPassword": "Esqueceu-se da palavra-passe?",
     "changePassword": "Alterar palavra-passe",
@@ -152,10 +154,6 @@
     },
     "export": "Exportar certificado",
     "certificate": "Certificado de conquista"
-  },
-  "login": {
-    "headline": "As melhores equipas começam aqui.",
-    "tagline": "O StudyMatch cria grupos equilibrados com base nas suas competências, notas e assiduidade."
   },
   "home": {
     "greeting": "Olá, {{name}}."
