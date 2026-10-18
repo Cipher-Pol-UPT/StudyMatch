@@ -1,29 +1,33 @@
 package com.studymatch.services;
 
-import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.studymatch.dtos.ChangePasswordRequestDTO;
+import com.studymatch.dtos.ResetPasswordRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.mail.EmailSender;
 import com.studymatch.models.User;
 import com.studymatch.repositories.UserRepository;
+import com.studymatch.security.PasswordPolicy;
 
 @Service
 public class UserService {
 
-  // BCrypt only looks at the first 72 bytes and refuses to hash anything longer
-  private static final int MAX_PASSWORD_BYTES = 72;
+  private static final SecureRandom RANDOM = new SecureRandom();
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final EmailSender emailSender;
 
-  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailSender emailSender) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
+    this.emailSender = emailSender;
   }
 
   public Optional<User> findByInstitutionalEmail(String institutionalEmail) {
@@ -47,7 +51,7 @@ public class UserService {
     }
 
     String newPassword = request.newPassword();
-    if (newPassword.getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES) {
+    if (!PasswordPolicy.fitsInBcrypt(newPassword)) {
       throw new StudyMatchException(ErrorCode.PASSWORD_TOO_LONG);
     }
     if (passwordEncoder.matches(newPassword, user.getPassword())) {
@@ -57,6 +61,44 @@ public class UserService {
     user.setPassword(passwordEncoder.encode(newPassword));
     user.setMustChangePassword(false);
     return userRepository.save(user);
+  }
+
+  public void requestPasswordReset(String institutionalEmail) {
+    // hashed before knowing if the account exists, so both cases take the same time
+    String code = "%06d".formatted(RANDOM.nextInt(1_000_000));
+    String codeHash = passwordEncoder.encode(code);
+
+    Optional<User> found = findByInstitutionalEmail(institutionalEmail);
+    if (found.isEmpty() || found.get().isBlocked()) {
+      return;
+    }
+
+    User user = found.get();
+    user.startPasswordReset(codeHash);
+    userRepository.save(user);
+    // personal email on purpose: it's the recovery contact, the institutional one might need the account to read it
+    emailSender.sendPasswordResetCode(user.getPersonalEmail(), code);
+  }
+
+  public void resetPassword(ResetPasswordRequestDTO request) {
+    // unknown email, no code or an expired one all get the same answer
+    User user = findByInstitutionalEmail(request.email())
+        .filter(User::hasActiveResetCode)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.RESET_CODE_INVALID));
+
+    if (!passwordEncoder.matches(request.code(), user.getResetCodeHash())) {
+      user.registerFailedResetAttempt();
+      userRepository.save(user);
+      throw new StudyMatchException(ErrorCode.RESET_CODE_INVALID);
+    }
+    if (!PasswordPolicy.fitsInBcrypt(request.newPassword())) {
+      throw new StudyMatchException(ErrorCode.PASSWORD_TOO_LONG);
+    }
+
+    user.setPassword(passwordEncoder.encode(request.newPassword()));
+    user.setMustChangePassword(false);
+    user.clearPasswordReset();
+    userRepository.save(user);
   }
 
 }

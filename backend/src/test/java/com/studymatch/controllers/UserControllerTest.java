@@ -35,7 +35,9 @@ import org.springframework.security.web.context.SecurityContextRepository;
 
 import com.studymatch.dtos.ChangePasswordRequestDTO;
 import com.studymatch.dtos.CurrentUserDTO;
+import com.studymatch.dtos.ForgotPasswordRequestDTO;
 import com.studymatch.dtos.LoginRequestDTO;
+import com.studymatch.dtos.ResetPasswordRequestDTO;
 import com.studymatch.enums.AccountStatus;
 import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
@@ -225,6 +227,33 @@ class UserControllerTest {
 
     // Assert
     assertEquals(idBefore, request.getSession(false).getId());
+  }
+
+  // forgot password
+
+  @Test
+  @DisplayName("Asking for a code is always 204 and passes the email on")
+  void forgotPasswordIsAlways204() {
+    // Act
+    ResponseEntity<Void> result = controller.forgotPassword(new ForgotPasswordRequestDTO(EMAIL));
+
+    // Assert
+    assertEquals(204, result.getStatusCode().value());
+    verify(userService).requestPasswordReset(EMAIL);
+  }
+
+  @Test
+  @DisplayName("A successful reset is 204")
+  void resetPasswordIs204() {
+    // Arrange
+    ResetPasswordRequestDTO reset = new ResetPasswordRequestDTO(EMAIL, "123456", "NewPass123");
+
+    // Act
+    ResponseEntity<Void> result = controller.resetPassword(reset);
+
+    // Assert
+    assertEquals(204, result.getStatusCode().value());
+    verify(userService).resetPassword(reset);
   }
 
 }

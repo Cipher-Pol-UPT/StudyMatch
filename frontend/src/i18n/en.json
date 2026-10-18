@@ -170,6 +170,7 @@
     "CURRENT_PASSWORD_INCORRECT": "Your current password is incorrect.",
     "NEW_PASSWORD_SAME_AS_CURRENT": "The new password must be different from the current one.",
     "PASSWORD_TOO_LONG": "This password is too long. Use fewer or simpler characters.",
+    "RESET_CODE_INVALID": "This code is invalid or has expired. Check it or request a new one.",
     "INSTITUTIONAL_EMAIL_ALREADY_EXISTS": "This institutional email is already in use.",
     "AT_LEAST_ONE_LANGUAGE_REQUIRED": "Select at least one language.",
     "STATUTE_END_DATE_IN_PAST": "The statute end date cannot be in the past.",

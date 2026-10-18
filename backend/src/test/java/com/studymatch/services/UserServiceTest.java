@@ -4,26 +4,36 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.ChangePasswordRequestDTO;
+import com.studymatch.dtos.ResetPasswordRequestDTO;
+import com.studymatch.enums.AccountStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.mail.EmailSender;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.User;
 import com.studymatch.repositories.UserRepository;
@@ -35,15 +45,17 @@ class UserServiceTest {
 
   private UserRepository userRepository;
   private PasswordEncoder passwordEncoder;
+  private EmailSender emailSender;
   private UserService userService;
   private Teacher ana;
 
   @BeforeEach
   void setUp() {
-    // fake repository (no db), real encoder (cost 4 so it's fast), real service
+    // fake repository (no db) and fake email sender (no emails), real encoder (cost 4 so it's fast), real service
     userRepository = mock(UserRepository.class);
     passwordEncoder = new BCryptPasswordEncoder(4);
-    userService = new UserService(userRepository, passwordEncoder);
+    emailSender = mock(EmailSender.class);
+    userService = new UserService(userRepository, passwordEncoder, emailSender);
     ana = new Teacher("ana@example.com", "ana@test.com", "Ana Test", passwordEncoder.encode(CURRENT));
   }
 
@@ -202,6 +214,197 @@ class UserServiceTest {
     // Act + Assert
     assertEquals(ErrorCode.PASSWORD_TOO_LONG, changeFails(CURRENT, overLimit));
     verify(userRepository, never()).save(any());
+  }
+
+  // forgot password: asking for a code
+
+  // asks for a code for ana and grabs the one that went in the (fake) email
+  private String requestCodeForAna() {
+    userService.requestPasswordReset("ana@test.com");
+    ArgumentCaptor<String> sentCode = ArgumentCaptor.forClass(String.class);
+    verify(emailSender, atLeastOnce()).sendPasswordResetCode(eq("ana@example.com"), sentCode.capture());
+    return sentCode.getValue();
+  }
+
+  private ErrorCode resetFails(String code, String newPassword) {
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> userService.resetPassword(new ResetPasswordRequestDTO("ana@test.com", code, newPassword)));
+    return e.getCode();
+  }
+
+  @Test
+  @DisplayName("Asking for a code emails 6 digits to the personal email and only keeps their hash")
+  void requestSendsCodeToPersonalEmail() {
+    // Arrange
+    anaIsInTheSystem(false);
+
+    // Act
+    String code = requestCodeForAna();
+
+    // Assert
+    assertTrue(code.matches("\\d{6}"));
+    assertNotEquals(code, ana.getResetCodeHash());
+    assertTrue(passwordEncoder.matches(code, ana.getResetCodeHash()));
+    verify(userRepository).save(ana);
+  }
+
+  @Test
+  @DisplayName("An unknown email quietly does nothing")
+  void requestForUnknownEmail() {
+    // Act - no exception either, the controller answers 204 anyway
+    assertDoesNotThrow(() -> userService.requestPasswordReset("nobody@test.com"));
+
+    // Assert
+    verify(userRepository, never()).save(any());
+    verify(emailSender, never()).sendPasswordResetCode(any(), any());
+  }
+
+  @Test
+  @DisplayName("A blocked account gets no code")
+  void requestForBlockedAccount() {
+    // Arrange
+    anaIsInTheSystem(false);
+    ana.setAccountStatus(AccountStatus.BLOCKED);
+
+    // Act
+    userService.requestPasswordReset("ana@test.com");
+
+    // Assert
+    assertNull(ana.getResetCodeHash());
+    verify(emailSender, never()).sendPasswordResetCode(any(), any());
+  }
+
+  @Test
+  @DisplayName("Asking again replaces the old code")
+  void newCodeReplacesOldOne() {
+    // Arrange
+    anaIsInTheSystem(false);
+    String firstCode = requestCodeForAna();
+    String secondCode = requestCodeForAna();
+    assumeFalse(firstCode.equals(secondCode)); // 1 in a million they're the same, then this test can't say anything
+
+    // Act + Assert - the first one is dead, the second one works
+    assertEquals(ErrorCode.RESET_CODE_INVALID, resetFails(firstCode, NEW));
+    assertDoesNotThrow(() -> userService.resetPassword(new ResetPasswordRequestDTO("ana@test.com", secondCode, NEW)));
+  }
+
+  // forgot password: using the code
+
+  @Test
+  @DisplayName("The right code sets the new password, uses the code up and drops the forced change")
+  void resetWithRightCode() {
+    // Arrange - even someone still on the one-time password can do this
+    anaIsInTheSystem(true);
+    String code = requestCodeForAna();
+
+    // Act
+    userService.resetPassword(new ResetPasswordRequestDTO("ana@test.com", code, NEW));
+
+    // Assert
+    assertTrue(passwordEncoder.matches(NEW, ana.getPassword()));
+    assertFalse(ana.isMustChangePassword());
+    assertNull(ana.getResetCodeHash());
+  }
+
+  @Test
+  @DisplayName("A code only works once")
+  void codeCannotBeReused() {
+    // Arrange
+    anaIsInTheSystem(false);
+    String code = requestCodeForAna();
+    userService.resetPassword(new ResetPasswordRequestDTO("ana@test.com", code, NEW));
+
+    // Act + Assert
+    assertEquals(ErrorCode.RESET_CODE_INVALID, resetFails(code, "Another123"));
+  }
+
+  @Test
+  @DisplayName("A wrong code counts as an attempt and changes nothing")
+  void wrongCodeCountsAttempt() {
+    // Arrange
+    anaIsInTheSystem(false);
+    String code = requestCodeForAna();
+    String hashBefore = ana.getPassword();
+    String wrongCode = code.equals("000000") ? "111111" : "000000";
+
+    // Act
+    ErrorCode result = resetFails(wrongCode, NEW);
+
+    // Assert
+    assertEquals(ErrorCode.RESET_CODE_INVALID, result);
+    assertEquals(1, ana.getResetCodeAttempts());
+    assertEquals(hashBefore, ana.getPassword());
+  }
+
+  @Test
+  @DisplayName("After 4 wrong tries the right code still works (boundary: 4)")
+  void fourWrongTriesStillAllowed() {
+    // Arrange
+    anaIsInTheSystem(false);
+    String code = requestCodeForAna();
+    String wrongCode = code.equals("000000") ? "111111" : "000000";
+    for (int i = 0; i < User.MAX_RESET_ATTEMPTS - 1; i++) {
+      resetFails(wrongCode, NEW);
+    }
+
+    // Act + Assert
+    assertDoesNotThrow(() -> userService.resetPassword(new ResetPasswordRequestDTO("ana@test.com", code, NEW)));
+  }
+
+  @Test
+  @DisplayName("After 5 wrong tries even the right code is refused (boundary: 5)")
+  void fiveWrongTriesBurnTheCode() {
+    // Arrange
+    anaIsInTheSystem(false);
+    String code = requestCodeForAna();
+    String wrongCode = code.equals("000000") ? "111111" : "000000";
+    for (int i = 0; i < User.MAX_RESET_ATTEMPTS; i++) {
+      resetFails(wrongCode, NEW);
+    }
+
+    // Act + Assert
+    assertEquals(ErrorCode.RESET_CODE_INVALID, resetFails(code, NEW));
+  }
+
+  @Test
+  @DisplayName("An expired code is refused even if it's right")
+  void expiredCode() {
+    // Arrange - pretend the code was asked for a while ago
+    anaIsInTheSystem(false);
+    String code = requestCodeForAna();
+    ReflectionTestUtils.setField(ana, "resetCodeExpiresAt", LocalDateTime.now().minusMinutes(1));
+
+    // Act + Assert
+    assertEquals(ErrorCode.RESET_CODE_INVALID, resetFails(code, NEW));
+  }
+
+  @Test
+  @DisplayName("Without asking for a code first, any code is refused")
+  void noCodeRequested() {
+    // Arrange
+    anaIsInTheSystem(false);
+
+    // Act + Assert
+    assertEquals(ErrorCode.RESET_CODE_INVALID, resetFails("123456", NEW));
+  }
+
+  @Test
+  @DisplayName("An unknown email gets the same answer as a wrong code")
+  void resetForUnknownEmail() {
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> userService.resetPassword(new ResetPasswordRequestDTO("nobody@test.com", "123456", NEW)));
+    assertEquals(ErrorCode.RESET_CODE_INVALID, e.getCode());
+  }
+
+  @Test
+  @DisplayName("The right code with a password over 72 bytes is PASSWORD_TOO_LONG")
+  void resetWithTooLongPassword() {
+    // Arrange
+    anaIsInTheSystem(false);
+    String code = requestCodeForAna();
+
+    // Act + Assert
+    assertEquals(ErrorCode.PASSWORD_TOO_LONG, resetFails(code, "é".repeat(36) + "1"));
   }
 
 }
