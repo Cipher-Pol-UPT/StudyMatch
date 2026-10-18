@@ -135,6 +135,13 @@
 .sm-edit-profile__locked dt { font-size: 12px; color: var(--sm-text-3); }
 .sm-edit-profile__locked dd { margin: 2px 0 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; }
 .sm-edit-profile__fields { display: flex; flex-direction: column; gap: 16px; }
+.sm-edit-profile__form { display: flex; flex-direction: column; gap: 20px; font-family: var(--sm-font); }
+.sm-edit-profile__languages { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.sm-edit-profile__legend { padding: 0 4px; margin-bottom: 10px; font-size: 13px; color: var(--sm-text-2); }
+.sm-edit-profile__languages--error .sm-edit-profile__legend,
+.sm-edit-profile__error { color: var(--sm-danger-ink); }
+.sm-edit-profile__error { margin: 0; padding: 0 4px; font-size: 13px; line-height: 1.35; }
+.sm-edit-profile__actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .sm-edit-profile__bar {
   position: sticky;
   bottom: 12px;
@@ -165,5 +172,6 @@
   .sm-banner-cover__tools .sm-btn__label { display: none; }
   .sm-edit-profile__locked { grid-template-columns: minmax(0, 1fr); }
   .sm-edit-profile__bar { border-radius: 20px; }
+  .sm-edit-profile__actions .sm-btn { flex: 1; }
   .sm-profile-academic { flex-direction: column; align-items: stretch; }
 }
