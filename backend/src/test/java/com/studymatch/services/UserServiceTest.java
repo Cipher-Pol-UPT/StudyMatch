@@ -3,6 +3,7 @@ package com.studymatch.services;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -12,6 +13,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -23,17 +25,23 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
+import org.springframework.mail.MailSendException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.ChangePasswordRequestDTO;
+import com.studymatch.dtos.CreateAccountRequestDTO;
 import com.studymatch.dtos.ResetPasswordRequestDTO;
 import com.studymatch.enums.AccountStatus;
+import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.mail.EmailSender;
+import com.studymatch.models.Staff;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.User;
 import com.studymatch.repositories.UserRepository;
@@ -55,7 +63,7 @@ class UserServiceTest {
     userRepository = mock(UserRepository.class);
     passwordEncoder = new BCryptPasswordEncoder(4);
     emailSender = mock(EmailSender.class);
-    userService = new UserService(userRepository, passwordEncoder, emailSender);
+    userService = new UserService(userRepository, passwordEncoder, emailSender, "test.com");
     ana = new Teacher("ana@example.com", "ana@test.com", "Ana Test", passwordEncoder.encode(CURRENT));
   }
 
@@ -99,6 +107,123 @@ class UserServiceTest {
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // create account
+
+  private static final CreateAccountRequestDTO NEW_TEACHER =
+      new CreateAccountRequestDTO(Role.TEACHER, "Test Teacher", "new.teacher@example.com", "new.teacher");
+
+  // saving gives back whatever was saved (like the real repository does)
+  private void savingWorks() {
+    when(userRepository.save(any(User.class))).thenAnswer(call -> call.getArgument(0));
+  }
+
+  // the one-time password that went in the (fake) email
+  private String sentOneTimePassword() {
+    ArgumentCaptor<String> password = ArgumentCaptor.forClass(String.class);
+    verify(emailSender, atLeastOnce()).sendAccountCredentials(any(), any(), any(), password.capture());
+    return password.getValue();
+  }
+
+  private ErrorCode createFails(CreateAccountRequestDTO request) {
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> userService.createAccount(request));
+    return e.getCode();
+  }
+
+  @Test
+  @DisplayName("A new Teacher gets username@domain, a hashed one-time password and has to change it")
+  void createTeacher() {
+    // Arrange
+    savingWorks();
+
+    // Act
+    User created = userService.createAccount(NEW_TEACHER);
+
+    // Assert
+    assertInstanceOf(Teacher.class, created);
+    assertEquals("new.teacher@test.com", created.getInstitutionalEmail());
+    assertTrue(created.isMustChangePassword());
+    assertTrue(passwordEncoder.matches(sentOneTimePassword(), created.getPassword()));
+    verify(emailSender).sendAccountCredentials(eq("new.teacher@example.com"), eq("Test Teacher"),
+        eq("new.teacher@test.com"), any());
+  }
+
+  @Test
+  @DisplayName("Choosing STAFF creates a Staff account")
+  void createStaff() {
+    // Arrange
+    savingWorks();
+
+    // Act
+    User created = userService.createAccount(
+        new CreateAccountRequestDTO(Role.STAFF, "Test Staff", "new.staff@example.com", "new.staff"));
+
+    // Assert
+    assertInstanceOf(Staff.class, created);
+  }
+
+  @ParameterizedTest(name = "{0} can't be created here")
+  @EnumSource(value = Role.class, names = { "ADMIN", "STUDENT" })
+  @DisplayName("Admin and Student accounts can't be created here")
+  void otherTypesNotAllowed(Role type) {
+    // Act
+    ErrorCode code = createFails(new CreateAccountRequestDTO(type, "Test User", "someone@example.com", "someone"));
+
+    // Assert
+    assertEquals(ErrorCode.ACCOUNT_TYPE_NOT_ALLOWED, code);
+    verify(userRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("An institutional email that's taken is refused")
+  void institutionalEmailTaken() {
+    // Arrange
+    when(userRepository.existsByInstitutionalEmail("new.teacher@test.com")).thenReturn(true);
+
+    // Act + Assert
+    assertEquals(ErrorCode.INSTITUTIONAL_EMAIL_ALREADY_EXISTS, createFails(NEW_TEACHER));
+    verify(userRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A personal email that's taken is refused")
+  void personalEmailTaken() {
+    // Arrange
+    when(userRepository.existsByPersonalEmail("new.teacher@example.com")).thenReturn(true);
+
+    // Act + Assert
+    assertEquals(ErrorCode.PERSONAL_EMAIL_ALREADY_EXISTS, createFails(NEW_TEACHER));
+    verify(userRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("If the email can't be sent the admin gets EMAIL_NOT_SENT")
+  void emailNotSent() {
+    // Arrange - the rollback itself is checked in the integration test, there's no db here
+    savingWorks();
+    doThrow(new MailSendException("mail server down"))
+        .when(emailSender).sendAccountCredentials(any(), any(), any(), any());
+
+    // Act + Assert
+    assertEquals(ErrorCode.EMAIL_NOT_SENT, createFails(NEW_TEACHER));
+  }
+
+  @Test
+  @DisplayName("The one-time password is 12 easy-to-read characters and different every time")
+  void oneTimePasswordFormat() {
+    // Arrange
+    savingWorks();
+
+    // Act - two accounts
+    userService.createAccount(NEW_TEACHER);
+    String first = sentOneTimePassword();
+    userService.createAccount(new CreateAccountRequestDTO(Role.STAFF, "Test Staff", "new.staff@example.com", "new.staff"));
+    String second = sentOneTimePassword();
+
+    // Assert - no 0, O, 1, l, I, i, o
+    assertTrue(first.matches("[A-HJ-NP-Za-hjkmnp-z2-9]{12}"));
+    assertNotEquals(first, second);
   }
 
   // change password

@@ -53,4 +53,31 @@ public class EmailSender {
     }
   }
 
+  // not async and not silent: the admin is waiting and has to know if it failed
+  public void sendAccountCredentials(String to, String name, String institutionalEmail, String oneTimePassword) {
+    SimpleMailMessage message = new SimpleMailMessage();
+    message.setFrom(from);
+    message.setTo(to);
+    message.setSubject("StudyMatch - A sua conta / Your account");
+    message.setText("""
+        Olá %1$s,
+
+        Foi criada uma conta StudyMatch para si.
+        Email institucional: %2$s
+        Palavra-passe temporária: %3$s
+        No primeiro início de sessão vai ter de escolher uma nova palavra-passe.
+
+        ---
+
+        Hello %1$s,
+
+        A StudyMatch account was created for you.
+        Institutional email: %2$s
+        Temporary password: %3$s
+        You'll be asked to choose a new password the first time you log in.
+        """.formatted(name, institutionalEmail, oneTimePassword));
+
+    mailSender.send(message);
+  }
+
 }
