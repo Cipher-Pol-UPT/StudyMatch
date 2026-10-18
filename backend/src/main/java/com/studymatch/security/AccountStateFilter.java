@@ -23,11 +23,11 @@ public class AccountStateFilter extends OncePerRequestFilter {
 
   private static final Set<String> ALLOWED_BEFORE_PASSWORD_CHANGE = Set.of(
       "GET /users/me",
-      "PUT /users/password");
+      "PUT /users/change-password");
 
   private static final Set<String> ALLOWED_BEFORE_PERSONALITY_TEST = Set.of(
       "GET /users/me",
-      "PUT /users/password",
+      "PUT /users/change-password",
       "POST /students/personality-test");
 
   private final UserService userService;
