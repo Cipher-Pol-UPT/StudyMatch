@@ -30,7 +30,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.studymatch.mail.EmailSender;
+import com.studymatch.utils.EmailSender;
 import com.studymatch.models.Admin;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Teacher;

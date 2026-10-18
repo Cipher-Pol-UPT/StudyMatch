@@ -62,7 +62,7 @@ class StudyMatchUserDetailsServiceTest {
   @DisplayName("The role comes from the user type")
   void studentGetsStudentRole() {
     // Arrange
-    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree"), 1);
+    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree", 3), 1);
     ReflectionTestUtils.setField(student, "number", 50003L);
     student.generateInstitutionalEmail("test.com");
     when(userService.findByInstitutionalEmail("50003@students.test.com")).thenReturn(Optional.of(student));

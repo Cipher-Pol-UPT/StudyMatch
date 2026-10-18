@@ -60,7 +60,7 @@ class PersonalityTestIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    Degree degree = degreeRepository.save(new Degree("Integration Test Degree"));
+    Degree degree = degreeRepository.save(new Degree("Integration Test Degree", 3));
     student = new Student("student.it@example.com", "Test Student", passwordEncoder.encode(PASSWORD), degree, 1);
     student.setMustChangePassword(false);
     student = studentRepository.save(student);

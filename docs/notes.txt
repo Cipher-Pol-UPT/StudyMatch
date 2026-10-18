@@ -178,6 +178,8 @@ AcademicYear
 
 Degree
 - + name.
+- + years (1 to 6, Register Student #9): number of curricular years, can't change after creation.
+  Method hasYear(curricularYear) checks a Student's year exists in the degree.
 
 Subject
 - cod -> code. Keep name, ects (whole number).

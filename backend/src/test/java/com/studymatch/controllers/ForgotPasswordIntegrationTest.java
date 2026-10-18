@@ -25,7 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.studymatch.mail.EmailSender;
+import com.studymatch.utils.EmailSender;
 import com.studymatch.models.Teacher;
 import com.studymatch.repositories.TeacherRepository;
 

@@ -19,6 +19,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import tools.jackson.core.JacksonException;
@@ -106,6 +108,30 @@ class GlobalExceptionHandlerTest {
     assertEquals("NOT_FOUND", response.getBody().code());
   }
 
+  // uploads
+
+  @Test
+  @DisplayName("A file over the upload limit is 413 FILE_TOO_LARGE")
+  void fileTooLarge() {
+    // Act - MockMvc doesn't enforce the limit, so the handler is called directly
+    ResponseEntity<ErrorResponseDTO> response = handler.handleFileTooLarge(new MaxUploadSizeExceededException(1024 * 1024));
+
+    // Assert
+    assertEquals(413, response.getStatusCode().value());
+    assertEquals("FILE_TOO_LARGE", response.getBody().code());
+  }
+
+  @Test
+  @DisplayName("An upload without the file is a field error on that part")
+  void missingFile() {
+    // Act
+    ResponseEntity<ErrorResponseDTO> response = handler.handleMissingFile(new MissingServletRequestPartException("file"));
+
+    // Assert
+    assertEquals(400, response.getStatusCode().value());
+    assertEquals(List.of(new FieldErrorDTO("file", "NOT_NULL", Map.of())), response.getBody().fieldErrors());
+  }
+
   // bodies that can't even be read
 
   // what Spring throws when Jackson fails on this body
@@ -165,7 +191,7 @@ class GlobalExceptionHandlerTest {
   @DisplayName("About me with exactly 500 characters is fine")
   void aboutMeAtLimitIsValid() {
     // Arrange
-    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree"), 1);
+    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree", 3), 1);
     student.setAboutMe("a".repeat(500));
 
     // Act + Assert
@@ -176,7 +202,7 @@ class GlobalExceptionHandlerTest {
   @DisplayName("About me with 501 characters gives SIZE_MAX with only the max")
   void aboutMeOverLimitIsSizeMax() {
     // Arrange
-    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree"), 1);
+    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree", 3), 1);
     student.setAboutMe("a".repeat(501));
     Set<ConstraintViolation<Student>> violations = validator.validateProperty(student, "aboutMe");
 

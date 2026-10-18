@@ -40,7 +40,7 @@ import com.studymatch.enums.AccountStatus;
 import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
-import com.studymatch.mail.EmailSender;
+import com.studymatch.utils.EmailSender;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.User;

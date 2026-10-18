@@ -40,7 +40,7 @@ class SubjectTest {
   @DisplayName("The same subject can be in two degrees with different years")
   void subjectCanBelongToSeveralDegrees() {
     // Arrange
-    Degree otherDegree = new Degree("Other Test Degree");
+    Degree otherDegree = new Degree("Other Test Degree", 3);
 
     // Act
     subject.addDegree(degree, 1, 1);
@@ -67,7 +67,7 @@ class SubjectTest {
   @DisplayName("Removing a degree only removes that degree")
   void removeDegreeKeepsTheOthers() {
     // Arrange
-    Degree otherDegree = new Degree("Other Test Degree");
+    Degree otherDegree = new Degree("Other Test Degree", 3);
     subject.addDegree(degree, 1, 1);
     subject.addDegree(otherDegree, 1, 1);
 
