@@ -171,7 +171,7 @@ class AccountStateFilterTest {
   }
 
   @ParameterizedTest(name = "{0} {1} is allowed")
-  @CsvSource({ "GET, /users/me", "PUT, /users/password" })
+  @CsvSource({ "GET, /users/me", "PUT, /users/change-password" })
   @DisplayName("Must change password: only /users/me and the password change are allowed")
   void passwordGateAllowsItsEndpoints(String method, String path) throws Exception {
     // Arrange
@@ -206,7 +206,7 @@ class AccountStateFilterTest {
     logInAs(new Teacher("t@example.com", EMAIL, "Test Teacher", "hash"));
 
     // Act - right path, wrong method
-    runFilter("GET", "/users/password");
+    runFilter("GET", "/users/change-password");
 
     // Assert
     assertEquals(403, response.getStatus());
@@ -231,7 +231,7 @@ class AccountStateFilterTest {
   }
 
   @ParameterizedTest(name = "{0} {1} is allowed")
-  @CsvSource({ "GET, /users/me", "PUT, /users/password", "POST, /students/personality-test" })
+  @CsvSource({ "GET, /users/me", "PUT, /users/change-password", "POST, /students/personality-test" })
   @DisplayName("Student without the test: /users/me, password change and the test are allowed")
   void personalityGateAllowsItsEndpoints(String method, String path) throws Exception {
     // Arrange
