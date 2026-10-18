@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.studymatch.dtos.PersonalityProfileDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Student;
 import com.studymatch.repositories.StudentRepository;
 
@@ -15,18 +16,20 @@ import com.studymatch.repositories.StudentRepository;
 public class StudentService {
 
   private final StudentRepository studentRepository;
-  private final PersonalityTestService personalityTestService;
 
-  public StudentService(StudentRepository studentRepository, PersonalityTestService personalityTestService) {
+  public StudentService(StudentRepository studentRepository) {
     this.studentRepository = studentRepository;
-    this.personalityTestService = personalityTestService;
   }
 
   @Transactional
-  public PersonalityProfileDTO takePersonalityTest(Long number, List<Integer> answers) {
-    Student student = studentRepository.findById(number)
+  public PersonalityProfileDTO takePersonalityTest(Long studentNumber, List<Integer> answers) {
+    Student student = studentRepository.findById(studentNumber)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
-    student.setPersonalityProfile(personalityTestService.score(answers));
+    // GR1: once per academic year, the reset comes with Start Academic Year (#66)
+    if (!student.requiresPersonalityTest()) {
+      throw new StudyMatchException(ErrorCode.PERSONALITY_TEST_ALREADY_TAKEN);
+    }
+    student.setPersonalityProfile(PersonalityProfile.fromAnswers(answers));
     return PersonalityProfileDTO.from(studentRepository.save(student).getPersonalityProfile());
   }
 

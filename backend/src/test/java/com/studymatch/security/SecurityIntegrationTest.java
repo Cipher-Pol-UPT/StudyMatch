@@ -229,9 +229,11 @@ class SecurityIntegrationTest {
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("PERSONALITY_TEST_REQUIRED"));
 
-    // gets past the gate; 404 only because the endpoint isn't built yet (#6), update this when it is
-    mockMvc.perform(post("/students/personality-test").with(csrf()).session(session))
-        .andExpect(status().isNotFound());
+    // the test itself gets through the gate
+    mockMvc.perform(post("/students/personality-test").with(csrf()).session(session)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"answers\":[3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]}"))
+        .andExpect(status().isOk());
   }
 
   // logout + misc
