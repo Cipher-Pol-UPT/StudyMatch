@@ -1,5 +1,7 @@
 package com.studymatch.services;
 
+import java.util.List;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +33,15 @@ public class CategoryService {
     } catch (DataIntegrityViolationException e) {
       throw new StudyMatchException(ErrorCode.CATEGORY_ALREADY_EXISTS);
     }
+  }
+
+  public List<Category> listCategories() {
+    return categoryRepository.findAllByOrderByNameAsc();
+  }
+
+  public Category getCategory(Long id) {
+    return categoryRepository.findById(id)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
   }
 
 }

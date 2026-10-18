@@ -8,6 +8,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -84,6 +87,51 @@ class CategoryServiceTest {
 
     // Assert
     assertEquals(ErrorCode.CATEGORY_ALREADY_EXISTS, e.getCode());
+  }
+
+  // list categories
+
+  @Test
+  @DisplayName("Listing returns the categories in the order the repository sorted them (by name)")
+  void listReturnsSortedCategories() {
+    // Arrange
+    List<Category> sorted = List.of(new Category("Algorithms"), new Category("Mathematics"));
+    when(categoryRepository.findAllByOrderByNameAsc()).thenReturn(sorted);
+
+    // Act
+    List<Category> result = categoryService.listCategories();
+
+    // Assert
+    assertEquals(sorted, result);
+  }
+
+  // get one category
+
+  @Test
+  @DisplayName("Getting a category by id returns it")
+  void getCategoryById() {
+    // Arrange
+    Category mathematics = new Category("Mathematics");
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(mathematics));
+
+    // Act
+    Category result = categoryService.getCategory(1L);
+
+    // Assert
+    assertEquals(mathematics, result);
+  }
+
+  @Test
+  @DisplayName("An id with no category gets NOT_FOUND")
+  void unknownIdIsNotFound() {
+    // Arrange
+    when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> categoryService.getCategory(99L));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
   }
 
 }
