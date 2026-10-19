@@ -48,7 +48,7 @@ export function DomainStatus({ status, size }: { status: keyof typeof DOMAIN_STA
   );
 }
 
-export type ProfileKey = 'leadership' | 'technical' | 'creativity' | 'execution';
+export type ProfileKey = 'leadership' | 'problemSolving' | 'creativity' | 'execution';
 
 export interface ProfileTagProps {
   profile: ProfileKey;
