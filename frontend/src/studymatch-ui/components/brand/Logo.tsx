@@ -10,7 +10,7 @@ export interface MarkProps {
   animate?: boolean;
 }
 
-export function Mark({ size = 40, bg = '#000', dots = ['#7a70ff', '#2a9fd6', '#eb6834', '#1baf7a'], animate }: MarkProps) {
+export function Mark({ size = 40, bg = 'var(--sm-inverse)', dots = ['#7a70ff', '#2a9fd6', '#eb6834', '#1baf7a'], animate }: MarkProps) {
   useTranslation();
   return (
     <motion.span
@@ -37,8 +37,8 @@ export interface LogoProps {
 export function Logo({ size = 32, inverted, markOnly, animate }: LogoProps) {
   useTranslation();
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: size * 0.32, fontFamily: 'var(--sm-font)', color: inverted ? '#fff' : '#000' }}>
-      <Mark size={size} bg={inverted ? '#fff' : '#000'} animate={animate} />
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: size * 0.32, fontFamily: 'var(--sm-font)', color: inverted ? 'var(--sm-white)' : 'var(--sm-text)' }}>
+      <Mark size={size} bg={inverted ? 'var(--sm-white)' : 'var(--sm-inverse)'} animate={animate} />
       {!markOnly && <span style={{ fontSize: size * 0.56, fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1 }}>StudyMatch</span>}
     </span>
   );

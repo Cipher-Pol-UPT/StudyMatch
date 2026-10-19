@@ -1,8 +1,8 @@
-.sm-cal { width: 100%; max-width: 360px; padding: 18px; border-radius: var(--sm-r-lg); background: var(--sm-white); box-shadow: var(--sm-shadow-sm); font-family: var(--sm-font); }
+.sm-cal { width: 100%; max-width: 360px; padding: 18px; border-radius: var(--sm-r-lg); background: var(--sm-surface); box-shadow: var(--sm-shadow-sm); font-family: var(--sm-font); }
 .sm-cal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-left: 6px; }
 .sm-cal__title { font-size: 17px; font-weight: 500; letter-spacing: -0.01em; text-transform: capitalize; }
 .sm-cal__nav { display: flex; gap: 4px; }
-.sm-cal__nav button { width: 36px; height: 36px; border: 0; border-radius: 50%; display: grid; place-items: center; background: var(--sm-fill); cursor: pointer; color: var(--sm-black); }
+.sm-cal__nav button { width: 36px; height: 36px; border: 0; border-radius: 50%; display: grid; place-items: center; background: var(--sm-fill); cursor: pointer; color: var(--sm-text); }
 .sm-cal__nav button:hover { background: var(--sm-fill-hover); }
 .sm-cal__nav button:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-cal__grid { display: grid; gap: 2px; }
@@ -18,7 +18,7 @@
   background: transparent;
   font: 400 15px var(--sm-font);
   font-variant-numeric: tabular-nums;
-  color: var(--sm-black);
+  color: var(--sm-text);
   cursor: pointer;
   transition: background var(--sm-dur-1), transform var(--sm-dur-2) var(--sm-ease-punch);
 }
@@ -27,7 +27,7 @@
 .sm-cal__day:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-cal__day[data-outside='true'] { color: var(--sm-text-3); }
 .sm-cal__day[data-today='true'] { font-weight: 600; color: var(--sm-violet); }
-.sm-cal__day[data-selected='true'] { background: var(--sm-violet); color: var(--sm-white); box-shadow: var(--sm-shadow-violet); }
+.sm-cal__day[data-selected='true'] { background: var(--sm-violet); color: var(--sm-on-accent); box-shadow: var(--sm-shadow-violet); }
 .sm-cal__day:disabled { opacity: 0.3; cursor: not-allowed; }
 .sm-cal__dots { position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); display: flex; gap: 2px; }
 .sm-cal__dots i { width: 4px; height: 4px; border-radius: 50%; }

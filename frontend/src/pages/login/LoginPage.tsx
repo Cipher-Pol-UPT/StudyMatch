@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { login } from '../../api/auth';
 import { isBackendError } from '../../api/errors';
-import { AuthLayout, BlockedNotice, LoginForm, useToast } from '../../studymatch-ui';
+import { AuthLayout, BlockedNotice, LoginForm, ThemeSwitcher, useToast } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import type { LoginInput } from '../../types/forms';
 import { ForgotPassword } from './ForgotPassword';
@@ -39,7 +39,7 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <AuthLayout centerBrand hideArt hideFooter headline={<RevealText text={t('auth.headline')} />}>
+      <AuthLayout centerBrand hideArt hideFooter topRight={<ThemeSwitcher />} headline={<RevealText text={t('auth.headline')} />}>
         <FadeIn key={view}>
           {view === 'accountBlocked' && (
             <BlockedNotice message={<p>{t('errors.ACCOUNT_BLOCKED')}</p>} onBack={() => setView('login')} />

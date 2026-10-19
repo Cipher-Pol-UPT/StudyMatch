@@ -144,7 +144,7 @@ export function Calendar({ value, onValueChange, events = [], min, max, weekStar
                     {evs.length > 0 && (
                       <span className="sm-cal__dots" aria-hidden>
                         {evs.slice(0, 3).map((ev, i) => (
-                          <i key={i} style={{ background: selected ? '#fff' : (ev.color ?? 'var(--sm-violet)') }} />
+                          <i key={i} style={{ background: selected ? 'var(--sm-on-accent)' : (ev.color ?? 'var(--sm-violet)') }} />
                         ))}
                       </span>
                     )}

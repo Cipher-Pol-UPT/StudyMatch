@@ -20,8 +20,8 @@ button.sm-steps__btn:focus-visible { outline: none; box-shadow: var(--sm-focus-r
   color: var(--sm-text-2);
   transition: background var(--sm-dur-2), color var(--sm-dur-2), box-shadow var(--sm-dur-2);
 }
-.sm-steps__item[data-state='current'] .sm-steps__dot { background: var(--sm-violet); color: var(--sm-white); box-shadow: 0 0 0 4px var(--sm-violet-100); }
-.sm-steps__item[data-state='done'] .sm-steps__dot { background: var(--sm-violet); color: var(--sm-white); }
+.sm-steps__item[data-state='current'] .sm-steps__dot { background: var(--sm-violet); color: var(--sm-on-accent); box-shadow: 0 0 0 4px var(--sm-violet-100); }
+.sm-steps__item[data-state='done'] .sm-steps__dot { background: var(--sm-violet); color: var(--sm-on-accent); }
 .sm-steps__text { display: flex; flex-direction: column; min-width: 0; }
 .sm-steps__label { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sm-steps__item[data-state='todo'] .sm-steps__label { color: var(--sm-text-3); }

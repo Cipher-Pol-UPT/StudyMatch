@@ -15,10 +15,10 @@
 .sm-banner__close:hover { opacity: 1; background: rgba(0, 0, 0, 0.06); }
 .sm-banner__close:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-banner--info { background: var(--sm-violet-50); color: var(--sm-violet-ink); }
-.sm-banner--success { background: var(--sm-success-50); color: #006b34; }
+.sm-banner--success { background: var(--sm-success-50); color: var(--sm-success-text, #006b34); }
 .sm-banner--warning { background: var(--sm-warning-50); color: var(--sm-warning-ink); }
-.sm-banner--danger { background: var(--sm-danger-50); color: #a31d19; }
-.sm-banner--neutral { background: var(--sm-fill); color: var(--sm-black); }
+.sm-banner--danger { background: var(--sm-danger-50); color: var(--sm-danger-text, #a31d19); }
+.sm-banner--neutral { background: var(--sm-fill); color: var(--sm-text); }
 
 /* ─── Toast ──────────────────────────────────────────────── */
 .sm-toast {
@@ -75,7 +75,7 @@
   overflow-y: auto;
   padding: 28px;
   border-radius: 28px;
-  background: var(--sm-white);
+  background: var(--sm-surface);
   box-shadow: var(--sm-shadow-lg);
   font-family: var(--sm-font);
   color: var(--sm-text);
@@ -85,7 +85,7 @@
 .sm-dialog--sm { max-width: 400px; }
 .sm-dialog--lg { max-width: 640px; }
 .sm-dialog--xl { max-width: 880px; }
-.sm-dialog__close { position: absolute; top: 16px; right: 16px; }
+.sm-dialog .sm-dialog__close { position: absolute; top: 16px; right: 16px; }
 .sm-dialog__title { margin: 0 40px 0 0; font-size: 24px; font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; }
 .sm-dialog__desc { margin: 8px 0 0; font-size: 16px; line-height: 1.45; color: var(--sm-text-2); }
 .sm-dialog__body { margin-top: 20px; }
@@ -100,7 +100,7 @@
 .sm-sheet {
   position: fixed;
   z-index: var(--sm-z-overlay);
-  background: var(--sm-white);
+  background: var(--sm-surface);
   font-family: var(--sm-font);
   color: var(--sm-text);
   overflow-y: auto;
@@ -139,8 +139,8 @@
   min-width: 220px;
   padding: 6px;
   border-radius: 18px;
-  background: var(--sm-white);
-  box-shadow: 0 0 0 1px rgba(60, 60, 90, 0.08), var(--sm-shadow-lg);
+  background: var(--sm-surface);
+  box-shadow: 0 0 0 1px var(--sm-hairline, rgba(60, 60, 90, .08)),var(--sm-shadow-lg);
   font-family: var(--sm-font);
   color: var(--sm-text);
   outline: none;
@@ -161,7 +161,7 @@
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: var(--sm-black);
+  color: var(--sm-text);
   font: 400 15px var(--sm-font);
   text-align: left;
   text-decoration: none;

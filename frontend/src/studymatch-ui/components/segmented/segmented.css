@@ -33,9 +33,9 @@
   transition: color var(--sm-dur-1);
 }
 .sm-seg--sm button { height: 32px; padding: 0 14px; font-size: 14px; }
-.sm-seg button:hover { color: var(--sm-black); }
+.sm-seg button:hover { color: var(--sm-text); }
 .sm-seg button[aria-checked='true'],
-.sm-seg button[aria-selected='true'] { color: var(--sm-black); }
+.sm-seg button[aria-selected='true'] { color: var(--sm-text); }
 .sm-seg button:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-seg button:disabled { opacity: 0.4; cursor: not-allowed; }
 .sm-seg__thumb {
@@ -43,13 +43,13 @@
   inset: 0;
   z-index: -1;
   border-radius: var(--sm-r-pill);
-  background: var(--sm-white);
+  background: var(--sm-surface);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px -4px rgba(0, 0, 0, 0.12);
 }
-.sm-seg--dark { background: var(--sm-gray-800); }
-.sm-seg--dark button { color: rgba(255, 255, 255, 0.6); }
-.sm-seg--dark button:hover { color: var(--sm-white); }
-.sm-seg--dark button[aria-checked='true'] { color: var(--sm-black); }
+.sm-seg--dark { background: var(--sm-inverse); }
+.sm-seg--dark button { color: color-mix(in srgb, var(--sm-inverse-text) 60%, transparent); }
+.sm-seg--dark button:hover { color: var(--sm-inverse-text); }
+.sm-seg--dark button[aria-checked='true'] { color: var(--sm-text); }
 
 /* ─── Tabs ───────────────────────────────────────────────── */
 .sm-tabs {
@@ -75,11 +75,11 @@
   cursor: pointer;
   transition: color var(--sm-dur-1);
 }
-.sm-tabs button:hover { color: var(--sm-black); }
-.sm-tabs button[aria-selected='true'] { color: var(--sm-black); }
+.sm-tabs button:hover { color: var(--sm-text); }
+.sm-tabs button[aria-selected='true'] { color: var(--sm-text); }
 .sm-tabs button:focus-visible { outline: none; color: var(--sm-violet-ink); }
 .sm-tabs button:focus-visible::after { content: ''; position: absolute; inset: 8px -6px; border-radius: 8px; box-shadow: 0 0 0 2px var(--sm-violet); }
-.sm-tabs__bar { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px; background: var(--sm-black); }
+.sm-tabs__bar { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px; background: var(--sm-text); }
 .sm-tabs__count {
   min-width: 22px;
   height: 20px;
@@ -92,4 +92,4 @@
   place-items: center;
   font-variant-numeric: tabular-nums;
 }
-.sm-tabs button[aria-selected='true'] .sm-tabs__count { background: var(--sm-black); color: var(--sm-white); }
+.sm-tabs button[aria-selected='true'] .sm-tabs__count { background: var(--sm-inverse); color: var(--sm-inverse-text); }

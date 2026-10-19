@@ -111,7 +111,7 @@
 .sm-note-composer {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   padding: 8px 8px 8px 20px; margin-bottom: 16px; border-radius: var(--sm-r-pill);
-  background: var(--sm-white); box-shadow: var(--sm-shadow-sm);
+  background: var(--sm-surface); box-shadow: var(--sm-shadow-sm);
 }
 .sm-note-composer input { flex: 1; min-width: 180px; border: 0; outline: 0; background: none; font: 400 16px var(--sm-font); color: var(--sm-text); height: 36px; }
 .sm-note-swatches { display: flex; gap: 6px; }

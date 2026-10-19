@@ -2,7 +2,7 @@ import { House, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../api/auth';
-import { AppShell, Avatar, EmptyState, Logo, Menu, type MenuEntry, type NavItem } from '../../studymatch-ui';
+import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry, type NavItem } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { HomePage } from '../home/HomePage';
 import { ProfilePage } from '../profile/ProfilePage';
@@ -34,7 +34,7 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
       brand={<Logo size={28} />}
       nav={[{ items: nav }]}
       title={t(current ? `nav.${current.key}` : 'nav.home')}
-      actions={<ProfileMenu user={currentUser} avatarUrl={profile?.avatarUrl ?? undefined} onLoggedOut={onLoggedOut} />}
+      actions={<><ThemeSwitcher /><ProfileMenu user={currentUser} avatarUrl={profile?.avatarUrl ?? undefined} onLoggedOut={onLoggedOut} /></>}
       linkAs={Link}
       className="student-shell"
       routeKey={pathname}

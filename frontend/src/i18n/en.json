@@ -9,6 +9,21 @@
     "language": "Language",
     "required": "{{field}} is required."
   },
+  "appearance": {
+    "title": "Appearance",
+    "description": "Choose a look for StudyMatch. Your choice is applied immediately and saved in this browser.",
+    "chooseTheme": "Choose a theme",
+    "done": "Done",
+    "modes": { "light": "Light", "dark": "Dark" },
+    "descriptions": {
+      "studymatch": "Violet accents, a soft canvas and a lime spark.",
+      "wine": "Wine accents on a light blush canvas.",
+      "wine-night": "Plum surfaces with raspberry accents.",
+      "cyan-night": "Deep blue surfaces, bright cyan and amber.",
+      "discord": "Layered greys with blurple and yellow.",
+      "spotify": "Near-black surfaces with bright green accents."
+    }
+  },
   "auth": {
     "headline": "Better teams start here.",
     "tagline": "StudyMatch forms balanced groups from your strengths, grades and attendance, so every project starts on the right foot.",

@@ -1,0 +1,23 @@
+.sm-dialog.sm-theme-dialog { max-width: 760px; }
+.sm-theme-selector { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.sm-theme-selector__option { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 0; padding: 10px; border: 1px solid var(--sm-border); border-radius: 16px; background: var(--sm-surface); color: var(--sm-text); font-family: var(--sm-font); text-align: left; cursor: pointer; }
+.sm-theme-selector__option:hover { background: var(--sm-surface-2); }
+.sm-theme-selector__option[aria-checked='true'] { border-color: var(--sm-violet); box-shadow: inset 0 0 0 1px var(--sm-violet); }
+.sm-theme-selector__option:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-theme-selector__preview { display: grid; gap: 8px; padding: 12px; border-radius: 10px; background: var(--preview-canvas); }
+.sm-theme-selector__mini-nav { display: flex; align-items: center; gap: 7px; padding: 7px; border-radius: 6px; background: var(--preview-surface); }
+.sm-theme-selector__mini-nav > i { width: 12px; height: 12px; border-radius: 4px; background: var(--preview-accent); }
+.sm-theme-selector__mini-nav > b { width: 45%; height: 4px; border-radius: 2px; background: var(--preview-text); opacity: .65; }
+.sm-theme-selector__mini-nav > em { width: 10px; height: 10px; margin-left: auto; border-radius: 50%; background: var(--preview-spark); }
+.sm-theme-selector__mini-card { display: grid; gap: 6px; padding: 11px 9px; border-radius: 7px; background: var(--preview-surface); }
+.sm-theme-selector__mini-card > b { width: 65%; height: 5px; border-radius: 3px; background: var(--preview-text); }
+.sm-theme-selector__mini-card > i { width: 85%; height: 4px; border-radius: 3px; background: var(--preview-text); opacity: .35; }
+.sm-theme-selector__mini-card > span { display: flex; gap: 5px; margin-top: 4px; }
+.sm-theme-selector__mini-card em { width: 42%; height: 13px; border-radius: 8px; background: var(--preview-accent); }
+.sm-theme-selector__mini-card small { width: 13px; height: 13px; border-radius: 50%; background: var(--preview-spark); }
+.sm-theme-selector__name { display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 14px; font-weight: 600; }
+.sm-theme-selector__name svg { color: var(--sm-violet); }
+.sm-theme-selector__mode { display: flex; align-items: center; gap: 4px; color: var(--sm-text-2); font-size: 11px; }
+.sm-theme-selector__description { color: var(--sm-text-2); font-size: 11px; line-height: 1.5; }
+@media (max-width: 620px) { .sm-theme-selector { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 360px) { .sm-theme-selector { grid-template-columns: minmax(0, 1fr); } }
