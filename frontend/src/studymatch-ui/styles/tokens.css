@@ -4,6 +4,7 @@
    them on :root, or on a wrapper element, to theme the library.
    ───────────────────────────────────────────────────────────── */
 :root {
+  color-scheme: light;
   /* Brand */
   --sm-violet: #4a3df5;            /* StudyMatch Violet, the hero colour */
   --sm-violet-press: #3b2fe0;
@@ -45,6 +46,15 @@
   --sm-danger: #e5322d;
   --sm-danger-ink: #b5221e;
   --sm-danger-50: #fdeceb;
+  --sm-danger-100: #fbdcda;
+  --sm-on-accent: #ffffff;
+  --sm-on-spark: #000000;
+  --sm-inverse: #000000;
+  --sm-inverse-text: #ffffff;
+  --sm-inverse-hover: #262624;
+  --sm-info-ink: #11618a;
+  --sm-success-text: #006b34;
+  --sm-danger-text: #a31d19;
 
   /* Tints: soft, colourful canvases (iOS / Stripe inspired) */
   --sm-tint-lavender: #efecff;
@@ -59,6 +69,14 @@
   --sm-fill: rgba(60, 60, 90, 0.08);
   --sm-fill-hover: rgba(60, 60, 90, 0.13);
   --sm-fill-strong: rgba(60, 60, 90, 0.18);
+  --sm-hairline: rgba(60, 60, 90, 0.08);
+  --sm-glass: rgba(255, 255, 255, 0.78);
+  --sm-glass-canvas: rgba(246, 246, 251, 0.75);
+  --sm-glass-strong: rgba(255, 255, 255, 0.96);
+  --sm-white-hover: #f4f4f2;
+  --sm-mesh-1: #7a6bff;
+  --sm-mesh-2: #2a9fd6;
+  --sm-mesh-3: #eb6834;
 
   /* Gradients */
   --sm-grad-brand: linear-gradient(135deg, #7a6bff 0%, #4a3df5 45%, #2a9fd6 100%);
@@ -70,7 +88,7 @@
   --sm-shadow-md: 0 2px 4px rgba(20, 20, 60, 0.04), 0 12px 32px -12px rgba(30, 25, 90, 0.18);
   --sm-shadow-lg: 0 4px 8px rgba(20, 20, 60, 0.04), 0 30px 60px -24px rgba(30, 25, 90, 0.28);
   --sm-shadow-violet: 0 10px 28px -10px rgba(74, 61, 245, 0.55);
-  --sm-focus-ring: 0 0 0 2px var(--sm-white), 0 0 0 4px var(--sm-violet);
+  --sm-focus-ring: 0 0 0 2px var(--sm-surface), 0 0 0 4px var(--sm-violet);
 
   /* Team-role profiles (data palette, CVD-validated) */
   --sm-lead: #5b4fe0;

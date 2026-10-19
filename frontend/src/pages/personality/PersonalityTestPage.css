@@ -8,7 +8,7 @@
 }
 
 .personality-page__hero {
-  background: color-mix(in srgb, var(--profile-color) 14%, var(--sm-white));
+  background: color-mix(in srgb, var(--profile-color) 14%, var(--sm-surface));
 }
 
 .personality-page__profile {

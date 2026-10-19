@@ -130,7 +130,7 @@
   padding: 10px 10px 16px;
   border: 0;
   border-radius: 28px;
-  background: var(--sm-white);
+  background: var(--sm-surface);
   box-shadow: var(--sm-shadow-sm);
   font-family: var(--sm-font);
   color: var(--sm-text);
@@ -181,7 +181,7 @@ button.sm-ach-badge:focus-visible { outline: none; box-shadow: var(--sm-focus-ri
 
 /* ─── Grid ───────────────────────────────────────────────── */
 .sm-ach-grid-wrap { display: flex; flex-direction: column; gap: 20px; font-family: var(--sm-font); }
-.sm-ach-summary { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding: 20px 24px; border-radius: 24px; background: var(--sm-white); box-shadow: var(--sm-shadow-sm); }
+.sm-ach-summary { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding: 20px 24px; border-radius: 24px; background: var(--sm-surface); box-shadow: var(--sm-shadow-sm); }
 .sm-ach-summary__count { font-size: 44px; line-height: 0.9; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
 .sm-ach-summary__count small { font-size: 18px; color: var(--sm-text-2); letter-spacing: -0.01em; margin-left: 4px; }
 .sm-ach-summary__bar { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px; }

@@ -29,7 +29,7 @@ export function GroupTile({ name, members, balance, profiles, status, selected, 
       transition={{ type: 'spring', stiffness: 400, damping: 26 }}
       className={cx('sm-card', 'sm-group-tile', selected && 'sm-card--gradient sm-card--on-dark')}
       aria-pressed={selected}
-      style={{ color: selected ? '#fff' : '#000' }}
+      style={{ color: selected ? 'var(--sm-white)' : 'var(--sm-text)' }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
         <div>
@@ -49,10 +49,11 @@ export function GroupTile({ name, members, balance, profiles, status, selected, 
         <AvatarStack names={members} size={34} ring={selected ? 'rgba(255,255,255,.35)' : undefined} />
         <span className="sm-group-tile__profiles" aria-label={i18n.t('ui.profiles_in_this_group')}>
           {profiles.map((p, i) => (
-            <ProfileDot key={i} profile={p} ring={selected ? 'rgba(255,255,255,.6)' : '#fff'} />
+            <ProfileDot key={i} profile={p} ring={selected ? 'rgba(255,255,255,.6)' : 'var(--sm-surface)'} />
           ))}
         </span>
       </div>
     </motion.button>
   );
 }
+

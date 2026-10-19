@@ -4,7 +4,7 @@
 .sm-rating__empty { color: var(--sm-fill-strong); }
 .sm-rating__fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; color: #ffb21e; }
 .sm-rating__meta { display: inline-flex; gap: 4px; margin-left: 6px; font-size: 14px; color: var(--sm-text-2); font-variant-numeric: tabular-nums; }
-.sm-rating__meta b { color: var(--sm-black); font-weight: 600; }
+.sm-rating__meta b { color: var(--sm-text); font-weight: 600; }
 
 .sm-rating__btn {
   display: grid;

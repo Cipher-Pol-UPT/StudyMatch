@@ -2,10 +2,11 @@ import { House, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../api/auth';
-import { AppShell, Avatar, EmptyState, Logo, Menu, type MenuEntry, type NavItem } from '../../studymatch-ui';
+import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry, type NavItem } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { HomePage } from '../home/HomePage';
 import { ProfilePage } from '../profile/ProfilePage';
+import { StudyRoomsPage } from '../studyrooms/StudyRoomsPage';
 import { ACCOUNT, SECTIONS } from './sections';
 import './student.css';
 import { useMyProfile } from './useMyProfile';
@@ -33,7 +34,7 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
       brand={<Logo size={28} />}
       nav={[{ items: nav }]}
       title={t(current ? `nav.${current.key}` : 'nav.home')}
-      actions={<ProfileMenu user={currentUser} avatarUrl={profile?.avatarUrl ?? undefined} onLoggedOut={onLoggedOut} />}
+      actions={<><ThemeSwitcher /><ProfileMenu user={currentUser} avatarUrl={profile?.avatarUrl ?? undefined} onLoggedOut={onLoggedOut} /></>}
       linkAs={Link}
       className="student-shell"
       routeKey={pathname}
@@ -41,7 +42,8 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
       <Routes>
         <Route path="/" element={<HomePage currentUser={currentUser} profile={profile} failed={failed} />} />
         <Route path={PROFILE_PATH} element={<ProfilePage onSaved={showSavedProfile} />} />
-        {pages.filter((p) => p.path !== PROFILE_PATH).map((p) => (
+        <Route path="/study-rooms" element={<StudyRoomsPage currentUser={currentUser} />} />
+        {pages.filter((p) => p.path !== PROFILE_PATH && p.path !== '/study-rooms').map((p) => (
           <Route key={p.path} path={p.path} element={<EmptyState icon={p.icon} title={t(`nav.${p.key}`)} body={t('placeholder.comingSoon')} />} />
         ))}
         <Route path="*" element={<Navigate to="/" replace />} />

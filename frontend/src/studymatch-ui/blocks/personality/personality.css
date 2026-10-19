@@ -16,7 +16,7 @@
   border-radius: 20px;
   background: var(--sm-fill);
   font: 500 14px/1.25 var(--sm-font);
-  color: var(--sm-black);
+  color: var(--sm-text);
   text-align: center;
   cursor: pointer;
   transition: background var(--sm-dur-1), transform var(--sm-dur-2) var(--sm-ease-punch), box-shadow var(--sm-dur-2);
@@ -25,7 +25,7 @@
 .sm-pt__opt:active { transform: scale(0.96); }
 .sm-pt__opt:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-pt__opt[aria-checked='true'],
-.sm-pt__opt:has(input:checked) { background: var(--sm-violet); color: var(--sm-white); box-shadow: var(--sm-shadow-violet); }
+.sm-pt__opt:has(input:checked) { background: var(--sm-violet); color: var(--sm-on-accent); box-shadow: var(--sm-shadow-violet); }
 .sm-pt__opt:has(input:focus-visible) { box-shadow: var(--sm-focus-ring); }
 .sm-pt__dot { border-radius: 50%; border: 2px solid currentColor; opacity: 0.6; transition: transform var(--sm-dur-2) var(--sm-ease-punch); }
 .sm-pt__opt[data-v='1'] .sm-pt__dot,
@@ -34,7 +34,7 @@
 .sm-pt__opt[data-v='4'] .sm-pt__dot { width: 24px; height: 24px; }
 .sm-pt__opt[data-v='3'] .sm-pt__dot { width: 18px; height: 18px; }
 .sm-pt__opt[aria-checked='true'] .sm-pt__dot,
-.sm-pt__opt:has(input:checked) .sm-pt__dot { background: var(--sm-white); border-color: var(--sm-white); opacity: 1; transform: scale(1.1); }
+.sm-pt__opt:has(input:checked) .sm-pt__dot { background: var(--sm-surface); border-color: var(--sm-on-accent); opacity: 1; transform: scale(1.1); }
 .sm-pt__opt kbd { position: absolute; top: 8px; right: 10px; font: 400 10px var(--sm-mono); opacity: 0.45; }
 .sm-pt__header { display: grid; gap: 12px; }
 .sm-pt__header .sm-pt__lead { margin: 0; }
@@ -44,7 +44,7 @@
 .sm-pt__statement { float: left; width: 100%; display: flex; gap: 12px; padding: 0; font-size: 17px; line-height: 1.4; color: var(--sm-text); }
 .sm-pt__statement + * { clear: both; padding-top: 14px; }
 .sm-pt__statement .sm-num { flex: none; min-width: 22px; color: var(--sm-text-3); }
-.sm-pt__item .sm-pt__opt { min-height: 96px; background: var(--sm-white); }
+.sm-pt__item .sm-pt__opt { min-height: 96px; background: var(--sm-surface); }
 .sm-pt__item .sm-pt__opt:not(:has(input:checked)):hover { background: var(--sm-fill); }
 .sm-pt__error { margin: 12px 0 0; font-size: 13px; color: var(--sm-danger-ink); }
 .sm-pt__progress { flex: 1; min-width: 180px; max-width: 360px; }
@@ -66,3 +66,4 @@
   .sm-pt__progress { max-width: none; }
   .sm-pt__opt kbd { position: static; margin-left: auto; }
 }
+

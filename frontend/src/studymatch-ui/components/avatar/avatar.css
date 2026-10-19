@@ -23,7 +23,7 @@
   min-width: 14px;
   min-height: 14px;
   border-radius: 50%;
-  border: 2.5px solid var(--sm-white);
+  border: 2.5px solid var(--sm-surface);
   display: grid;
   place-items: center;
   color: #fff;
@@ -37,13 +37,13 @@
   min-width: 10px;
   min-height: 10px;
   border-radius: 50%;
-  border: 2px solid var(--sm-white);
+  border: 2px solid var(--sm-surface);
   background: var(--sm-success);
 }
 .sm-avatar__presence--away { background: var(--sm-warning); }
 .sm-avatar__presence--offline { background: var(--sm-gray-300); }
 
 .sm-avatar-stack { display: inline-flex; align-items: center; }
-.sm-avatar-stack > * { box-shadow: 0 0 0 3px var(--sm-stack-ring, var(--sm-white)); }
+.sm-avatar-stack > * { box-shadow: 0 0 0 3px var(--sm-stack-ring, var(--sm-surface)); }
 .sm-avatar-stack > * + * { margin-left: -10px; }
 .sm-avatar--more { background: var(--sm-tint-lavender); color: var(--sm-violet-ink); }

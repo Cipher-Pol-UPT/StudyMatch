@@ -2,7 +2,7 @@
 .sm-table-wrap {
   position: relative;
   overflow: auto;
-  background: var(--sm-white);
+  background: var(--sm-surface);
   border-radius: var(--sm-r-lg);
   box-shadow: var(--sm-shadow-sm);
   font-family: var(--sm-font);
@@ -15,7 +15,7 @@
   top: 0;
   z-index: 1;
   padding: 14px 16px;
-  background: var(--sm-white);
+  background: var(--sm-surface);
   border-bottom: 1px solid var(--sm-border);
   font: 400 12px var(--sm-mono);
   text-transform: uppercase;
@@ -53,11 +53,11 @@
   text-transform: inherit;
   cursor: pointer;
 }
-.sm-table__sort:hover { color: var(--sm-black); background: var(--sm-fill); }
+.sm-table__sort:hover { color: var(--sm-text); background: var(--sm-fill); }
 .sm-table__sort:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-table__sort svg { opacity: 0.5; }
 .sm-table th[aria-sort='ascending'] .sm-table__sort,
-.sm-table th[aria-sort='descending'] .sm-table__sort { color: var(--sm-black); }
+.sm-table th[aria-sort='descending'] .sm-table__sort { color: var(--sm-text); }
 .sm-table th[aria-sort='ascending'] svg,
 .sm-table th[aria-sort='descending'] svg { opacity: 1; }
 .sm-table__empty td { padding: 0 !important; }
@@ -71,7 +71,7 @@
   border: 0;
   border-radius: var(--sm-r-pill);
   background: transparent;
-  color: var(--sm-black);
+  color: var(--sm-text);
   font: 500 15px var(--sm-font);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
@@ -80,7 +80,7 @@
   transition: background var(--sm-dur-1), color var(--sm-dur-1);
 }
 .sm-pagination button:hover:not(:disabled) { background: var(--sm-fill); }
-.sm-pagination button[aria-current='page'] { background: var(--sm-black); color: var(--sm-white); }
+.sm-pagination button[aria-current='page'] { background: var(--sm-inverse); color: var(--sm-inverse-text); }
 .sm-pagination button:disabled { opacity: 0.35; cursor: not-allowed; }
 .sm-pagination button:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-pagination__gap { min-width: 24px; text-align: center; color: var(--sm-text-3); }

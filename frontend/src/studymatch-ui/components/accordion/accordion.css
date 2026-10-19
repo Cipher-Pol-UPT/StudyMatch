@@ -1,4 +1,4 @@
-.sm-accordion { background: var(--sm-white); border-radius: var(--sm-r-lg); box-shadow: var(--sm-shadow-sm); overflow: hidden; font-family: var(--sm-font); }
+.sm-accordion { background: var(--sm-surface); border-radius: var(--sm-r-lg); box-shadow: var(--sm-shadow-sm); overflow: hidden; font-family: var(--sm-font); }
 .sm-accordion--plain { background: transparent; box-shadow: none; border-radius: 0; }
 .sm-accordion__item + .sm-accordion__item { border-top: 1px solid var(--sm-border); }
 .sm-accordion__heading { margin: 0; font: inherit; }
@@ -13,7 +13,7 @@
   background: none;
   font: 500 16px var(--sm-font);
   letter-spacing: -0.01em;
-  color: var(--sm-black);
+  color: var(--sm-text);
   text-align: left;
   cursor: pointer;
   transition: background var(--sm-dur-1);

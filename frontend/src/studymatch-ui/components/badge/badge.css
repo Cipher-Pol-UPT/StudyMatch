@@ -10,13 +10,13 @@
   font-variant-numeric: tabular-nums;
   line-height: 1;
   background: var(--sm-violet);
-  color: var(--sm-white);
+  color: var(--sm-on-accent);
   white-space: nowrap;
 }
-.sm-badge--spark { background: var(--sm-spark); color: var(--sm-black); }
-.sm-badge--black { background: var(--sm-black); color: var(--sm-white); }
+.sm-badge--spark { background: var(--sm-spark); color: var(--sm-on-spark); }
+.sm-badge--black { background: var(--sm-inverse); color: var(--sm-inverse-text); }
 .sm-badge--danger { background: var(--sm-danger); color: var(--sm-white); }
-.sm-badge--neutral { background: var(--sm-fill-strong); color: var(--sm-black); }
+.sm-badge--neutral { background: var(--sm-fill-strong); color: var(--sm-text); }
 .sm-badge--dot { min-width: 10px; width: 10px; height: 10px; padding: 0; }
 
 /* ─── Status pill ────────────────────────────────────────── */
@@ -37,10 +37,10 @@
 .sm-status--warning { background: var(--sm-warning-50); color: var(--sm-warning-ink); }
 .sm-status--danger { background: var(--sm-danger-50); color: var(--sm-danger-ink); }
 .sm-status--violet { background: var(--sm-violet-50); color: var(--sm-violet-ink); }
-.sm-status--info { background: var(--sm-tint-sky); color: #11618a; }
+.sm-status--info { background: var(--sm-tint-sky); color: var(--sm-info-ink, #11618a); }
 .sm-status--pulse > i { animation: sm-pulse 1.6s var(--sm-ease-out) infinite; }
 @keyframes sm-pulse { 0% { box-shadow: 0 0 0 0 currentColor; } 70%, 100% { box-shadow: 0 0 0 6px transparent; } }
 
 /* ─── Profile tag ────────────────────────────────────────── */
-.sm-profile-tag { padding-left: 4px; color: var(--sm-black); }
+.sm-profile-tag { padding-left: 4px; color: var(--sm-text); }
 .sm-profile-tag__icon { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex-shrink: 0; }

@@ -36,24 +36,24 @@
 .sm-btn--xl { --h: 64px; font-size: 18px; }
 .sm-btn--block { display: flex; width: 100%; }
 
-.sm-btn--primary { background: var(--sm-violet); color: var(--sm-white); box-shadow: var(--sm-shadow-violet); }
+.sm-btn--primary { background: var(--sm-violet); color: var(--sm-on-accent); box-shadow: var(--sm-shadow-violet); }
 .sm-btn--primary:hover:not(:disabled) { background: var(--sm-violet-press); }
-.sm-btn--secondary { background: var(--sm-fill); color: var(--sm-black); }
+.sm-btn--secondary { background: var(--sm-fill); color: var(--sm-text); }
 .sm-btn--secondary:hover:not(:disabled) { background: var(--sm-fill-hover); }
 .sm-btn--tinted { background: var(--sm-violet-a12); color: var(--sm-violet-ink); }
 .sm-btn--tinted:hover:not(:disabled) { background: var(--sm-violet-a18); }
-.sm-btn--gradient { background: var(--sm-grad-brand); color: var(--sm-white); box-shadow: var(--sm-shadow-violet); }
+.sm-btn--gradient { background: var(--sm-grad-brand); color: var(--sm-on-accent); box-shadow: var(--sm-shadow-violet); }
 .sm-btn--gradient:hover:not(:disabled) { filter: saturate(1.15) brightness(1.04); }
-.sm-btn--black { background: var(--sm-black); color: var(--sm-white); }
-.sm-btn--black:hover:not(:disabled) { background: var(--sm-gray-800); }
+.sm-btn--black { background: var(--sm-inverse); color: var(--sm-inverse-text); }
+.sm-btn--black:hover:not(:disabled) { background: var(--sm-inverse-hover); }
 .sm-btn--white { background: var(--sm-white); color: var(--sm-black); box-shadow: var(--sm-shadow-sm); }
-.sm-btn--white:hover:not(:disabled) { background: var(--sm-gray-50); }
-.sm-btn--outline { background: transparent; color: var(--sm-black); box-shadow: inset 0 0 0 1.5px var(--sm-gray-200); }
-.sm-btn--outline:hover:not(:disabled) { box-shadow: inset 0 0 0 1.5px var(--sm-black); }
-.sm-btn--ghost { background: transparent; color: var(--sm-black); padding: 0 calc(var(--h) * 0.3); }
+.sm-btn--white:hover:not(:disabled) { background: var(--sm-white-hover); }
+.sm-btn--outline { background: transparent; color: var(--sm-text); box-shadow: inset 0 0 0 1.5px var(--sm-gray-200); }
+.sm-btn--outline:hover:not(:disabled) { box-shadow: inset 0 0 0 1.5px var(--sm-text); }
+.sm-btn--ghost { background: transparent; color: var(--sm-text); padding: 0 calc(var(--h) * 0.3); }
 .sm-btn--ghost:hover:not(:disabled) { background: var(--sm-fill); }
 .sm-btn--danger { background: var(--sm-danger-50); color: var(--sm-danger-ink); }
-.sm-btn--danger:hover:not(:disabled) { background: #fbdcda; }
+.sm-btn--danger:hover:not(:disabled) { background: var(--sm-danger-100, #fbdcda); }
 .sm-btn--danger-solid { background: var(--sm-danger); color: var(--sm-white); }
 .sm-btn--danger-solid:hover:not(:disabled) { background: #cc2622; }
 
@@ -81,7 +81,7 @@
   border: 0;
   border-radius: 50%;
   cursor: pointer;
-  color: var(--sm-black);
+  color: var(--sm-text);
   background: var(--sm-fill);
   text-decoration: none;
   transition: transform var(--sm-dur-2) var(--sm-ease-punch), background var(--sm-dur-1), box-shadow var(--sm-dur-2);
@@ -95,10 +95,10 @@
 .sm-icon-btn--secondary:hover:not(:disabled) { background: var(--sm-fill-hover); }
 .sm-icon-btn--tinted { background: var(--sm-violet-a12); color: var(--sm-violet-ink); }
 .sm-icon-btn--tinted:hover:not(:disabled) { background: var(--sm-violet-a18); }
-.sm-icon-btn--primary { background: var(--sm-violet); color: var(--sm-white); box-shadow: var(--sm-shadow-violet); }
+.sm-icon-btn--primary { background: var(--sm-violet); color: var(--sm-on-accent); box-shadow: var(--sm-shadow-violet); }
 .sm-icon-btn--primary:hover:not(:disabled) { background: var(--sm-violet-press); }
-.sm-icon-btn--black { background: var(--sm-black); color: var(--sm-white); }
-.sm-icon-btn--white { background: var(--sm-white); box-shadow: var(--sm-shadow-sm); }
+.sm-icon-btn--black { background: var(--sm-inverse); color: var(--sm-inverse-text); }
+.sm-icon-btn--white { background: var(--sm-white); color: var(--sm-black); box-shadow: var(--sm-shadow-sm); }
 .sm-icon-btn--ghost { background: transparent; }
 .sm-icon-btn--ghost:hover:not(:disabled) { background: var(--sm-fill); }
 

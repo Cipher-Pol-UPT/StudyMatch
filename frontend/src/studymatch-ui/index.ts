@@ -5,8 +5,14 @@
 import './styles/base.css';
 import './styles/fonts.css';
 import './styles/tokens.css';
+import './styles/themes.css';
 
 export { StudyMatchProvider,type StudyMatchProviderProps } from './Provider';
+export { ThemeProvider,type ThemeProviderProps } from './themes/ThemeProvider';
+export { useTheme } from './themes/ThemeContext';
+export { THEMES,DEFAULT_THEME,THEME_STORAGE_KEY,isThemeId,type ThemeId } from './themes/themes';
+export { ThemeSelector } from './components/theme/ThemeSelector';
+export { ThemeSwitcher } from './components/theme/ThemeSwitcher';
 
 // Utilities
 export { cx } from './utils/cx';
