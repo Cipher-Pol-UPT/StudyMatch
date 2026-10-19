@@ -1,0 +1,157 @@
+.registration {
+  display: grid;
+  gap: 24px;
+  max-width: 920px;
+}
+
+.registration__head h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.registration__head p {
+  margin: 8px 0 0;
+  color: var(--sm-text-2);
+}
+
+.registration__card,
+.registration__result {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.registration__card > .sm-btn,
+.registration__result > .sm-btn {
+  justify-self: start;
+}
+
+.registration__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.registration__note {
+  margin: 0;
+  color: var(--sm-text-2);
+}
+
+.registration__loading {
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+}
+
+.registration__result-icon {
+  width: 40px;
+  height: 40px;
+  color: var(--sm-exec);
+}
+
+.registration__result-icon--warning {
+  color: var(--sm-warning-ink);
+}
+
+.registration__result h2 {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 500;
+}
+
+.registration__details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+  margin: 0;
+}
+
+.registration__details dt {
+  font-size: 13px;
+  color: var(--sm-text-3);
+}
+
+.registration__details dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.registration__resend {
+  display: grid;
+  gap: 12px;
+}
+
+.registration__resend > .sm-btn {
+  justify-self: start;
+}
+
+.registration__table {
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.registration__errors {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--sm-danger-ink);
+  font-size: 14px;
+}
+
+.registration__account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.registration__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .registration__details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .registration__card > .sm-btn,
+  .registration__result > .sm-btn,
+  .registration__resend > .sm-btn,
+  .registration__actions > .sm-btn {
+    justify-self: stretch;
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .registration__table thead {
+    display: none;
+  }
+
+  .registration__table tbody tr {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 4px 12px;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--sm-border);
+  }
+
+  .registration__table tbody td {
+    display: block;
+    padding: 0;
+    border: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .registration__table tbody td:nth-child(n + 3) {
+    grid-column: 1 / -1;
+  }
+
+  .registration__table tbody td:nth-child(2) {
+    font-weight: 500;
+  }
+}

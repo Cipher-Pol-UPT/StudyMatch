@@ -14,7 +14,10 @@
     "description": "Escolha o aspeto do StudyMatch. A escolha é aplicada de imediato e guardada neste navegador.",
     "chooseTheme": "Escolher um tema",
     "done": "Concluído",
-    "modes": { "light": "Claro", "dark": "Escuro" },
+    "modes": {
+      "light": "Claro",
+      "dark": "Escuro"
+    },
     "descriptions": {
       "studymatch": "Violeta, fundo suave e um toque de lima.",
       "wine": "Vinho sobre um fundo rosa claro.",
@@ -67,12 +70,22 @@
     "skills": "Competências",
     "interests": "Interesses",
     "languages": "Idiomas",
-    "code": "Código de verificação"
+    "code": "Código de verificação",
+    "degreeProgramme": "Curso",
+    "username": "Nome de utilizador",
+    "accountType": "Tipo de conta"
   },
   "accounts": {
     "create": "Criar conta de funcionário ou docente",
     "registerStudent": "Registar estudante",
-    "changeStatus": "Alterar estado da conta"
+    "changeStatus": "Alterar estado da conta",
+    "intro": "Crie uma conta para um funcionário ou docente. O número de funcionário e uma palavra-passe temporária são gerados automaticamente.",
+    "usernameHint": "Apenas letras minúsculas, números e pontos, por exemplo joao.silva.",
+    "createSubmit": "Criar conta",
+    "created": "Conta de {{type}} criada",
+    "employeeNumber": "Número de funcionário",
+    "credentialsSent": "O email institucional e uma palavra-passe temporária foram enviados para o email pessoal.",
+    "createAnother": "Criar outra conta"
   },
   "rooms": {
     "title": "Salas de estudo",
@@ -569,11 +582,62 @@
     "studentInformation": "Informação do estudante",
     "notifications": "Notificações",
     "logout": "Terminar sessão",
-    "accountMenu": "Menu da conta"
+    "accountMenu": "Menu da conta",
+    "registerStudent": "Registar estudantes",
+    "createAccount": "Criar conta"
   },
   "passwordRules": {
     "length": "Pelo menos 8 caracteres",
     "letter": "Pelo menos uma letra",
     "number": "Pelo menos um número"
+  },
+  "workspace": {
+    "signedInAs": "{{role}} · {{email}}",
+    "nothingYet": "As suas ferramentas vão aparecer aqui",
+    "actions": {
+      "registerStudent": "Registe um estudante ou importe uma turma inteira a partir de um ficheiro CSV.",
+      "createAccount": "Crie contas de funcionários e docentes. As credenciais seguem por email."
+    }
+  },
+  "registration": {
+    "intro": "Registe um estudante ou importe um ficheiro CSV. O número de estudante, o email institucional e a palavra-passe temporária são gerados automaticamente.",
+    "oneStudent": "Um estudante",
+    "csvImport": "Importar CSV",
+    "chooseDegree": "Escolha um curso",
+    "chooseYear": "Escolha um ano",
+    "year": "{{year}}.º ano",
+    "submit": "Registar estudante",
+    "registered": "Estudante registado",
+    "degreeAndYear": "{{degree}} · {{year}}.º ano",
+    "credentialsSent": "O email institucional e uma palavra-passe temporária foram enviados para o email pessoal.",
+    "emailNotSent": "A conta foi criada, mas não foi possível entregar o email com as credenciais. Verifique o email pessoal e envie-as novamente.",
+    "fixEmailHint": "Corrija-o se estiver errado. Uma nova palavra-passe temporária substitui a anterior.",
+    "resend": "Enviar credenciais novamente",
+    "credentialsResent": "Novas credenciais enviadas.",
+    "registerAnother": "Registar outro estudante",
+    "csvTitle": "Importar estudantes de um ficheiro CSV",
+    "csvRules": "UTF-8, um estudante por linha, com as colunas name, personalEmail, degreeProgramme e curricularYear. Até 200 estudantes por ficheiro, separados por vírgulas ou ponto e vírgula.",
+    "downloadTemplate": "Descarregar modelo",
+    "csvHint": "Ficheiro CSV, até 1 MB",
+    "previewTitle": "Verifique antes de importar",
+    "previewSummary": "{{valid}} prontos a importar, {{invalid}} com erros. Nada é criado até confirmar.",
+    "row": "Linha",
+    "status": "Estado",
+    "details": "Detalhes",
+    "ready": "Pronto",
+    "importValid": "Importar {{count}} estudantes",
+    "importDone": "Importação concluída",
+    "importSummary": "{{created}} criados, {{notSent}} criados sem o email, {{rejected}} rejeitados.",
+    "results": {
+      "CREATED": "Criado",
+      "EMAIL_NOT_SENT": "Email não enviado",
+      "REJECTED": "Rejeitado"
+    },
+    "importAnother": "Importar outro ficheiro"
+  },
+  "password": {
+    "firstTitle": "Escolha a sua palavra-passe",
+    "firstSubtitle": "Entrou com uma palavra-passe temporária. Escolha uma palavra-passe que só o próprio conheça para continuar.",
+    "changed": "Palavra-passe alterada."
   }
 }

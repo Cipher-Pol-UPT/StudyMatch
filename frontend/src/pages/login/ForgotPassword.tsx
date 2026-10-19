@@ -1,14 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { requestPasswordReset, resetPassword } from '../../api/auth';
-import { ForgotPasswordForm, ResetPasswordForm, useToast, type PasswordRule } from '../../studymatch-ui';
+import { ForgotPasswordForm, ResetPasswordForm, useToast } from '../../studymatch-ui';
 import type { ResetPasswordInput } from '../../types/forms';
-
-const PASSWORD_RULES: PasswordRule[] = [
-  { id: 'length', labelKey: 'passwordRules.length', test: password => password.length >= 8 },
-  { id: 'letter', labelKey: 'passwordRules.letter', test: password => /\p{L}/u.test(password) },
-  { id: 'number', labelKey: 'passwordRules.number', test: password => /\d/.test(password) },
-];
+import { PASSWORD_RULES } from '../password/passwordRules';
 
 export interface ForgotPasswordProps {
   onPasswordReset: () => void;

@@ -50,7 +50,7 @@ describe('app start', () => {
     mockCurrentUserResponse(200, { ...student, mustChangePassword: true, personalityTestRequired: true });
     renderApp();
 
-    expect(await screen.findByText('Change password')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Choose your password' })).toBeTruthy();
   });
 
   it('sends a student without a personality test to take it', async () => {

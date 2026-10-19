@@ -1,0 +1,10 @@
+.sm-account-form { display: flex; flex-direction: column; gap: 16px; }
+.sm-account-form__type { display: flex; flex-direction: column; gap: 8px; }
+.sm-account-form__label { padding: 0 4px; font-size: 13px; color: var(--sm-text-2); }
+.sm-account-form__domain { padding-right: 8px; font-size: 17px; color: var(--sm-text-2); white-space: nowrap; }
+.sm-account-form__row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; }
+.sm-account-form > .sm-btn { align-self: flex-start; margin-top: 4px; }
+@media (max-width: 600px) {
+  .sm-account-form__row { grid-template-columns: minmax(0, 1fr); }
+  .sm-account-form > .sm-btn { align-self: stretch; }
+}

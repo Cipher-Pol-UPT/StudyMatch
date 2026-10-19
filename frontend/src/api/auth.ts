@@ -1,5 +1,5 @@
 import type { CurrentUser } from '../types/currentUser';
-import type { LoginInput, ResetPasswordRequest } from '../types/forms';
+import type { ChangePasswordInput, LoginInput, ResetPasswordRequest } from '../types/forms';
 import { readCsrfToken, request } from './client';
 import { isBackendError } from './errors';
 
@@ -33,6 +33,10 @@ async function ensureCsrfToken() {
   if (readCsrfToken() === undefined) {
     await getCurrentUser();
   }
+}
+
+export function changePassword(change: ChangePasswordInput): Promise<CurrentUser> {
+  return request<CurrentUser>('PUT', '/users/change-password', change);
 }
 
 export function logout(): Promise<void> {
