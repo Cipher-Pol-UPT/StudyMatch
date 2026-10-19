@@ -41,19 +41,31 @@ export function ResetPasswordForm({ email, onSubmit, onResendCode, onBack, passw
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordsDiffer, setPasswordsDiffer] = useState(false);
+
+  function submit() {
+    if (newPassword !== confirmPassword) {
+      setPasswordsDiffer(true);
+      return;
+    }
+    void feedback.submit(() => onSubmit({ code, newPassword }));
+  }
+
   return <div>
     <AuthHeader title={t('auth.resetPassword')} subtitle={t('auth.codeSent', { email })} />
     <form className="sm-auth__form" noValidate onSubmit={event => {
-      event.preventDefault(); void feedback.submit(() => onSubmit({ code, newPassword, confirmPassword }));
+      event.preventDefault(); submit();
     }}>
       {feedback.message && <Banner tone="danger">{feedback.message}</Banner>}
       {resend.message && <Banner tone="danger">{resend.message}</Banner>}
       <TextField label={t('fields.code')} inputMode="numeric" autoComplete="one-time-code" value={code}
         disabled={feedback.busy} error={feedback.fieldError('code')} onChange={event => setCode(event.target.value)} />
       <PasswordField label={t('fields.newPassword')} autoComplete="new-password" rules={passwordRules} value={newPassword}
-        disabled={feedback.busy} error={feedback.fieldError('newPassword')} onChange={event => setNewPassword(event.target.value)} />
+        disabled={feedback.busy} error={feedback.fieldError('newPassword')}
+        onChange={event => { setNewPassword(event.target.value); setPasswordsDiffer(false); }} />
       <PasswordField label={t('fields.confirmPassword')} autoComplete="new-password" value={confirmPassword}
-        disabled={feedback.busy} error={feedback.fieldError('confirmPassword')} onChange={event => setConfirmPassword(event.target.value)} />
+        disabled={feedback.busy} error={passwordsDiffer ? t('auth.passwordsDoNotMatch') : undefined}
+        onChange={event => { setConfirmPassword(event.target.value); setPasswordsDiffer(false); }} />
       <Button type="submit" loading={feedback.busy}>{t('auth.resetPassword')}</Button>
       <Button variant="secondary" loading={resend.busy} disabled={feedback.busy} onClick={() => void resend.submit(onResendCode)}>
         {t('auth.resendCode')}
