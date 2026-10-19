@@ -207,9 +207,9 @@ public class StudentService {
       Optional<Degree> degree = degreeService.findByName(student.degreeProgramme());
       if (degree.isEmpty()) {
         problems.add(new FieldErrorDTO("degreeProgramme", ErrorCode.DEGREE_NOT_FOUND.name(), Map.of()));
-      } else if (!wrongFields.contains("curricularYear") && !degree.get().hasYear(student.curricularYear())) {
+      } else if (!wrongFields.contains("curricularYear") && !degree.get().hasCurricularYear(student.curricularYear())) {
         problems.add(new FieldErrorDTO("curricularYear", ErrorCode.CURRICULAR_YEAR_NOT_IN_DEGREE.name(),
-            Map.of("years", degree.get().getYears())));
+            Map.of("years", degree.get().getCurricularYears())));
       }
     }
 

@@ -7,7 +7,6 @@ import './segmented.css';
 export interface TabItem<T extends string> {
   value: T;
   label: ReactNode;
-  /** Small counter pill, e.g. pending items. */
   count?: number;
   disabled?: boolean;
 }
@@ -17,14 +16,11 @@ export interface TabsProps<T extends string> {
   value?: T;
   defaultValue?: T;
   onValueChange?: (value: T) => void;
-  /** Accessible name of the tab list. */
   label?: string;
-  /** Prefix for tab / panel ids. Use `tabPanelProps(idBase, value)` on your panels. */
   idBase?: string;
   className?: string;
 }
 
-/** Underlined tabs for switching views inside a page. Arrow keys move between tabs. */
 export function Tabs<T extends string>({ tabs, value, defaultValue, onValueChange, label, idBase, className }: TabsProps<T>) {
   const auto = useId();
   const base = idBase ?? auto;

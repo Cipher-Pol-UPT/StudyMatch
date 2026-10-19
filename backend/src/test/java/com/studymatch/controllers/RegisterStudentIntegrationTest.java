@@ -194,7 +194,7 @@ class RegisterStudentIntegrationTest {
   void listDegrees() throws Exception {
     mockMvc.perform(get("/degrees/").session(staff))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[?(@.name == 'IT Test Degree')].years").value(3));
+        .andExpect(jsonPath("$[?(@.name == 'IT Test Degree')].curricularYears").value(3));
   }
 
   // resend

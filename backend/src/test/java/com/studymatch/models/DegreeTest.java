@@ -35,14 +35,14 @@ class DegreeTest {
   @ValueSource(ints = { 1, 2, 3 })
   @DisplayName("Every year from 1 to the degree's length exists (boundaries: 1 and 3)")
   void yearsInside(int year) {
-    assertTrue(new Degree("Test Degree", 3).hasYear(year));
+    assertTrue(new Degree("Test Degree", 3).hasCurricularYear(year));
   }
 
   @ParameterizedTest(name = "year {0} doesn't exist in a 3-year degree")
   @ValueSource(ints = { 0, 4, -1 })
   @DisplayName("Year 0 and one past the end don't exist (boundaries: 0 and 4)")
   void yearsOutside(int year) {
-    assertFalse(new Degree("Test Degree", 3).hasYear(year));
+    assertFalse(new Degree("Test Degree", 3).hasCurricularYear(year));
   }
 
   @ParameterizedTest(name = "{0} years is allowed")

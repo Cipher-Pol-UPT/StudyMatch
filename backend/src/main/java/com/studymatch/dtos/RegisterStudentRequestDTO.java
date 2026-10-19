@@ -1,7 +1,5 @@
 package com.studymatch.dtos;
 
-import com.studymatch.models.Degree;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -14,7 +12,7 @@ public record RegisterStudentRequestDTO(
     @NotBlank @Size(max = 100) String name,
     @NotBlank @Email @Size(max = 254) String personalEmail,
     @NotBlank String degreeProgramme,
-    @NotNull @Min(1) @Max(Degree.MAX_YEARS) Integer curricularYear) {
+    @NotNull @Min(1) @Max(6) Integer curricularYear) {
 
   public RegisterStudentRequestDTO {
     if (name != null) {

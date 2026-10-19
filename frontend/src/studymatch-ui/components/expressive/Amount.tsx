@@ -13,12 +13,10 @@ export interface AmountProps {
   prefix?: ReactNode;
   suffix?: ReactNode;
   color?: string;
-  /** Font size; defaults to the responsive hero size. */
   size?: number | string;
   className?: string;
 }
 
-/** Big numeral where each digit slides up when it changes: the motion rule for numbers. */
 export function Amount({ value, prefix, suffix, color, size, className }: AmountProps) {
   useTranslation();
   const chars = String(value).split('');
@@ -49,12 +47,10 @@ export function Amount({ value, prefix, suffix, color, size, className }: Amount
 export interface KeypadProps {
   onKey: (key: string) => void;
   disabledKeys?: string[];
-  /** Key in the bottom-left slot (e.g. "." or "00"). Empty by default. */
   extraKey?: string;
   className?: string;
 }
 
-/** 3×4 numeric keypad. Sends "0"–"9", the extra key, and "del". Inherits the surface colour. */
 export function Keypad({ onKey, disabledKeys = [], extraKey, className }: KeypadProps) {
   useTranslation();
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', extraKey ?? '', '0', 'del'];

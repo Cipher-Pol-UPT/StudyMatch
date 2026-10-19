@@ -12,15 +12,12 @@ export interface StepItem {
 
 export interface StepsProps {
   steps: (StepItem | string)[];
-  /** 0-based index of the current step. Steps before it are complete. */
   current: number;
   orientation?: 'horizontal' | 'vertical';
-  /** Let users jump back to completed steps. */
   onStepClick?: (index: number) => void;
   className?: string;
 }
 
-/** Progress through a multi-step flow: account activation, the personality test, group generation. */
 export function Steps({ steps, current, orientation = 'horizontal', onStepClick, className }: StepsProps) {
   useTranslation();
   return (

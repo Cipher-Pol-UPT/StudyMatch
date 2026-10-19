@@ -8,7 +8,6 @@ import { type ProfileKey } from '../badge/Badge';
 import { PROFILES,PROFILE_KEYS } from '../badge/Badge.shared';
 import './charts.css';
 
-// ─── Bar chart ─────────────────────────────────────────────
 export interface BarDatum {
   label: string;
   value: number;
@@ -17,21 +16,15 @@ export interface BarDatum {
 
 export interface BarChartProps {
   data: BarDatum[];
-  /** Upper bound of the scale. Defaults to the largest value. */
   max?: number;
   height?: number;
-  /** Format numbers on the bars and in the tooltip. */
   format?: (value: number) => string;
-  /** Highlight one bar (e.g. the current class). */
   highlight?: string;
-  /** Horizontal reference line, e.g. the pass mark (9.5). */
   reference?: { value: number; label: string };
-  /** Accessible summary of what the chart shows. */
   label: string;
   className?: string;
 }
 
-/** Vertical bars with values on top. Accessible as a table for screen readers. */
 export function BarChart({ data, max, height = 220, format = (v) => String(v), highlight, reference, label, className }: BarChartProps) {
   useTranslation();
   const top = max ?? Math.max(1, ...data.map((d) => d.value), reference?.value ?? 0);
@@ -81,7 +74,6 @@ export function BarChart({ data, max, height = 220, format = (v) => String(v), h
   );
 }
 
-// ─── Donut ─────────────────────────────────────────────────
 export interface DonutSegment {
   label: string;
   value: number;
@@ -92,16 +84,13 @@ export interface DonutChartProps {
   segments: DonutSegment[];
   size?: number;
   thickness?: number;
-  /** Big text in the middle. */
   center?: ReactNode;
   centerCaption?: ReactNode;
-  /** Show the legend next to the donut. */
   legend?: boolean;
   label: string;
   className?: string;
 }
 
-/** Parts of a whole: Passed / Failed / In progress, profile mix of a class. */
 export function DonutChart({ segments, size = 168, thickness = 22, center, centerCaption, legend = true, label, className }: DonutChartProps) {
   useTranslation();
   const total = segments.reduce((s, x) => s + x.value, 0) || 1;
@@ -155,16 +144,12 @@ export function DonutChart({ segments, size = 168, thickness = 22, center, cente
   );
 }
 
-// ─── Profile bars (personality result) ─────────────────────
 export interface ProfileBarsProps {
-  /** Percentages per profile (0–100). */
   values: Record<ProfileKey, number>;
-  /** Highlight the strongest profile. */
   emphasizeTop?: boolean;
   className?: string;
 }
 
-/** The personality profile as four labelled bars, strongest first. */
 export function ProfileBars({ values, emphasizeTop = true, className }: ProfileBarsProps) {
   useTranslation();
   const sorted = [...PROFILE_KEYS].sort((a, b) => values[b] - values[a]);

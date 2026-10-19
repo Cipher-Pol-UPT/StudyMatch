@@ -14,9 +14,6 @@ import jakarta.validation.constraints.NotBlank;
 @Entity
 public class Degree {
 
-  public static final int MIN_YEARS = 1;
-  public static final int MAX_YEARS = 6;
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -25,18 +22,18 @@ public class Degree {
   @Column(unique = true)
   private String name;
 
-  // no setter on purpose: students may already be in any of these years
-  @Min(MIN_YEARS)
-  @Max(MAX_YEARS)
+  // fixed when the degree is created (the default is only for degrees that existed before this column)
+  @Min(1)
+  @Max(6)
   @ColumnDefault("3")
-  private int years;
+  private int curricularYears;
 
   protected Degree() {
   }
 
-  public Degree(String name, int years) {
+  public Degree(String name, int curricularYears) {
     this.name = name;
-    this.years = years;
+    this.curricularYears = curricularYears;
   }
 
   public Long getId() {
@@ -47,16 +44,16 @@ public class Degree {
     return name;
   }
 
+  public int getCurricularYears() {
+    return curricularYears;
+  }
+
   public void setName(String name) {
     this.name = name;
   }
 
-  public int getYears() {
-    return years;
-  }
-
-  public boolean hasYear(int curricularYear) {
-    return curricularYear >= 1 && curricularYear <= years;
+  public boolean hasCurricularYear(int curricularYear) {
+    return curricularYear >= 1 && curricularYear <= curricularYears;
   }
 
 }
