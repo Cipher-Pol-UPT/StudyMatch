@@ -40,7 +40,7 @@ public class DegreeController {
     return ResponseEntity.ok(DegreeResponseDTO.from(degreeService.getDegree(id)));
   }
 
-  @PostMapping("register")
+  @PostMapping
   @PreAuthorize("hasRole('STAFF')")
   public ResponseEntity<DegreeResponseDTO> registerDegree(@Valid @RequestBody DegreeRequestDTO registerRequest) {
     Degree degree = degreeService.registerDegree(registerRequest);

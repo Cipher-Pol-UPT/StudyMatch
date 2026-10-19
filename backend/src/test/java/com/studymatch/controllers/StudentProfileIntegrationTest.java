@@ -101,7 +101,7 @@ class StudentProfileIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    degree = degreeRepository.save(new Degree("Integration Test Degree"));
+    degree = degreeRepository.save(new Degree("Integration Test Degree", 3));
     student = saveStudent("student.it", "Test Student");
     otherStudent = saveStudent("other.student.it", "Other Test Student");
     theirTeacher = saveTeacher("teacher.it");

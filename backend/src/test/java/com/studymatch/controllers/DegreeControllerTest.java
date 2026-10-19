@@ -21,7 +21,7 @@ import com.studymatch.services.DegreeService;
 
 class DegreeControllerTest {
 
-  private static final DegreeRequestDTO REGISTER = new DegreeRequestDTO("Mathematics");
+  private static final DegreeRequestDTO REGISTER = new DegreeRequestDTO("Mathematics", 3);
 
   private DegreeService degreeService;
   private DegreeController controller;
@@ -38,7 +38,7 @@ class DegreeControllerTest {
   @DisplayName("Registering a degree is 201 with the new degree's data")
   void registerDegreeIs201() {
     // Arrange - @PreAuthorize isn't active without Spring, so the role check isn't tested here
-    when(degreeService.registerDegree(REGISTER)).thenReturn(new Degree("Mathematics"));
+    when(degreeService.registerDegree(REGISTER)).thenReturn(new Degree("Mathematics", 3));
 
     // Act
     ResponseEntity<DegreeResponseDTO> result = controller.registerDegree(REGISTER);
@@ -46,6 +46,7 @@ class DegreeControllerTest {
     // Assert
     assertEquals(201, result.getStatusCode().value());
     assertEquals("Mathematics", result.getBody().name());
+    assertEquals(3, result.getBody().curricularYears());
   }
 
   @Test
@@ -68,7 +69,7 @@ class DegreeControllerTest {
   @DisplayName("Listing degrees is 200 with each degree's data, in the service's order")
   void listDegreesIs200() {
     // Arrange
-    when(degreeService.listDegrees()).thenReturn(List.of(new Degree("Biology"), new Degree("Mathematics")));
+    when(degreeService.listDegrees()).thenReturn(List.of(new Degree("Biology", 3), new Degree("Mathematics", 3)));
 
     // Act
     ResponseEntity<List<DegreeResponseDTO>> result = controller.listDegrees();
@@ -98,7 +99,7 @@ class DegreeControllerTest {
   @DisplayName("Getting a degree is 200 with its data")
   void getDegreeIs200() {
     // Arrange
-    when(degreeService.getDegree(1L)).thenReturn(new Degree("Mathematics"));
+    when(degreeService.getDegree(1L)).thenReturn(new Degree("Mathematics", 3));
 
     // Act
     ResponseEntity<DegreeResponseDTO> result = controller.getDegree(1L);

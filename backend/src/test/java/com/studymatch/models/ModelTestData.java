@@ -9,7 +9,7 @@ public final class ModelTestData {
   }
 
   public static Degree degree() {
-    return new Degree("Test Degree");
+    return new Degree("Test Degree", 3);
   }
 
   public static Student student(String name) {

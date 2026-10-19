@@ -29,7 +29,7 @@ public class DegreeService {
 
     // two Staff registering the same name at once both pass the check above, the unique column stops the second
     try {
-      return degreeRepository.save(new Degree(name));
+      return degreeRepository.save(new Degree(name, request.curricularYears()));
     } catch (DataIntegrityViolationException e) {
       throw new StudyMatchException(ErrorCode.DEGREE_ALREADY_EXISTS);
     }

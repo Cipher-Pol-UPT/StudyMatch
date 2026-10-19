@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -39,7 +41,7 @@ class RegisterDegreeIntegrationTest {
 
   private static final String PASSWORD = "Test1234";
   private static final String NAME = "IT Test Degree";
-  private static final String NEW_DEGREE = "{\"name\":\"" + NAME + "\"}";
+  private static final String NEW_DEGREE = "{\"name\":\"" + NAME + "\",\"curricularYears\":3}";
 
   @Autowired
   private MockMvc mockMvc;
@@ -76,7 +78,7 @@ class RegisterDegreeIntegrationTest {
   }
 
   private ResultActions registerDegree(MockHttpSession session, String body) throws Exception {
-    return mockMvc.perform(post("/degrees/register").with(csrf()).session(session)
+    return mockMvc.perform(post("/degrees/").with(csrf()).session(session)
         .contentType(MediaType.APPLICATION_JSON)
         .content(body));
   }
@@ -93,7 +95,8 @@ class RegisterDegreeIntegrationTest {
     registerDegree(staff, NEW_DEGREE)
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").isNumber())
-        .andExpect(jsonPath("$.name").value(NAME));
+        .andExpect(jsonPath("$.name").value(NAME))
+        .andExpect(jsonPath("$.curricularYears").value(3));
 
     // Assert
     assertTrue(degreeRepository.existsByNameIgnoreCase(NAME));
@@ -103,11 +106,11 @@ class RegisterDegreeIntegrationTest {
   @DisplayName("A name that already exists is 409, even with different case and spaces")
   void degreeNameTaken() throws Exception {
     // Arrange
-    degreeRepository.save(new Degree(NAME));
+    degreeRepository.save(new Degree(NAME, 3));
     MockHttpSession staff = loginAsStaff();
 
     // Act + Assert
-    registerDegree(staff, "{\"name\":\"  " + NAME.toLowerCase() + " \"}")
+    registerDegree(staff, "{\"name\":\"  " + NAME.toLowerCase() + " \",\"curricularYears\":3}")
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("DEGREE_ALREADY_EXISTS"));
   }
@@ -119,7 +122,7 @@ class RegisterDegreeIntegrationTest {
     MockHttpSession staff = loginAsStaff();
 
     // Act + Assert
-    registerDegree(staff, "{\"name\":\"   \"}")
+    registerDegree(staff, "{\"name\":\"   \",\"curricularYears\":3}")
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("name"))
@@ -133,11 +136,40 @@ class RegisterDegreeIntegrationTest {
     MockHttpSession staff = loginAsStaff();
 
     // Act + Assert
-    registerDegree(staff, "{\"name\":\"" + "a".repeat(101) + "\"}")
+    registerDegree(staff, "{\"name\":\"" + "a".repeat(101) + "\",\"curricularYears\":3}")
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("name"))
         .andExpect(jsonPath("$.fieldErrors[0].code").value("SIZE_MAX"));
+  }
+
+  @ParameterizedTest(name = "{0} curricular years is {1}")
+  @CsvSource({ "0, MIN", "7, MAX" })
+  @DisplayName("Curricular years outside 1 to 6 is a field error")
+  void curricularYearsOutOfRange(int years, String code) throws Exception {
+    // Arrange
+    MockHttpSession staff = loginAsStaff();
+
+    // Act + Assert
+    registerDegree(staff, "{\"name\":\"" + NAME + "\",\"curricularYears\":" + years + "}")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("curricularYears"))
+        .andExpect(jsonPath("$.fieldErrors[0].code").value(code));
+  }
+
+  @Test
+  @DisplayName("Missing curricular years is a field error")
+  void missingCurricularYears() throws Exception {
+    // Arrange
+    MockHttpSession staff = loginAsStaff();
+
+    // Act + Assert
+    registerDegree(staff, "{\"name\":\"" + NAME + "\"}")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("curricularYears"))
+        .andExpect(jsonPath("$.fieldErrors[0].code").value("NOT_NULL"));
   }
 
   // only the staff
@@ -177,7 +209,7 @@ class RegisterDegreeIntegrationTest {
   @Test
   @DisplayName("Without logging in it's 401")
   void notLoggedIn() throws Exception {
-    mockMvc.perform(post("/degrees/register").with(csrf())
+    mockMvc.perform(post("/degrees/").with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
         .content(NEW_DEGREE))
         .andExpect(status().isUnauthorized());

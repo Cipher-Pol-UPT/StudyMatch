@@ -28,7 +28,7 @@ class StudentTest {
 
   @BeforeEach
   void setUp() {
-    student = new Student("student@example.com", "Test Student", "hash", new Degree("Test Degree"), 1);
+    student = new Student("student@example.com", "Test Student", "hash", new Degree("Test Degree", 3), 1);
   }
 
   // role + account state

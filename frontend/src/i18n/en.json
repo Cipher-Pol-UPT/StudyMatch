@@ -180,6 +180,7 @@
     "INVALID_BANNER": "Use a JPG or PNG image up to 5 MB.",
     "STATUTE_END_DATE_IN_PAST": "The statute end date cannot be in the past.",
     "SUBJECT_ALREADY_IN_DEGREE": "This subject is already in the degree.",
+    "DEGREE_ALREADY_EXISTS": "A degree with this name already exists.",
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Select at least one teacher.",
     "CLASS_SECTION_ALREADY_EXISTS": "This class section already exists.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "The class section does not belong to this subject edition.",

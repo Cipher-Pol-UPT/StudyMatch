@@ -39,13 +39,14 @@ class DegreeServiceTest {
   // register degree
 
   @Test
-  @DisplayName("A new degree is saved with its name")
+  @DisplayName("A new degree is saved with its name and curricular years")
   void newDegreeIsSaved() {
     // Act
-    Degree degree = degreeService.registerDegree(new DegreeRequestDTO("Mathematics"));
+    Degree degree = degreeService.registerDegree(new DegreeRequestDTO("Mathematics", 3));
 
     // Assert
     assertEquals("Mathematics", degree.getName());
+    assertEquals(3, degree.getCurricularYears());
     verify(degreeRepository).save(degree);
   }
 
@@ -53,7 +54,7 @@ class DegreeServiceTest {
   @DisplayName("Spaces around the name are removed before checking and saving")
   void nameIsTrimmed() {
     // Act
-    Degree degree = degreeService.registerDegree(new DegreeRequestDTO("  Mathematics  "));
+    Degree degree = degreeService.registerDegree(new DegreeRequestDTO("  Mathematics  ", 3));
 
     // Assert
     assertEquals("Mathematics", degree.getName());
@@ -68,7 +69,7 @@ class DegreeServiceTest {
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
-        () -> degreeService.registerDegree(new DegreeRequestDTO("Mathematics")));
+        () -> degreeService.registerDegree(new DegreeRequestDTO("Mathematics", 3)));
 
     // Assert
     assertEquals(ErrorCode.DEGREE_ALREADY_EXISTS, e.getCode());
@@ -83,7 +84,7 @@ class DegreeServiceTest {
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
-        () -> degreeService.registerDegree(new DegreeRequestDTO("Mathematics")));
+        () -> degreeService.registerDegree(new DegreeRequestDTO("Mathematics", 3)));
 
     // Assert
     assertEquals(ErrorCode.DEGREE_ALREADY_EXISTS, e.getCode());
@@ -95,7 +96,7 @@ class DegreeServiceTest {
   @DisplayName("Listing returns the degrees in the order the repository sorted them (by name)")
   void listReturnsSortedDegrees() {
     // Arrange
-    List<Degree> sorted = List.of(new Degree("Biology"), new Degree("Mathematics"));
+    List<Degree> sorted = List.of(new Degree("Biology", 3), new Degree("Mathematics", 3));
     when(degreeRepository.findAllByOrderByNameAsc()).thenReturn(sorted);
 
     // Act
@@ -111,7 +112,7 @@ class DegreeServiceTest {
   @DisplayName("Getting a degree by id returns it")
   void getDegreeById() {
     // Arrange
-    Degree mathematics = new Degree("Mathematics");
+    Degree mathematics = new Degree("Mathematics", 3);
     when(degreeRepository.findById(1L)).thenReturn(Optional.of(mathematics));
 
     // Act

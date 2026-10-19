@@ -59,9 +59,9 @@ class GetDegreesIntegrationTest {
   // saved out of order so the test shows the endpoint sorts them
   @BeforeEach
   void saveDegrees() {
-    degreeRepository.save(new Degree("IT Zeta Degree"));
-    alpha = degreeRepository.save(new Degree("IT Alpha Degree"));
-    degreeRepository.save(new Degree("IT Mu Degree"));
+    degreeRepository.save(new Degree("IT Zeta Degree", 3));
+    alpha = degreeRepository.save(new Degree("IT Alpha Degree", 3));
+    degreeRepository.save(new Degree("IT Mu Degree", 3));
   }
 
   private MockHttpSession loginAsTeacher() throws Exception {
@@ -141,7 +141,8 @@ class GetDegreesIntegrationTest {
     mockMvc.perform(get("/degrees/" + alpha.getId()).session(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(alpha.getId()))
-        .andExpect(jsonPath("$.name").value("IT Alpha Degree"));
+        .andExpect(jsonPath("$.name").value("IT Alpha Degree"))
+        .andExpect(jsonPath("$.curricularYears").value(3));
   }
 
   @Test
