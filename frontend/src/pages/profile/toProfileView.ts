@@ -1,5 +1,6 @@
-import { PROFILE_KEYS, type ProfileKey, type StudentProfile } from '../../studymatch-ui';
-import type { PersonalityProfileData, PrivateProfileData, StudentProfileData } from '../../types/studentProfile';
+import type { StudentProfile } from '../../studymatch-ui';
+import type { PrivateProfileData, StudentProfileData } from '../../types/studentProfile';
+import { strongestProfile, toPercentages } from '../personality/personalityScores';
 
 export function toProfileView(data: StudentProfileData): StudentProfile {
   const privateProfile = data.privateProfile;
@@ -29,19 +30,6 @@ export function toProfileView(data: StudentProfileData): StudentProfile {
     })),
     achievements: data.achievements.map(earned => ({ id: earned.achievement, earnedAt: earned.earnedAt })),
   };
-}
-
-function toPercentages(profile: PersonalityProfileData): Record<ProfileKey, number> {
-  return {
-    leadership: profile.leadership * 100,
-    technical: profile.problemSolving * 100,
-    creativity: profile.creativity * 100,
-    execution: profile.execution * 100,
-  };
-}
-
-function strongestProfile(personality: Record<ProfileKey, number>): ProfileKey {
-  return PROFILE_KEYS.reduce((strongest, key) => (personality[key] > personality[strongest] ? key : strongest));
 }
 
 function toAttendance(privateProfile: PrivateProfileData | null): number | null | undefined {

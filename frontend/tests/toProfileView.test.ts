@@ -36,10 +36,10 @@ describe('profile view mapping', () => {
     expect(view.achievements).toEqual([{ id: 'FIRST_STUDYROOM', earnedAt: '2026-10-10T15:00:00' }]);
   });
 
-  it('shows the personality profile as percentages, with problem solving as the technical profile', () => {
+  it('shows the personality profile as percentages', () => {
     const view = toProfileView(profile);
 
-    expect(view.personality).toEqual({ leadership: 80, technical: 60, creativity: 90, execution: 40 });
+    expect(view.personality).toEqual({ leadership: 80, problemSolving: 60, creativity: 90, execution: 40 });
     expect(view.dominantProfile).toBe('creativity');
   });
 

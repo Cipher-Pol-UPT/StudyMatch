@@ -1,11 +1,5 @@
 import type { Achievement, Language } from './enums';
-
-export interface PersonalityProfileData {
-  leadership: number;
-  problemSolving: number;
-  creativity: number;
-  execution: number;
-}
+import type { PersonalityProfileData } from './personalityProfile';
 
 export interface PrivateProfileData {
   institutionalEmail: string;
