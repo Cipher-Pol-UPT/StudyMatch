@@ -6,7 +6,7 @@ import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry
 import type { CurrentUser } from '../../types/currentUser';
 import { HomePage } from '../home/HomePage';
 import { ProfilePage } from '../profile/ProfilePage';
-import { StudyRoomsPage } from '../studyrooms/StudyRoomsPage';
+import { StudyRoomsPage } from '../studyRooms/StudyRoomsPage';
 import { ACCOUNT, SECTIONS } from './sections';
 import './student.css';
 import { useMyProfile } from './useMyProfile';
