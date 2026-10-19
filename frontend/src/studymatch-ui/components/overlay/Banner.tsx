@@ -14,16 +14,12 @@ export interface BannerProps {
   tone?: BannerTone;
   title?: ReactNode;
   children?: ReactNode;
-  /** Button or link on the right. */
   action?: ReactNode;
-  /** Shows a close button. */
   onDismiss?: () => void;
-  /** Replace the tone icon (or pass `null` to hide it). */
   icon?: IconComponent | null;
   className?: string;
 }
 
-/** Inline message about the page or a form. Danger banners are announced immediately. */
 export function Banner({ tone = 'info', title, children, action, onDismiss, icon, className }: BannerProps) {
   useTranslation();
   const Icon = icon === null ? null : (icon ?? TONE_ICON[tone]);

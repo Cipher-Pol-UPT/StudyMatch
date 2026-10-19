@@ -13,9 +13,7 @@ export interface SelectOption {
 
 export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
   label: ReactNode;
-  /** Options as data. You can also pass <option> children. */
   options?: SelectOption[];
-  /** First, empty option shown when nothing is selected. */
   placeholder?: string;
   hint?: ReactNode;
   error?: ReactNode;
@@ -24,10 +22,6 @@ export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement
   containerClassName?: string;
 }
 
-/**
- * Native select in the filled field style. Native on purpose: it is accessible,
- * works on every phone picker and plays well with any form library.
- */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
   { label, options, placeholder, hint, error, optional, icon, id, containerClassName, className, children, disabled, ...rest },
   ref,

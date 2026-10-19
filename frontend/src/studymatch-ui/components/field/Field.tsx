@@ -6,31 +6,21 @@ import type { IconComponent } from '../../utils/shared';
 import './field.css';
 
 export interface FieldShellProps {
-  /** id of the control inside. Used to wire the label and the hint. */
   id: string;
   label: ReactNode;
   hint?: ReactNode;
-  /** Replaces the hint and turns the field red. */
   error?: ReactNode;
-  /** Adds a quiet "Optional" tag next to the label. */
   optional?: boolean;
   icon?: IconComponent;
   suffix?: ReactNode;
   disabled?: boolean;
-  /** Align content to the top (multi-line controls). */
   top?: boolean;
-  /** Right side of the hint row, e.g. a character counter. */
   aside?: ReactNode;
-  /** Extra content under the hint, e.g. a password checklist. */
   below?: ReactNode;
   className?: string;
   children: ReactNode;
 }
 
-/**
- * The filled, iOS-style field box with an inline label.
- * Use it to wrap any custom control so it matches TextField.
- */
 export function Field({ id, label, hint, error, optional, icon: Icon, suffix, disabled, top, aside, below, className, children }: FieldShellProps) {
   useTranslation();
   const hintId = `${id}-hint`;

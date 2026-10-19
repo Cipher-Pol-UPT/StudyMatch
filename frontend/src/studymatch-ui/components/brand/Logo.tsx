@@ -5,15 +5,11 @@ import { EASE_OUT } from '../../utils/shared';
 
 export interface MarkProps {
   size?: number;
-  /** Frame colour: black (default) or white on dark/violet surfaces. */
   bg?: string;
-  /** The four profile dots, in fixed order: Leadership, Problem Solving, Creativity, Execution. */
   dots?: [string, string, string, string];
-  /** Slow quarter-turns, for loading and hero moments. */
   animate?: boolean;
 }
 
-/** Four people, one team: the StudyMatch mark. */
 export function Mark({ size = 40, bg = '#000', dots = ['#7a70ff', '#2a9fd6', '#eb6834', '#1baf7a'], animate }: MarkProps) {
   useTranslation();
   return (
@@ -33,9 +29,7 @@ export function Mark({ size = 40, bg = '#000', dots = ['#7a70ff', '#2a9fd6', '#e
 
 export interface LogoProps {
   size?: number;
-  /** White wordmark and frame for dark surfaces. */
   inverted?: boolean;
-  /** Hide the wordmark (mark only). */
   markOnly?: boolean;
   animate?: boolean;
 }

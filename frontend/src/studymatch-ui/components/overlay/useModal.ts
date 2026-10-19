@@ -26,10 +26,6 @@ export function focusableIn(root: HTMLElement) {
   return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((el) => el.offsetParent !== null || el === document.activeElement);
 }
 
-/**
- * Everything a modal surface needs: scroll lock, focus moved inside and trapped,
- * Escape to close, and focus returned to the trigger on close.
- */
 export function useModal(open: boolean, onClose: () => void, panel: RefObject<HTMLElement | null>, { dismissible = true, initialFocus }: { dismissible?: boolean; initialFocus?: RefObject<HTMLElement | null> } = {}) {
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);

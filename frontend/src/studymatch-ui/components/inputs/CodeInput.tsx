@@ -10,9 +10,7 @@ export interface CodeInputProps {
   value?: string;
   defaultValue?: string;
   onValueChange?: (code: string) => void;
-  /** Called once every box is filled. */
   onComplete?: (code: string) => void;
-  /** Accept letters too (verification codes). Defaults to digits only. */
   alphanumeric?: boolean;
   label?: string;
   error?: boolean;
@@ -20,10 +18,6 @@ export interface CodeInputProps {
   className?: string;
 }
 
-/**
- * One box per character for verification or 2FA codes.
- * Typing auto-advances, Backspace goes back, and pasting a whole code fills every box.
- */
 export function CodeInput({ length = 6, value, defaultValue = '', onValueChange, onComplete, alphanumeric, label = i18n.t('ui.verification_code'), error, disabled, className }: CodeInputProps) {
   useTranslation();
   const [code, setCode] = useControllableState(value, defaultValue, onValueChange);
