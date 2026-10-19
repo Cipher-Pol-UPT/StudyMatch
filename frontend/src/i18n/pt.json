@@ -16,6 +16,8 @@
     "sendLink": "Enviar ligação de recuperação",
     "resetPassword": "Repor palavra-passe",
     "activateAccount": "Ativar conta",
+    "logout": "Terminar sessão",
+    "loggedOut": "Sessão terminada.",
     "checkEmail": "Verifique a sua caixa de entrada",
     "resend": "Reenviar email",
     "verifyEmail": "Confirmar email"

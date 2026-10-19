@@ -16,6 +16,8 @@
     "sendLink": "Send reset link",
     "resetPassword": "Reset password",
     "activateAccount": "Activate account",
+    "logout": "Log out",
+    "loggedOut": "You have logged out.",
     "checkEmail": "Check your inbox",
     "resend": "Resend email",
     "verifyEmail": "Confirm email"

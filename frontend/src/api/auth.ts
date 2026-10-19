@@ -21,3 +21,7 @@ export async function login(credentials: LoginInput): Promise<CurrentUser> {
 
   return request<CurrentUser>('POST', '/users/login', credentials);
 }
+
+export function logout(): Promise<void> {
+  return request<void>('POST', '/users/logout');
+}
