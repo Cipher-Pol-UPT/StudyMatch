@@ -40,7 +40,7 @@ public class CategoryController {
     return ResponseEntity.ok(CategoryResponseDTO.from(categoryService.getCategory(id)));
   }
 
-  @PostMapping("register")
+  @PostMapping
   @PreAuthorize("hasRole('STAFF')")
   public ResponseEntity<CategoryResponseDTO> registerCategory(@Valid @RequestBody CategoryRequestDTO registerRequest) {
     Category category = categoryService.registerCategory(registerRequest);

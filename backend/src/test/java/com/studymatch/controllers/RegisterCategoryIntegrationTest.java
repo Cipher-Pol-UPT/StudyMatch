@@ -76,7 +76,7 @@ class RegisterCategoryIntegrationTest {
   }
 
   private ResultActions registerCategory(MockHttpSession session, String body) throws Exception {
-    return mockMvc.perform(post("/categories/register").with(csrf()).session(session)
+    return mockMvc.perform(post("/categories/").with(csrf()).session(session)
         .contentType(MediaType.APPLICATION_JSON)
         .content(body));
   }
@@ -177,7 +177,7 @@ class RegisterCategoryIntegrationTest {
   @Test
   @DisplayName("Without logging in it's 401")
   void notLoggedIn() throws Exception {
-    mockMvc.perform(post("/categories/register").with(csrf())
+    mockMvc.perform(post("/categories/").with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
         .content(NEW_CATEGORY))
         .andExpect(status().isUnauthorized());
