@@ -246,7 +246,7 @@ class RegisterStudentIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Disposition", "attachment; filename=\"students.csv\""))
         .andExpect(content().contentTypeCompatibleWith("text/csv"))
-        .andExpect(content().string("﻿name,personalEmail,degreeProgramme,curricularYear\r\n"));
+        .andExpect(content().string("\uFEFFname,personalEmail,degreeProgramme,curricularYear\r\n"));
   }
 
   @Test

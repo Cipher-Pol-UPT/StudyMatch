@@ -90,7 +90,7 @@ class StudentCsvReaderTest {
   @Test
   @DisplayName("Excel's BOM at the start doesn't break the first column")
   void bomIsRemoved() {
-    List<StudentCsvReader.Row> rows = read("﻿" + HEADER + "Ana,ana@example.com,D,1\n");
+    List<StudentCsvReader.Row> rows = read("\uFEFF" + HEADER + "Ana,ana@example.com,D,1\n");
     assertEquals("Ana", rows.get(0).student().name());
   }
 
@@ -215,7 +215,7 @@ class StudentCsvReaderTest {
   @Test
   @DisplayName("The template is only the four columns, with the BOM for Excel")
   void template() {
-    assertEquals("﻿name,personalEmail,degreeProgramme,curricularYear\r\n", reader.template());
+    assertEquals("\uFEFFname,personalEmail,degreeProgramme,curricularYear\r\n", reader.template());
   }
 
   @Test

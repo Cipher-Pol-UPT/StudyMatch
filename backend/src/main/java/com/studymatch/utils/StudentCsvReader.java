@@ -29,19 +29,22 @@ public class StudentCsvReader {
   public static final List<String> COLUMNS = List.of("name", "personalEmail", "degreeProgramme", "curricularYear");
   public static final int MAX_ROWS = 200;
 
+  // the invisible mark Excel puts at the start of UTF-8 files
+  private static final String BOM = "\uFEFF";
+
   // row is the line in the spreadsheet (the header is row 1), errors are the ones found while reading
   public record Row(int row, RegisterStudentRequestDTO student, List<FieldErrorDTO> errors) {
   }
 
   // starts with the BOM so Excel opens (and saves) it as UTF-8
   public String template() {
-    return "﻿" + String.join(",", COLUMNS) + "\r\n";
+    return BOM + String.join(",", COLUMNS) + "\r\n";
   }
 
   public List<Row> read(byte[] file) {
     String text = decodeUtf8(file);
-    if (text.startsWith("﻿")) {
-      text = text.substring(1); // Excel's BOM, otherwise the first column would be "﻿name"
+    if (text.startsWith(BOM)) {
+      text = text.substring(1); // otherwise the first column would be read as BOM + "name"
     }
     if (text.isBlank()) {
       throw new StudyMatchException(ErrorCode.CSV_EMPTY);
