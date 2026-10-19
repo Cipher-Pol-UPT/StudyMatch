@@ -7,26 +7,18 @@ import { useControllableState } from '../../utils/shared';
 import './rating.css';
 
 export interface RatingProps {
-  /** 0–max. Read-only ratings accept decimals (4.6 shows a partial star). */
   value?: number;
   defaultValue?: number;
-  /** Makes the rating an input. */
   onValueChange?: (value: number) => void;
   max?: number;
   size?: number;
   readOnly?: boolean;
-  /** Show "4.6" next to the stars. */
   showValue?: boolean;
-  /** e.g. 23 → "(23)". */
   count?: number;
-  /** Accessible name of the input. */
   label?: string;
   className?: string;
 }
 
-
-
-/** 1–5 stars (Rate Tutor). Interactive as a radio group, or read-only with partial stars. */
 export function Rating({ value, defaultValue = 0, onValueChange, max = 5, size = 22, readOnly, showValue, count, label = i18n.t('ui.rating'), className }: RatingProps) {
   useTranslation();
   const WORDS = ['', i18n.t('ui.poor'), i18n.t('ui.fair'), i18n.t('ui.good'), i18n.t('ui.very_good'), i18n.t('ui.excellent')];

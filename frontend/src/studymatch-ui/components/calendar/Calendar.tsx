@@ -7,7 +7,6 @@ import './calendar.css';
 
 export interface CalendarEvent {
   date: Date | string;
-  /** Dot colour. */
   color?: string;
   label?: string;
 }
@@ -15,14 +14,11 @@ export interface CalendarEvent {
 export interface CalendarProps {
   value?: Date | null;
   onValueChange?: (date: Date) => void;
-  /** Days with dots (StudyRooms, assignment deadlines). */
   events?: CalendarEvent[];
   min?: Date;
   max?: Date;
-  /** 0 = Sunday, 1 = Monday (default, as in Portugal). */
   weekStartsOn?: 0 | 1;
   locale?: string;
-  /** Month shown first. Defaults to the selected date or today. */
   defaultMonth?: Date;
   className?: string;
 }
@@ -32,7 +28,6 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 const toDate = (d: Date | string) => (typeof d === 'string' ? new Date(d.length === 10 ? `${d}T00:00:00` : d) : d);
 
-/** Month calendar with event dots and full keyboard support (arrows, Home/End, PageUp/PageDown). */
 export function Calendar({ value, onValueChange, events = [], min, max, weekStartsOn = 1, locale = i18n.language, defaultMonth, className }: CalendarProps) {
   useTranslation();
   const today = startOfDay(new Date());
@@ -54,7 +49,7 @@ export function Calendar({ value, onValueChange, events = [], min, max, weekStar
     const fmt = new Intl.DateTimeFormat(locale, { weekday: 'narrow' });
     const long = new Intl.DateTimeFormat(locale, { weekday: 'long' });
     return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(2024, 0, 7 + i + weekStartsOn); // 7 Jan 2024 is a Sunday
+      const d = new Date(2024, 0, 7 + i + weekStartsOn); 
       return { short: fmt.format(d), long: long.format(d) };
     });
   }, [locale, weekStartsOn]);

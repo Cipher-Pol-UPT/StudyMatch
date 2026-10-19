@@ -8,14 +8,11 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   hint?: ReactNode;
   error?: ReactNode;
   optional?: boolean;
-  /** Grow with the content instead of scrolling. */
   autoResize?: boolean;
-  /** Show a live "120 / 500" counter. Defaults to true when `maxLength` is set. */
   showCount?: boolean;
   containerClassName?: string;
 }
 
-/** Multi-line field (e.g. the 500-character "About me"). */
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
   { label, hint, error, optional, autoResize = true, showCount, maxLength, id, containerClassName, className, onChange, value, defaultValue, rows = 3, disabled, ...rest },
   ref,

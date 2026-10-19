@@ -34,3 +34,7 @@ async function ensureCsrfToken() {
     await getCurrentUser();
   }
 }
+
+export function logout(): Promise<void> {
+  return request<void>('POST', '/users/logout');
+}

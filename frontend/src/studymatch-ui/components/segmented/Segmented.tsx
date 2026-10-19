@@ -16,20 +16,13 @@ export interface SegmentedProps<T extends string | number> {
   value?: T;
   defaultValue?: T;
   onValueChange?: (value: T) => void;
-  /** Accessible name of the group. */
   label: string;
   size?: 'sm' | 'md';
-  /** Dark track, for use on light-tinted hero areas. */
   dark?: boolean;
-  /** Stretch to full width with equal segments. */
   block?: boolean;
   className?: string;
 }
 
-/**
- * Pick one of 2–5 options. The white thumb slides between segments.
- * Keyboard: arrow keys move the selection, as in a radio group.
- */
 export function Segmented<T extends string | number>({ options, value, defaultValue, onValueChange, label, size = 'md', dark, block, className }: SegmentedProps<T>) {
   const id = useId();
   const [current, setCurrent] = useControllableState<T>(value, defaultValue ?? options[0]?.value, onValueChange);

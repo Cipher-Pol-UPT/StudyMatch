@@ -11,14 +11,11 @@ export interface SearchFieldProps extends Omit<InputHTMLAttributes<HTMLInputElem
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
-  /** Accessible name. Defaults to the placeholder. */
   label?: string;
   size?: 'sm' | 'md';
-  /** A keyboard hint shown on the right while empty, e.g. "⌘K". */
   shortcut?: ReactNode;
 }
 
-/** Pill search input with a clear button. Escape clears it. */
 export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(function SearchField(
   { value, defaultValue = '', onValueChange, onChange, placeholder = i18n.t('ui.search'), label, size = 'md', shortcut, className, onKeyDown, ...rest },
   ref,

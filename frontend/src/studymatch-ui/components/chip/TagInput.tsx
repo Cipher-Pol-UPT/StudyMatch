@@ -12,19 +12,13 @@ export interface TagInputProps {
   defaultValue?: string[];
   onValueChange?: (tags: string[]) => void;
   placeholder?: string;
-  /** Maximum number of tags. */
   max?: number;
-  /** Quick-add suggestions shown under the field (already-added ones are hidden). */
   suggestions?: string[];
   hint?: ReactNode;
   error?: ReactNode;
   className?: string;
 }
 
-/**
- * Free-form tags (skills, interests, languages).
- * Enter or comma adds a tag, Backspace on an empty input removes the last one.
- */
 export function TagInput({ label, value, defaultValue = [], onValueChange, placeholder = i18n.t('ui.type_and_press_enter'), max, suggestions = [], hint, error, className }: TagInputProps) {
   useTranslation();
   const id = useId();
