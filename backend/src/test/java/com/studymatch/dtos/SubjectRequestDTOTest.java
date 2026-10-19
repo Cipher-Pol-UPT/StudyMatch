@@ -20,6 +20,7 @@ import jakarta.validation.Validator;
 class SubjectRequestDTOTest {
 
   private static final List<DegreePlacementDTO> ONE_DEGREE = List.of(new DegreePlacementDTO(1L, 1, 1));
+  private static final SubjectEditionRequestDTO EDITION = new SubjectEditionRequestDTO(2026, List.of(1L), List.of("T1"));
 
   private static Validator validator;
 
@@ -36,19 +37,19 @@ class SubjectRequestDTOTest {
   }
 
   private SubjectRequestDTO withCode(String code) {
-    return new SubjectRequestDTO(code, "Mathematics I", 6, 1L, ONE_DEGREE);
+    return new SubjectRequestDTO(code, "Mathematics I", 6, 1L, ONE_DEGREE, EDITION);
   }
 
   private SubjectRequestDTO withName(String name) {
-    return new SubjectRequestDTO("MAT1", name, 6, 1L, ONE_DEGREE);
+    return new SubjectRequestDTO("MAT1", name, 6, 1L, ONE_DEGREE, EDITION);
   }
 
   private SubjectRequestDTO withEcts(Integer ects) {
-    return new SubjectRequestDTO("MAT1", "Mathematics I", ects, 1L, ONE_DEGREE);
+    return new SubjectRequestDTO("MAT1", "Mathematics I", ects, 1L, ONE_DEGREE, EDITION);
   }
 
   private SubjectRequestDTO withDegree(DegreePlacementDTO placement) {
-    return new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, List.of(placement));
+    return new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, List.of(placement), EDITION);
   }
 
   @Test
@@ -118,7 +119,7 @@ class SubjectRequestDTOTest {
   @DisplayName("A missing category is NOT_NULL")
   void missingCategory() {
     assertEquals(Set.of("categoryId=NotNull"),
-        failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, null, ONE_DEGREE)));
+        failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, null, ONE_DEGREE, EDITION)));
   }
 
   // degrees
@@ -126,8 +127,8 @@ class SubjectRequestDTOTest {
   @Test
   @DisplayName("A subject with no degrees is NOT_EMPTY")
   void noDegrees() {
-    assertEquals(Set.of("degrees=NotEmpty"), failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, List.of())));
-    assertEquals(Set.of("degrees=NotEmpty"), failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, null)));
+    assertEquals(Set.of("degrees=NotEmpty"), failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, List.of(), EDITION)));
+    assertEquals(Set.of("degrees=NotEmpty"), failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, null, EDITION)));
   }
 
   @Test
@@ -136,7 +137,7 @@ class SubjectRequestDTOTest {
     List<DegreePlacementDTO> degrees = new ArrayList<>();
     degrees.add(null);
     assertEquals(Set.of("degrees[0].<list element>=NotNull"),
-        failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, degrees)));
+        failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, degrees, EDITION)));
   }
 
   @Test
@@ -159,6 +160,51 @@ class SubjectRequestDTOTest {
     assertTrue(failures(withDegree(new DegreePlacementDTO(1L, 1, 2))).isEmpty());
     assertEquals(Set.of("degrees[0].semester=Min"), failures(withDegree(new DegreePlacementDTO(1L, 1, 0))));
     assertEquals(Set.of("degrees[0].semester=Max"), failures(withDegree(new DegreePlacementDTO(1L, 1, 3))));
+  }
+
+  // edition
+
+  private SubjectRequestDTO withEdition(SubjectEditionRequestDTO edition) {
+    return new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, ONE_DEGREE, edition);
+  }
+
+  @Test
+  @DisplayName("A subject without its edition is NOT_NULL")
+  void missingEdition() {
+    assertEquals(Set.of("edition=NotNull"), failures(withEdition(null)));
+  }
+
+  @Test
+  @DisplayName("The edition needs an academic year")
+  void editionMissingAcademicYear() {
+    assertEquals(Set.of("edition.academicYear=NotNull"),
+        failures(withEdition(new SubjectEditionRequestDTO(null, List.of(1L), List.of()))));
+  }
+
+  @Test
+  @DisplayName("The edition needs at least one teacher")
+  void editionWithoutTeachers() {
+    assertEquals(Set.of("edition.teacherIds=NotEmpty"),
+        failures(withEdition(new SubjectEditionRequestDTO(2026, List.of(), List.of()))));
+    assertEquals(Set.of("edition.teacherIds=NotEmpty"),
+        failures(withEdition(new SubjectEditionRequestDTO(2026, null, List.of()))));
+  }
+
+  @Test
+  @DisplayName("Classes are optional: none or a missing list are both accepted")
+  void editionWithoutClasses() {
+    assertTrue(failures(withEdition(new SubjectEditionRequestDTO(2026, List.of(1L), List.of()))).isEmpty());
+    assertTrue(failures(withEdition(new SubjectEditionRequestDTO(2026, List.of(1L), null))).isEmpty());
+  }
+
+  @Test
+  @DisplayName("Each class code is checked: not blank, at most 20 characters")
+  void editionClassCodes() {
+    assertEquals(Set.of("edition.classSections[0].<list element>=NotBlank"),
+        failures(withEdition(new SubjectEditionRequestDTO(2026, List.of(1L), List.of(" ")))));
+    assertTrue(failures(withEdition(new SubjectEditionRequestDTO(2026, List.of(1L), List.of("a".repeat(20))))).isEmpty());
+    assertEquals(Set.of("edition.classSections[0].<list element>=Size"),
+        failures(withEdition(new SubjectEditionRequestDTO(2026, List.of(1L), List.of("a".repeat(21))))));
   }
 
 }

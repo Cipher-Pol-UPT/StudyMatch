@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,22 +19,29 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import com.studymatch.dtos.DegreePlacementDTO;
+import com.studymatch.dtos.SubjectEditionRequestDTO;
 import com.studymatch.dtos.SubjectRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
 import com.studymatch.models.DegreeSubject;
+import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Subject;
+import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.SubjectRepository;
 
 class SubjectServiceTest {
 
+  private static final SubjectEditionRequestDTO EDITION = new SubjectEditionRequestDTO(2026, List.of(1L), List.of("T1"));
+
   private SubjectRepository subjectRepository;
   private CategoryRepository categoryRepository;
   private DegreeRepository degreeRepository;
+  private SubjectEditionService subjectEditionService;
   private SubjectService subjectService;
 
   private Category mathematics;
@@ -45,7 +53,8 @@ class SubjectServiceTest {
     subjectRepository = mock(SubjectRepository.class);
     categoryRepository = mock(CategoryRepository.class);
     degreeRepository = mock(DegreeRepository.class);
-    subjectService = new SubjectService(subjectRepository, categoryRepository, degreeRepository);
+    subjectEditionService = mock(SubjectEditionService.class);
+    subjectService = new SubjectService(subjectRepository, categoryRepository, degreeRepository, subjectEditionService);
 
     mathematics = new Category("Mathematics");
     computerScience = new Degree("Computer Science", 3);
@@ -56,10 +65,15 @@ class SubjectServiceTest {
 
     // saveAndFlush returns what it was given
     when(subjectRepository.saveAndFlush(any(Subject.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    // the edition service's own checks are tested in SubjectEditionServiceTest, here it just builds the edition
+    when(subjectEditionService.createEdition(any(Subject.class), any(SubjectEditionRequestDTO.class)))
+        .thenAnswer(invocation -> new SubjectEdition(invocation.getArgument(0), new AcademicYear(2026),
+            Set.of(ModelTestData.teacher())));
   }
 
   private static SubjectRequestDTO request(String code, DegreePlacementDTO... degrees) {
-    return new SubjectRequestDTO(code, "Mathematics I", 6, 1L, List.of(degrees));
+    return new SubjectRequestDTO(code, "Mathematics I", 6, 1L, List.of(degrees), EDITION);
   }
 
   // register subject
@@ -69,7 +83,7 @@ class SubjectServiceTest {
   void newSubjectIsSaved() {
     // Act
     Subject subject = subjectService.registerSubject(
-        request("MAT1", new DegreePlacementDTO(10L, 1, 1), new DegreePlacementDTO(20L, 2, 2)));
+        request("MAT1", new DegreePlacementDTO(10L, 1, 1), new DegreePlacementDTO(20L, 2, 2))).getSubject();
 
     // Assert
     assertEquals("MAT1", subject.getCode());
@@ -88,8 +102,8 @@ class SubjectServiceTest {
   @DisplayName("Spaces around the code and name are removed before checking and saving")
   void codeAndNameAreTrimmed() {
     // Act
-    Subject subject = subjectService.registerSubject(
-        new SubjectRequestDTO("  MAT1 ", "  Mathematics I ", 6, 1L, List.of(new DegreePlacementDTO(10L, 1, 1))));
+    Subject subject = subjectService.registerSubject(new SubjectRequestDTO("  MAT1 ", "  Mathematics I ", 6, 1L,
+        List.of(new DegreePlacementDTO(10L, 1, 1)), EDITION)).getSubject();
 
     // Assert
     assertEquals("MAT1", subject.getCode());
@@ -117,7 +131,7 @@ class SubjectServiceTest {
   void unknownCategoryIsNotFound() {
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectService.registerSubject(
-        new SubjectRequestDTO("MAT1", "Mathematics I", 6, 99L, List.of(new DegreePlacementDTO(10L, 1, 1)))));
+        new SubjectRequestDTO("MAT1", "Mathematics I", 6, 99L, List.of(new DegreePlacementDTO(10L, 1, 1)), EDITION)));
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
@@ -152,7 +166,7 @@ class SubjectServiceTest {
   @DisplayName("The degree's last curricular year is allowed")
   void lastCurricularYearIsAllowed() {
     // Act
-    Subject subject = subjectService.registerSubject(request("MAT1", new DegreePlacementDTO(10L, 3, 2)));
+    Subject subject = subjectService.registerSubject(request("MAT1", new DegreePlacementDTO(10L, 3, 2))).getSubject();
 
     // Assert
     assertEquals(3, subject.getDegreeSubjects().iterator().next().getCurricularYear());
@@ -182,6 +196,46 @@ class SubjectServiceTest {
 
     // Assert
     assertEquals(ErrorCode.SUBJECT_ALREADY_EXISTS, e.getCode());
+  }
+
+  @Test
+  @DisplayName("The subject's first edition is created from the request, for the saved subject")
+  void firstEditionIsCreated() {
+    // Act
+    SubjectEdition edition = subjectService.registerSubject(request("MAT1", new DegreePlacementDTO(10L, 1, 1)));
+
+    // Assert
+    verify(subjectEditionService).createEdition(edition.getSubject(), EDITION);
+    assertEquals("MAT1", edition.getSubject().getCode());
+  }
+
+  @Test
+  @DisplayName("When the edition is refused, its error goes through (and the transaction drops the subject)")
+  void refusedEditionIsPassedOn() {
+    // Arrange
+    when(subjectEditionService.createEdition(any(Subject.class), any(SubjectEditionRequestDTO.class)))
+        .thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectService.registerSubject(request("MAT1", new DegreePlacementDTO(10L, 1, 1))));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  @Test
+  @DisplayName("A refused subject never gets to its edition")
+  void refusedSubjectCreatesNoEdition() {
+    // Arrange
+    when(subjectRepository.existsByCodeIgnoreCase("MAT1")).thenReturn(true);
+
+    // Act
+    assertThrows(StudyMatchException.class,
+        () -> subjectService.registerSubject(request("MAT1", new DegreePlacementDTO(10L, 1, 1))));
+
+    // Assert
+    verify(subjectEditionService, never()).createEdition(any(), any());
   }
 
   // list subjects

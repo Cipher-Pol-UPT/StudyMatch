@@ -13,6 +13,7 @@ import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
 import com.studymatch.models.Subject;
+import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -23,17 +24,20 @@ public class SubjectService {
   private final SubjectRepository subjectRepository;
   private final CategoryRepository categoryRepository;
   private final DegreeRepository degreeRepository;
+  private final SubjectEditionService subjectEditionService;
 
   public SubjectService(SubjectRepository subjectRepository, CategoryRepository categoryRepository,
-      DegreeRepository degreeRepository) {
+      DegreeRepository degreeRepository, SubjectEditionService subjectEditionService) {
     this.subjectRepository = subjectRepository;
     this.categoryRepository = categoryRepository;
     this.degreeRepository = degreeRepository;
+    this.subjectEditionService = subjectEditionService;
   }
 
-  // "MAT1" and " mat1 " are the same subject
+  // "MAT1" and " mat1 " are the same subject. The subject and its first edition are saved together:
+  // if the edition is refused, the subject isn't kept either
   @Transactional
-  public Subject registerSubject(SubjectRequestDTO request) {
+  public SubjectEdition registerSubject(SubjectRequestDTO request) {
     String code = request.code().trim();
     if (subjectRepository.existsByCodeIgnoreCase(code)) {
       throw new StudyMatchException(ErrorCode.SUBJECT_ALREADY_EXISTS);
@@ -53,10 +57,11 @@ public class SubjectService {
 
     // two Staff registering the same code at once both pass the check above, the unique column stops the second
     try {
-      return subjectRepository.saveAndFlush(subject);
+      subject = subjectRepository.saveAndFlush(subject);
     } catch (DataIntegrityViolationException e) {
       throw new StudyMatchException(ErrorCode.SUBJECT_ALREADY_EXISTS);
     }
+    return subjectEditionService.createEdition(subject, request.edition());
   }
 
   public List<Subject> listSubjects() {
