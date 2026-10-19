@@ -1,8 +1,9 @@
-import { Brain, House, KeyRound } from 'lucide-react';
+import { House, KeyRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentUser } from './api/auth';
 import { LoginPage } from './pages/login/LoginPage';
+import { PersonalityTestPage } from './pages/personality/PersonalityTestPage';
 import { PlaceholderPage } from './pages/placeholder/PlaceholderPage';
 import type { CurrentUser } from './types/currentUser';
 
@@ -31,7 +32,7 @@ export default function App() {
   }
 
   if (currentUser.personalityTestRequired) {
-    return <PlaceholderPage icon={Brain} title={t('personality.title')} />;
+    return <PersonalityTestPage onCompleted={() => setCurrentUser({ ...currentUser, personalityTestRequired: false })} />;
   }
 
   return <PlaceholderPage icon={House} title={t('home.greeting', { name: currentUser.name })} />;

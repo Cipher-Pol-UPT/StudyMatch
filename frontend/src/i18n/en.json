@@ -60,7 +60,34 @@
     "attendance": "Confirm attendance"
   },
   "personality": {
-    "title": "Personality test"
+    "title": "Personality test",
+    "heading": "How do you work in a team?",
+    "lead": "{{count}} statements, about 3 minutes. There are no right answers: be honest, it helps us build groups where everyone has a role.",
+    "yearly": "You need to complete this test once per academic year to use StudyMatch. Your answers can't be changed after you submit them.",
+    "answered": "Answered",
+    "progress": "{{answered}} of {{total}}",
+    "submit": "Submit answers",
+    "strongestProfile": "Your strongest profile",
+    "yourProfile": "Your profile",
+    "privacy": "Your profile is used to balance groups this academic year. Only you, your teachers and staff can see it.",
+    "continue": "Continue to StudyMatch",
+    "questions": {
+      "1": "I feel comfortable speaking in front of the class.",
+      "2": "I try to understand my classmates' point of view before disagreeing.",
+      "3": "I plan my tasks in advance so I meet the deadlines.",
+      "4": "When a deadline gets close, I easily get anxious.",
+      "5": "I like trying different ways of solving a problem.",
+      "6": "In group work, I prefer to stay in the background.",
+      "7": "Sometimes I criticise my classmates' work harshly.",
+      "8": "I often leave work until the last minute.",
+      "9": "I stay calm when things go wrong in the group.",
+      "10": "I prefer following known methods to exploring new ideas.",
+      "11": "I'm usually the one who starts the conversation when the group is quiet.",
+      "12": "I like helping a classmate who is struggling, even if it slows me down.",
+      "13": "I check my work carefully before handing it in.",
+      "14": "I worry a lot about things going wrong.",
+      "15": "I'm interested in topics outside my field of study."
+    }
   },
   "likert": {
     "1": "Strongly disagree",

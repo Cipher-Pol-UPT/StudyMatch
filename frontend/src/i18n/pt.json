@@ -60,7 +60,34 @@
     "attendance": "Confirmar presenças"
   },
   "personality": {
-    "title": "Teste de personalidade"
+    "title": "Teste de personalidade",
+    "heading": "Como trabalha em equipa?",
+    "lead": "{{count}} afirmações, cerca de 3 minutos. Não há respostas certas: responda com sinceridade, ajuda-nos a formar grupos onde todos têm um papel.",
+    "yearly": "Tem de fazer este teste uma vez por ano letivo para usar o StudyMatch. Depois de submeter, as respostas não podem ser alteradas.",
+    "answered": "Respondidas",
+    "progress": "{{answered}} de {{total}}",
+    "submit": "Submeter respostas",
+    "strongestProfile": "O seu perfil mais forte",
+    "yourProfile": "O seu perfil",
+    "privacy": "O seu perfil é usado para equilibrar os grupos neste ano letivo. Só o próprio, os seus docentes e os funcionários o podem ver.",
+    "continue": "Continuar para o StudyMatch",
+    "questions": {
+      "1": "Sinto-me à vontade a falar em frente à turma.",
+      "2": "Procuro perceber o ponto de vista dos colegas antes de discordar.",
+      "3": "Planeio as tarefas com antecedência para cumprir os prazos.",
+      "4": "Quando um prazo se aproxima, a ansiedade toma conta de mim com facilidade.",
+      "5": "Gosto de experimentar formas diferentes de resolver um problema.",
+      "6": "Em trabalhos de grupo, prefiro ficar em segundo plano.",
+      "7": "Às vezes critico o trabalho dos colegas de forma dura.",
+      "8": "Deixo muitas vezes o trabalho para a última hora.",
+      "9": "Mantenho a calma quando as coisas correm mal no grupo.",
+      "10": "Prefiro seguir métodos conhecidos a explorar ideias novas.",
+      "11": "Costumo ser eu a puxar a conversa quando o grupo está calado.",
+      "12": "Gosto de ajudar um colega com dificuldades, mesmo que isso me atrase.",
+      "13": "Reviso o meu trabalho com cuidado antes de o entregar.",
+      "14": "Preocupo-me muito com a possibilidade de as coisas correrem mal.",
+      "15": "Interesso-me por temas fora da minha área de estudo."
+    }
   },
   "likert": {
     "1": "Discordo totalmente",
