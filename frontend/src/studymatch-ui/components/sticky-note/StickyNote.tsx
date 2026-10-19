@@ -235,5 +235,3 @@ export function StickyBoard({
     </div>
   );
 }
-
-export { tiltFor };
