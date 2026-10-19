@@ -55,7 +55,6 @@ export interface ToastOptions {
   tone?: ToastTone;
   action?: string;
   onAction?: () => void;
-  /** Milliseconds. Defaults to 4000 (6000 with an action). */
   duration?: number;
 }
 
@@ -77,7 +76,6 @@ function isOptions(x: unknown): x is ToastOptions {
   return typeof x === 'object' && x !== null && 'message' in x;
 }
 
-/** Hosts the toast stack. Already included in <StudyMatchProvider>. */
 export function ToastProvider({ children, max = 3 }: { children: ReactNode; max?: number }) {
   useTranslation();
   const [items, setItems] = useState<ToastItem[]>([]);

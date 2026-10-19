@@ -1,14 +1,13 @@
-import { Brain, House, KeyRound, UserRound } from 'lucide-react';
+import { House, KeyRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BrowserRouter } from 'react-router-dom';
 import { getCurrentUser } from './api/auth';
 import { LoginPage } from './pages/login/LoginPage';
+import { PersonalityTestPage } from './pages/personality/PersonalityTestPage';
 import { PlaceholderPage } from './pages/placeholder/PlaceholderPage';
-import { ProfilePage } from './pages/profile/ProfilePage';
-import { buttonClass } from './studymatch-ui';
+import { StudentArea } from './pages/student/StudentArea';
 import type { CurrentUser } from './types/currentUser';
-
-const PROFILE_PATH = '/profile';
 
 export default function App() {
   const { t } = useTranslation();
@@ -35,27 +34,16 @@ export default function App() {
   }
 
   if (currentUser.personalityTestRequired) {
-    return <PlaceholderPage icon={Brain} title={t('personality.title')} />;
+    return <PersonalityTestPage onCompleted={() => setCurrentUser({ ...currentUser, personalityTestRequired: false })} />;
   }
 
-  const isStudent = currentUser.role === 'STUDENT';
-
-  if (isStudent && window.location.pathname === PROFILE_PATH) {
-    return <ProfilePage />;
+  if (currentUser.role !== 'STUDENT') {
+    return <PlaceholderPage icon={House} title={t('home.greeting', { name: currentUser.name })} />;
   }
-
-  const myProfileLink = (
-    <a className={buttonClass({ variant: 'secondary' })} href={PROFILE_PATH}>
-      <UserRound size={18} aria-hidden />
-      {t('profile.myProfile')}
-    </a>
-  );
 
   return (
-    <PlaceholderPage
-      icon={House}
-      title={t('home.greeting', { name: currentUser.name })}
-      action={isStudent ? myProfileLink : undefined}
-    />
+    <BrowserRouter>
+      <StudentArea currentUser={currentUser} onLoggedOut={() => setCurrentUser(null)} />
+    </BrowserRouter>
   );
 }

@@ -33,39 +33,25 @@ export interface StudentProfile {
   avatarUrl?: string | null;
   bannerUrl?: string | null;
   bannerPreset?: BannerPreset;
-  /** About text supplied by the caller. */
   aboutMe?: string;
   skills: string[];
   interests: string[];
-  /** Backend language codes. */
   languages: import('../../../types/enums').Language[];
-  /** Personality profile for the current academic year (private). */
   personality?: Record<ProfileKey, number>;
-  /** Level per course category, from final grades (GR3, private). */
   categoryLevels?: { category: string; level: CategoryLevel; subjects?: number }[];
-  /** Overall attendance % (private). Null for students with a special statute. */
   attendance?: number | null;
   tutorBadges?: { subject: string; rating?: number; ratings?: number }[];
   achievements?: AchievementState[];
 }
 
-/**
- * Who is looking. Business rule (View My Profile): other students see only the public part
- * (banner, name, about me, skills, interests, languages, badges). Grades, attendance, category
- * levels and the personality profile are visible to the student, their teachers and staff.
- */
 export interface ProfileViewer { showPrivate: boolean; canEdit: boolean }
-
-// â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export interface ProfileHeaderProps {
   profile: StudentProfile;
   viewer?: ProfileViewer;
-  /** Make the photo and cover editable in place. */
   editable?: boolean;
   onAvatarChange?: (image: CroppedImage | null) => void;
   onBannerChange?: (image: CroppedImage | null) => void;
   onBannerPresetChange?: (preset: BannerPreset) => void;
-  /** Right side, e.g. an "Edit profile" button. */
   actions?: ReactNode;
   className?: string;
 }
@@ -124,7 +110,6 @@ export function ProfileHeader({ profile: p, viewer = { showPrivate: false, canEd
   );
 }
 
-// â”€â”€â”€ Sections â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function PrivateNote() {
   useTranslation();
   return (
@@ -156,9 +141,7 @@ function Tags({ label, items, icon }: { label: string; items: string[]; icon?: t
 export interface ProfileViewProps {
   profile: StudentProfile;
   viewer?: ProfileViewer;
-  /** Shows "Edit profile" (viewer = self). */
   onEdit?: () => void;
-  /** Edit the photo and cover directly on the profile. */
   onAvatarChange?: (image: CroppedImage | null) => void;
   onBannerChange?: (image: CroppedImage | null) => void;
   onBannerPresetChange?: (preset: BannerPreset) => void;
@@ -167,11 +150,6 @@ export interface ProfileViewProps {
   className?: string;
 }
 
-/**
- * View My Profile (and another student's public profile).
- * Header with cover and photo, about, skills / interests / languages, personality,
- * category levels and attendance (private), and badges: Tutor per subject and achievements.
- */
 export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit: false }, onEdit, onAvatarChange, onBannerChange, onBannerPresetChange, onExportCertificate, locale = i18n.language, className }: ProfileViewProps) {
   useTranslation();
   const [achievement, setAchievement] = useState<AchievementId | null>(null);
@@ -302,7 +280,6 @@ export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit
   );
 }
 
-/** Small summary for lists and hover cards: photo, name, programme and earned badges. */
 export function ProfileCard({ profile: p, onClick }: { profile: StudentProfile; onClick?: () => void }) {
   useTranslation();
   const earned = (p.achievements ?? []).filter((a) => a.earnedAt).slice(0, 4);

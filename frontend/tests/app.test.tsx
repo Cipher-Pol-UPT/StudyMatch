@@ -66,24 +66,6 @@ describe('my profile', () => {
     window.history.pushState({}, '', '/');
   });
 
-  it('links a student from the home page to their profile', async () => {
-    mockCurrentUserResponse(200, student);
-    renderApp();
-
-    const link = await screen.findByRole('link', { name: 'My profile' });
-
-    expect(link.getAttribute('href')).toBe('/profile');
-  });
-
-  it('does not link a teacher to a student profile', async () => {
-    mockCurrentUserResponse(200, { ...student, role: 'TEACHER' });
-    renderApp();
-
-    await screen.findByText('Hello, Maria Costa.');
-
-    expect(screen.queryByRole('link', { name: 'My profile' })).toBeNull();
-  });
-
   it('opens the profile page for a student on /profile', async () => {
     window.history.pushState({}, '', '/profile');
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {

@@ -10,20 +10,12 @@ export interface CardProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   tone?: CardTone;
   outline?: boolean;
   padding?: 'none' | 'sm' | 'md' | 'lg';
-  /** Element to render: 'div' (default), 'section', 'article', 'li'… */
   as?: ElementType;
-  /** Header title. */
   title?: ReactNode;
-  /** Text under the title. */
   description?: ReactNode;
-  /** Top-right action next to the title. */
   action?: ReactNode;
 }
 
-/**
- * The basic surface. Tints are for friendly grouping, dark tones for hero moments.
- * With `onClick`, the card becomes keyboard-operable (Enter / Space).
- */
 export const Card = forwardRef<HTMLElement, CardProps>(function Card(
   { tone = 'white', outline, padding = 'md', as: As = 'div', title, description, action, onClick, onKeyDown, className, children, ...rest },
   ref,
@@ -71,10 +63,8 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
 export interface StatCardProps {
   label: ReactNode;
   value: ReactNode;
-  /** Small unit after the value ("%", "/20"). */
   unit?: ReactNode;
   caption?: ReactNode;
-  /** Signed change, e.g. +4.2 or -1. Positive is green. */
   trend?: number;
   trendSuffix?: string;
   tone?: CardTone;
@@ -82,7 +72,6 @@ export interface StatCardProps {
   className?: string;
 }
 
-/** Large numeric headline card: one honest number, big. */
 export function StatCard({ label, value, unit, caption, trend, trendSuffix = '%', tone = 'white', action, className }: StatCardProps) {
   return (
     <Card tone={tone} className={className}>

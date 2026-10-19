@@ -8,7 +8,6 @@ import './accordion.css';
 export interface AccordionItem {
   id: string;
   title: ReactNode;
-  /** Right side of the header (a count, a status). */
   meta?: ReactNode;
   content: ReactNode;
   disabled?: boolean;
@@ -16,15 +15,12 @@ export interface AccordionItem {
 
 export interface AccordionProps {
   items: AccordionItem[];
-  /** Allow several panels open at once. */
   multiple?: boolean;
   defaultOpen?: string[];
-  /** White card with dividers, or plain rows. */
   variant?: 'card' | 'plain';
   className?: string;
 }
 
-/** Collapsible sections, e.g. "Why was this group formed?" or FAQ. */
 export function Accordion({ items, multiple, defaultOpen = [], variant = 'card', className }: AccordionProps) {
   const base = useId();
   const [open, setOpen] = useState<string[]>(defaultOpen);

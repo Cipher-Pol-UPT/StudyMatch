@@ -13,20 +13,16 @@ import { ImageCropper,type CroppedImage } from './ImageCropper';
 import './profile.css';
 import { BANNER_PRESETS,DEFAULT_IMAGE_MAX,PROFILE_IMAGE_TYPES,validateProfileImage } from './ProfileMedia.shared';
 
-// ─── Banner presets ────────────────────────────────────────
 export type BannerPreset = 'violet' | 'sunrise' | 'fresh' | 'ink' | 'lavender' | 'sky' | 'peach' | 'mint';
 
 export interface ProfileBannerProps {
-  /** Banner photo. Takes priority over the preset. */
   src?: string | null;
   preset?: BannerPreset;
-  /** Height in px (the width is fluid). */
   height?: number;
   children?: ReactNode;
   className?: string;
 }
 
-/** The wide cover at the top of a profile: a photo or a colour preset with a soft dot texture. */
 export function ProfileBanner({ src, preset = 'violet', height = 220, children, className }: ProfileBannerProps) {
   useTranslation();
   const style: CSSProperties = { height, background: src ? `center / cover no-repeat url("${src}")` : BANNER_PRESETS[preset].background };
@@ -37,7 +33,6 @@ export function ProfileBanner({ src, preset = 'violet', height = 220, children, 
   );
 }
 
-// ─── Shared: pick → crop ───────────────────────────────────
 function useImagePicker(maxSize: number) {
   const input = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -63,22 +58,17 @@ function useImagePicker(maxSize: number) {
   return { open: () => input.current?.click(), file, clear: () => setFile(null), element };
 }
 
-// ─── Avatar uploader ───────────────────────────────────────
 export interface AvatarUploaderProps {
   name: string;
-  /** Current photo URL. Without it, the initials avatar is shown. */
   src?: string | null;
-  /** Called with the cropped photo, or null when removed. */
   onChange: (image: CroppedImage | null) => void;
   size?: number;
   maxSize?: number;
-  /** Ring colour around the avatar (match the surface behind it). */
   ring?: string;
   disabled?: boolean;
   className?: string;
 }
 
-/** Profile photo with a camera button: upload, crop to a circle, change or remove. */
 export function AvatarUploader({ name, src, onChange, size = 120, maxSize = DEFAULT_IMAGE_MAX, ring = 'var(--sm-white)', disabled, className }: AvatarUploaderProps) {
   useTranslation();
   const picker = useImagePicker(maxSize);
@@ -129,11 +119,9 @@ export function AvatarUploader({ name, src, onChange, size = 120, maxSize = DEFA
   );
 }
 
-// ─── Banner uploader ───────────────────────────────────────
 export interface BannerUploaderProps {
   src?: string | null;
   preset?: BannerPreset;
-  /** New photo (cropped 3:1) or null when the photo is removed. */
   onImageChange: (image: CroppedImage | null) => void;
   onPresetChange?: (preset: BannerPreset) => void;
   height?: number;
@@ -142,7 +130,6 @@ export interface BannerUploaderProps {
   className?: string;
 }
 
-/** Editable cover: upload and crop a 3:1 photo, or pick a colour preset. */
 export function BannerUploader({ src, preset = 'violet', onImageChange, onPresetChange, height = 220, maxSize = DEFAULT_IMAGE_MAX, children, className }: BannerUploaderProps) {
   useTranslation();
   const picker = useImagePicker(maxSize);

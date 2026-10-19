@@ -10,15 +10,22 @@
     "required": "O campo {{field}} é obrigatório."
   },
   "auth": {
+    "headline": "As melhores equipas começam aqui.",
+    "tagline": "O StudyMatch cria grupos equilibrados com base nas suas competências, notas e assiduidade.",
     "login": "Iniciar sessão",
     "forgotPassword": "Esqueceu-se da palavra-passe?",
     "changePassword": "Alterar palavra-passe",
-    "sendLink": "Enviar ligação de recuperação",
     "resetPassword": "Repor palavra-passe",
     "activateAccount": "Ativar conta",
     "checkEmail": "Verifique a sua caixa de entrada",
     "resend": "Reenviar email",
-    "verifyEmail": "Confirmar email"
+    "verifyEmail": "Confirmar email",
+    "sendCode": "Enviar código",
+    "resendCode": "Enviar um novo código",
+    "backToLogin": "Voltar ao início de sessão",
+    "codeSent": "Se existir uma conta para {{email}}, enviámos um código de 6 dígitos para o email pessoal associado. É válido durante 15 minutos. Verifique também a pasta de spam.",
+    "newCodeSent": "Se existir uma conta para este email, enviámos um novo código. O anterior deixou de funcionar.",
+    "passwordReset": "Palavra-passe atualizada. Inicie sessão com a nova palavra-passe."
   },
   "fields": {
     "institutionalEmail": "Email institucional",
@@ -43,7 +50,8 @@
     "aboutMe": "Sobre mim",
     "skills": "Competências",
     "interests": "Interesses",
-    "languages": "Idiomas"
+    "languages": "Idiomas",
+    "code": "Código de verificação"
   },
   "accounts": {
     "create": "Criar conta de funcionário ou docente",
@@ -60,7 +68,34 @@
     "attendance": "Confirmar presenças"
   },
   "personality": {
-    "title": "Teste de personalidade"
+    "title": "Teste de personalidade",
+    "heading": "Como trabalha em equipa?",
+    "lead": "{{count}} afirmações, cerca de 3 minutos. Não há respostas certas: responda com sinceridade, ajuda-nos a formar grupos onde todos têm um papel.",
+    "yearly": "Tem de fazer este teste uma vez por ano letivo para usar o StudyMatch. Depois de submeter, as respostas não podem ser alteradas.",
+    "answered": "Respondidas",
+    "progress": "{{answered}} de {{total}}",
+    "submit": "Submeter respostas",
+    "strongestProfile": "O seu perfil mais forte",
+    "yourProfile": "O seu perfil",
+    "privacy": "O seu perfil é usado para equilibrar os grupos neste ano letivo. Só o próprio, os seus docentes e os funcionários o podem ver.",
+    "continue": "Continuar para o StudyMatch",
+    "questions": {
+      "1": "Sinto-me à vontade a falar em frente à turma.",
+      "2": "Procuro perceber o ponto de vista dos colegas antes de discordar.",
+      "3": "Planeio as tarefas com antecedência para cumprir os prazos.",
+      "4": "Quando um prazo se aproxima, a ansiedade toma conta de mim com facilidade.",
+      "5": "Gosto de experimentar formas diferentes de resolver um problema.",
+      "6": "Em trabalhos de grupo, prefiro ficar em segundo plano.",
+      "7": "Às vezes critico o trabalho dos colegas de forma dura.",
+      "8": "Deixo muitas vezes o trabalho para a última hora.",
+      "9": "Mantenho a calma quando as coisas correm mal no grupo.",
+      "10": "Prefiro seguir métodos conhecidos a explorar ideias novas.",
+      "11": "Costumo ser eu a puxar a conversa quando o grupo está calado.",
+      "12": "Gosto de ajudar um colega com dificuldades, mesmo que isso me atrase.",
+      "13": "Reviso o meu trabalho com cuidado antes de o entregar.",
+      "14": "Preocupo-me muito com a possibilidade de as coisas correrem mal.",
+      "15": "Interesso-me por temas fora da minha área de estudo."
+    }
   },
   "likert": {
     "1": "Discordo totalmente",
@@ -147,15 +182,30 @@
     "export": "Exportar certificado",
     "certificate": "Certificado de conquista"
   },
-  "login": {
-    "headline": "As melhores equipas começam aqui.",
-    "tagline": "O StudyMatch cria grupos equilibrados com base nas suas competências, notas e assiduidade."
-  },
   "home": {
-    "greeting": "Olá, {{name}}."
+    "greeting": "Olá, {{name}}.",
+    "studentInfo": "{{programme}} · {{year}}.º ano · N.º de estudante {{number}}",
+    "quickActions": "Acesso rápido",
+    "actions": {
+      "rooms": "Um espaço partilhado para se concentrar, trocar ideias e progredir em conjunto.",
+      "subjects": "Explore as suas unidades curriculares e aprofunde cada uma.",
+      "groups": "Consulte os seus grupos e conheça a sua equipa.",
+      "assignments": "Veja o que está para entregar e acompanhe as suas entregas."
+    },
+    "achievements": "Conquistas",
+    "average": "Média",
+    "upcomingTasks": "Próximas tarefas",
+    "noTasks": "Sem tarefas por agora",
+    "noTasksBody": "Os prazos e as salas de estudo vão aparecer aqui.",
+    "calendar": {
+      "label": "Calendário de tarefas",
+      "previousWeek": "Semana anterior",
+      "nextWeek": "Semana seguinte",
+      "today": "Hoje",
+      "more": "+{{count}} mais"
+    }
   },
   "profile": {
-    "myProfile": "O meu perfil",
     "saved": "Perfil atualizado.",
     "tryAgain": "Tentar novamente"
   },
@@ -231,7 +281,8 @@
     "DECIMAL_MAX": "O máximo é {{value}}.",
     "ASSERT_TRUE": "Este valor tem de ser verdadeiro.",
     "ASSERT_FALSE": "Este valor tem de ser falso.",
-    "DIGITS": "Utilize no máximo {{integer}} algarismos inteiros e {{fraction}} decimais."
+    "DIGITS": "Utilize no máximo {{integer}} algarismos inteiros e {{fraction}} decimais.",
+    "PASSWORDS_DO_NOT_MATCH": "As palavras-passe não coincidem."
   },
   "demo": {
     "title": "Componentes StudyMatch",
@@ -431,5 +482,22 @@
     "green": "Verde",
     "orange": "Laranja",
     "violet": "Violeta"
+  },
+  "nav": {
+    "home": "Início",
+    "rooms": "Salas de estudo",
+    "subjects": "Unidades curriculares",
+    "groups": "Grupos de estudo",
+    "assignments": "Trabalhos",
+    "profile": "O meu perfil",
+    "studentInformation": "Informação do estudante",
+    "notifications": "Notificações",
+    "logout": "Terminar sessão",
+    "accountMenu": "Menu da conta"
+  },
+  "passwordRules": {
+    "length": "Pelo menos 8 caracteres",
+    "letter": "Pelo menos uma letra",
+    "number": "Pelo menos um número"
   }
 }

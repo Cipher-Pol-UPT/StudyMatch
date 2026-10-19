@@ -8,22 +8,16 @@ import './profile.css';
 
 export interface CroppedImage {
   blob: Blob;
-  /** Object URL for an instant preview. Revoke it when you no longer need it. */
   url: string;
   width: number;
   height: number;
 }
 
 export interface ImageCropperProps {
-  /** The picked file, or an image URL. */
   source: File | string;
-  /** Width ÷ height of the result. 1 for avatars, 3 for banners. */
   aspect?: number;
-  /** Circle mask for avatars, rectangle for banners. */
   shape?: 'circle' | 'rect';
-  /** Pixel width of the exported image (height follows the aspect). */
   outputWidth?: number;
-  /** JPEG quality 0–1. */
   quality?: number;
   maxZoom?: number;
   onApply: (image: CroppedImage) => void;
@@ -34,10 +28,6 @@ export interface ImageCropperProps {
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
-/**
- * Drag to reposition, zoom with the slider, the wheel or +/−, arrows to nudge.
- * Exports a JPEG through a canvas: no dependencies, no upload until you decide.
- */
 export function ImageCropper({ source, aspect = 1, shape = 'circle', outputWidth = 512, quality = 0.9, maxZoom = 3, onApply, onCancel, applyLabel = i18n.t('ui.apply'), className }: ImageCropperProps) {
   useTranslation();
   const frame = useRef<HTMLDivElement>(null);

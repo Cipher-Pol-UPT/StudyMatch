@@ -8,7 +8,11 @@ import { EditProfile } from './EditProfile';
 import { toProfileView } from './toProfileView';
 import './ProfilePage.css';
 
-export function ProfilePage() {
+export interface ProfilePageProps {
+  onSaved?: (saved: StudentProfileData) => void;
+}
+
+export function ProfilePage({ onSaved }: ProfilePageProps) {
   const { t } = useTranslation();
   const toast = useToast();
   const [profile, setProfile] = useState<StudentProfileData | null>(null);
@@ -34,31 +38,32 @@ export function ProfilePage() {
   function showSavedProfile(saved: StudentProfileData) {
     setProfile(saved);
     setIsEditing(false);
+    onSaved?.(saved);
     toast.success(t('profile.saved'));
   }
 
   if (loadFailed) {
     return (
-      <main className="profile-page profile-page--centered">
+      <div className="profile-page profile-page--centered">
         <EmptyState
           icon={UserRound}
           title={t('common.unexpectedError')}
           action={<Button variant="secondary" icon={RefreshCw} onClick={tryLoadingAgain}>{t('profile.tryAgain')}</Button>}
         />
-      </main>
+      </div>
     );
   }
 
   if (profile === null) {
     return (
-      <main className="profile-page profile-page--centered">
+      <div className="profile-page profile-page--centered">
         <Spinner />
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="profile-page">
+    <div className="profile-page">
       {isEditing ? (
         <EditProfile profile={profile} onSaved={showSavedProfile} onCancel={() => setIsEditing(false)} />
       ) : (
@@ -68,6 +73,6 @@ export function ProfilePage() {
           onEdit={() => setIsEditing(true)}
         />
       )}
-    </main>
+    </div>
   );
 }

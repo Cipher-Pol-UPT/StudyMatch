@@ -5,24 +5,19 @@ import { EASE_OUT,useControllableState } from '../../utils/shared';
 import './overlay.css';
 
 export interface PopoverProps {
-  /** The trigger. Must be a single element that accepts onClick (e.g. a Button or IconButton). */
   trigger: ReactElement;
-  /** Content, or a render function that receives `close`. */
   children: ReactNode | ((close: () => void) => ReactNode);
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   side?: 'bottom' | 'top';
   align?: 'start' | 'end' | 'center';
-  /** ARIA role of the panel. Menu sets this to "menu". */
   role?: string;
-  /** Accessible name of the panel. */
   label?: string;
   width?: CSSProperties['width'];
   className?: string;
 }
 
-/** Click-to-open floating panel. Closes on outside click and Escape, returning focus to the trigger. */
 export function Popover({ trigger, children, open, defaultOpen = false, onOpenChange, side = 'bottom', align = 'start', role = 'dialog', label, width, className }: PopoverProps) {
   const [isOpen, setOpen] = useControllableState(open, defaultOpen, onOpenChange);
   const anchor = useRef<HTMLSpanElement>(null);

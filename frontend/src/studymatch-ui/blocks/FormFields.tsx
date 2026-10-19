@@ -7,7 +7,7 @@ import { TextField } from '../components/field/TextField';
 import { Banner } from '../components/overlay/Banner';
 import { useFormFeedback } from '../utils/useFormFeedback';
 
-interface InputField { name: string; label: string; type?: string; value?: string; options?: { value: string; label: string }[] }
+interface InputField { name: string; label: string; type?: string; value?: string; autoComplete?: string; options?: { value: string; label: string }[] }
 export interface FormFieldsProps {
   title?: ReactNode; fields: InputField[]; submitLabel: string;
   onSubmit: (values: Record<string, string>) => Promise<void>;
@@ -33,9 +33,9 @@ export function FormFields({ title, fields, submitLabel, onSubmit, fieldErrors, 
       </select>
       {feedback.fieldError(field.name) && <p id={`${id}-${field.name}-error`} role="alert">{feedback.fieldError(field.name)}</p>}
     </div> : field.type === 'password' ? <PasswordField key={field.name} label={t(field.label)}
-      value={values[field.name]} disabled={feedback.busy} error={feedback.fieldError(field.name)}
+      autoComplete={field.autoComplete} value={values[field.name]} disabled={feedback.busy} error={feedback.fieldError(field.name)}
       onChange={event => setValues(v => ({ ...v, [field.name]: event.target.value }))} />
-      : <TextField key={field.name} label={t(field.label)} type={field.type ?? 'text'} value={values[field.name]}
+      : <TextField key={field.name} label={t(field.label)} type={field.type ?? 'text'} autoComplete={field.autoComplete} value={values[field.name]}
         disabled={feedback.busy} error={feedback.fieldError(field.name)}
         onChange={event => setValues(v => ({ ...v, [field.name]: event.target.value }))} />)}
     <Button type="submit" loading={feedback.busy}>{t(submitLabel)}</Button>

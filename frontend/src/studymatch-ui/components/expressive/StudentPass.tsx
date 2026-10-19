@@ -28,24 +28,15 @@ function Pattern({ seed, color }: { seed: string; color: string }) {
 
 export interface StudentPassProps {
   name: string;
-  /** Student number. */
   number: string;
-  /** Curricular year. */
   year: number;
-  /** Current group, e.g. "Group 04 · SWE". */
   group: string;
   profile: ProfileKey;
   teammates?: string[];
-  /** Card colour (any CSS colour). */
   color?: string;
-  /** Text on the top-left. */
   programme?: string;
 }
 
-/**
- * The student's pass: a card-shaped object that tilts under the pointer
- * and flips to reveal teammates (the "exchange" motion behaviour).
- */
 export function StudentPass({ name, number, year, group, profile, teammates = [], color = 'var(--sm-violet)', programme = 'StudyMatch' }: StudentPassProps) {
   useTranslation();
   const [flipped, setFlipped] = useState(false);

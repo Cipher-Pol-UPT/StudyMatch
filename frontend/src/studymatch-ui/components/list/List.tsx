@@ -5,28 +5,20 @@ import type { IconComponent } from '../../utils/shared';
 import './list.css';
 
 export interface ListRowProps {
-  /** Avatar, IconTile or any media on the left. */
   leading?: ReactNode;
   title: ReactNode;
   subtitle?: ReactNode;
-  /** Right-aligned value (a grade, a count, a date). */
   value?: ReactNode;
-  /** Small line under the value. */
   valueSub?: ReactNode;
-  /** Anything else on the right: a badge, a switch, a menu. */
   trailing?: ReactNode;
-  /** Show a chevron to signal navigation. */
   chevron?: boolean;
-  /** Makes the row a button. */
   onClick?: () => void;
-  /** Makes the row a link. Use `linkAs` for router links. */
   href?: string;
   linkAs?: ElementType;
   compact?: boolean;
   className?: string;
 }
 
-/** The workhorse of the system: a 72px row with leading media, text and a trailing value. */
 export function ListRow({ leading, title, subtitle, value, valueSub, trailing, chevron, onClick, href, linkAs, compact, className }: ListRowProps) {
   const body = (
     <>
@@ -70,16 +62,12 @@ export function ListRow({ leading, title, subtitle, value, valueSub, trailing, c
 
 export interface ListProps {
   children: ReactNode;
-  /** Eyebrow title above the list. */
   title?: ReactNode;
-  /** Remove the white card (rows sit directly on the surface). */
   plain?: boolean;
-  /** Left inset of the dividers, to line up with the text column. */
   dividerInset?: number;
   className?: string;
 }
 
-/** A white, rounded container that draws hairline dividers between rows. */
 export function List({ children, title, plain, dividerInset, className }: ListProps) {
   const list = (
     <div className={cx('sm-list', plain && 'sm-list--plain', !title && className)} style={dividerInset !== undefined ? ({ ['--sm-row-inset' as string]: `${dividerInset}px` } as CSSProperties) : undefined}>
@@ -103,7 +91,6 @@ export interface IconTileProps {
   shape?: 'circle' | 'square';
 }
 
-/** A round (or squircle) icon container for list rows and cards. */
 export function IconTile({ icon: Icon, color = 'var(--sm-black)', bg = 'var(--sm-fill)', size = 44, shape = 'circle' }: IconTileProps) {
   return (
     <span className={cx('sm-icon-tile', shape === 'square' && 'sm-icon-tile--square')} style={{ width: size, height: size, background: bg, color }}>
