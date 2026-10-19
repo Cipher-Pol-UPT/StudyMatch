@@ -81,14 +81,18 @@ describe('forgot password', () => {
       .toBe(JSON.stringify({ email: EMAIL, code: '123456', newPassword: 'NewPassword1' }));
   });
 
-  it('does not send the new password when the two passwords do not match', async () => {
+  it('shows under the confirmation that the passwords do not match, without calling the backend', async () => {
     const fetchMock = mockBackend();
     renderLoginPage();
 
     await askForCode();
     fillNewPassword('123456', 'NewPassword1', 'OtherPassword1');
 
+    const confirmField = screen.getByLabelText('Confirm password');
+
     expect(await screen.findByText("The passwords don't match.")).toBeTruthy();
+    expect(confirmField.getAttribute('aria-invalid')).toBe('true');
+    expect(screen.queryByText('Check the highlighted fields.')).toBeNull();
     expect(requestsTo(fetchMock, '/api/users/reset-password')).toHaveLength(0);
   });
 

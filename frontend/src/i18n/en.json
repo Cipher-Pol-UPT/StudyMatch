@@ -25,7 +25,8 @@
     "backToLogin": "Back to log in",
     "codeSent": "If an account exists for {{email}}, we sent a 6-digit code to its personal email. It is valid for 15 minutes. Check your spam folder too.",
     "newCodeSent": "If an account exists for this email, we sent a new code. The previous one no longer works.",
-    "passwordReset": "Password updated. Log in with your new password."
+    "passwordReset": "Password updated. Log in with your new password.",
+    "passwordsDoNotMatch": "The passwords don't match."
   },
   "fields": {
     "institutionalEmail": "Institutional email",
@@ -281,8 +282,7 @@
     "DECIMAL_MAX": "The maximum is {{value}}.",
     "ASSERT_TRUE": "This value must be true.",
     "ASSERT_FALSE": "This value must be false.",
-    "DIGITS": "Use at most {{integer}} integer and {{fraction}} decimal digits.",
-    "PASSWORDS_DO_NOT_MATCH": "The passwords don't match."
+    "DIGITS": "Use at most {{integer}} integer and {{fraction}} decimal digits."
   },
   "demo": {
     "title": "StudyMatch components",

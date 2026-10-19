@@ -7,13 +7,12 @@ import {
   Button,
   Card,
   PersonalityTest,
-  PROFILE_KEYS,
   PROFILES,
   ProfileBars,
   type PersonalityQuestion,
-  type ProfileKey,
 } from '../../studymatch-ui';
 import type { PersonalityProfileData } from '../../types/personalityProfile';
+import { strongestProfile, toPercentages } from './personalityScores';
 import './PersonalityTestPage.css';
 
 const QUESTION_COUNT = 15;
@@ -52,7 +51,7 @@ export function PersonalityTestPage({ onCompleted }: PersonalityTestPageProps) {
 function PersonalityResult({ profile, onContinue }: { profile: PersonalityProfileData; onContinue: () => void }) {
   const { t } = useTranslation();
   const percentages = toPercentages(profile);
-  const strongest = PROFILE_KEYS.reduce((best, key) => (percentages[key] > percentages[best] ? key : best));
+  const strongest = strongestProfile(percentages);
   const { label, description, color, icon: Icon } = PROFILES[strongest];
 
   return (
@@ -79,15 +78,6 @@ function PersonalityResult({ profile, onContinue }: { profile: PersonalityProfil
 
 function questionId(index: number) {
   return `q${index + 1}`;
-}
-
-function toPercentages(profile: PersonalityProfileData): Record<ProfileKey, number> {
-  return {
-    leadership: profile.leadership * 100,
-    technical: profile.problemSolving * 100,
-    creativity: profile.creativity * 100,
-    execution: profile.execution * 100,
-  };
 }
 
 function withQuestionIds(error: BackendError): BackendError {
