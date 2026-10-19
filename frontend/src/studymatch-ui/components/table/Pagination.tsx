@@ -7,13 +7,10 @@ import { paginationRange } from './Pagination.shared';
 import './table.css';
 
 export interface PaginationProps {
-  /** 1-based current page. */
   page: number;
   pageCount: number;
   onPageChange: (page: number) => void;
-  /** Pages shown on each side of the current one. */
   siblings?: number;
-  /** Left-side summary, e.g. "Showing 21–40 of 132". */
   info?: ReactNode;
   className?: string;
 }

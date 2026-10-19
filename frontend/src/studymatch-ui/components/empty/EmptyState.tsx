@@ -7,9 +7,7 @@ export interface EmptyStateProps {
   icon: IconComponent;
   title: ReactNode;
   body?: ReactNode;
-  /** Primary way out, usually a Button. */
   action?: ReactNode;
-  /** Colour of the icon tile. */
   tone?: 'lavender' | 'sky' | 'peach' | 'mint' | 'lemon' | 'rose';
   compact?: boolean;
   className?: string;
@@ -24,7 +22,6 @@ const TONE: Record<NonNullable<EmptyStateProps['tone']>, [string, string]> = {
   rose: ['var(--sm-tint-rose)', '#c63d7c'],
 };
 
-/** Says what is missing, why, and what to do next. Never a dead end. */
 export function EmptyState({ icon: Icon, title, body, action, tone = 'lavender', compact, className }: EmptyStateProps) {
   const [bg, fg] = TONE[tone];
   return (

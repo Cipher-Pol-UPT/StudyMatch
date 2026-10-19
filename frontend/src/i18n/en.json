@@ -425,5 +425,42 @@
     "green": "Green",
     "orange": "Orange",
     "violet": "Violet"
+  },
+
+  "nav": {
+    "home": "Home",
+    "rooms": "StudyRooms",
+    "subjects": "Subjects",
+    "groups": "Study groups",
+    "assignments": "Assignments",
+    "profile": "My profile",
+    "studentInformation": "Student information",
+    "notifications": "Notifications",
+    "logout": "Log out",
+    "accountMenu": "Account menu"
+  },
+  "home": {
+    "greeting": "Hello, {{name}}.",
+    "studentInfo": "{{programme}} · Year {{year}} · Student no. {{number}}",
+    "quickActions": "Quick actions",
+    "actions": {
+      "rooms": "A shared space to focus, exchange ideas and make progress together.",
+      "subjects": "Explore your enrolled classes and dive into each subject.",
+      "groups": "Check your matches and meet your study group.",
+      "assignments": "See what is due and keep track of your deliveries."
+    },
+    "achievements": "Achievements",
+    "average": "Average",
+    "upcomingTasks": "Upcoming tasks",
+    "noTasks": "No upcoming tasks",
+    "noTasksBody": "Deadlines and StudyRooms will show up here.",
+    "calendar": {
+      "label": "Task calendar",
+      "previousWeek": "Previous week",
+      "nextWeek": "Next week",
+      "today": "Today",
+      "more": "+{{count}} more"
+    }
   }
 }
+

@@ -4,18 +4,13 @@ import { cx } from '../../utils/cx';
 import './selection.css';
 
 export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'children'> {
-  /** Label shown next to the box. */
   children?: ReactNode;
-  /** Secondary line under the label. */
   description?: ReactNode;
-  /** "Some selected" state, e.g. for a select-all checkbox. */
   indeterminate?: boolean;
-  /** Convenience callback with the boolean value. */
   onCheckedChange?: (checked: boolean) => void;
   invalid?: boolean;
 }
 
-/** A real <input type="checkbox"> with a custom face. Forms, refs and native events all work. */
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
   { children, description, indeterminate, onCheckedChange, onChange, disabled, invalid, className, ...rest },
   ref,

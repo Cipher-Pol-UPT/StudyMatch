@@ -5,14 +5,11 @@ import './overlay.css';
 
 export interface TooltipProps {
   content: ReactNode;
-  /** A single focusable element (button, link…). It receives `aria-describedby`. */
   children: ReactElement;
   side?: 'top' | 'bottom';
-  /** Hover delay in ms. Focus shows the tooltip immediately. */
   delay?: number;
 }
 
-/** Short, non-essential hint on hover and focus. Never put the only copy of important info here. */
 export function Tooltip({ content, children, side = 'top', delay = 250 }: TooltipProps) {
   const [open, setOpen] = useState(false);
   const id = useId();

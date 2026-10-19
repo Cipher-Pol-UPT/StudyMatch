@@ -1,0 +1,22 @@
+.profile-menu__trigger { display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.profile-menu__trigger:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+
+.sm-shell.student-shell { grid-template-columns: minmax(0, 1fr); }
+.sm-shell.student-shell .sm-shell__menu { display: inline-grid !important; }
+.sm-shell.student-shell .sm-shell__side {
+  position: fixed; inset: 0 auto 0 0; height: auto; width: 288px; max-width: 85vw;
+  background: var(--sm-surface);
+  transform: translateX(-100%); visibility: hidden; /* hidden = not tabbable while closed */
+}
+.sm-shell.student-shell.sm-shell--open .sm-shell__side { transform: none; visibility: visible; box-shadow: var(--sm-shadow-lg); }
+.sm-shell.student-shell .sm-shell__scrim {
+  display: block; position: fixed; inset: 0; z-index: 25;
+  background: color-mix(in srgb, var(--sm-ink) 40%, transparent);
+  opacity: 0; pointer-events: none;
+}
+.sm-shell.student-shell.sm-shell--open .sm-shell__scrim { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: no-preference) {
+  .sm-shell.student-shell .sm-shell__side { transition: transform var(--sm-dur-3) var(--sm-ease-out), visibility 0s linear var(--sm-dur-3); }
+  .sm-shell.student-shell.sm-shell--open .sm-shell__side { transition-delay: 0s; }
+  .sm-shell.student-shell .sm-shell__scrim { transition: opacity var(--sm-dur-2); }
+}

@@ -71,7 +71,6 @@
 .sm-ach-tile[data-tilting='true'] { transition: transform 0.12s linear; }
 .sm-ach-tile[data-tilting='true'] .sm-ach-tile__glare { opacity: 1; }
 
-/* Legendary & epic: holographic foil */
 .sm-ach-tile--legendary::after,
 .sm-ach-tile--epic::after {
   content: '';

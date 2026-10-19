@@ -18,7 +18,6 @@ export interface RadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
   description?: ReactNode;
 }
 
-/** A single radio. Inside a <RadioGroup> it reads name and checked state from the group. */
 export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio({ value, children, description, className, disabled, onChange, ...rest }, ref) {
   const group = useContext(Ctx);
   const isDisabled = disabled ?? group?.disabled;
@@ -49,16 +48,13 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio({ v
 });
 
 export interface RadioGroupProps {
-  /** Visible group label (rendered as a <legend>). */
   label?: ReactNode;
   name?: string;
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
-  /** Options as data. You can also pass <Radio> children. */
   options?: { value: string; label: ReactNode; description?: ReactNode; disabled?: boolean }[];
   orientation?: 'vertical' | 'horizontal';
-  /** Render options as big tappable cards. */
   variant?: 'default' | 'cards';
   disabled?: boolean;
   className?: string;

@@ -15,5 +15,5 @@ export const NOTE_HEX: Record<NoteColor, string> = {
 };
 
 export function tiltFor(id: string) {
-  return ((hashString(id) % 70) - 35) / 10; // −3.5° … +3.4°
+  return ((hashString(id) % 70) - 35) / 10; 
 }

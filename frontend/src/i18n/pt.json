@@ -425,5 +425,41 @@
     "green": "Verde",
     "orange": "Laranja",
     "violet": "Violeta"
+  },
+  "nav": {
+    "home": "Início",
+    "rooms": "Salas de estudo",
+    "subjects": "Unidades curriculares",
+    "groups": "Grupos de estudo",
+    "assignments": "Trabalhos",
+    "profile": "O meu perfil",
+    "studentInformation": "Informação do estudante",
+    "notifications": "Notificações",
+    "logout": "Terminar sessão",
+    "accountMenu": "Menu da conta"
+  },
+  "home": {
+    "greeting": "Olá, {{name}}.",
+    "studentInfo": "{{programme}} · {{year}}.º ano · N.º de estudante {{number}}",
+    "quickActions": "Acesso rápido",
+    "actions": {
+      "rooms": "Um espaço partilhado para se concentrar, trocar ideias e progredir em conjunto.",
+      "subjects": "Explore as suas unidades curriculares e aprofunde cada uma.",
+      "groups": "Consulte os seus grupos e conheça a sua equipa.",
+      "assignments": "Veja o que está para entregar e acompanhe as suas entregas."
+    },
+    "achievements": "Conquistas",
+    "average": "Média",
+    "upcomingTasks": "Próximas tarefas",
+    "noTasks": "Sem tarefas por agora",
+    "noTasksBody": "Os prazos e as salas de estudo vão aparecer aqui.",
+    "calendar": {
+      "label": "Calendário de tarefas",
+      "previousWeek": "Semana anterior",
+      "nextWeek": "Semana seguinte",
+      "today": "Hoje",
+      "more": "+{{count}} mais"
+    }
   }
+
 }
