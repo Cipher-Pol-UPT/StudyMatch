@@ -8,20 +8,16 @@ import './chip.css';
 
 export interface ChipProps {
   children: ReactNode;
-  /** Pressed / active filter state. */
   selected?: boolean;
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   icon?: IconComponent;
-  /** Shows a remove (×) button. The chip and the × are separate buttons. */
   onRemove?: () => void;
-  /** Label for the remove button. Defaults to "Remove <children>". */
   removeLabel?: string;
   size?: 'sm' | 'md';
   disabled?: boolean;
   className?: string;
 }
 
-/** Filter chip or removable tag. A chip without `onClick` is static (a label, not a button). */
 export function Chip({ children, selected, onClick, icon: Icon, onRemove, removeLabel, size = 'md', disabled, className }: ChipProps) {
   useTranslation();
   const interactive = !!onClick;

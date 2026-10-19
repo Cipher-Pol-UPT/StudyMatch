@@ -11,17 +11,13 @@ import './expressive.css';
 export interface GroupTileProps {
   name: string;
   members: string[];
-  /** Balance score, 0–100. */
   balance: number;
-  /** Profiles present in the group. */
   profiles: ProfileKey[];
-  /** Draft or Published. */
   status?: import('../../../types/enums').GroupStatus;
   selected?: boolean;
   onClick?: () => void;
 }
 
-/** A generated group at a glance: size, balance, members and profile mix. Selected turns into the brand gradient. */
 export function GroupTile({ name, members, balance, profiles, status, selected, onClick }: GroupTileProps) {
   useTranslation();
   return (

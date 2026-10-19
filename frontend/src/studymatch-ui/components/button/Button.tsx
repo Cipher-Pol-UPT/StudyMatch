@@ -25,22 +25,16 @@ export interface ButtonStyleOptions {
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Visual weight. `primary` is reserved for the single most important action on a screen. */
   variant?: ButtonVariant;
   size?: ButtonSize;
-  /** Icon before the label. */
   icon?: IconComponent;
-  /** Icon after the label (e.g. an arrow). */
   iconRight?: IconComponent;
-  /** Stretch to the container width. */
   block?: boolean;
-  /** Shows a spinner, keeps the width and blocks clicks. */
   loading?: boolean;
 }
 
 const ICON_SIZE: Record<ButtonSize, number> = { sm: 16, md: 18, lg: 20, xl: 22 };
 
-/** Pill button. Defaults to `type="button"` so it never submits a form by accident. */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { variant = 'primary', size = 'md', icon: Icon, iconRight: IconRight, block, loading, disabled, className, children, type = 'button', ...rest },
   ref,
@@ -67,13 +61,11 @@ export type IconButtonVariant = 'secondary' | 'primary' | 'tinted' | 'black' | '
 
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon: IconComponent;
-  /** Accessible name. Also shown as a native tooltip. */
   label: string;
   variant?: IconButtonVariant;
   size?: 'sm' | 'md' | 'lg';
 }
 
-/** Circular, icon-only button. `label` is required for screen readers. */
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
   { icon: Icon, label, variant = 'secondary', size = 'md', className, type = 'button', ...rest },
   ref,
@@ -93,9 +85,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
 });
 
 export interface ButtonGroupProps extends HTMLAttributes<HTMLDivElement> {
-  /** Stack vertically (mobile footers, sheets). */
   stack?: boolean;
-  /** Align to the end (dialog footers). */
   end?: boolean;
 }
 

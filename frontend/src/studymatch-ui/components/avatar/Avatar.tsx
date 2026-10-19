@@ -10,19 +10,15 @@ import { AVATAR_GRADIENTS,initialsOf } from './Avatar.shared';
 
 export interface AvatarProps {
   name: string;
-  /** Photo URL. Falls back to initials if it fails to load. */
   src?: string;
   size?: number;
-  /** Override the generated gradient. */
   color?: string;
-  /** Small profile badge in the corner. */
   profile?: ProfileKey;
   presence?: 'online' | 'away' | 'offline';
   shape?: 'circle' | 'square';
   className?: string;
 }
 
-/** Initials on a deterministic gradient (same name, same colour), or a photo. */
 export function Avatar({ name, src, size = 44, color, profile, presence, shape = 'circle', className }: AvatarProps) {
   useTranslation();
   const [failed, setFailed] = useState(false);
@@ -50,9 +46,7 @@ export function Avatar({ name, src, size = 44, color, profile, presence, shape =
 export interface AvatarStackProps {
   names: string[];
   size?: number;
-  /** How many avatars to show before "+N". */
   max?: number;
-  /** Ring colour between avatars; match the surface behind the stack. */
   ring?: string;
   className?: string;
 }

@@ -7,14 +7,11 @@ export interface SwitchProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   checked?: boolean;
   defaultChecked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
-  /** Accessible name when there is no visible `children` label. */
   label?: string;
-  /** Visible label rendered next to the switch. */
   children?: ReactNode;
   size?: 'sm' | 'md';
 }
 
-/** iOS-style on/off switch for settings that apply immediately. */
 export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch(
   { checked, defaultChecked = false, onCheckedChange, label, children, size = 'md', className, disabled, onClick, ...rest },
   ref,
@@ -58,7 +55,6 @@ export interface ControlRowProps {
   className?: string;
 }
 
-/** A settings row: title and description on the left, a control on the right. */
 export function ControlRow({ title, description, children, className }: ControlRowProps) {
   return (
     <div className={cx('sm-control-row', className)}>

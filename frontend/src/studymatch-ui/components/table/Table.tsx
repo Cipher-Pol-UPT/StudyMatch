@@ -7,15 +7,11 @@ import { Skeleton } from '../progress/Progress';
 import './table.css';
 
 export interface TableColumn<T> {
-  /** Unique key. Also the default field read from the row. */
   key: string;
   header: ReactNode;
-  /** Custom cell. Defaults to `String(row[key])`. */
   render?: (row: T, index: number) => ReactNode;
-  /** Right-align numbers, centre icons. */
   align?: 'left' | 'right' | 'center';
   sortable?: boolean;
-  /** Value used for sorting. Defaults to `row[key]`. */
   sortValue?: (row: T) => string | number | null | undefined;
   width?: CSSProperties['width'];
 }
@@ -25,28 +21,20 @@ export type SortState = { key: string; direction: 'asc' | 'desc' } | null;
 export interface TableProps<T> {
   columns: TableColumn<T>[];
   rows: T[];
-  /** Stable key per row. */
   rowKey: (row: T, index: number) => string | number;
   onRowClick?: (row: T) => void;
-  /** Highlight rows (e.g. selected students). */
   isRowSelected?: (row: T) => boolean;
-  /** Shown when there are no rows. Use an <EmptyState>. */
   empty?: ReactNode;
-  /** Render skeleton rows instead of data. */
   loading?: boolean;
   loadingRows?: number;
   caption?: ReactNode;
   dense?: boolean;
   striped?: boolean;
-  /** Remove the white card behind the table. */
   plain?: boolean;
-  /** Max height before the body scrolls (the header stays sticky). */
   maxHeight?: CSSProperties['maxHeight'];
-  /** Controlled sorting. Leave undefined to let the table sort itself. */
   sort?: SortState;
   defaultSort?: SortState;
   onSortChange?: (sort: SortState) => void;
-  /** Accessible name when there is no caption. */
   label?: string;
   className?: string;
 }
@@ -61,10 +49,6 @@ function compare(a: unknown, b: unknown) {
   return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
 }
 
-/**
- * Data table with sortable columns, a sticky header, keyboard-clickable rows,
- * loading skeletons and an empty slot. Sorts client-side unless `sort` is controlled.
- */
 export function Table<T>({
   columns,
   rows,

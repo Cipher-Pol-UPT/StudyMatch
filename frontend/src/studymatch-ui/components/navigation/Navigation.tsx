@@ -8,10 +8,6 @@ import { Badge } from '../badge/Badge';
 import '../button/button.css';
 import './navigation.css';
 
-/**
- * Router-agnostic links. Pass your router's Link through `linkAs`;
- * StudyMatch passes `href` and also `to` (React Router), so both work.
- */
 function NavLinkEl({ linkAs, href, className, children, current, onClick, label }: { linkAs?: ElementType; href?: string; className: string; children: ReactNode; current?: boolean; onClick?: () => void; label?: string }) {
   useTranslation();
   if (!href) {
@@ -29,13 +25,11 @@ function NavLinkEl({ linkAs, href, className, children, current, onClick, label 
   );
 }
 
-// ─── Tab bar ───────────────────────────────────────────────
 export interface TabBarItem {
   value: string;
   label: string;
   icon: IconComponent;
   href?: string;
-  /** The raised, gradient centre action. */
   fab?: boolean;
   badge?: number;
 }
@@ -45,12 +39,10 @@ export interface TabBarProps {
   value: string;
   onValueChange?: (value: string) => void;
   linkAs?: ElementType;
-  /** Pin to the bottom of the viewport. */
   fixed?: boolean;
   className?: string;
 }
 
-/** Mobile bottom navigation with an optional central action. */
 export function TabBar({ items, value, onValueChange, linkAs, fixed, className }: TabBarProps) {
   useTranslation();
   return (
@@ -78,7 +70,6 @@ export function TabBar({ items, value, onValueChange, linkAs, fixed, className }
   );
 }
 
-// ─── Breadcrumbs ───────────────────────────────────────────
 export interface BreadcrumbsProps {
   items: { label: ReactNode; href?: string }[];
   linkAs?: ElementType;
@@ -111,14 +102,12 @@ export function Breadcrumbs({ items, linkAs, className }: BreadcrumbsProps) {
   );
 }
 
-// ─── App shell ─────────────────────────────────────────────
 export interface NavItem {
   label: string;
   icon: IconComponent;
   href?: string;
   onClick?: () => void;
   badge?: number;
-  /** Mark as current. Usually computed from the router location. */
   active?: boolean;
 }
 
@@ -128,27 +117,17 @@ export interface NavSection {
 }
 
 export interface AppShellProps {
-  /** Logo area at the top of the sidebar. */
   brand: ReactNode;
   nav: NavSection[];
-  /** Page title in the top bar. */
   title?: ReactNode;
-  /** Right side of the top bar: search, notifications, user menu. */
   actions?: ReactNode;
-  /** Bottom of the sidebar (e.g. the user chip). */
   sidebarFooter?: ReactNode;
-  /** Your router's Link component. */
   linkAs?: ElementType;
-  /** Changes on navigation; closes the mobile drawer. Pass `location.pathname`. */
   routeKey?: string;
   children: ReactNode;
   className?: string;
 }
 
-/**
- * Sidebar + top bar + content. Collapses to a drawer under 960px.
- * Role-specific navigation (Student, Teacher, Staff, Admin) is just a different `nav`.
- */
 export function AppShell({ brand, nav, title, actions, sidebarFooter, linkAs, routeKey, children, className }: AppShellProps) {
   useTranslation();
   const [openRoute, setOpenRoute] = useState<string | null>(null);

@@ -10,15 +10,22 @@
     "required": "{{field}} is required."
   },
   "auth": {
+    "headline": "Better teams start here.",
+    "tagline": "StudyMatch forms balanced groups from your strengths, grades and attendance, so every project starts on the right foot.",
     "login": "Log in",
     "forgotPassword": "Forgot password?",
     "changePassword": "Change password",
-    "sendLink": "Send reset link",
     "resetPassword": "Reset password",
     "activateAccount": "Activate account",
     "checkEmail": "Check your inbox",
     "resend": "Resend email",
-    "verifyEmail": "Confirm email"
+    "verifyEmail": "Confirm email",
+    "sendCode": "Send code",
+    "resendCode": "Send a new code",
+    "backToLogin": "Back to log in",
+    "codeSent": "If an account exists for {{email}}, we sent a 6-digit code to its personal email. It is valid for 15 minutes. Check your spam folder too.",
+    "newCodeSent": "If an account exists for this email, we sent a new code. The previous one no longer works.",
+    "passwordReset": "Password updated. Log in with your new password."
   },
   "fields": {
     "institutionalEmail": "Institutional email",
@@ -43,7 +50,8 @@
     "aboutMe": "About me",
     "skills": "Skills",
     "interests": "Interests",
-    "languages": "Languages"
+    "languages": "Languages",
+    "code": "Verification code"
   },
   "accounts": {
     "create": "Create staff or teacher account",
@@ -174,12 +182,28 @@
     "export": "Export certificate",
     "certificate": "Achievement certificate"
   },
-  "login": {
-    "headline": "Better teams start here.",
-    "tagline": "StudyMatch forms balanced groups from your strengths, grades and attendance, so every project starts on the right foot."
-  },
   "home": {
-    "greeting": "Hello, {{name}}."
+    "greeting": "Hello, {{name}}.",
+    "studentInfo": "{{programme}} · Year {{year}} · Student no. {{number}}",
+    "quickActions": "Quick actions",
+    "actions": {
+      "rooms": "A shared space to focus, exchange ideas and make progress together.",
+      "subjects": "Explore your enrolled classes and dive into each subject.",
+      "groups": "Check your matches and meet your study group.",
+      "assignments": "See what is due and keep track of your deliveries."
+    },
+    "achievements": "Achievements",
+    "average": "Average",
+    "upcomingTasks": "Upcoming tasks",
+    "noTasks": "No upcoming tasks",
+    "noTasksBody": "Deadlines and StudyRooms will show up here.",
+    "calendar": {
+      "label": "Task calendar",
+      "previousWeek": "Previous week",
+      "nextWeek": "Next week",
+      "today": "Today",
+      "more": "+{{count}} more"
+    }
   },
   "placeholder": {
     "comingSoon": "This page is not available yet."
@@ -252,7 +276,8 @@
     "DECIMAL_MAX": "The maximum is {{value}}.",
     "ASSERT_TRUE": "This value must be true.",
     "ASSERT_FALSE": "This value must be false.",
-    "DIGITS": "Use at most {{integer}} integer and {{fraction}} decimal digits."
+    "DIGITS": "Use at most {{integer}} integer and {{fraction}} decimal digits.",
+    "PASSWORDS_DO_NOT_MATCH": "The passwords don't match."
   },
   "demo": {
     "title": "StudyMatch components",
@@ -452,5 +477,22 @@
     "green": "Green",
     "orange": "Orange",
     "violet": "Violet"
+  },
+  "nav": {
+    "home": "Home",
+    "rooms": "StudyRooms",
+    "subjects": "Subjects",
+    "groups": "Study groups",
+    "assignments": "Assignments",
+    "profile": "My profile",
+    "studentInformation": "Student information",
+    "notifications": "Notifications",
+    "logout": "Log out",
+    "accountMenu": "Account menu"
+  },
+  "passwordRules": {
+    "length": "At least 8 characters",
+    "letter": "At least one letter",
+    "number": "At least one number"
   }
 }

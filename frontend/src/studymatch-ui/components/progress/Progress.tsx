@@ -8,7 +8,6 @@ import './progress.css';
 
 export interface SpinnerProps {
   size?: number;
-  /** White spinner for dark or violet surfaces. */
   onDark?: boolean;
   label?: string;
 }
@@ -19,18 +18,14 @@ export function Spinner({ size = 28, onDark, label = i18n.t('ui.loading') }: Spi
 }
 
 export interface ProgressBarProps {
-  /** 0–max. Omit (or use `indeterminate`) when progress is unknown. */
   value?: number;
   max?: number;
   indeterminate?: boolean;
-  /** Accessible name; also shown above the bar when `showLabel` is set. */
   label: string;
   showLabel?: boolean;
-  /** Text on the right of the label row. Defaults to the percentage. */
   valueText?: ReactNode;
   tone?: 'brand' | 'success' | 'warning' | 'danger';
   size?: 'sm' | 'md' | 'lg';
-  /** Custom fill (any CSS background). */
   color?: string;
   className?: string;
 }
@@ -63,18 +58,15 @@ export function ProgressBar({ value = 0, max = 100, indeterminate, label, showLa
 }
 
 export interface ScoreRingProps {
-  /** 0–100. */
   value: number;
   size?: number;
   stroke?: number;
   color?: string;
   track?: string;
   label?: string;
-  /** Replace the number in the middle. */
   children?: ReactNode;
 }
 
-/** Circular score (Balance score, attendance %). Animates from zero on mount. */
 export function ScoreRing({ value, size = 72, stroke = 7, color = 'var(--sm-violet)', track = 'var(--sm-fill)', label = i18n.t('ui.score'), children }: ScoreRingProps) {
   useTranslation();
   const r = (size - stroke) / 2;
@@ -108,12 +100,10 @@ export function ScoreRing({ value, size = 72, stroke = 7, color = 'var(--sm-viol
 export interface SkeletonProps {
   w?: CSSProperties['width'];
   h?: CSSProperties['height'];
-  /** Border radius. Use `"50%"` for avatars. */
   r?: CSSProperties['borderRadius'];
   className?: string;
 }
 
-/** Shimmering placeholder that matches the shape of what is loading. */
 export function Skeleton({ w = '100%', h = 16, r, className }: SkeletonProps) {
   useTranslation();
   return <span className={cx('sm-skel', className)} style={{ width: w, height: h, borderRadius: r }} aria-hidden />;

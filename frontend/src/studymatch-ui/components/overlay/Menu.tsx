@@ -29,10 +29,6 @@ export interface MenuProps {
   width?: number;
 }
 
-/**
- * Dropdown of actions (row "⋯" menus, the user menu).
- * Arrow keys move, Enter selects, Escape closes; focus lands on the first item.
- */
 export function Menu({ trigger, items, align = 'end', side = 'bottom', label = i18n.t('ui.actions'), open, onOpenChange, width }: MenuProps) {
   useTranslation();
   const [isOpen, setOpen] = useControllableState(open, false, onOpenChange);

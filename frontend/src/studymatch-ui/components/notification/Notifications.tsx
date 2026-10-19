@@ -13,11 +13,9 @@ export interface NotificationItem {
   id: string;
   title: ReactNode;
   body?: ReactNode;
-  /** Already formatted, e.g. "2 min ago". */
   time?: ReactNode;
   read?: boolean;
   icon?: IconComponent;
-  /** Icon tile colour. */
   tone?: 'violet' | 'success' | 'warning' | 'danger' | 'info';
 }
 
@@ -38,7 +36,6 @@ const TONE: Record<NonNullable<NotificationItem['tone']>, [string, string]> = {
   info: ['var(--sm-tint-sky)', '#1f86c0'],
 };
 
-/** In-app notifications (GR8): groups published, StudyRoom changes, achievements. */
 export function NotificationList({ items, onItemClick, onMarkAllRead, emptyText = i18n.t('ui.you_re_all_caught_up'), title = i18n.t('ui.notifications'), className }: NotificationListProps) {
   useTranslation();
   const unread = items.filter((i) => !i.read).length;
@@ -99,7 +96,6 @@ export interface NotificationBellProps extends NotificationListProps {
   align?: 'start' | 'end';
 }
 
-/** Bell icon with an unread badge that opens the notification list. */
 export function NotificationBell({ align = 'end', ...list }: NotificationBellProps) {
   useTranslation();
   const unread = list.items.filter((i) => !i.read).length;

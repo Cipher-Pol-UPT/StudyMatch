@@ -4,16 +4,13 @@ import { cx } from '../../utils/cx';
 import './badge.css';
 import { DOMAIN_STATUS,PROFILES } from './Badge.shared';
 
-// ─── Badge ─────────────────────────────────────────────────
 export type BadgeTone = 'violet' | 'spark' | 'black' | 'danger' | 'neutral';
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: BadgeTone;
-  /** Render a small dot without content (e.g. "unread"). */
   dot?: boolean;
 }
 
-/** Counters and tiny labels. Spark is for celebrating something new. */
 export function Badge({ tone = 'violet', dot, className, children, ...rest }: BadgeProps) {
   useTranslation();
   return (
@@ -23,17 +20,14 @@ export function Badge({ tone = 'violet', dot, className, children, ...rest }: Ba
   );
 }
 
-// ─── Status pill ───────────────────────────────────────────
 export type StatusTone = 'neutral' | 'success' | 'warning' | 'danger' | 'violet' | 'info';
 
 export interface StatusPillProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: StatusTone;
   size?: 'sm' | 'md';
-  /** Animated dot for live states ("In progress", "Live now"). */
   pulse?: boolean;
 }
 
-/** A coloured dot and a word. Colour always comes with text, never alone. */
 export function StatusPill({ tone = 'neutral', size = 'md', pulse, className, children, ...rest }: StatusPillProps) {
   useTranslation();
   return (
@@ -54,12 +48,10 @@ export function DomainStatus({ status, size }: { status: keyof typeof DOMAIN_STA
   );
 }
 
-// ─── Profiles ──────────────────────────────────────────────
 export type ProfileKey = 'leadership' | 'technical' | 'creativity' | 'execution';
 
 export interface ProfileTagProps {
   profile: ProfileKey;
-  /** Use the short label ("Lead", "Tech"…). */
   short?: boolean;
   size?: 'sm' | 'md';
   className?: string;

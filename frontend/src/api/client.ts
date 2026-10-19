@@ -30,6 +30,10 @@ export async function request<T>(method: Method, path: string, body?: unknown): 
     throw isBackendError(error) ? error : new Error(`${method} ${path} failed with status ${response.status}`);
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return response.json();
 }
 

@@ -6,19 +6,13 @@ import { describedBy } from './Field.shared';
 export interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix'> {
   label: ReactNode;
   hint?: ReactNode;
-  /** Error message. Replaces the hint and sets aria-invalid. */
   error?: ReactNode;
-  /** Shows an "Optional" tag next to the label. */
   optional?: boolean;
-  /** Leading icon. */
   icon?: IconComponent;
-  /** Trailing content: a unit, a button, a spinner. */
   suffix?: ReactNode;
-  /** Class name for the outer wrapper (the input keeps `sm-field__input`). */
   containerClassName?: string;
 }
 
-/** Filled text field with an inline label. Works with any form library: the ref goes to the <input>. */
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField(
   { label, hint, error, optional, icon, suffix, id, containerClassName, className, disabled, ...rest },
   ref,

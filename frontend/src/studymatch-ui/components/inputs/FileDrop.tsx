@@ -8,15 +8,11 @@ import './inputs.css';
 
 export interface FileDropProps {
   label?: ReactNode;
-  /** e.g. "image/png,image/jpeg" or ".csv". */
   accept?: string;
-  /** Max size in bytes, e.g. 5 * 1024 * 1024 for a 5 MB banner. */
   maxSize?: number;
   multiple?: boolean;
-  /** Valid files only. Invalid ones are listed with the reason. */
   onFiles: (files: File[]) => void;
   hint?: ReactNode;
-  /** Show a preview for images. */
   preview?: boolean;
   disabled?: boolean;
   className?: string;
@@ -32,7 +28,6 @@ function matchesAccept(file: File, accept?: string) {
   });
 }
 
-/** Drag-and-drop or click to choose (banner upload, CSV import). Validates type and size. */
 export function FileDrop({ label = i18n.t('ui.drop_a_file_here_or_click_to_browse'), accept, maxSize, multiple, onFiles, hint, preview = true, disabled, className }: FileDropProps) {
   useTranslation();
   const id = useId();
