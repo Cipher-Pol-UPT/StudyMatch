@@ -1,7 +1,9 @@
 package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -133,6 +135,27 @@ class DegreeServiceTest {
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // find by name (register student)
+
+  @Test
+  @DisplayName("Degrees are looked up by name, ignoring spaces around it")
+  void findByNameTrims() {
+    // Arrange
+    Degree degree = new Degree("Test Degree", 3);
+    when(degreeRepository.findByNameIgnoreCase("Test Degree")).thenReturn(Optional.of(degree));
+
+    // Act + Assert
+    assertSame(degree, degreeService.getByName("  Test Degree "));
+  }
+
+  @Test
+  @DisplayName("An unknown degree name is DEGREE_NOT_FOUND")
+  void unknownDegreeName() {
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> degreeService.getByName("Nope"));
+    assertEquals(ErrorCode.DEGREE_NOT_FOUND, e.getCode());
+    assertTrue(degreeService.findByName("Nope").isEmpty());
   }
 
 }

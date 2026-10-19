@@ -1,5 +1,7 @@
 package com.studymatch.models;
 
+import org.hibernate.annotations.ColumnDefault;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -20,9 +22,10 @@ public class Degree {
   @Column(unique = true)
   private String name;
 
-  // fixed when the degree is created
+  // fixed when the degree is created (the default is only for degrees that existed before this column)
   @Min(1)
   @Max(6)
+  @ColumnDefault("3")
   private int curricularYears;
 
   protected Degree() {
@@ -47,6 +50,10 @@ public class Degree {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public boolean hasCurricularYear(int curricularYear) {
+    return curricularYear >= 1 && curricularYear <= curricularYears;
   }
 
 }

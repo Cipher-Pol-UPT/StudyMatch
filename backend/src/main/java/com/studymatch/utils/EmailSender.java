@@ -1,4 +1,4 @@
-package com.studymatch.mail;
+package com.studymatch.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

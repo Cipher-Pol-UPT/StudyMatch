@@ -15,7 +15,7 @@ import com.studymatch.dtos.ResetPasswordRequestDTO;
 import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
-import com.studymatch.mail.EmailSender;
+import com.studymatch.utils.EmailSender;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.User;
@@ -26,10 +26,6 @@ import com.studymatch.security.PasswordPolicy;
 public class UserService {
 
   private static final SecureRandom RANDOM = new SecureRandom();
-
-  // no 0/O or 1/l/I, people type this from an email
-  private static final String ONE_TIME_PASSWORD_CHARACTERS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-  private static final int ONE_TIME_PASSWORD_LENGTH = 12;
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
@@ -64,11 +60,11 @@ public class UserService {
     if (userRepository.existsByInstitutionalEmail(institutionalEmail)) {
       throw new StudyMatchException(ErrorCode.INSTITUTIONAL_EMAIL_ALREADY_EXISTS);
     }
-    if (userRepository.existsByPersonalEmail(request.personalEmail())) {
+    if (isPersonalEmailTaken(request.personalEmail())) {
       throw new StudyMatchException(ErrorCode.PERSONAL_EMAIL_ALREADY_EXISTS);
     }
 
-    String oneTimePassword = generateOneTimePassword();
+    String oneTimePassword = PasswordPolicy.generateOneTimePassword();
     String hash = passwordEncoder.encode(oneTimePassword);
     User user = request.type() == Role.TEACHER
         ? new Teacher(request.personalEmail(), institutionalEmail, request.name(), hash)
@@ -83,12 +79,9 @@ public class UserService {
     return user;
   }
 
-  private static String generateOneTimePassword() {
-    StringBuilder password = new StringBuilder(ONE_TIME_PASSWORD_LENGTH);
-    for (int i = 0; i < ONE_TIME_PASSWORD_LENGTH; i++) {
-      password.append(ONE_TIME_PASSWORD_CHARACTERS.charAt(RANDOM.nextInt(ONE_TIME_PASSWORD_CHARACTERS.length())));
-    }
-    return password.toString();
+  // personal emails are unique across every kind of user, so other services check here
+  public boolean isPersonalEmailTaken(String personalEmail) {
+    return userRepository.existsByPersonalEmail(personalEmail.trim().toLowerCase());
   }
 
   public User changePassword(String institutionalEmail, ChangePasswordRequestDTO request) {

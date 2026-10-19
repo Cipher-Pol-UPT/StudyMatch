@@ -1,6 +1,7 @@
 package com.studymatch.services;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,15 @@ public class DegreeService {
   public Degree getDegree(Long id) {
     return degreeRepository.findById(id)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  // by name so the student form and the CSV column work the same way
+  public Optional<Degree> findByName(String name) {
+    return degreeRepository.findByNameIgnoreCase(name.trim());
+  }
+
+  public Degree getByName(String name) {
+    return findByName(name).orElseThrow(() -> new StudyMatchException(ErrorCode.DEGREE_NOT_FOUND));
   }
 
 }

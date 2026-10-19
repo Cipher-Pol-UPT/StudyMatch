@@ -1,4 +1,4 @@
-package com.studymatch.mail;
+package com.studymatch.utils;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;

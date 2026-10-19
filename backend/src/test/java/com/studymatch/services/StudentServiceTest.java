@@ -23,7 +23,9 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.studymatch.dtos.AchievementBadgeDTO;
 import com.studymatch.dtos.PersonalityProfileDTO;
@@ -43,6 +45,9 @@ import com.studymatch.models.Student;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.User;
 import com.studymatch.repositories.StudentRepository;
+import com.studymatch.utils.EmailSender;
+
+import jakarta.validation.Validator;
 
 class StudentServiceTest {
 
@@ -68,8 +73,10 @@ class StudentServiceTest {
     enrolmentService = mock(EnrolmentService.class);
     tutorRoleService = mock(TutorRoleService.class);
     earnedAchievementService = mock(EarnedAchievementService.class);
+    // the registration dependencies aren't used by these tests (see StudentRegistrationTest)
     studentService = new StudentService(studentRepository, enrolmentService, tutorRoleService,
-        earnedAchievementService);
+        earnedAchievementService, mock(DegreeService.class), mock(UserService.class), mock(PasswordEncoder.class),
+        mock(EmailSender.class), mock(Validator.class), mock(TransactionTemplate.class), "test.com");
 
     student = withNumber(ModelTestData.student("Test Student"), STUDENT_NUMBER);
     student.setLanguages(Set.of(Language.PORTUGUESE));

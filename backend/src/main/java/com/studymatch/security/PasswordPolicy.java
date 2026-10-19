@@ -1,6 +1,7 @@
 package com.studymatch.security;
 
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 
 // one place for the password rules, used by every DTO that sets a new password
 public final class PasswordPolicy {
@@ -14,7 +15,20 @@ public final class PasswordPolicy {
   // BCrypt only looks at the first 72 bytes and refuses to hash anything longer
   private static final int MAX_BYTES = 72;
 
+  // no 0/O or 1/l/I, people type this from an email
+  private static final String ONE_TIME_PASSWORD_CHARACTERS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  private static final int ONE_TIME_PASSWORD_LENGTH = 12;
+  private static final SecureRandom RANDOM = new SecureRandom();
+
   private PasswordPolicy() {
+  }
+
+  public static String generateOneTimePassword() {
+    StringBuilder password = new StringBuilder(ONE_TIME_PASSWORD_LENGTH);
+    for (int i = 0; i < ONE_TIME_PASSWORD_LENGTH; i++) {
+      password.append(ONE_TIME_PASSWORD_CHARACTERS.charAt(RANDOM.nextInt(ONE_TIME_PASSWORD_CHARACTERS.length())));
+    }
+    return password.toString();
   }
 
   // @Size counts characters, but é is 2 bytes, so this is checked separately

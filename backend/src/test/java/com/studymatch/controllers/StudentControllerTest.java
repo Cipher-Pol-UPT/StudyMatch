@@ -29,6 +29,7 @@ import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
 import com.studymatch.services.StudentService;
 import com.studymatch.services.UserService;
+import com.studymatch.utils.StudentCsvReader;
 
 class StudentControllerTest {
 
@@ -47,7 +48,7 @@ class StudentControllerTest {
   void setUp() {
     studentService = mock(StudentService.class);
     userService = mock(UserService.class);
-    controller = new StudentController(studentService, userService);
+    controller = new StudentController(studentService, userService, new StudentCsvReader());
 
     student = ModelTestData.student("Test Student");
     ReflectionTestUtils.setField(student, "number", NUMBER);

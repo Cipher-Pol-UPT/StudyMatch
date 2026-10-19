@@ -105,7 +105,7 @@ class StudyRoomIntegrationTest {
   }
 
   private Student saveStudent(String personalEmail, String name) {
-    Degree degree = degreeRepository.save(new Degree("IT StudyRoom Degree " + name));
+    Degree degree = degreeRepository.save(new Degree("IT StudyRoom Degree " + name, 3));
     Student student = new Student(personalEmail, name, passwordEncoder.encode(PASSWORD), degree, 1);
     student.setMustChangePassword(false);
     student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
