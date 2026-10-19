@@ -1,5 +1,7 @@
 package com.studymatch.repositories;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.studymatch.models.AcademicYear;
@@ -11,5 +13,7 @@ public interface SubjectEditionRepository extends JpaRepository<SubjectEdition, 
   boolean existsBySubjectAndAcademicYear(Subject subject, AcademicYear academicYear);
 
   boolean existsByIdAndTeachers_Number(Long id, Long teacherNumber);
+
+  List<SubjectEdition> findDistinctByTeachers_Number(Long teacherNumber);
 
 }
