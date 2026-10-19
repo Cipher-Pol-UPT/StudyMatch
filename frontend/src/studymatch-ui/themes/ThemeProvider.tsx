@@ -26,6 +26,7 @@ export function ThemeProvider({ children, defaultTheme = DEFAULT_THEME, storageK
     try {
       window.localStorage.setItem(storageKey, next);
     } catch {
+      // Storage can be blocked; the selected theme still applies for this session.
     }
   }, [storageKey]);
 

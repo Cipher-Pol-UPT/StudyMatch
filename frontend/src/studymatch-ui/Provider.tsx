@@ -23,4 +23,3 @@ export function StudyMatchProvider({ children, applyBodyClass = true, maxToasts 
   }, [applyBodyClass]);
   return <ThemeProvider defaultTheme={defaultTheme}><ToastProvider max={maxToasts}>{children}</ToastProvider></ThemeProvider>;
 }
-
