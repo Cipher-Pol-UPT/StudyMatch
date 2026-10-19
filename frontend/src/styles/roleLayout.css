@@ -1,0 +1,32 @@
+.role-page { display: grid; gap: 24px; max-width: 1400px; margin: 0 auto; }
+.role-page > header > h1 { margin: 6px 0 12px; }
+.role-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.role-card { display: grid; align-content: start; gap: 12px; padding: 24px; color: var(--sm-text); text-decoration: none; border: 1px solid var(--sm-border); border-radius: var(--sm-radius-lg, 20px); background: var(--sm-surface); }
+.role-card > svg, .role-card > span { color: var(--sm-violet); }
+.role-card h2 { margin: 0; font-size: 18px; }
+.role-card p { margin: 0; color: var(--sm-text-2); font-size: 14px; line-height: 1.6; }
+.role-card:hover { border-color: var(--sm-violet); }
+.role-card:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.role-load { display: grid; place-items: center; min-height: 220px; }
+@media (max-width: 1000px) { .role-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .role-grid { grid-template-columns: minmax(0, 1fr); }  }
+
+.sm-shell.role-shell { grid-template-columns: minmax(0, 1fr); }
+.sm-shell.role-shell .sm-shell__menu { display: inline-grid !important; }
+.sm-shell.role-shell .sm-shell__side {
+  position: fixed; inset: 0 auto 0 0; height: auto; width: 288px; max-width: 85vw;
+  background: var(--sm-surface);
+  transform: translateX(-100%); visibility: hidden; /* hidden = not tabbable while closed */
+}
+.sm-shell.role-shell.sm-shell--open .sm-shell__side { transform: none; visibility: visible; box-shadow: var(--sm-shadow-lg); }
+.sm-shell.role-shell .sm-shell__scrim {
+  display: block; position: fixed; inset: 0; z-index: 25;
+  background: color-mix(in srgb, var(--sm-ink) 40%, transparent);
+  opacity: 0; pointer-events: none;
+}
+.sm-shell.role-shell.sm-shell--open .sm-shell__scrim { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: no-preference) {
+  .sm-shell.role-shell .sm-shell__side { transition: transform var(--sm-dur-3) var(--sm-ease-out), visibility 0s linear var(--sm-dur-3); }
+  .sm-shell.role-shell.sm-shell--open .sm-shell__side { transition-delay: 0s; }
+  .sm-shell.role-shell .sm-shell__scrim { transition: opacity var(--sm-dur-2); }
+}

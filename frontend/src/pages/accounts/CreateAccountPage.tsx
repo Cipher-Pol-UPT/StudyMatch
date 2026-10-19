@@ -28,7 +28,7 @@ export function CreateAccountPage({ domain }: CreateAccountPageProps) {
   return (
     <div className="registration">
       <header className="registration__head">
-        <h1>{t('nav.createAccount')}</h1>
+        <h1>{t('workspace.sections.createAccount')}</h1>
         <p>{t('accounts.intro')}</p>
       </header>
       {created ? (

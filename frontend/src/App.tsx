@@ -5,10 +5,16 @@ import { LoginPage } from './pages/login/LoginPage';
 import { ChangePasswordPage } from './pages/password/ChangePasswordPage';
 import { PersonalityTestPage } from './pages/personality/PersonalityTestPage';
 import { StudentArea } from './pages/student/StudentArea';
-import { WorkspaceArea } from './pages/workspace/WorkspaceArea';
+import { AdminArea } from './pages/admin/AdminArea';
+import { StaffArea } from './pages/staff/StaffArea';
+import { TeacherArea } from './pages/teacher/TeacherArea';
 import type { CurrentUser } from './types/currentUser';
 
 export default function App() {
+  return <BrowserRouter><ApplicationSession /></BrowserRouter>;
+}
+
+function ApplicationSession() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
@@ -27,21 +33,24 @@ export default function App() {
     return <LoginPage onLoggedIn={setCurrentUser} />;
   }
 
-  const logOut = () => setCurrentUser(null);
+  const onLoggedOut = () => setCurrentUser(null);
 
   if (currentUser.mustChangePassword) {
-    return <ChangePasswordPage onPasswordChanged={setCurrentUser} onLoggedOut={logOut} />;
+    return <ChangePasswordPage onPasswordChanged={setCurrentUser} onLoggedOut={onLoggedOut} />;
   }
 
-  if (currentUser.personalityTestRequired) {
+  if (currentUser.role === 'STUDENT' && currentUser.personalityTestRequired) {
     return <PersonalityTestPage onCompleted={() => setCurrentUser({ ...currentUser, personalityTestRequired: false })} />;
   }
 
-  return (
-    <BrowserRouter>
-      {currentUser.role === 'STUDENT'
-        ? <StudentArea currentUser={currentUser} onLoggedOut={logOut} />
-        : <WorkspaceArea currentUser={currentUser} onLoggedOut={logOut} />}
-    </BrowserRouter>
-  );
+  switch (currentUser.role) {
+    case 'ADMIN':
+      return <AdminArea key={currentUser.number} currentUser={currentUser} onLoggedOut={onLoggedOut} />;
+    case 'STAFF':
+      return <StaffArea key={currentUser.number} currentUser={currentUser} onLoggedOut={onLoggedOut} />;
+    case 'TEACHER':
+      return <TeacherArea key={currentUser.number} currentUser={currentUser} onLoggedOut={onLoggedOut} />;
+    case 'STUDENT':
+      return <StudentArea key={currentUser.number} currentUser={currentUser} onLoggedOut={onLoggedOut} />;
+  }
 }

@@ -14,11 +14,11 @@ export function RegisterStudentPage() {
   return (
     <div className="registration">
       <header className="registration__head">
-        <h1>{t('nav.registerStudent')}</h1>
+        <h1>{t('workspace.sections.registerStudent')}</h1>
         <p>{t('registration.intro')}</p>
       </header>
       <Tabs<RegistrationMode>
-        label={t('nav.registerStudent')}
+        label={t('workspace.sections.registerStudent')}
         value={mode}
         onValueChange={setMode}
         tabs={[{ value: 'manual', label: t('registration.oneStudent') }, { value: 'csv', label: t('registration.csvImport') }]}

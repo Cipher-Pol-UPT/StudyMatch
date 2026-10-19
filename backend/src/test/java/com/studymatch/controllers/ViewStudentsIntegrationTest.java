@@ -314,4 +314,33 @@ class ViewStudentsIntegrationTest {
         .andExpect(status().isNotFound());
   }
 
+  @Test
+  @DisplayName("A teacher discovers only their assigned editions, with subject and class metadata")
+  void teacherListsOwnEditions() throws Exception {
+    mockMvc.perform(get("/subject-editions/").session(loginAs("it.teacher@studymatch.com")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].id").value(edition.getId()))
+        .andExpect(jsonPath("$[0].academicYear").value(2091))
+        .andExpect(jsonPath("$[0].subject.code").value("ITVIEW1"))
+        .andExpect(jsonPath("$[0].classSections[0]").value("T1"))
+        .andExpect(jsonPath("$[0].classSections[1]").value("T2"));
+  }
+
+  @Test
+  @DisplayName("An unrelated teacher cannot discover another teacher's edition")
+  void unrelatedTeacherHasNoEditions() throws Exception {
+    mockMvc.perform(get("/subject-editions/").session(loginAs("it.other@studymatch.com")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(0));
+  }
+
+  @Test
+  @DisplayName("Staff and unauthenticated users cannot use the teacher edition list")
+  void editionListOnlyForTeachers() throws Exception {
+    mockMvc.perform(get("/subject-editions/").session(loginAs("it.staff@studymatch.com")))
+        .andExpect(status().isForbidden());
+    mockMvc.perform(get("/subject-editions/")).andExpect(status().isUnauthorized());
+  }
+
 }
