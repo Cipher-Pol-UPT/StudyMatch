@@ -25,7 +25,8 @@
     "backToLogin": "Voltar ao início de sessão",
     "codeSent": "Se existir uma conta para {{email}}, enviámos um código de 6 dígitos para o email pessoal associado. É válido durante 15 minutos. Verifique também a pasta de spam.",
     "newCodeSent": "Se existir uma conta para este email, enviámos um novo código. O anterior deixou de funcionar.",
-    "passwordReset": "Palavra-passe atualizada. Inicie sessão com a nova palavra-passe."
+    "passwordReset": "Palavra-passe atualizada. Inicie sessão com a nova palavra-passe.",
+    "passwordsDoNotMatch": "As palavras-passe não coincidem."
   },
   "fields": {
     "institutionalEmail": "Email institucional",
@@ -249,8 +250,7 @@
     "DECIMAL_MAX": "O máximo é {{value}}.",
     "ASSERT_TRUE": "Este valor tem de ser verdadeiro.",
     "ASSERT_FALSE": "Este valor tem de ser falso.",
-    "DIGITS": "Utilize no máximo {{integer}} algarismos inteiros e {{fraction}} decimais.",
-    "PASSWORDS_DO_NOT_MATCH": "As palavras-passe não coincidem."
+    "DIGITS": "Utilize no máximo {{integer}} algarismos inteiros e {{fraction}} decimais."
   },
   "demo": {
     "title": "Componentes StudyMatch",

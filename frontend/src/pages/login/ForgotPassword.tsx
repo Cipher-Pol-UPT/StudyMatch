@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { requestPasswordReset, resetPassword } from '../../api/auth';
-import type { BackendError } from '../../api/errors';
 import { ForgotPasswordForm, ResetPasswordForm, useToast, type PasswordRule } from '../../studymatch-ui';
 import type { ResetPasswordInput } from '../../types/forms';
 
@@ -10,11 +9,6 @@ const PASSWORD_RULES: PasswordRule[] = [
   { id: 'letter', labelKey: 'passwordRules.letter', test: password => /\p{L}/u.test(password) },
   { id: 'number', labelKey: 'passwordRules.number', test: password => /\d/.test(password) },
 ];
-
-const PASSWORDS_DO_NOT_MATCH: BackendError = {
-  code: 'VALIDATION_FAILED',
-  fieldErrors: [{ field: 'confirmPassword', code: 'PASSWORDS_DO_NOT_MATCH' }],
-};
 
 export interface ForgotPasswordProps {
   onPasswordReset: () => void;
@@ -36,10 +30,7 @@ export function ForgotPassword({ onPasswordReset, onBack }: ForgotPasswordProps)
     toast.info(t('auth.newCodeSent'));
   }
 
-  async function changePassword(institutionalEmail: string, { code, newPassword, confirmPassword }: ResetPasswordInput) {
-    if (newPassword !== confirmPassword) {
-      throw PASSWORDS_DO_NOT_MATCH;
-    }
+  async function changePassword(institutionalEmail: string, { code, newPassword }: ResetPasswordInput) {
     await resetPassword({ email: institutionalEmail, code, newPassword });
     onPasswordReset();
   }
