@@ -33,7 +33,7 @@ public class Student extends User {
 
   public static final int MAX_BANNER_BYTES = 5 * 1024 * 1024;
 
-  public static final int MAX_PFP_BYTES = 5 * 1024 * 1024;
+  public static final int MAX_PFP_BYTES = 1024 * 1024;
 
   private static final Pattern IMAGE_DATA_URL = Pattern.compile("^data:image/(png|jpeg);base64,([A-Za-z0-9+/=]+)$");
 

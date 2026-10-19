@@ -158,7 +158,7 @@ describe('edit profile', () => {
     await openEditProfile();
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(await screen.findByText('Use a JPG or PNG image up to 5 MB.')).toBeTruthy();
+    expect(await screen.findByText('Use a JPG or PNG image up to 1 MB.')).toBeTruthy();
   });
 
   it('shows a field error the backend reports for a skill under the skills field', async () => {

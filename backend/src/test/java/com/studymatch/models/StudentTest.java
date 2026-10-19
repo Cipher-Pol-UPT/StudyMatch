@@ -347,7 +347,7 @@ class StudentTest {
   }
 
   @Test
-  @DisplayName("A profile photo of exactly 5 MB is saved")
+  @DisplayName("A profile photo of exactly 1 MB is saved")
   void profilePhotoAtTheLimitIsSaved() {
     // Arrange
     String photo = pngBanner(Student.MAX_PFP_BYTES);
@@ -360,7 +360,7 @@ class StudentTest {
   }
 
   @Test
-  @DisplayName("A profile photo over 5 MB is rejected")
+  @DisplayName("A profile photo over 1 MB is rejected")
   void profilePhotoOverTheLimitIsRejected() {
     // Arrange
     String photo = pngBanner(Student.MAX_PFP_BYTES + 1);
