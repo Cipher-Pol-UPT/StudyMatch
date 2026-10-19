@@ -193,6 +193,7 @@
     "STUDYROOM_ALREADY_STARTED": "Esta sala de estudo já começou.",
     "STUDYROOM_IN_PAST": "A sala de estudo não pode começar no passado.",
     "STUDYROOM_ENDS_BEFORE_START": "A sala de estudo tem de terminar depois do início.",
+    "STUDYROOM_OVERLAP": "Sobrepõe-se à sua sala de estudo de {{subject}} ({{startsAt}} – {{endsAt}}).",
     "STUDYROOM_NOT_ENDED": "A sala de estudo ainda não terminou.",
     "STUDYROOM_FULL": "Esta sala de estudo está lotada.",
     "TUTOR_CANNOT_JOIN_OWN_STUDYROOM": "Os tutores não podem inscrever-se na sua própria sala de estudo.",

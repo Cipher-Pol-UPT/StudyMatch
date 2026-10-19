@@ -193,6 +193,7 @@
     "STUDYROOM_ALREADY_STARTED": "This StudyRoom has already started.",
     "STUDYROOM_IN_PAST": "The StudyRoom cannot start in the past.",
     "STUDYROOM_ENDS_BEFORE_START": "The StudyRoom must end after it starts.",
+    "STUDYROOM_OVERLAP": "This overlaps your {{subject}} StudyRoom ({{startsAt}} – {{endsAt}}).",
     "STUDYROOM_NOT_ENDED": "The StudyRoom has not ended yet.",
     "STUDYROOM_FULL": "This StudyRoom is full.",
     "TUTOR_CANNOT_JOIN_OWN_STUDYROOM": "Tutors cannot join their own StudyRoom.",

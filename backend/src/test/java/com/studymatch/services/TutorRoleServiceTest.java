@@ -2,17 +2,22 @@ package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.studymatch.dtos.TutorBadgeDTO;
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
 import com.studymatch.models.TutorRole;
@@ -79,6 +84,34 @@ class TutorRoleServiceTest {
 
     // Assert
     assertTrue(badges.isEmpty());
+  }
+
+  @Test
+  @DisplayName("The tutor role of a student in a subject they tutor is found")
+  void getsTutorRoleOfSubject() {
+    // Arrange
+    TutorRole tutorRole = ModelTestData.tutorRole(tutor);
+    when(tutorRoleRepository.findByStudentNumberAndSubjectId(1L, 10L)).thenReturn(Optional.of(tutorRole));
+
+    // Act
+    TutorRole found = tutorRoleService.getByStudentAndSubject(1L, 10L);
+
+    // Assert
+    assertSame(tutorRole, found);
+  }
+
+  @Test
+  @DisplayName("A student who doesn't tutor the subject gets ACCESS_DENIED")
+  void notTutorOfSubjectIsDenied() {
+    // Arrange
+    when(tutorRoleRepository.findByStudentNumberAndSubjectId(1L, 10L)).thenReturn(Optional.empty());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> tutorRoleService.getByStudentAndSubject(1L, 10L));
+
+    // Assert
+    assertEquals(ErrorCode.ACCESS_DENIED, e.getCode());
   }
 
 }
