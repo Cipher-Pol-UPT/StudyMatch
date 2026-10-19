@@ -210,14 +210,17 @@ class SubjectEditionServiceTest {
   @Test
   @DisplayName("Teacher editions are returned as complete DTOs, newest academic year first")
   void listTaughtEditions() {
+    // Arrange
     SubjectEdition older = new SubjectEdition(subject, new AcademicYear(2025), Set.of(ana));
     older.addClassSection("T1");
     SubjectEdition newer = new SubjectEdition(subject, year2026, Set.of(ana));
     newer.addClassSection("T2");
     when(subjectEditionRepository.findDistinctByTeachers_Number(7L)).thenReturn(List.of(older, newer));
 
+    // Act
     var editions = subjectEditionService.listTaughtBy(7L);
 
+    // Assert
     assertEquals(List.of(2026, 2025), editions.stream().map(edition -> edition.academicYear()).toList());
     assertEquals(List.of("T2"), editions.getFirst().classSections());
     assertEquals(subject.getCode(), editions.getFirst().subject().code());
@@ -227,8 +230,14 @@ class SubjectEditionServiceTest {
   @Test
   @DisplayName("A teacher without assigned editions gets an empty list")
   void noTaughtEditions() {
+    // Arrange
     when(subjectEditionRepository.findDistinctByTeachers_Number(7L)).thenReturn(List.of());
-    assertEquals(List.of(), subjectEditionService.listTaughtBy(7L));
+
+    // Act
+    var editions = subjectEditionService.listTaughtBy(7L);
+
+    // Assert
+    assertEquals(List.of(), editions);
   }
 
 }

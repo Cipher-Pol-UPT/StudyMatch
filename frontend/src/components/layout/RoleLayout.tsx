@@ -1,11 +1,13 @@
-import { House } from 'lucide-react';
+import { Bell, House, KeyRound } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation } from 'react-router-dom';
-import { AppShell, Logo, type NavItem } from '../../studymatch-ui';
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { AppShell, EmptyState, Logo, type NavItem } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import type { NavigationSection } from '../../types/navigation';
+import { FeaturePlaceholder } from '../feedback/FeaturePlaceholder';
 import { AccountActions } from '../navigation/AccountActions';
+import { RoleHomePage } from './RoleHomePage';
 import '../../styles/roleLayout.css';
 
 interface RoleLayoutProps {
@@ -13,7 +15,8 @@ interface RoleLayoutProps {
   sections: NavigationSection[];
   onLoggedOut: () => void;
   activePath?: string;
-  children: ReactNode;
+  // the <Route>s of the role's ready sections
+  children?: ReactNode;
 }
 
 export function RoleLayout({ currentUser, sections, onLoggedOut, activePath, children }: RoleLayoutProps) {
@@ -45,7 +48,16 @@ export function RoleLayout({ currentUser, sections, onLoggedOut, activePath, chi
       className="role-shell"
       routeKey={pathname}
     >
-      {children}
+      <Routes>
+        <Route path="/" element={<RoleHomePage currentUser={currentUser} sections={sections} />} />
+        {children}
+        {sections.filter(section => !section.ready).map(section => (
+          <Route key={section.path} path={section.path} element={<FeaturePlaceholder section={section} />} />
+        ))}
+        <Route path="/change-password" element={<EmptyState icon={KeyRound} title={t('auth.changePassword')} body={t('placeholder.comingSoon')} />} />
+        <Route path="/notifications" element={<EmptyState icon={Bell} title={t('nav.notifications')} body={t('placeholder.comingSoon')} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </AppShell>
   );
 }

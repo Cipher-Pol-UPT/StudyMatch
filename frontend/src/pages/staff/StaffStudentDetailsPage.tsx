@@ -16,8 +16,8 @@ export function StaffStudentDetailsPage() {
   const { number } = useParams();
   const [params] = useSearchParams();
   const id = Number(number);
-  const load = useCallback(() => {
-    if (!Number.isSafeInteger(id) || id <= 0) return Promise.reject({ code: 'NOT_FOUND' });
+  const load = useCallback(async () => {
+    if (!Number.isSafeInteger(id) || id <= 0) throw { code: 'NOT_FOUND' };
     return getStudentRecord(id);
   }, [id]);
   const record = useRemoteData(String(number), load);
@@ -60,7 +60,7 @@ export function StaffStudentDetailsPage() {
                   <dt>{t('directory.statuteType')}</dt>
                   <dd>{data.statuteType === null ? t('directory.noStatute') : t(`statutes.${data.statuteType}`)}</dd>
                 </div>
-                <div><dt>{t('directory.statuteEnd')}</dt><dd>{data.statuteEndDate ?? '—'}</dd></div>
+                <div><dt>{t('directory.statuteEnd')}</dt><dd>{format.date(data.statuteEndDate)}</dd></div>
               </dl>
             </Card>
             <Card title={t('directory.categoryLevels')}>

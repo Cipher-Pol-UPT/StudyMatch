@@ -105,7 +105,7 @@ describe('staff student directory', () => {
     fireEvent.click(await screen.findByRole('link', { name: 'Ana Silva' }));
     expect(await screen.findByText('ana.personal@example.com')).toBeTruthy();
     expect(screen.getByText(i18n.t('statutes.WORKING_STUDENT'))).toBeTruthy();
-    expect(screen.getByText('2030-09-01')).toBeTruthy();
+    expect(screen.getByText('Sep 1, 2030')).toBeTruthy();
     expect(screen.getByText('CS101 · Programming')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit profile' })).toBeNull();
     const back = new URL(screen.getByRole('link', { name: /Back to students/ }).getAttribute('href')!, 'https://test.invalid');
@@ -147,7 +147,7 @@ describe('staff student directory', () => {
 describe('teacher student directory', () => {
   it('opens students from a taught subject and filters by name and class', async () => {
     const fetchMock = backend();
-    open('/subjects', 'TEACHER');
+    open('/students', 'TEACHER');
     fireEvent.click(await screen.findByRole('link', { name: /Programming/ }));
     await screen.findByRole('link', { name: 'Ana Silva' });
     fireEvent.change(screen.getByLabelText('Search by name or number'), { target: { value: 'Rui' } });
@@ -200,7 +200,7 @@ describe('teacher student directory', () => {
 
   it('shows an empty state when no subject editions are assigned', async () => {
     backend(url => url.pathname === '/api/subject-editions/' ? reply([]) : undefined);
-    open('/subjects', 'TEACHER');
+    open('/students', 'TEACHER');
     expect(await screen.findByText('No subject editions assigned')).toBeTruthy();
   });
 

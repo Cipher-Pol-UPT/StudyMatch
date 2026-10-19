@@ -47,7 +47,7 @@
       "categories": "Register and rename subject categories.",
       "academicYear": "Start the next academic year.",
       "analytics": "Explore student and group indicators.",
-      "mySubjects": "Open the editions you teach and view their enrolled students.",
+      "mySubjects": "Open the subject editions you teach.",
       "assignments": "Create and manage subject assignments.",
       "groups": "View, generate, edit, import and export assignment groups.",
       "grades": "Record student grades for your subjects.",
@@ -683,8 +683,7 @@
     "studentInformation": "Student information",
     "notifications": "Notifications",
     "logout": "Log out",
-    "accountMenu": "Account menu",
-    "changePassword": "Change password"
+    "accountMenu": "Account menu"
   },
   "passwordRules": {
     "length": "At least 8 characters",

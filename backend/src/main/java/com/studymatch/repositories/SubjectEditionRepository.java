@@ -17,4 +17,3 @@ public interface SubjectEditionRepository extends JpaRepository<SubjectEdition, 
   List<SubjectEdition> findDistinctByTeachers_Number(Long teacherNumber);
 
 }
-

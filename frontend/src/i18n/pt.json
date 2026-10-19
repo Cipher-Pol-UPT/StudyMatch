@@ -47,7 +47,7 @@
       "categories": "Registar categorias de unidades curriculares e alterar os seus nomes.",
       "academicYear": "Iniciar o próximo ano letivo.",
       "analytics": "Explorar indicadores de estudantes e grupos.",
-      "mySubjects": "Abrir as edições que leciona e consultar os estudantes inscritos.",
+      "mySubjects": "Abrir as edições das unidades curriculares que leciona.",
       "assignments": "Criar e gerir avaliações das unidades curriculares.",
       "groups": "Consultar, gerar, editar, importar e exportar grupos de trabalho.",
       "grades": "Registar classificações nas suas unidades curriculares.",
@@ -683,8 +683,7 @@
     "studentInformation": "Informação do estudante",
     "notifications": "Notificações",
     "logout": "Terminar sessão",
-    "accountMenu": "Menu da conta",
-    "changePassword": "Alterar palavra-passe"
+    "accountMenu": "Menu da conta"
   },
   "passwordRules": {
     "length": "Pelo menos 8 caracteres",

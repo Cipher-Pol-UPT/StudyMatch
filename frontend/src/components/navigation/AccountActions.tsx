@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../../api/auth';
 import { isBackendError } from '../../api/errors';
-import { Avatar, Button, Menu, ThemeSwitcher, useToast } from '../../studymatch-ui';
+import { Avatar, Menu, ThemeSwitcher, useToast } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import './accountActions.css';
 
@@ -58,9 +58,6 @@ export function AccountActions({ user, onLoggedOut }: AccountActionsProps) {
           { label: t('nav.logout'), icon: LogOut, danger: true, disabled: busy, onSelect: () => { void signOut(); } },
         ]}
       />
-      <Button size="sm" variant="ghost" icon={LogOut} loading={busy} onClick={() => { void signOut(); }}>
-        {t('nav.logout')}
-      </Button>
     </div>
   );
 }

@@ -11,7 +11,7 @@ const profile = { number: 50001, name: 'Alex Silva', banner: null, pfp: null, ab
 const workspaces = [
   { role: 'ADMIN' as const, title: 'Administrator workspace', links: ['Create account', 'Block account', 'Unblock account'] },
   { role: 'STAFF' as const, title: 'Staff workspace', links: ['Students', 'Register student', 'Enrolments', 'Analytics'] },
-  { role: 'TEACHER' as const, title: 'Teacher workspace', links: ['My subjects', 'Assignments', 'Assignment groups', 'Grades', 'Tutor applications'] },
+  { role: 'TEACHER' as const, title: 'Teacher workspace', links: ['Students', 'My subjects', 'Assignments', 'Assignment groups', 'Grades', 'Tutor applications'] },
 ];
 
 function backend(user: CurrentUser | null, loginUser = user, logoutFails = false) {
@@ -89,12 +89,8 @@ describe('logout', () => {
   it.each(['ADMIN', 'STAFF', 'TEACHER', 'STUDENT'] as Role[])('ends the %s session and returns to login', async role => {
     const fetchMock = backend({ ...base, role });
     start();
-    if (role === 'STUDENT') {
-      fireEvent.click(await screen.findByRole('button', { name: 'Account menu' }));
-      fireEvent.click(await screen.findByRole('menuitem', { name: 'Log out' }));
-    } else {
-      fireEvent.click(await screen.findByRole('button', { name: 'Log out' }));
-    }
+    fireEvent.click(await screen.findByRole('button', { name: 'Account menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Log out' }));
     expect(await screen.findByRole('button', { name: 'Log in' })).toBeTruthy();
     if (role !== 'STUDENT') expect(await screen.findByText('You have been logged out.')).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledWith('/api/users/logout', expect.objectContaining({ method: 'POST', credentials: 'include', headers: { 'X-XSRF-TOKEN': 'test-token' } }));
@@ -112,10 +108,12 @@ describe('logout', () => {
   it('does not pretend a failed logout ended the server session', async () => {
     backend({ ...base, role: 'TEACHER' }, undefined, true);
     start();
-    fireEvent.click(await screen.findByRole('button', { name: 'Log out' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Account menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Log out' }));
     expect(await screen.findByText('Could not end your session. Check your connection and try again.')).toBeTruthy();
     expect(screen.getByText('Teacher workspace', { selector: 'p' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Log in' })).toBeNull();
-    await waitFor(() => expect((screen.getByRole('button', { name: 'Log out' }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    await waitFor(() => expect((screen.getByRole('menuitem', { name: 'Log out' }) as HTMLButtonElement).disabled).toBe(false));
   });
 });

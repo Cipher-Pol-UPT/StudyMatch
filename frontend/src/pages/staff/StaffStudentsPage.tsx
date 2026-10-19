@@ -19,7 +19,7 @@ export function StaffStudentsPage() {
   const format = useStudentFormatting();
   const [params, setParams] = useSearchParams();
   const pageValue = Number(params.get('page') ?? 0);
-  const page = Number.isSafeInteger(pageValue) && pageValue >= 0 && pageValue <= 2147483647 ? pageValue : 0;
+  const page = Number.isSafeInteger(pageValue) && pageValue >= 0 ? pageValue : 0;
   const normalized = new URLSearchParams();
   for (const key of FILTERS) {
     const value = params.get(key)?.trim();
