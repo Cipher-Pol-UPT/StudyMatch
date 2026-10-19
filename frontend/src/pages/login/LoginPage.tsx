@@ -3,39 +3,52 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { login } from '../../api/auth';
 import { isBackendError } from '../../api/errors';
-import { AuthLayout, BlockedNotice, LoginForm } from '../../studymatch-ui';
+import { AuthLayout, BlockedNotice, LoginForm, useToast } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import type { LoginInput } from '../../types/forms';
+import { ForgotPassword } from './ForgotPassword';
 import { RevealText } from './RevealText';
 
 export interface LoginPageProps {
   onLoggedIn: (user: CurrentUser) => void;
 }
 
+type LoginView = 'login' | 'accountBlocked' | 'forgotPassword';
+
 export function LoginPage({ onLoggedIn }: LoginPageProps) {
   const { t } = useTranslation();
-  const [accountBlocked, setAccountBlocked] = useState(false);
+  const toast = useToast();
+  const [view, setView] = useState<LoginView>('login');
 
   async function handleLogin(credentials: LoginInput) {
     try {
       onLoggedIn(await login(credentials));
     } catch (error) {
       if (isBackendError(error) && error.code === 'ACCOUNT_BLOCKED') {
-        setAccountBlocked(true);
+        setView('accountBlocked');
         return;
       }
       throw error;
     }
   }
 
+  function showLoginAfterPasswordReset() {
+    setView('login');
+    toast.success(t('auth.passwordReset'));
+  }
+
   return (
     <MotionConfig reducedMotion="user">
-      <AuthLayout centered headline={<RevealText text={t('login.headline')} />} tagline={t('login.tagline')}>
-        <FadeIn key={accountBlocked ? 'blocked' : 'login'}>
-          {accountBlocked ? (
-            <BlockedNotice message={<p>{t('errors.ACCOUNT_BLOCKED')}</p>} onBack={() => setAccountBlocked(false)} />
-          ) : (
-            <LoginForm onSubmit={handleLogin} />
+      <AuthLayout centerBrand hideArt hideFooter headline={<RevealText text={t('auth.headline')} />}>
+        <FadeIn key={view}>
+          {view === 'accountBlocked' && (
+            <BlockedNotice message={<p>{t('errors.ACCOUNT_BLOCKED')}</p>} onBack={() => setView('login')} />
+          )}
+          {view === 'forgotPassword' && (
+            <ForgotPassword onPasswordReset={showLoginAfterPasswordReset} onBack={() => setView('login')} />
+          )}
+          {view === 'login' && (
+            <LoginForm onSubmit={handleLogin} onForgotPassword={() => setView('forgotPassword')} />
           )}
         </FadeIn>
       </AuthLayout>

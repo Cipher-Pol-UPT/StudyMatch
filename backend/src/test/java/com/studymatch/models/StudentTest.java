@@ -320,6 +320,85 @@ class StudentTest {
     assertEquals(ErrorCode.INVALID_BANNER, e.getCode());
   }
 
+  @Test
+  @DisplayName("A JPEG profile photo is saved")
+  void jpegProfilePhotoIsSaved() {
+    // Arrange
+    String photo = jpegBanner(1024);
+
+    // Act
+    student.setPfp(photo);
+
+    // Assert
+    assertEquals(photo, student.getPfp());
+  }
+
+  @Test
+  @DisplayName("A null profile photo removes the current one")
+  void nullProfilePhotoRemovesIt() {
+    // Arrange
+    student.setPfp(pngBanner(1024));
+
+    // Act
+    student.setPfp(null);
+
+    // Assert
+    assertNull(student.getPfp());
+  }
+
+  @Test
+  @DisplayName("A profile photo of exactly 1 MB is saved")
+  void profilePhotoAtTheLimitIsSaved() {
+    // Arrange
+    String photo = pngBanner(Student.MAX_PFP_BYTES);
+
+    // Act
+    student.setPfp(photo);
+
+    // Assert
+    assertEquals(photo, student.getPfp());
+  }
+
+  @Test
+  @DisplayName("A profile photo over 1 MB is rejected")
+  void profilePhotoOverTheLimitIsRejected() {
+    // Arrange
+    String photo = pngBanner(Student.MAX_PFP_BYTES + 1);
+
+    // Act + Assert
+    assertInvalidProfilePhoto(photo);
+  }
+
+  @Test
+  @DisplayName("A profile photo in another format is rejected")
+  void profilePhotoInAnotherFormatIsRejected() {
+    // Arrange
+    String photo = "data:image/gif;base64," + Base64.getEncoder().encodeToString("GIF89a".getBytes());
+
+    // Act + Assert
+    assertInvalidProfilePhoto(photo);
+  }
+
+  @Test
+  @DisplayName("A rejected profile photo keeps the current one")
+  void rejectedProfilePhotoKeepsTheCurrentOne() {
+    // Arrange
+    String photo = pngBanner(1024);
+    student.setPfp(photo);
+
+    // Act
+    assertThrows(StudyMatchException.class, () -> student.setPfp("https://example.com/photo.png"));
+
+    // Assert
+    assertEquals(photo, student.getPfp());
+  }
+
+  private void assertInvalidProfilePhoto(String photo) {
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> student.setPfp(photo));
+
+    assertEquals(ErrorCode.INVALID_PROFILE_PHOTO, e.getCode());
+  }
+
   private static String pngBanner(int bytes) {
     return "data:image/png;base64," + Base64.getEncoder().encodeToString(imageOfSize(bytes, 0x89, 0x50, 0x4E, 0x47));
   }

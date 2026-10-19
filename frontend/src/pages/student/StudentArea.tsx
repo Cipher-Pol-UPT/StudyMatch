@@ -5,9 +5,12 @@ import { logout } from '../../api/auth';
 import { AppShell, Avatar, EmptyState, Logo, Menu, type MenuEntry, type NavItem } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { HomePage } from '../home/HomePage';
+import { ProfilePage } from '../profile/ProfilePage';
 import { ACCOUNT, SECTIONS } from './sections';
 import './student.css';
 import { useMyProfile } from './useMyProfile';
+
+const PROFILE_PATH = '/profile';
 
 export interface StudentAreaProps {
   currentUser: CurrentUser;
@@ -17,7 +20,7 @@ export interface StudentAreaProps {
 export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { profile, failed } = useMyProfile();
+  const { profile, failed, showSavedProfile } = useMyProfile();
   const pages = [...SECTIONS, ...ACCOUNT];
   const current = pages.find((p) => p.path === pathname);
   const nav: NavItem[] = [
@@ -37,7 +40,8 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
     >
       <Routes>
         <Route path="/" element={<HomePage currentUser={currentUser} profile={profile} failed={failed} />} />
-        {pages.map((p) => (
+        <Route path={PROFILE_PATH} element={<ProfilePage onSaved={showSavedProfile} />} />
+        {pages.filter((p) => p.path !== PROFILE_PATH).map((p) => (
           <Route key={p.path} path={p.path} element={<EmptyState icon={p.icon} title={t(`nav.${p.key}`)} body={t('placeholder.comingSoon')} />} />
         ))}
         <Route path="*" element={<Navigate to="/" replace />} />

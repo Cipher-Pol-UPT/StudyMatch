@@ -17,7 +17,7 @@ export interface PasswordFieldProps extends Omit<InputHTMLAttributes<HTMLInputEl
 }
 
 export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(function PasswordField(
-  { label = i18n.t('ui.password'), hint, error, icon, rules, id, containerClassName, className, onChange, value, defaultValue, disabled, ...rest },
+  { label = i18n.t('ui.password'), hint, error, icon, rules, id, containerClassName, className, onChange, value, defaultValue, disabled, autoComplete = 'current-password', ...rest },
   ref,
 ) {
   useTranslation();
@@ -83,7 +83,7 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(fu
         className={['sm-field__input', className].filter(Boolean).join(' ')}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(fid, hint, error)}
-        autoComplete="current-password"
+        autoComplete={autoComplete}
         spellCheck={false}
         value={value}
         defaultValue={value === undefined ? defaultValue : undefined}

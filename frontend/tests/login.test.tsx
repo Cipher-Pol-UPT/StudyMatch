@@ -59,6 +59,13 @@ describe('login page', () => {
     });
   });
 
+  it('lets password managers fill the email and the password', () => {
+    renderLoginPage();
+
+    expect(screen.getByLabelText('Institutional email').getAttribute('autocomplete')).toBe('username');
+    expect(screen.getByLabelText('Password').getAttribute('autocomplete')).toBe('current-password');
+  });
+
   it('shows the backend message for wrong credentials', async () => {
     mockBackendResponse(401, { code: 'INVALID_CREDENTIALS' });
     const onLoggedIn = renderLoginPage();

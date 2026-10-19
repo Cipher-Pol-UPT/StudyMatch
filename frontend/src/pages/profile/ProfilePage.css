@@ -1,0 +1,10 @@
+.profile-page--centered {
+  display: grid;
+  place-items: center;
+  min-height: 50svh;
+}
+
+.profile-edit {
+  display: grid;
+  gap: 24px;
+}

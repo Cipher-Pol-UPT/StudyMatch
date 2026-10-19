@@ -1,0 +1,22 @@
+.personality-page {
+  min-height: 100svh;
+  box-sizing: border-box;
+  padding-block: 48px;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  background: var(--sm-canvas);
+}
+
+.personality-page__hero {
+  background: color-mix(in srgb, var(--profile-color) 14%, var(--sm-white));
+}
+
+.personality-page__profile {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+
+.personality-page__profile .sm-profile-bars {
+  width: 100%;
+}

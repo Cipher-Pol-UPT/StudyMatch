@@ -57,7 +57,7 @@ describe('presentational components', () => {
     const submit = vi.fn(async () => {});
     render(<PersonalityTest questions={[{id:'q1',text:'A supplied question'}]} onSubmit={submit} />);
     fireEvent.click(screen.getByRole('radio', {name:'Strongly agree'}));
-    fireEvent.click(screen.getByRole('button', {name:'Submit'}));
+    fireEvent.click(screen.getByRole('button', {name:'Submit answers'}));
     await waitFor(() => expect(submit).toHaveBeenCalledWith({q1:5}));
     expect(screen.getAllByRole('group')).toHaveLength(1);
   });

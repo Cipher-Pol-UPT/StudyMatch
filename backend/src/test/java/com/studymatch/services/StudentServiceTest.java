@@ -241,10 +241,10 @@ class StudentServiceTest {
   }
 
   @Test
-  @DisplayName("Editing saves the banner, about me, skills, interests and languages")
+  @DisplayName("Editing saves the banner, profile photo, about me, skills, interests and languages")
   void editingSavesTheEditableFields() {
     // Arrange
-    UpdateProfileRequestDTO changes = new UpdateProfileRequestDTO(PNG_BANNER, "Test about me",
+    UpdateProfileRequestDTO changes = new UpdateProfileRequestDTO(PNG_BANNER, PNG_BANNER, "Test about me",
         Set.of("Test Skill"), Set.of("Test Interest"), Set.of(Language.ENGLISH, Language.SPANISH));
 
     // Act
@@ -252,6 +252,7 @@ class StudentServiceTest {
 
     // Assert
     assertEquals(PNG_BANNER, profile.banner());
+    assertEquals(PNG_BANNER, profile.pfp());
     assertEquals("Test about me", profile.aboutMe());
     assertEquals(Set.of("Test Skill"), profile.skills());
     assertEquals(Set.of("Test Interest"), profile.interests());
@@ -264,7 +265,7 @@ class StudentServiceTest {
   @DisplayName("Editing with no languages throws AT_LEAST_ONE_LANGUAGE_REQUIRED")
   void editingWithoutLanguagesIsRejected() {
     // Arrange
-    UpdateProfileRequestDTO changes = new UpdateProfileRequestDTO(null, null, Set.of(), Set.of(), Set.of());
+    UpdateProfileRequestDTO changes = new UpdateProfileRequestDTO(null, null, null, Set.of(), Set.of(), Set.of());
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
@@ -279,7 +280,7 @@ class StudentServiceTest {
   @DisplayName("Editing with an invalid banner throws INVALID_BANNER")
   void editingWithAnInvalidBannerIsRejected() {
     // Arrange
-    UpdateProfileRequestDTO changes = new UpdateProfileRequestDTO("data:image/gif;base64,R0lGODlh", null,
+    UpdateProfileRequestDTO changes = new UpdateProfileRequestDTO("data:image/gif;base64,R0lGODlh", null, null,
         Set.of(), Set.of(), Set.of(Language.ENGLISH));
 
     // Act
@@ -288,6 +289,22 @@ class StudentServiceTest {
 
     // Assert
     assertEquals(ErrorCode.INVALID_BANNER, e.getCode());
+    verify(studentRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("Editing with an invalid profile photo throws INVALID_PROFILE_PHOTO")
+  void editingWithAnInvalidProfilePhotoIsRejected() {
+    // Arrange
+    UpdateProfileRequestDTO changes = new UpdateProfileRequestDTO(null, "data:image/gif;base64,R0lGODlh", null,
+        Set.of(), Set.of(), Set.of(Language.ENGLISH));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studentService.updateProfile(STUDENT_NUMBER, changes));
+
+    // Assert
+    assertEquals(ErrorCode.INVALID_PROFILE_PHOTO, e.getCode());
     verify(studentRepository, never()).save(any());
   }
 

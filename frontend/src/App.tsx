@@ -1,9 +1,10 @@
-import { Brain, House, KeyRound } from 'lucide-react';
+import { House, KeyRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter } from 'react-router-dom';
 import { getCurrentUser } from './api/auth';
 import { LoginPage } from './pages/login/LoginPage';
+import { PersonalityTestPage } from './pages/personality/PersonalityTestPage';
 import { PlaceholderPage } from './pages/placeholder/PlaceholderPage';
 import { StudentArea } from './pages/student/StudentArea';
 import type { CurrentUser } from './types/currentUser';
@@ -33,7 +34,7 @@ export default function App() {
   }
 
   if (currentUser.personalityTestRequired) {
-    return <PlaceholderPage icon={Brain} title={t('personality.title')} />;
+    return <PersonalityTestPage onCompleted={() => setCurrentUser({ ...currentUser, personalityTestRequired: false })} />;
   }
 
   if (currentUser.role !== 'STUDENT') {

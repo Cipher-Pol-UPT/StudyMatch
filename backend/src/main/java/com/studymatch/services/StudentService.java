@@ -84,6 +84,7 @@ public class StudentService {
   public StudentProfileDTO updateProfile(Long studentNumber, UpdateProfileRequestDTO changes) {
     Student student = getByNumber(studentNumber);
     student.setBanner(changes.banner());
+    student.setPfp(changes.pfp());
     student.setAboutMe(changes.aboutMe());
     student.setSkills(changes.skills());
     student.setInterests(changes.interests());
