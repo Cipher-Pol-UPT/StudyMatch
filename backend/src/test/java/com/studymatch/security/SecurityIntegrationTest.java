@@ -68,7 +68,7 @@ class SecurityIntegrationTest {
   }
 
   private Student saveStudentWithoutTest() {
-    Degree degree = degreeRepository.save(new Degree("Integration Test Degree"));
+    Degree degree = degreeRepository.save(new Degree("Integration Test Degree", 3));
     Student student = new Student("it.student@example.com", "Test Student", passwordEncoder.encode(PASSWORD), degree, 1);
     student.setMustChangePassword(false);
     student = studentRepository.save(student);

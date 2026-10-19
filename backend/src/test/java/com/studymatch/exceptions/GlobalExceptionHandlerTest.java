@@ -165,7 +165,7 @@ class GlobalExceptionHandlerTest {
   @DisplayName("About me with exactly 500 characters is fine")
   void aboutMeAtLimitIsValid() {
     // Arrange
-    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree"), 1);
+    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree", 3), 1);
     student.setAboutMe("a".repeat(500));
 
     // Act + Assert
@@ -176,7 +176,7 @@ class GlobalExceptionHandlerTest {
   @DisplayName("About me with 501 characters gives SIZE_MAX with only the max")
   void aboutMeOverLimitIsSizeMax() {
     // Arrange
-    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree"), 1);
+    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree", 3), 1);
     student.setAboutMe("a".repeat(501));
     Set<ConstraintViolation<Student>> violations = validator.validateProperty(student, "aboutMe");
 

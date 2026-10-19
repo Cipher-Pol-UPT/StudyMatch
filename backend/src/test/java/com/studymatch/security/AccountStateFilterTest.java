@@ -71,7 +71,7 @@ class AccountStateFilterTest {
   }
 
   private Student studentWithoutTest() {
-    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree"), 1);
+    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree", 3), 1);
     student.setMustChangePassword(false);
     return student;
   }
@@ -188,7 +188,7 @@ class AccountStateFilterTest {
   @DisplayName("Password change comes before the personality test")
   void passwordGateComesFirst() throws Exception {
     // Arrange - a brand new student: must change password AND take the test
-    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree"), 1);
+    Student student = new Student("s@example.com", "Test Student", "hash", new Degree("Test Degree", 3), 1);
     logInAs(student);
 
     // Act - trying to take the test before changing the password
