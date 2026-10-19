@@ -2,6 +2,7 @@ package com.studymatch.services;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -40,9 +41,10 @@ public class SubjectService {
   public SubjectEdition registerSubject(SubjectRequestDTO request) {
     String code = request.code().trim();
     // the id lets the frontend offer a new edition of the existing subject instead
-    subjectRepository.findByCodeIgnoreCase(code).ifPresent(existing -> {
-      throw new StudyMatchException(ErrorCode.SUBJECT_ALREADY_EXISTS, Map.of("id", existing.getId()));
-    });
+    Optional<Subject> existing = subjectRepository.findByCodeIgnoreCase(code);
+    if (existing.isPresent()) {
+      throw new StudyMatchException(ErrorCode.SUBJECT_ALREADY_EXISTS, Map.of("id", existing.get().getId()));
+    }
 
     Category category = categoryService.getCategory(request.categoryId());
     Subject subject = new Subject(code, request.name().trim(), request.ects(), category);

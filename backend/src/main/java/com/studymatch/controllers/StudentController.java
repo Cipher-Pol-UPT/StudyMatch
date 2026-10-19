@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,13 +24,17 @@ import org.springframework.web.multipart.MultipartFile;
 import com.studymatch.dtos.ImportPreviewRowDTO;
 import com.studymatch.dtos.ImportResultRowDTO;
 import com.studymatch.dtos.ImportStudentsRequestDTO;
+import com.studymatch.dtos.PageDTO;
 import com.studymatch.dtos.PersonalityProfileDTO;
 import com.studymatch.dtos.PersonalityTestRequestDTO;
 import com.studymatch.dtos.RegisterStudentRequestDTO;
 import com.studymatch.dtos.RegisteredStudentDTO;
 import com.studymatch.dtos.ResendCredentialsRequestDTO;
 import com.studymatch.dtos.StudentProfileDTO;
+import com.studymatch.dtos.StudentRecordDTO;
+import com.studymatch.dtos.StudentSummaryDTO;
 import com.studymatch.dtos.UpdateProfileRequestDTO;
+import com.studymatch.enums.AccountStatus;
 import com.studymatch.models.User;
 import com.studymatch.services.StudentService;
 import com.studymatch.services.UserService;
@@ -49,6 +54,23 @@ public class StudentController {
     this.studentService = studentService;
     this.userService = userService;
     this.csvReader = csvReader;
+  }
+
+  // view students (staff)
+
+  @GetMapping
+  @PreAuthorize("hasRole('STAFF')")
+  public ResponseEntity<PageDTO<StudentSummaryDTO>> listStudents(@RequestParam(required = false) String search,
+      @RequestParam(required = false) Long degreeId, @RequestParam(required = false) Integer curricularYear,
+      @RequestParam(required = false) AccountStatus status, @RequestParam(defaultValue = "0") int page) {
+    return ResponseEntity.ok(studentService.listStudents(search, degreeId, curricularYear, status, page));
+  }
+
+  @GetMapping("{number}")
+  @PreAuthorize("hasRole('STAFF')")
+  public ResponseEntity<StudentRecordDTO> getRecord(@PathVariable Long number, Authentication authentication) {
+    User staff = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(studentService.getRecord(number, staff));
   }
 
   // register student

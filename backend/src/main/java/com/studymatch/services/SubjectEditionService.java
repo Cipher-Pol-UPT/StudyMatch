@@ -49,4 +49,14 @@ public class SubjectEditionService {
     }
   }
 
+  // a teacher only sees the students of editions they teach
+  public void checkTaughtBy(Long editionId, Long teacherNumber) {
+    if (!subjectEditionRepository.existsById(editionId)) {
+      throw new StudyMatchException(ErrorCode.NOT_FOUND);
+    }
+    if (!subjectEditionRepository.existsByIdAndTeachers_Number(editionId, teacherNumber)) {
+      throw new StudyMatchException(ErrorCode.ACCESS_DENIED);
+    }
+  }
+
 }

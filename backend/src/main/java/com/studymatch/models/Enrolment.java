@@ -95,4 +95,9 @@ public class Enrolment {
     this.status = finalGrade >= PASSING_GRADE ? EnrolmentStatus.PASSED : EnrolmentStatus.FAILED;
   }
 
+  // passed or failed, either way there's a final grade to count
+  public boolean isFinished() {
+    return finalGrade != null;
+  }
+
 }

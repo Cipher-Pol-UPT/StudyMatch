@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -36,6 +37,13 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorResponseDTO> handleMissingFile(MissingServletRequestPartException e) {
     FieldErrorDTO missing = new FieldErrorDTO(e.getRequestPartName(), "NOT_NULL", Map.of());
     return ResponseEntity.badRequest().body(ErrorResponseDTO.validationFailed(List.of(missing)));
+  }
+
+  // a url value of the wrong type, like ?status=SLEEPING or /students/abc
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ErrorResponseDTO> handleWrongUrlValue(MethodArgumentTypeMismatchException e) {
+    FieldErrorDTO wrong = new FieldErrorDTO(e.getName(), "INVALID", Map.of());
+    return ResponseEntity.badRequest().body(ErrorResponseDTO.validationFailed(List.of(wrong)));
   }
 
   @ExceptionHandler(StudyMatchException.class)
