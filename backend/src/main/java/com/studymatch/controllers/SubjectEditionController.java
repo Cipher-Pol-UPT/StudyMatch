@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.studymatch.dtos.EditionStudentDTO;
+import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.models.User;
 import com.studymatch.services.EnrolmentService;
 import com.studymatch.services.SubjectEditionService;
@@ -32,6 +33,13 @@ public class SubjectEditionController {
     this.userService = userService;
   }
 
+  @GetMapping
+  @PreAuthorize("hasRole('TEACHER')")
+  public ResponseEntity<List<SubjectEditionResponseDTO>> listMyEditions(Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(subjectEditionService.listTaughtBy(teacher.getNumber()));
+  }
+
   // view students (teacher): only for teachers of this edition
   @GetMapping("{id}/students")
   @PreAuthorize("hasRole('TEACHER')")
@@ -44,3 +52,4 @@ public class SubjectEditionController {
   }
 
 }
+

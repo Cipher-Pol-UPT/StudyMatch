@@ -1,10 +1,14 @@
 package com.studymatch.services;
 
+import java.util.Comparator;
+import java.util.List;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.SubjectEditionRequestDTO;
+import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.AcademicYear;
@@ -47,6 +51,18 @@ public class SubjectEditionService {
     } catch (DataIntegrityViolationException e) {
       throw new StudyMatchException(ErrorCode.SUBJECT_EDITION_ALREADY_EXISTS);
     }
+  }
+
+  // discover the editions assigned to the authenticated teacher
+  @Transactional(readOnly = true)
+  public List<SubjectEditionResponseDTO> listTaughtBy(Long teacherNumber) {
+    // Map the lazy classes, teachers and subject degrees while the transaction is open.
+    return subjectEditionRepository.findDistinctByTeachers_Number(teacherNumber).stream()
+        .map(SubjectEditionResponseDTO::from)
+        .sorted(Comparator.comparingInt(SubjectEditionResponseDTO::academicYear).reversed()
+            .thenComparing(edition -> edition.subject().name())
+            .thenComparing(SubjectEditionResponseDTO::id))
+        .toList();
   }
 
   // a teacher only sees the students of editions they teach
