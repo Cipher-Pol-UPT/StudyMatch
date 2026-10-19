@@ -108,8 +108,9 @@ class RegisterSubjectIntegrationTest {
     return "[{\"degreeId\":" + degreeId + ",\"curricularYear\":" + curricularYear + ",\"semester\":" + semester + "}]";
   }
 
-  private String edition(int academicYear, String teacherIds, String classSections) {
-    return "{\"academicYear\":" + academicYear + ",\"teacherIds\":" + teacherIds + ",\"classSections\":" + classSections + "}";
+  private String edition(int academicYear, String teacherNumbers, String classSections) {
+    return "{\"academicYear\":" + academicYear + ",\"teacherNumbers\":" + teacherNumbers + ",\"classSections\":"
+        + classSections + "}";
   }
 
   private String validEdition() {
@@ -189,7 +190,7 @@ class RegisterSubjectIntegrationTest {
         .andExpect(jsonPath("$.subject.degrees[0].semester").value(1));
 
     // Assert
-    assertTrue(subjectRepository.existsByCodeIgnoreCase(CODE));
+    assertTrue(subjectRepository.findByCodeIgnoreCase(CODE).isPresent());
   }
 
   @Test
@@ -208,14 +209,15 @@ class RegisterSubjectIntegrationTest {
   @DisplayName("A code that already exists is 409, even with different case and spaces")
   void subjectCodeTaken() throws Exception {
     // Arrange
-    saveExistingSubject();
+    Subject existing = saveExistingSubject();
     MockHttpSession staff = loginAsStaff();
 
     // Act + Assert
     registerSubject(staff, newSubject("  " + CODE.toLowerCase() + " ", category.getId(), inDegree(degree.getId(), 1, 1),
         validEdition()))
         .andExpect(status().isConflict())
-        .andExpect(jsonPath("$.code").value("SUBJECT_ALREADY_EXISTS"));
+        .andExpect(jsonPath("$.code").value("SUBJECT_ALREADY_EXISTS"))
+        .andExpect(jsonPath("$.params.id").value(existing.getId()));
   }
 
   @Test
@@ -230,22 +232,19 @@ class RegisterSubjectIntegrationTest {
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("degrees"))
         .andExpect(jsonPath("$.fieldErrors[0].code").value("NOT_EMPTY"));
-    assertFalse(subjectRepository.existsByCodeIgnoreCase(CODE));
+    assertFalse(subjectRepository.findByCodeIgnoreCase(CODE).isPresent());
   }
 
   @Test
-  @DisplayName("A subject with no teachers is a field error")
+  @DisplayName("A subject with no teachers is 400 AT_LEAST_ONE_TEACHER_REQUIRED")
   void noTeachers() throws Exception {
     // Arrange
     MockHttpSession staff = loginAsStaff();
 
-    // Act + Assert
+    // Act + Assert - the subject's rollback isn't visible here, the test shares the service's transaction
     registerSubject(staff, subjectWithEdition(edition(YEAR, "[]", "[]")))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
-        .andExpect(jsonPath("$.fieldErrors[0].field").value("edition.teacherIds"))
-        .andExpect(jsonPath("$.fieldErrors[0].code").value("NOT_EMPTY"));
-    assertFalse(subjectRepository.existsByCodeIgnoreCase(CODE));
+        .andExpect(jsonPath("$.code").value("AT_LEAST_ONE_TEACHER_REQUIRED"));
   }
 
   @Test
@@ -286,7 +285,7 @@ class RegisterSubjectIntegrationTest {
     registerSubject(staff, newSubject(CODE, category.getId(), inDegree(degree.getId(), 4, 1), validEdition()))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("CURRICULAR_YEAR_OUT_OF_RANGE"));
-    assertFalse(subjectRepository.existsByCodeIgnoreCase(CODE));
+    assertFalse(subjectRepository.findByCodeIgnoreCase(CODE).isPresent());
   }
 
   @Test
@@ -410,7 +409,7 @@ class RegisterSubjectIntegrationTest {
   }
 
   @Test
-  @DisplayName("An edition without teachers is a field error")
+  @DisplayName("An edition without teachers is 400 AT_LEAST_ONE_TEACHER_REQUIRED")
   void editionWithoutTeachers() throws Exception {
     // Arrange
     Subject existing = saveExistingSubject();
@@ -419,8 +418,7 @@ class RegisterSubjectIntegrationTest {
     // Act + Assert
     registerEdition(staff, existing.getId(), edition(YEAR, "[]", "[]"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.fieldErrors[0].field").value("teacherIds"))
-        .andExpect(jsonPath("$.fieldErrors[0].code").value("NOT_EMPTY"));
+        .andExpect(jsonPath("$.code").value("AT_LEAST_ONE_TEACHER_REQUIRED"));
   }
 
   // only the staff
@@ -443,7 +441,7 @@ class RegisterSubjectIntegrationTest {
     registerEdition(session, existing.getId(), validEdition())
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
-    assertFalse(subjectRepository.existsByCodeIgnoreCase("ITSUBJ2"));
+    assertFalse(subjectRepository.findByCodeIgnoreCase("ITSUBJ2").isPresent());
   }
 
   @Test

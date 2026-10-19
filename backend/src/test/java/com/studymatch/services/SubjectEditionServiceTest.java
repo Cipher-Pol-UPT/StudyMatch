@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,17 +27,13 @@ import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.models.Teacher;
-import com.studymatch.repositories.AcademicYearRepository;
 import com.studymatch.repositories.SubjectEditionRepository;
-import com.studymatch.repositories.SubjectRepository;
-import com.studymatch.repositories.TeacherRepository;
 
 class SubjectEditionServiceTest {
 
   private SubjectEditionRepository subjectEditionRepository;
-  private SubjectRepository subjectRepository;
-  private AcademicYearRepository academicYearRepository;
-  private TeacherRepository teacherRepository;
+  private AcademicYearService academicYearService;
+  private TeacherService teacherService;
   private SubjectEditionService subjectEditionService;
 
   private Subject subject;
@@ -49,30 +44,28 @@ class SubjectEditionServiceTest {
   @BeforeEach
   void setUp() {
     subjectEditionRepository = mock(SubjectEditionRepository.class);
-    subjectRepository = mock(SubjectRepository.class);
-    academicYearRepository = mock(AcademicYearRepository.class);
-    teacherRepository = mock(TeacherRepository.class);
-    subjectEditionService = new SubjectEditionService(subjectEditionRepository, subjectRepository,
-        academicYearRepository, teacherRepository);
+    academicYearService = mock(AcademicYearService.class);
+    teacherService = mock(TeacherService.class);
+    subjectEditionService = new SubjectEditionService(subjectEditionRepository, academicYearService, teacherService);
 
     subject = ModelTestData.subject();
     year2026 = new AcademicYear(2026);
     ana = new Teacher("ana@example.com", "ana@studymatch.com", "Ana", "hash");
     rui = new Teacher("rui@example.com", "rui@studymatch.com", "Rui", "hash");
-    when(academicYearRepository.findById(2026)).thenReturn(Optional.of(year2026));
-    when(teacherRepository.findAllById(Set.of(1L))).thenReturn(List.of(ana));
-    when(teacherRepository.findAllById(Set.of(1L, 2L))).thenReturn(List.of(ana, rui));
+    when(academicYearService.getAcademicYear(2026)).thenReturn(year2026);
+    when(academicYearService.getAcademicYear(2099)).thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
+    when(teacherService.getTeachers(List.of(1L))).thenReturn(Set.of(ana));
+    when(teacherService.getTeachers(List.of(1L, 2L))).thenReturn(Set.of(ana, rui));
+    when(teacherService.getTeachers(List.of())).thenReturn(Set.of());
 
     // saveAndFlush returns what it was given
     when(subjectEditionRepository.saveAndFlush(any(SubjectEdition.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
   }
 
-  private static SubjectEditionRequestDTO request(List<Long> teacherIds, List<String> classSections) {
-    return new SubjectEditionRequestDTO(2026, teacherIds, classSections);
+  private static SubjectEditionRequestDTO request(List<Long> teacherNumbers, List<String> classSections) {
+    return new SubjectEditionRequestDTO(2026, teacherNumbers, classSections);
   }
-
-  // create edition
 
   @Test
   @DisplayName("A new edition is saved for the subject and year, with its teachers and classes")
@@ -100,17 +93,19 @@ class SubjectEditionServiceTest {
   }
 
   @Test
-  @DisplayName("The same teacher picked twice is assigned once")
-  void repeatedTeacherCountsOnce() {
+  @DisplayName("No teachers gets AT_LEAST_ONE_TEACHER_REQUIRED from the edition, and nothing is saved")
+  void noTeachersIsRefused() {
     // Act
-    SubjectEdition edition = subjectEditionService.createEdition(subject, request(List.of(1L, 1L), List.of()));
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectEditionService.createEdition(subject, request(List.of(), List.of())));
 
     // Assert
-    assertEquals(Set.of(ana), edition.getTeachers());
+    assertEquals(ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED, e.getCode());
+    verify(subjectEditionRepository, never()).saveAndFlush(any());
   }
 
   @Test
-  @DisplayName("An academic year that isn't registered gets NOT_FOUND and nothing is saved")
+  @DisplayName("An academic year that isn't registered: the year's NOT_FOUND goes through and nothing is saved")
   void unknownAcademicYearIsNotFound() {
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectEditionService.createEdition(subject,
@@ -122,10 +117,10 @@ class SubjectEditionServiceTest {
   }
 
   @Test
-  @DisplayName("A teacher that doesn't exist gets NOT_FOUND and nothing is saved")
+  @DisplayName("A teacher number that doesn't exist: the teachers' NOT_FOUND goes through and nothing is saved")
   void unknownTeacherIsNotFound() {
-    // Arrange - only teacher 1 exists
-    when(teacherRepository.findAllById(Set.of(1L, 99L))).thenReturn(List.of(ana));
+    // Arrange
+    when(teacherService.getTeachers(List.of(1L, 99L))).thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
@@ -176,35 +171,6 @@ class SubjectEditionServiceTest {
 
     // Assert
     assertEquals(ErrorCode.SUBJECT_EDITION_ALREADY_EXISTS, e.getCode());
-  }
-
-  // edition of an existing subject
-
-  @Test
-  @DisplayName("An edition for an existing subject is created for that subject")
-  void editionOfExistingSubject() {
-    // Arrange
-    when(subjectRepository.findWithDegreesById(5L)).thenReturn(Optional.of(subject));
-
-    // Act
-    SubjectEdition edition = subjectEditionService.registerEdition(5L, request(List.of(1L), List.of()));
-
-    // Assert
-    assertSame(subject, edition.getSubject());
-  }
-
-  @Test
-  @DisplayName("An edition for a subject that doesn't exist gets NOT_FOUND")
-  void editionOfUnknownSubject() {
-    // Arrange
-    when(subjectRepository.findWithDegreesById(99L)).thenReturn(Optional.empty());
-
-    // Act
-    StudyMatchException e = assertThrows(StudyMatchException.class,
-        () -> subjectEditionService.registerEdition(99L, request(List.of(1L), List.of())));
-
-    // Assert
-    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
   }
 
 }

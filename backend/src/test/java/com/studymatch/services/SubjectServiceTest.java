@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -30,8 +31,6 @@ import com.studymatch.models.DegreeSubject;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
-import com.studymatch.repositories.CategoryRepository;
-import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.SubjectRepository;
 
 class SubjectServiceTest {
@@ -39,8 +38,8 @@ class SubjectServiceTest {
   private static final SubjectEditionRequestDTO EDITION = new SubjectEditionRequestDTO(2026, List.of(1L), List.of("T1"));
 
   private SubjectRepository subjectRepository;
-  private CategoryRepository categoryRepository;
-  private DegreeRepository degreeRepository;
+  private CategoryService categoryService;
+  private DegreeService degreeService;
   private SubjectEditionService subjectEditionService;
   private SubjectService subjectService;
 
@@ -51,17 +50,20 @@ class SubjectServiceTest {
   @BeforeEach
   void setUp() {
     subjectRepository = mock(SubjectRepository.class);
-    categoryRepository = mock(CategoryRepository.class);
-    degreeRepository = mock(DegreeRepository.class);
+    categoryService = mock(CategoryService.class);
+    degreeService = mock(DegreeService.class);
     subjectEditionService = mock(SubjectEditionService.class);
-    subjectService = new SubjectService(subjectRepository, categoryRepository, degreeRepository, subjectEditionService);
+    subjectService = new SubjectService(subjectRepository, categoryService, degreeService, subjectEditionService);
 
     mathematics = new Category("Mathematics");
     computerScience = new Degree("Computer Science", 3);
     physics = new Degree("Physics", 5);
-    when(categoryRepository.findById(1L)).thenReturn(Optional.of(mathematics));
-    when(degreeRepository.findById(10L)).thenReturn(Optional.of(computerScience));
-    when(degreeRepository.findById(20L)).thenReturn(Optional.of(physics));
+    when(subjectRepository.findByCodeIgnoreCase(any())).thenReturn(Optional.empty());
+    when(categoryService.getCategory(1L)).thenReturn(mathematics);
+    when(categoryService.getCategory(99L)).thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
+    when(degreeService.getDegree(10L)).thenReturn(computerScience);
+    when(degreeService.getDegree(20L)).thenReturn(physics);
+    when(degreeService.getDegree(99L)).thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
 
     // saveAndFlush returns what it was given
     when(subjectRepository.saveAndFlush(any(Subject.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -108,14 +110,16 @@ class SubjectServiceTest {
     // Assert
     assertEquals("MAT1", subject.getCode());
     assertEquals("Mathematics I", subject.getName());
-    verify(subjectRepository).existsByCodeIgnoreCase("MAT1");
+    verify(subjectRepository).findByCodeIgnoreCase("MAT1");
   }
 
   @Test
-  @DisplayName("A subject with a code that already exists gets SUBJECT_ALREADY_EXISTS and isn't saved")
+  @DisplayName("A code that already exists gets SUBJECT_ALREADY_EXISTS with that subject's id, and nothing is saved")
   void duplicateSubjectIsRefused() {
-    // Arrange
-    when(subjectRepository.existsByCodeIgnoreCase("MAT1")).thenReturn(true);
+    // Arrange - the id lets the frontend offer a new edition of the existing subject
+    Subject existing = mock(Subject.class);
+    when(existing.getId()).thenReturn(7L);
+    when(subjectRepository.findByCodeIgnoreCase("MAT1")).thenReturn(Optional.of(existing));
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
@@ -123,6 +127,7 @@ class SubjectServiceTest {
 
     // Assert
     assertEquals(ErrorCode.SUBJECT_ALREADY_EXISTS, e.getCode());
+    assertEquals(Map.of("id", 7L), e.getParams());
     verify(subjectRepository, never()).saveAndFlush(any());
   }
 
@@ -228,13 +233,46 @@ class SubjectServiceTest {
   @DisplayName("A refused subject never gets to its edition")
   void refusedSubjectCreatesNoEdition() {
     // Arrange
-    when(subjectRepository.existsByCodeIgnoreCase("MAT1")).thenReturn(true);
+    Subject existing = mock(Subject.class);
+    when(existing.getId()).thenReturn(7L);
+    when(subjectRepository.findByCodeIgnoreCase("MAT1")).thenReturn(Optional.of(existing));
 
     // Act
     assertThrows(StudyMatchException.class,
         () -> subjectService.registerSubject(request("MAT1", new DegreePlacementDTO(10L, 1, 1))));
 
     // Assert
+    verify(subjectEditionService, never()).createEdition(any(), any());
+  }
+
+  // new edition of an existing subject
+
+  @Test
+  @DisplayName("A new edition of an existing subject is created for that subject")
+  void editionOfExistingSubject() {
+    // Arrange
+    Subject existing = new Subject("MAT1", "Mathematics I", 6, mathematics);
+    when(subjectRepository.findWithDegreesById(5L)).thenReturn(Optional.of(existing));
+
+    // Act
+    SubjectEdition edition = subjectService.registerEdition(5L, EDITION);
+
+    // Assert
+    assertSame(existing, edition.getSubject());
+    verify(subjectEditionService).createEdition(existing, EDITION);
+  }
+
+  @Test
+  @DisplayName("A new edition of a subject that doesn't exist gets NOT_FOUND")
+  void editionOfUnknownSubject() {
+    // Arrange
+    when(subjectRepository.findWithDegreesById(99L)).thenReturn(Optional.empty());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectService.registerEdition(99L, EDITION));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
     verify(subjectEditionService, never()).createEdition(any(), any());
   }
 

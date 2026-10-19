@@ -28,7 +28,6 @@ import com.studymatch.models.Degree;
 import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.models.Teacher;
-import com.studymatch.services.SubjectEditionService;
 import com.studymatch.services.SubjectService;
 
 class SubjectControllerTest {
@@ -38,14 +37,12 @@ class SubjectControllerTest {
       List.of(new DegreePlacementDTO(10L, 1, 1)), EDITION);
 
   private SubjectService subjectService;
-  private SubjectEditionService subjectEditionService;
   private SubjectController controller;
 
   @BeforeEach
   void setUp() {
     subjectService = mock(SubjectService.class);
-    subjectEditionService = mock(SubjectEditionService.class);
-    controller = new SubjectController(subjectService, subjectEditionService);
+    controller = new SubjectController(subjectService);
   }
 
   private static SubjectEdition edition(Subject subject, Teacher... teachers) {
@@ -125,7 +122,7 @@ class SubjectControllerTest {
   @DisplayName("Adding an edition to an existing subject is 201 with the edition")
   void registerEditionIs201() {
     // Arrange
-    when(subjectEditionService.registerEdition(5L, EDITION)).thenReturn(edition(subject("MAT1"), teacher("Ana")));
+    when(subjectService.registerEdition(5L, EDITION)).thenReturn(edition(subject("MAT1"), teacher("Ana")));
 
     // Act
     ResponseEntity<SubjectEditionResponseDTO> result = controller.registerEdition(5L, EDITION);
@@ -140,7 +137,7 @@ class SubjectControllerTest {
   @DisplayName("When the subject already has that year's edition, the service's error goes through to the handler")
   void duplicateEditionIsPassedOn() {
     // Arrange
-    when(subjectEditionService.registerEdition(5L, EDITION))
+    when(subjectService.registerEdition(5L, EDITION))
         .thenThrow(new StudyMatchException(ErrorCode.SUBJECT_EDITION_ALREADY_EXISTS));
 
     // Act

@@ -10,7 +10,7 @@ import com.studymatch.models.Subject;
 
 public interface SubjectRepository extends JpaRepository<Subject, Long> {
 
-  boolean existsByCodeIgnoreCase(String code);
+  Optional<Subject> findByCodeIgnoreCase(String code);
 
   // open-in-view is off, so the degrees are loaded here for the response to read them
   @EntityGraph(attributePaths = "degreeSubjects")

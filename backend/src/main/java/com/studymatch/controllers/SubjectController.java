@@ -17,7 +17,6 @@ import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.dtos.SubjectRequestDTO;
 import com.studymatch.dtos.SubjectResponseDTO;
 import com.studymatch.models.SubjectEdition;
-import com.studymatch.services.SubjectEditionService;
 import com.studymatch.services.SubjectService;
 
 import jakarta.validation.Valid;
@@ -27,11 +26,9 @@ import jakarta.validation.Valid;
 public class SubjectController {
 
   private final SubjectService subjectService;
-  private final SubjectEditionService subjectEditionService;
 
-  public SubjectController(SubjectService subjectService, SubjectEditionService subjectEditionService) {
+  public SubjectController(SubjectService subjectService) {
     this.subjectService = subjectService;
-    this.subjectEditionService = subjectEditionService;
   }
 
   // any logged-in user: students, teachers and Staff all browse the subjects of the degrees
@@ -58,7 +55,7 @@ public class SubjectController {
   @PreAuthorize("hasRole('STAFF')")
   public ResponseEntity<SubjectEditionResponseDTO> registerEdition(@PathVariable Long id,
       @Valid @RequestBody SubjectEditionRequestDTO editionRequest) {
-    SubjectEdition edition = subjectEditionService.registerEdition(id, editionRequest);
+    SubjectEdition edition = subjectService.registerEdition(id, editionRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(SubjectEditionResponseDTO.from(edition));
   }
 

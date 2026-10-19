@@ -182,12 +182,11 @@ class SubjectRequestDTOTest {
   }
 
   @Test
-  @DisplayName("The edition needs at least one teacher")
-  void editionWithoutTeachers() {
-    assertEquals(Set.of("edition.teacherIds=NotEmpty"),
-        failures(withEdition(new SubjectEditionRequestDTO(2026, List.of(), List.of()))));
-    assertEquals(Set.of("edition.teacherIds=NotEmpty"),
+  @DisplayName("The teacher list is required, but an empty one gets through: the edition refuses it with its own error")
+  void editionTeachers() {
+    assertEquals(Set.of("edition.teacherNumbers=NotNull"),
         failures(withEdition(new SubjectEditionRequestDTO(2026, null, List.of()))));
+    assertTrue(failures(withEdition(new SubjectEditionRequestDTO(2026, List.of(), List.of()))).isEmpty());
   }
 
   @Test
