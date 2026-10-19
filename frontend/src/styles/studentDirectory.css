@@ -1,0 +1,18 @@
+.directory-filters { display: grid; grid-template-columns: 2fr repeat(3, minmax(130px, 1fr)); gap: 12px; padding: 18px; border: 1px solid var(--sm-border); border-radius: 18px; background: var(--sm-surface); }
+.directory-filter-actions { display: flex; flex-wrap: wrap; gap: 8px; grid-column: 1 / -1; }
+.directory-table .sm-table { min-width: 1100px; }
+.directory-table--teacher .sm-table { min-width: 800px; }
+.directory-page a:not(.role-card) { color: var(--sm-violet); text-underline-offset: 3px; }
+.directory-back { width: fit-content; font-weight: 650; }
+.directory-details { display: grid; gap: 14px; margin: 0; }
+.directory-details > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; }
+.directory-details dt { color: var(--sm-text-2); }
+.directory-details dd { margin: 0; font-weight: 650; overflow-wrap: anywhere; }
+.student-personality { display: grid; gap: 3px; margin: 0; min-width: 160px; font-size: 11px; }
+.student-personality > div { display: flex; justify-content: space-between; gap: 12px; }
+.student-personality dt { color: var(--sm-text-2); }
+.student-personality dd { margin: 0; font-variant-numeric: tabular-nums; }
+.directory-subject-meta { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; color: var(--sm-text-2); font-size: 13px; }
+.directory-teacher-filters { grid-template-columns: minmax(0, 2fr) minmax(160px, 1fr); }
+@media (max-width: 900px) { .directory-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .directory-record-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) { .directory-filters { grid-template-columns: minmax(0, 1fr); } }
