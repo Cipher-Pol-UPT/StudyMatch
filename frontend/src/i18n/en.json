@@ -192,6 +192,8 @@
     "SUBJECT_ALREADY_IN_DEGREE": "This subject is already in the degree.",
     "DEGREE_ALREADY_EXISTS": "A degree with this name already exists.",
     "CATEGORY_ALREADY_EXISTS": "A category with this name already exists.",
+    "SUBJECT_ALREADY_EXISTS": "A subject with this code already exists.",
+    "CURRICULAR_YEAR_OUT_OF_RANGE": "The curricular year is beyond the degree's duration.",
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Select at least one teacher.",
     "CLASS_SECTION_ALREADY_EXISTS": "This class section already exists.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "The class section does not belong to this subject edition.",

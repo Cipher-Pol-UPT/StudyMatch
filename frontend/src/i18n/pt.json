@@ -192,6 +192,8 @@
     "SUBJECT_ALREADY_IN_DEGREE": "Esta unidade curricular já faz parte do curso.",
     "DEGREE_ALREADY_EXISTS": "Já existe um curso com este nome.",
     "CATEGORY_ALREADY_EXISTS": "Já existe uma categoria com este nome.",
+    "SUBJECT_ALREADY_EXISTS": "Já existe uma unidade curricular com este código.",
+    "CURRICULAR_YEAR_OUT_OF_RANGE": "O ano curricular excede a duração do curso.",
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Selecione pelo menos um docente.",
     "CLASS_SECTION_ALREADY_EXISTS": "Esta turma já existe.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "A turma não pertence a esta edição da unidade curricular.",
