@@ -14,8 +14,10 @@ public class AbsenceService {
     this.absenceRepository = absenceRepository;
   }
 
+  // only the current class, lessons are counted from it too, so after a class change attendance can't go below 0
   public long countUnjustifiedAbsences(Enrolment enrolment) {
-    return absenceRepository.countByEnrolmentAndJustifiedFalse(enrolment);
+    return absenceRepository.countByEnrolmentAndJustifiedFalseAndLesson_ClassSection(enrolment,
+        enrolment.getClassSection());
   }
 
 }

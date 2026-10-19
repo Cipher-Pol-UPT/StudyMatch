@@ -1,5 +1,6 @@
 package com.studymatch.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -171,6 +172,39 @@ class SubjectEditionServiceTest {
 
     // Assert
     assertEquals(ErrorCode.SUBJECT_EDITION_ALREADY_EXISTS, e.getCode());
+  }
+
+  // who can see an edition's students
+
+  @Test
+  @DisplayName("A teacher of the edition can see its students")
+  void teacherOfEditionAllowed() {
+    // Arrange
+    when(subjectEditionRepository.existsById(7L)).thenReturn(true);
+    when(subjectEditionRepository.existsByIdAndTeachers_Number(7L, 1L)).thenReturn(true);
+
+    // Act + Assert
+    assertDoesNotThrow(() -> subjectEditionService.checkTaughtBy(7L, 1L));
+  }
+
+  @Test
+  @DisplayName("Any other teacher gets ACCESS_DENIED")
+  void otherTeacherDenied() {
+    // Arrange - the edition exists, but teacher 2 doesn't teach it
+    when(subjectEditionRepository.existsById(7L)).thenReturn(true);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectEditionService.checkTaughtBy(7L, 2L));
+
+    // Assert
+    assertEquals(ErrorCode.ACCESS_DENIED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("An edition that doesn't exist is NOT_FOUND")
+  void unknownEdition() {
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectEditionService.checkTaughtBy(99L, 1L));
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
   }
 
 }

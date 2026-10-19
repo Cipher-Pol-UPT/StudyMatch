@@ -10,4 +10,6 @@ public interface SubjectEditionRepository extends JpaRepository<SubjectEdition, 
 
   boolean existsBySubjectAndAcademicYear(Subject subject, AcademicYear academicYear);
 
+  boolean existsByIdAndTeachers_Number(Long id, Long teacherNumber);
+
 }

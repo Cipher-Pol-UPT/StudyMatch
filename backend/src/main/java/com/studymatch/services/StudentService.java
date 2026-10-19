@@ -10,23 +10,31 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.studymatch.dtos.EnrolmentRecordDTO;
 import com.studymatch.dtos.FieldErrorDTO;
 import com.studymatch.dtos.ImportPreviewRowDTO;
 import com.studymatch.dtos.ImportResultRowDTO;
 import com.studymatch.dtos.ImportStudentsRequestDTO;
+import com.studymatch.dtos.PageDTO;
 import com.studymatch.dtos.PersonalityProfileDTO;
 import com.studymatch.dtos.PrivateProfileDTO;
 import com.studymatch.dtos.RegisterStudentRequestDTO;
 import com.studymatch.dtos.RegisteredStudentDTO;
 import com.studymatch.dtos.ResendCredentialsRequestDTO;
 import com.studymatch.dtos.StudentProfileDTO;
+import com.studymatch.dtos.StudentRecordDTO;
+import com.studymatch.dtos.StudentSummaryDTO;
 import com.studymatch.dtos.UpdateProfileRequestDTO;
+import com.studymatch.enums.AccountStatus;
 import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -43,6 +51,8 @@ import jakarta.validation.Validator;
 
 @Service
 public class StudentService {
+
+  private static final int STUDENTS_PER_PAGE = 20;
 
   private final StudentRepository studentRepository;
   private final EnrolmentService enrolmentService;
@@ -71,6 +81,64 @@ public class StudentService {
     this.validator = validator;
     this.transactionTemplate = transactionTemplate;
     this.institutionDomain = institutionDomain;
+  }
+
+  // view students (staff): every filter is optional, only the ones given end up in the query
+  @Transactional(readOnly = true)
+  public PageDTO<StudentSummaryDTO> listStudents(String search, Long degreeId, Integer curricularYear,
+      AccountStatus status, int page) {
+    List<Specification<Student>> filters = new ArrayList<>();
+    if (search != null && !search.isBlank()) {
+      filters.add(matchesSearch(search.trim()));
+    }
+    if (degreeId != null) {
+      filters.add((student, query, where) -> where.equal(student.get("degree").get("id"), degreeId));
+    }
+    if (curricularYear != null) {
+      filters.add((student, query, where) -> where.equal(student.get("curricularYear"), curricularYear));
+    }
+    if (status != null) {
+      filters.add((student, query, where) -> where.equal(student.get("accountStatus"), status));
+    }
+
+    PageRequest pageRequest = PageRequest.of(Math.max(page, 0), STUDENTS_PER_PAGE, Sort.by("name", "number"));
+    return PageDTO.from(studentRepository.findAll(Specification.allOf(filters), pageRequest), this::toSummary);
+  }
+
+  // part of the name (any capitals), or the exact number when it's all digits
+  private static Specification<Student> matchesSearch(String search) {
+    return (student, query, where) -> {
+      var byName = where.like(where.lower(student.get("name")), "%" + likeLiteral(search.toLowerCase()) + "%", '\\');
+      if (search.chars().allMatch(Character::isDigit) && search.length() < 19) {
+        return where.or(byName, where.equal(student.get("number"), Long.valueOf(search)));
+      }
+      return byName;
+    };
+  }
+
+  // % and _ are wildcards in LIKE, escaped so they're searched as normal characters
+  private static String likeLiteral(String text) {
+    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+  }
+
+  private StudentSummaryDTO toSummary(Student student) {
+    Double attendance = student.hasActiveStatute() ? null : enrolmentService.getAttendanceRate(student);
+    return new StudentSummaryDTO(student.getNumber(), student.getName(), student.getDegree().getName(),
+        student.getCurricularYear(), attendance, enrolmentService.getAverageGrade(student),
+        PersonalityProfileDTO.from(student.getPersonalityProfile()), student.getAccountStatus());
+  }
+
+  // view students (staff), picking one: the normal profile plus the staff-only parts
+  @Transactional(readOnly = true)
+  public StudentRecordDTO getRecord(Long studentNumber, User staff) {
+    Student student = getByNumber(studentNumber);
+    List<EnrolmentRecordDTO> enrolments = enrolmentService.getEnrolments(student).stream()
+        .map(EnrolmentRecordDTO::from)
+        .toList();
+
+    return new StudentRecordDTO(getProfile(studentNumber, staff), student.getPersonalEmail(),
+        student.getAccountStatus(), student.getStatuteType(), student.getStatuteEndDate(),
+        enrolmentService.getAverageGrade(student), enrolmentService.getCategoryLevels(student), enrolments);
   }
 
   @Transactional(readOnly = true)
