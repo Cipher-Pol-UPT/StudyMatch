@@ -78,6 +78,7 @@ class ViewStudentsIntegrationTest {
   private SubjectEdition edition;
   private Student ana;
   private Student rui;
+  private Enrolment anaEnrolment;
 
   // ana: class T1, 14 in a finished 6 ECTS subject, 1 absence in 2 lessons. rui: class T2, still in progress
   @BeforeEach
@@ -102,9 +103,9 @@ class ViewStudentsIntegrationTest {
     ana = studentRepository.save(new Student("it.ana@example.com", "Ana View", "hash", degree, 2));
     rui = studentRepository.save(new Student("it.rui@example.com", "Rui View", "hash", degree, 1));
 
-    Enrolment anaEnrolment = new Enrolment(ana, section("T1"));
-    anaEnrolment.setFinalGrade(14);
-    anaEnrolment = enrolmentRepository.save(anaEnrolment);
+    Enrolment enrolment = new Enrolment(ana, section("T1"));
+    enrolment.setFinalGrade(14);
+    anaEnrolment = enrolmentRepository.save(enrolment);
     enrolmentRepository.save(new Enrolment(rui, section("T2")));
 
     Lesson first = lessonRepository.save(new Lesson(section("T1"), LocalDateTime.now().minusDays(2)));
@@ -158,6 +159,23 @@ class ViewStudentsIntegrationTest {
     staffList("&search=ana").andExpect(jsonPath("$.content[*].name").value("Ana View"));
     staffList("&search=" + rui.getNumber()).andExpect(jsonPath("$.content[*].name").value("Rui View"));
     staffList("&search=nobody").andExpect(jsonPath("$.totalElements").value(0));
+  }
+
+  private ResultActions staffSearch(String search) throws Exception {
+    return mockMvc.perform(get("/students/").param("degreeId", degree.getId().toString()).param("search", search)
+        .session(loginAs("it.staff@studymatch.com")));
+  }
+
+  @Test
+  @DisplayName("% and _ in the search are normal characters, not wildcards")
+  void staffSearchWildcards() throws Exception {
+    // Arrange
+    studentRepository.save(new Student("it.eva@example.com", "Eva_Maria View", "hash", degree, 1));
+
+    // Act + Assert - as wildcards, both would match all 3 students
+    staffSearch("_").andExpect(jsonPath("$.totalElements").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("Eva_Maria View"));
+    staffSearch("%").andExpect(jsonPath("$.totalElements").value(0));
   }
 
   @Test
@@ -263,6 +281,22 @@ class ViewStudentsIntegrationTest {
     teacherList("it.teacher@studymatch.com", "?classSection=T2")
         .andExpect(jsonPath("$.length()").value(1))
         .andExpect(jsonPath("$[0].name").value("Rui View"));
+  }
+
+  @Test
+  @DisplayName("After a class change attendance only counts the new class: 2 old absences and 1 new lesson is 100%, not -100%")
+  void attendanceAfterClassChange() throws Exception {
+    // Arrange - a 2nd absence in T1, then ana moves to T2, which has had 1 lesson
+    Lesson third = lessonRepository.save(new Lesson(section("T1"), LocalDateTime.now().minusDays(3)));
+    absenceRepository.save(new Absence(third, anaEnrolment, false));
+    lessonRepository.save(new Lesson(section("T2"), LocalDateTime.now().minusHours(1)));
+    anaEnrolment.changeClassSection(section("T2"));
+
+    // Act + Assert - same number for the teacher and for staff
+    teacherList("it.teacher@studymatch.com", "?search=ana")
+        .andExpect(jsonPath("$[0].classSection").value("T2"))
+        .andExpect(jsonPath("$[0].attendance").value(100.0));
+    staffList("&search=ana").andExpect(jsonPath("$.content[0].attendance").value(100.0));
   }
 
   @Test

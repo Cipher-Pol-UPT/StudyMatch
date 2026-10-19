@@ -108,12 +108,17 @@ public class StudentService {
   // part of the name (any capitals), or the exact number when it's all digits
   private static Specification<Student> matchesSearch(String search) {
     return (student, query, where) -> {
-      var byName = where.like(where.lower(student.get("name")), "%" + search.toLowerCase() + "%");
+      var byName = where.like(where.lower(student.get("name")), "%" + likeLiteral(search.toLowerCase()) + "%", '\\');
       if (search.chars().allMatch(Character::isDigit) && search.length() < 19) {
         return where.or(byName, where.equal(student.get("number"), Long.valueOf(search)));
       }
       return byName;
     };
+  }
+
+  // % and _ are wildcards in LIKE, escaped so they're searched as normal characters
+  private static String likeLiteral(String text) {
+    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
   }
 
   private StudentSummaryDTO toSummary(Student student) {

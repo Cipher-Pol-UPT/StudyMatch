@@ -24,11 +24,12 @@ class AbsenceServiceTest {
   }
 
   @Test
-  @DisplayName("Counts only the unjustified absences of an enrolment")
+  @DisplayName("Counts only the unjustified absences of an enrolment, in its current class")
   void countsUnjustifiedAbsences() {
     // Arrange
     Enrolment enrolment = ModelTestData.enrolment(ModelTestData.student("Test Student"));
-    when(absenceRepository.countByEnrolmentAndJustifiedFalse(enrolment)).thenReturn(3L);
+    when(absenceRepository.countByEnrolmentAndJustifiedFalseAndLesson_ClassSection(enrolment,
+        enrolment.getClassSection())).thenReturn(3L);
 
     // Act
     long absences = absenceService.countUnjustifiedAbsences(enrolment);
