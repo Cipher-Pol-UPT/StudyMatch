@@ -19,7 +19,7 @@ export function TeacherHomePage({ currentUser }: { currentUser: CurrentUser }) {
           <Link className="role-card" key={section.path} to={section.path}>
             <section.icon size={25} aria-hidden />
             <h2>{t(`workspace.sections.${section.key}`)}</h2>
-            <p>{t(`workspace.descriptions.${section.key}`)}</p>
+            <p>{t(section.key === 'students' ? 'directory.chooseSubject' : `workspace.descriptions.${section.key}`)}</p>
             <span>{t('workspace.open')} →</span>
           </Link>
         ))}

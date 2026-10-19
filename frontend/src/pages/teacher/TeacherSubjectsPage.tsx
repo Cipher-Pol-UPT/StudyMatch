@@ -7,7 +7,7 @@ import { useRemoteData } from '../../hooks/useRemoteData';
 import { EmptyState } from '../../studymatch-ui';
 import '../../styles/studentDirectory.css';
 
-export function TeacherSubjectsPage() {
+export function TeacherSubjectsPage({ titleKey = 'workspace.sections.mySubjects' }: { titleKey?: string }) {
   const { t } = useTranslation();
   const editions = useRemoteData('my-subject-editions', getMySubjectEditions);
 
@@ -18,7 +18,7 @@ export function TeacherSubjectsPage() {
   return (
     <div className="role-page directory-page">
       <header>
-        <h1 className="sm-h2">{t('workspace.sections.mySubjects')}</h1>
+        <h1 className="sm-h2">{t(titleKey)}</h1>
         <p className="sm-caption">{t('directory.chooseSubject')}</p>
       </header>
       {editions.data?.length === 0 ? (

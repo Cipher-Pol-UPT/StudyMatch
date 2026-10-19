@@ -6,7 +6,6 @@ import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
 import '../../styles/studentDirectory.css';
 
-// Both the student list and profile must belong to an edition this teacher teaches.
 export function TeacherSubjectLayout() {
   const { t } = useTranslation();
   const { editionId } = useParams();
@@ -21,7 +20,7 @@ export function TeacherSubjectLayout() {
 
   return (
     <div className="role-page directory-page">
-      <Link className="directory-back" to="/subjects">← {t('workspace.sections.mySubjects')}</Link>
+      <Link className="directory-back" to="/students">← {t('workspace.sections.students')}</Link>
       {edition.loading || edition.error !== undefined ? (
         <DataLoadState error={edition.error} retry={edition.retry} />
       ) : edition.data && (

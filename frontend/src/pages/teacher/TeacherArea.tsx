@@ -21,15 +21,16 @@ export function TeacherArea({ currentUser, onLoggedOut }: TeacherAreaProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   return (
-    <RoleLayout currentUser={currentUser} sections={TEACHER_SECTIONS} onLoggedOut={onLoggedOut} activePath={pathname.startsWith('/subject-editions/') ? '/subjects' : pathname}>
+    <RoleLayout currentUser={currentUser} sections={TEACHER_SECTIONS} onLoggedOut={onLoggedOut} activePath={pathname.startsWith('/subject-editions/') ? '/students' : pathname}>
       <Routes>
         <Route path="/" element={<TeacherHomePage currentUser={currentUser} />} />
+        <Route path="/students" element={<TeacherSubjectsPage titleKey="workspace.sections.students" />} />
         <Route path="/subjects" element={<TeacherSubjectsPage />} />
         <Route path="/subject-editions/:editionId" element={<TeacherSubjectLayout />}>
           <Route path="students" element={<TeacherStudentsPage />} />
           <Route path="students/:number" element={<TeacherStudentProfilePage />} />
         </Route>
-        {TEACHER_SECTIONS.filter(section => section.key !== 'mySubjects').map(section => (
+        {TEACHER_SECTIONS.filter(section => section.key !== 'mySubjects' && section.key !== 'students').map(section => (
           <Route key={section.path} path={section.path} element={<FeaturePlaceholder section={section} />} />
         ))}
         <Route path="/change-password" element={<EmptyState icon={KeyRound} title={t('auth.changePassword')} body={t('placeholder.comingSoon')} />} />
