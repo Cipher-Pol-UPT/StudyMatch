@@ -138,6 +138,27 @@ npm run dev
 
 The app opens on **http://localhost:5173**.
 
+### 4. Demo data (optional)
+
+A new database has no accounts, so there is a `demo` profile that fills an empty database with accounts and some academic history. It does nothing if the database already has users.
+
+```bash
+cd backend
+./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
+```
+
+Every demo account uses the password `StudyMatch1`.
+
+| Role | Login | What to try |
+| --- | --- | --- |
+| Admin | `admin@studymatch.com` | Create staff and teacher accounts |
+| Staff | `ana.lima@studymatch.com` | Register students, one by one or from a CSV |
+| Teacher | `joao.silva@studymatch.com` | Teacher home |
+| Student | `50000@students.studymatch.com` | Profile with degree, attendance, personality and an achievement |
+| Student | `50001@students.studymatch.com` | Cold start: change the one-time password, then take the personality test |
+
+The emails with credentials and reset codes are caught by Mailpit at **http://localhost:8025** (`docker compose up -d`).
+
 ### Useful commands
 
 | Where | Command | What it does |
