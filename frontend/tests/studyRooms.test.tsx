@@ -12,7 +12,7 @@ const event = (topic: string) => screen.getByRole('button', { name: new RegExp(`
 const waitForClosedPopup = () => waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 3000 });
 
 async function closePopup() {
-  fireEvent.click(within(details()).getByRole('button', { name: 'Close', exact: true }));
+  fireEvent.click(within(details()).getByRole('button', { name: 'Close' }));
   await waitForClosedPopup();
 }
 
@@ -54,7 +54,7 @@ describe('study rooms demo', () => {
 
   it('shows only the clicked subject, keeps it selected on a second click, and can restore all subjects', () => {
     renderPage();
-    const statistics = screen.getByRole('button', { name: 'Statistics', exact: true });
+    const statistics = screen.getByRole('button', { name: 'Statistics' });
     fireEvent.click(statistics);
     expect(screen.getAllByRole('button', { name: /^View / })).toHaveLength(4);
     expect(event('Hypothesis tests without fear')).toBeTruthy();
@@ -62,7 +62,7 @@ describe('study rooms demo', () => {
     expect(statistics.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(statistics);
     expect(screen.getAllByRole('button', { name: /^View / })).toHaveLength(4);
-    fireEvent.click(screen.getByRole('button', { name: 'Programming Lab', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Programming Lab' }));
     expect(event('Clean code, clear thinking')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^View Hypothesis tests/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show all subjects' }));
@@ -76,7 +76,7 @@ describe('study rooms demo', () => {
     expect(screen.getByRole('article', { name: 'Hypothesis tests without fear' })).toBeTruthy();
     expect(screen.queryByRole('article', { name: 'Software quality essentials' })).toBeNull();
     expect(screen.queryByRole('article', { name: 'Clean code, clear thinking' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Statistics', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Statistics' }));
     expect(screen.getAllByRole('article')).toHaveLength(3);
     expect(screen.getByRole('article', { name: 'Hypothesis tests without fear' })).toBeTruthy();
     expect(screen.queryByRole('article', { name: 'A better code review' })).toBeNull();
@@ -128,7 +128,7 @@ describe('study rooms demo', () => {
 
   it('shows an empty personal list for an unmatched subject and resets the filter from browse', () => {
     renderPage();
-    fireEvent.click(screen.getByRole('button', { name: 'Statistics', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Statistics' }));
     fireEvent.click(screen.getByRole('button', { name: /^My study rooms/ }));
     expect(screen.getByText('No study rooms to show')).toBeTruthy();
     expect(screen.queryByRole('article')).toBeNull();
@@ -139,7 +139,7 @@ describe('study rooms demo', () => {
   it('uses the app language for filters, dates, and personal views', async () => {
     await i18n.changeLanguage('pt');
     renderPage();
-    expect(screen.getByRole('button', { name: 'Estatística', exact: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Estatística' })).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: /^seg/i })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /^As minhas salas de estudo/ }));
     expect(screen.getByRole('heading', { name: 'As minhas salas de estudo' })).toBeTruthy();
