@@ -28,21 +28,23 @@ export function Mark({ size = 40, bg = 'var(--sm-inverse)', dots = ['#7a70ff', '
   );
 }
 
-const SIGNATURE = 'barbosaz1';
+const SIGNATURES = ['diogof146', 'barbosaz1', 'falconz0012', 'manuyepes'];
+const LONGEST = Math.max(...SIGNATURES.map(name => name.length));
 
 function useSignature() {
-  const [shown, setShown] = useState(false);
+  const [signature, setSignature] = useState<string | null>(null);
   useEffect(() => {
     let typed = '';
     let timer: number | undefined;
     const onKey = (event: KeyboardEvent) => {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.key.length !== 1) return;
-      typed = (typed + event.key.toLowerCase()).slice(-SIGNATURE.length);
-      if (typed !== SIGNATURE) return;
+      typed = (typed + event.key.toLowerCase()).slice(-LONGEST);
+      const name = SIGNATURES.find(candidate => typed.endsWith(candidate));
+      if (!name) return;
       typed = '';
-      setShown(true);
+      setSignature(name);
       window.clearTimeout(timer);
-      timer = window.setTimeout(() => setShown(false), 3200);
+      timer = window.setTimeout(() => setSignature(null), 3200);
     };
     window.addEventListener('keydown', onKey);
     return () => {
@@ -50,7 +52,7 @@ function useSignature() {
       window.clearTimeout(timer);
     };
   }, []);
-  return shown;
+  return signature;
 }
 
 export interface LogoProps {
@@ -62,7 +64,8 @@ export interface LogoProps {
 
 export function Logo({ size = 32, inverted, markOnly, animate }: LogoProps) {
   useTranslation();
-  const signed = useSignature();
+  const signature = useSignature();
+  const signed = signature !== null;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: size * 0.32, fontFamily: 'var(--sm-font)', color: inverted ? 'var(--sm-white)' : 'var(--sm-text)' }}>
       <motion.span style={{ display: 'inline-flex' }} animate={{ rotate: signed ? 360 : 0 }} transition={{ duration: signed ? 0.9 : 0, ease: EASE_OUT }}>
@@ -73,7 +76,7 @@ export function Logo({ size = 32, inverted, markOnly, animate }: LogoProps) {
         {signed && (
           <motion.span aria-hidden initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
             style={{ font: `400 ${Math.max(10, size * 0.34)}px var(--sm-mono)`, color: inverted ? 'var(--sm-white)' : 'var(--sm-violet)' }}>
-            {SIGNATURE}
+            {signature}
           </motion.span>
         )}
       </AnimatePresence>

@@ -1,11 +1,5 @@
 import type { FieldError } from '../api/errors';
 
-export interface DegreeData {
-  id: number;
-  name: string;
-  curricularYears: number;
-}
-
 export interface StudentRegistration {
   name: string;
   personalEmail: string;

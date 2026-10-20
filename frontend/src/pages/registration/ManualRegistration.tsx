@@ -1,29 +1,19 @@
-import { CheckCircle2, MailWarning, RefreshCw, UserPlus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { CheckCircle2, MailWarning, UserPlus } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { listDegrees } from '../../api/degrees';
+import { getDegrees } from '../../api/degrees';
 import { registerStudent } from '../../api/students';
-import { Banner, Button, Card, EmptyState, RegisterStudentForm, Spinner } from '../../studymatch-ui';
-import type { DegreeData, RegisteredStudent, StudentRegistration } from '../../types/registration';
+import { DataLoadState } from '../../components/feedback/DataLoadState';
+import { useRemoteData } from '../../hooks/useRemoteData';
+import { Banner, Button, Card, RegisterStudentForm } from '../../studymatch-ui';
+import type { RegisteredStudent, StudentRegistration } from '../../types/registration';
 import { ResendCredentials } from './ResendCredentials';
 
 export function ManualRegistration() {
   const { t } = useTranslation();
-  const [degrees, setDegrees] = useState<DegreeData[] | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
-  const [loadAttempt, setLoadAttempt] = useState(0);
+  const degrees = useRemoteData('degrees', getDegrees);
   const [registered, setRegistered] = useState<{ student: RegisteredStudent; personalEmail: string } | null>(null);
   const [formKey, setFormKey] = useState(0);
-
-  useEffect(() => {
-    let isCurrentAttempt = true;
-    listDegrees()
-      .then(loaded => isCurrentAttempt && setDegrees(loaded))
-      .catch(() => isCurrentAttempt && setLoadFailed(true));
-    return () => {
-      isCurrentAttempt = false;
-    };
-  }, [loadAttempt]);
 
   async function register(student: StudentRegistration) {
     setRegistered({ student: await registerStudent(student), personalEmail: student.personalEmail });
@@ -34,18 +24,8 @@ export function ManualRegistration() {
     setFormKey(key => key + 1);
   }
 
-  if (loadFailed) {
-    return (
-      <EmptyState
-        icon={RefreshCw}
-        title={t('common.unexpectedError')}
-        action={<Button variant="secondary" onClick={() => { setLoadFailed(false); setLoadAttempt(attempt => attempt + 1); }}>{t('profile.tryAgain')}</Button>}
-      />
-    );
-  }
-
-  if (degrees === null) {
-    return <div className="registration__loading"><Spinner /></div>;
+  if (!degrees.data) {
+    return <DataLoadState error={degrees.error} retry={degrees.retry} />;
   }
 
   if (registered) {
@@ -77,7 +57,7 @@ export function ManualRegistration() {
 
   return (
     <Card className="registration__card">
-      <RegisterStudentForm key={formKey} degrees={degrees} onSubmit={register} />
+      <RegisterStudentForm key={formKey} degrees={degrees.data} onSubmit={register} />
     </Card>
   );
 }

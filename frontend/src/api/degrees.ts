@@ -1,6 +1,4 @@
-import type { DegreeData } from '../types/registration';
+import type { DegreeData } from '../types/studentDirectory';
 import { request } from './client';
 
-export function listDegrees(): Promise<DegreeData[]> {
-  return request<DegreeData[]>('GET', '/degrees/');
-}
+export const getDegrees = () => request<DegreeData[]>('GET', '/degrees/');

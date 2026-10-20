@@ -51,6 +51,16 @@ afterEach(() => {
 });
 
 describe('register one student', () => {
+  it('lets staff try again when the degrees fail to load', async () => {
+    let attempts = 0;
+    mockBackend({ 'GET /api/degrees/': () => (++attempts === 1 ? { status: 500 } : { status: 200, body: DEGREES }) });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+
+    expect(await screen.findByLabelText('Degree programme')).toBeTruthy();
+  });
+
   it('only offers the years that exist in the chosen degree', async () => {
     mockBackend({ 'GET /api/degrees/': { status: 200, body: DEGREES } });
     renderPage();
@@ -186,5 +196,18 @@ describe('import students from a CSV file', () => {
     await uploadFile();
 
     expect(await screen.findByText('The file is missing these columns: curricularYear.')).toBeTruthy();
+  });
+
+  it('shows an error when the template cannot be downloaded', async () => {
+    mockBackend({
+      'GET /api/degrees/': { status: 200, body: DEGREES },
+      'GET /api/students/import/template': { status: 500 },
+    });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Import from CSV' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Download template' }));
+
+    expect(await screen.findByText('Something went wrong. Please try again.')).toBeTruthy();
   });
 });

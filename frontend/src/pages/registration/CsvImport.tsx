@@ -111,7 +111,7 @@ export function CsvImport() {
     <Card className="registration__card">
       <h2 className="registration__title">{t('registration.csvTitle')}</h2>
       <p className="registration__note">{t('registration.csvRules')}</p>
-      <Button variant="secondary" icon={Download} onClick={() => void saveTemplate()}>{t('registration.downloadTemplate')}</Button>
+      <Button variant="secondary" icon={Download} disabled={feedback.busy} onClick={() => void feedback.submit(saveTemplate)}>{t('registration.downloadTemplate')}</Button>
       {feedback.message && <Banner tone="danger">{feedback.message}</Banner>}
       {feedback.busy
         ? <div className="registration__loading"><Spinner /></div>
