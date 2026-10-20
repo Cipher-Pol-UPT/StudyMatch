@@ -17,6 +17,7 @@ export { ThemeSwitcher } from './components/theme/ThemeSwitcher';
 // Utilities
 export { cx } from './utils/cx';
 export { checkPassword,type PasswordRule,type PasswordRuleResult } from './utils/password';
+export { useFormFeedback } from './utils/useFormFeedback';
 export { EASE_OUT,SPRING,formatBytes,hashString,useControllableState,type IconComponent } from './utils/shared';
 
 // Brand

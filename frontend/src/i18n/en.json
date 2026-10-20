@@ -128,7 +128,10 @@
     "description": "Choose a look for StudyMatch. Your choice is applied immediately and saved in this browser.",
     "chooseTheme": "Choose a theme",
     "done": "Done",
-    "modes": { "light": "Light", "dark": "Dark" },
+    "modes": {
+      "light": "Light",
+      "dark": "Dark"
+    },
     "descriptions": {
       "studymatch": "Violet accents, a soft canvas and a lime spark.",
       "wine": "Wine accents on a light blush canvas.",
@@ -181,12 +184,22 @@
     "skills": "Skills",
     "interests": "Interests",
     "languages": "Languages",
-    "code": "Verification code"
+    "code": "Verification code",
+    "degreeProgramme": "Degree programme",
+    "username": "Username",
+    "accountType": "Account type"
   },
   "accounts": {
     "create": "Create staff or teacher account",
     "registerStudent": "Register student",
-    "changeStatus": "Change account status"
+    "changeStatus": "Change account status",
+    "intro": "Create an account for a staff member or a teacher. The employee number and a one-time password are generated automatically.",
+    "usernameHint": "Only lowercase letters, numbers and dots, for example joao.silva.",
+    "createSubmit": "Create account",
+    "created": "{{type}} account created",
+    "employeeNumber": "Employee number",
+    "credentialsSent": "The institutional email and a one-time password were sent to the personal email.",
+    "createAnother": "Create another account"
   },
   "rooms": {
     "title": "StudyRooms",
@@ -689,5 +702,46 @@
     "length": "At least 8 characters",
     "letter": "At least one letter",
     "number": "At least one number"
+  },
+  "registration": {
+    "intro": "Register one student or import a CSV file. The student number, institutional email and one-time password are generated automatically.",
+    "oneStudent": "One student",
+    "csvImport": "Import from CSV",
+    "chooseDegree": "Choose a degree",
+    "chooseYear": "Choose a year",
+    "year": "Year {{year}}",
+    "submit": "Register student",
+    "registered": "Student registered",
+    "degreeAndYear": "{{degree}} · Year {{year}}",
+    "credentialsSent": "The institutional email and a one-time password were sent to the personal email.",
+    "emailNotSent": "The account was created, but the email with the credentials couldn't be delivered. Check the personal email and send them again.",
+    "fixEmailHint": "Change it if it was wrong. A new one-time password replaces the previous one.",
+    "resend": "Send credentials again",
+    "credentialsResent": "New credentials sent.",
+    "registerAnother": "Register another student",
+    "csvTitle": "Import students from a CSV file",
+    "csvRules": "UTF-8, one student per row, with the columns name, personalEmail, degreeProgramme and curricularYear. Up to 200 students per file, separated by commas or semicolons.",
+    "downloadTemplate": "Download template",
+    "csvHint": "CSV file, up to 1 MB",
+    "previewTitle": "Check before importing",
+    "previewSummary": "{{valid}} ready to import, {{invalid}} with errors. Nothing is created until you confirm.",
+    "row": "Row",
+    "status": "Status",
+    "details": "Details",
+    "ready": "Ready",
+    "importValid": "Import {{count}} students",
+    "importDone": "Import finished",
+    "importSummary": "{{created}} created, {{notSent}} created without the email, {{rejected}} rejected.",
+    "results": {
+      "CREATED": "Created",
+      "EMAIL_NOT_SENT": "Email not sent",
+      "REJECTED": "Rejected"
+    },
+    "importAnother": "Import another file"
+  },
+  "password": {
+    "firstTitle": "Choose your password",
+    "firstSubtitle": "You signed in with a one-time password. Choose a password only you know to continue.",
+    "changed": "Password changed."
   }
 }

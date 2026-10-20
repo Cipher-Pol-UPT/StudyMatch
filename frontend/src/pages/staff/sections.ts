@@ -3,7 +3,7 @@ import type { NavigationSection } from '../../types/navigation';
 
 export const STAFF_SECTIONS: NavigationSection[] = [
   { key: 'students', path: '/students', icon: Users, ready: true },
-  { key: 'registerStudent', path: '/students/register', icon: UserPlus },
+  { key: 'registerStudent', path: '/students/register', icon: UserPlus, ready: true },
   { key: 'enrolments', path: '/enrolments', icon: ListChecks },
   { key: 'studentClasses', path: '/student-classes', icon: Layers },
   { key: 'statutes', path: '/student-statutes', icon: ShieldCheck },

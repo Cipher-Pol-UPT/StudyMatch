@@ -1,10 +1,11 @@
-import { Bell, House, KeyRound } from 'lucide-react';
+import { Bell, House } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppShell, EmptyState, Logo, type NavItem } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import type { NavigationSection } from '../../types/navigation';
+import { AccountPasswordPage } from '../../pages/password/AccountPasswordPage';
 import { FeaturePlaceholder } from '../feedback/FeaturePlaceholder';
 import { AccountActions } from '../navigation/AccountActions';
 import { RoleHomePage } from './RoleHomePage';
@@ -54,7 +55,7 @@ export function RoleLayout({ currentUser, sections, onLoggedOut, activePath, chi
         {sections.filter(section => !section.ready).map(section => (
           <Route key={section.path} path={section.path} element={<FeaturePlaceholder section={section} />} />
         ))}
-        <Route path="/change-password" element={<EmptyState icon={KeyRound} title={t('auth.changePassword')} body={t('placeholder.comingSoon')} />} />
+        <Route path="/change-password" element={<AccountPasswordPage />} />
         <Route path="/notifications" element={<EmptyState icon={Bell} title={t('nav.notifications')} body={t('placeholder.comingSoon')} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

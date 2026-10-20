@@ -1,11 +1,9 @@
-import { KeyRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { BrowserRouter } from 'react-router-dom';
 import { getCurrentUser } from './api/auth';
 import { LoginPage } from './pages/login/LoginPage';
+import { ChangePasswordPage } from './pages/password/ChangePasswordPage';
 import { PersonalityTestPage } from './pages/personality/PersonalityTestPage';
-import { PlaceholderPage } from './pages/placeholder/PlaceholderPage';
 import { StudentArea } from './pages/student/StudentArea';
 import { AdminArea } from './pages/admin/AdminArea';
 import { StaffArea } from './pages/staff/StaffArea';
@@ -17,7 +15,6 @@ export default function App() {
 }
 
 function ApplicationSession() {
-  const { t } = useTranslation();
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
@@ -36,15 +33,15 @@ function ApplicationSession() {
     return <LoginPage onLoggedIn={setCurrentUser} />;
   }
 
+  const onLoggedOut = () => setCurrentUser(null);
+
   if (currentUser.mustChangePassword) {
-    return <PlaceholderPage icon={KeyRound} title={t('auth.changePassword')} />;
+    return <ChangePasswordPage onPasswordChanged={setCurrentUser} onLoggedOut={onLoggedOut} />;
   }
 
   if (currentUser.role === 'STUDENT' && currentUser.personalityTestRequired) {
     return <PersonalityTestPage onCompleted={() => setCurrentUser({ ...currentUser, personalityTestRequired: false })} />;
   }
-
-  const onLoggedOut = () => setCurrentUser(null);
 
   switch (currentUser.role) {
     case 'ADMIN':

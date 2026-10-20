@@ -64,8 +64,8 @@ describe('role areas', () => {
   it('opens an unimplemented staff feature as an empty state', async () => {
     backend({ ...base, role: 'STAFF' });
     start();
-    fireEvent.click(await screen.findByRole('link', { name: /Register students individually/ }));
-    expect(await screen.findByRole('heading', { name: 'Register student' })).toBeTruthy();
+    fireEvent.click(await screen.findByRole('link', { name: /Enrol students in a subject edition/ }));
+    expect(await screen.findByRole('heading', { name: 'Enrolments' })).toBeTruthy();
     expect(screen.getByText(i18n.t('placeholder.comingSoon'))).toBeTruthy();
   });
 
@@ -100,7 +100,7 @@ describe('logout', () => {
   it.each(['ADMIN', 'STAFF', 'TEACHER', 'STUDENT'] as Role[])('keeps the %s first-password gate ahead of the role home', async role => {
     backend({ ...base, role, mustChangePassword: true });
     start();
-    expect(await screen.findByText('Change password')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Choose your password' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Open navigation' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Hello, Alex Silva.' })).toBeNull();
   });

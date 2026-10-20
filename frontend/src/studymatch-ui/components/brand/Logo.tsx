@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../../i18n';
 import { EASE_OUT } from '../../utils/shared';
@@ -27,6 +28,33 @@ export function Mark({ size = 40, bg = 'var(--sm-inverse)', dots = ['#7a70ff', '
   );
 }
 
+const SIGNATURES = ['diogof146', 'barbosaz1', 'falconz0012', 'manuyepes'];
+const LONGEST = Math.max(...SIGNATURES.map(name => name.length));
+
+function useSignature() {
+  const [signature, setSignature] = useState<string | null>(null);
+  useEffect(() => {
+    let typed = '';
+    let timer: number | undefined;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.key.length !== 1) return;
+      typed = (typed + event.key.toLowerCase()).slice(-LONGEST);
+      const name = SIGNATURES.find(candidate => typed.endsWith(candidate));
+      if (!name) return;
+      typed = '';
+      setSignature(name);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setSignature(null), 3200);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.clearTimeout(timer);
+    };
+  }, []);
+  return signature;
+}
+
 export interface LogoProps {
   size?: number;
   inverted?: boolean;
@@ -36,10 +64,22 @@ export interface LogoProps {
 
 export function Logo({ size = 32, inverted, markOnly, animate }: LogoProps) {
   useTranslation();
+  const signature = useSignature();
+  const signed = signature !== null;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: size * 0.32, fontFamily: 'var(--sm-font)', color: inverted ? 'var(--sm-white)' : 'var(--sm-text)' }}>
-      <Mark size={size} bg={inverted ? 'var(--sm-white)' : 'var(--sm-inverse)'} animate={animate} />
+      <motion.span style={{ display: 'inline-flex' }} animate={{ rotate: signed ? 360 : 0 }} transition={{ duration: signed ? 0.9 : 0, ease: EASE_OUT }}>
+        <Mark size={size} bg={inverted ? 'var(--sm-white)' : 'var(--sm-inverse)'} animate={animate} />
+      </motion.span>
       {!markOnly && <span style={{ fontSize: size * 0.56, fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1 }}>StudyMatch</span>}
+      <AnimatePresence>
+        {signed && (
+          <motion.span aria-hidden initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
+            style={{ font: `400 ${Math.max(10, size * 0.34)}px var(--sm-mono)`, color: inverted ? 'var(--sm-white)' : 'var(--sm-violet)' }}>
+            {signature}
+          </motion.span>
+        )}
+      </AnimatePresence>
     </span>
   );
 }

@@ -10,16 +10,41 @@ import { useFormFeedback } from '../../utils/useFormFeedback';
 import { FormFields } from '../FormFields';
 import { AuthHeader } from './AuthLayout';
 export interface ChangePasswordFormProps extends FormFeedbackProps {
-  onSubmit: (input: ChangePasswordInput) => Promise<void>; onCancel?: () => void; showCurrentPassword?: boolean;
+  onSubmit: (input: ChangePasswordInput) => Promise<void>; onCancel?: () => void;
+  showCurrentPassword?: boolean; passwordRules?: PasswordRule[]; title?: string; subtitle?: string;
 }
-export function ChangePasswordForm({ onSubmit, onCancel, showCurrentPassword = true, fieldErrors }: ChangePasswordFormProps) {
+export function ChangePasswordForm({ onSubmit, onCancel, showCurrentPassword = true, passwordRules, title, subtitle, fieldErrors }: ChangePasswordFormProps) {
   const { t } = useTranslation();
-  return <FormFields title={t('auth.changePassword')} fields={[
-    ...(showCurrentPassword ? [{ name: 'current', label: 'fields.currentPassword', type: 'password' }] : []),
-    { name: 'password', label: 'fields.newPassword', type: 'password' },
-    { name: 'confirmPassword', label: 'fields.confirmPassword', type: 'password' },
-  ]} submitLabel="common.save" fieldErrors={fieldErrors} onCancel={onCancel}
-    onSubmit={v => onSubmit({ current: showCurrentPassword ? v.current : undefined, password: v.password, confirmPassword: v.confirmPassword })} />;
+  const feedback = useFormFeedback(fieldErrors);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordsDiffer, setPasswordsDiffer] = useState(false);
+
+  function submit() {
+    if (newPassword !== confirmPassword) {
+      setPasswordsDiffer(true);
+      return;
+    }
+    void feedback.submit(() => onSubmit({ currentPassword: showCurrentPassword ? currentPassword : undefined, newPassword }));
+  }
+
+  return <div>
+    <AuthHeader title={title ?? t('auth.changePassword')} subtitle={subtitle} />
+    <form className="sm-auth__form" noValidate onSubmit={event => { event.preventDefault(); submit(); }}>
+      {feedback.message && <Banner tone="danger">{feedback.message}</Banner>}
+      {showCurrentPassword && <PasswordField label={t('fields.currentPassword')} autoComplete="current-password" value={currentPassword}
+        disabled={feedback.busy} error={feedback.fieldError('currentPassword')} onChange={event => setCurrentPassword(event.target.value)} />}
+      <PasswordField label={t('fields.newPassword')} autoComplete="new-password" rules={passwordRules} value={newPassword}
+        disabled={feedback.busy} error={feedback.fieldError('newPassword')}
+        onChange={event => { setNewPassword(event.target.value); setPasswordsDiffer(false); }} />
+      <PasswordField label={t('fields.confirmPassword')} autoComplete="new-password" value={confirmPassword}
+        disabled={feedback.busy} error={passwordsDiffer ? t('auth.passwordsDoNotMatch') : undefined}
+        onChange={event => { setConfirmPassword(event.target.value); setPasswordsDiffer(false); }} />
+      <Button type="submit" loading={feedback.busy}>{t('common.save')}</Button>
+      {onCancel && <Button variant="ghost" disabled={feedback.busy} onClick={onCancel}>{t('common.cancel')}</Button>}
+    </form>
+  </div>;
 }
 export interface ForgotPasswordFormProps extends FormFeedbackProps { onSubmit: (email: string) => Promise<void>; onBack?: () => void }
 export function ForgotPasswordForm({ onSubmit, onBack, fieldErrors }: ForgotPasswordFormProps) {
