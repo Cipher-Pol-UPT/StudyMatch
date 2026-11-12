@@ -143,6 +143,23 @@ class CreateAssignmentRequestDTOTest {
     assertEquals(Set.of("type", "date"), fields(violations));
   }
 
+  @Test
+  @DisplayName("The date can be today (boundary)")
+  void todayIsValid() {
+    // Act
+    Set<ConstraintViolation<CreateAssignmentRequestDTO>> violations = validator.validate(withDate(LocalDate.now()));
+
+    // Assert
+    assertTrue(violations.isEmpty());
+  }
+
+  @Test
+  @DisplayName("The date cannot be yesterday (boundary)")
+  void yesterdayIsInvalid() {
+    // Act + Assert
+    assertOnlyViolation(withDate(LocalDate.now().minusDays(1)), "date");
+  }
+
   // grouping
 
   @Test
@@ -205,6 +222,10 @@ class CreateAssignmentRequestDTOTest {
 
   private static CreateAssignmentRequestDTO withName(String name) {
     return new CreateAssignmentRequestDTO(name, AssignmentType.EXAM, DATE, 30, null);
+  }
+
+  private static CreateAssignmentRequestDTO withDate(LocalDate date) {
+    return new CreateAssignmentRequestDTO("Final Exam", AssignmentType.EXAM, date, 30, null);
   }
 
   private static CreateAssignmentRequestDTO withGrouping(CreateAssignmentRequestDTO.Grouping grouping) {

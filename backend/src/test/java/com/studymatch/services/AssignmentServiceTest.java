@@ -133,6 +133,21 @@ class AssignmentServiceTest {
     assertEquals(List.of(new AssignmentResponseDTO.Separation(1001L, 1002L)), response.grouping().separations());
   }
 
+  @Test
+  @DisplayName("A name the edition already has gets ASSIGNMENT_ALREADY_EXISTS, checked without the spaces around it")
+  void repeatedNameIsRefused() {
+    // Arrange - the request sends " Final Exam "
+    when(assignmentRepository.existsBySubjectEditionAndNameIgnoreCase(edition, "Final Exam")).thenReturn(true);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> assignmentService.createAssignment(EDITION_ID, exam(30)));
+
+    // Assert
+    assertEquals(ErrorCode.ASSIGNMENT_ALREADY_EXISTS, e.getCode());
+    verify(assignmentRepository, never()).save(any());
+  }
+
   // weights
 
   @Test

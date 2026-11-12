@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
@@ -229,6 +230,34 @@ class CreateAssignmentIntegrationTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
         .andExpect(jsonPath("$.fieldErrors[*].field", Matchers.containsInAnyOrder("name", "weight")));
+  }
+
+  @Test
+  @DisplayName("The same name in another case and with spaces is 409 ASSIGNMENT_ALREADY_EXISTS")
+  void repeatedNameIsRefused() throws Exception {
+    // Arrange
+    create("""
+        {"name":"Exam","type":"EXAM","date":"2093-01-15","weight":30}
+        """).andExpect(status().isCreated());
+
+    // Act + Assert
+    create("""
+        {"name":"  exam  ","type":"PRACTICAL_EXAM","date":"2093-01-20","weight":30}
+        """)
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("ASSIGNMENT_ALREADY_EXISTS"));
+    assertEquals(1, savedAssignments().size());
+  }
+
+  @Test
+  @DisplayName("A date in the past is a FUTURE_OR_PRESENT field error")
+  void pastDateIsFieldError() throws Exception {
+    create("""
+        {"name":"Exam","type":"EXAM","date":"%s","weight":30}
+        """.formatted(LocalDate.now().minusDays(1)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("date"))
+        .andExpect(jsonPath("$.fieldErrors[0].code").value("FUTURE_OR_PRESENT"));
   }
 
   @Test
