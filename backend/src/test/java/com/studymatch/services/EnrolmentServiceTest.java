@@ -3,16 +3,22 @@ package com.studymatch.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
@@ -136,6 +142,30 @@ class EnrolmentServiceTest {
   void otherTeacherDoesNotTeachThem() {
     // Act + Assert
     assertFalse(enrolmentService.isTaughtBy(student, 50003L));
+  }
+
+  // picking students of one edition (separations)
+
+  @Test
+  @DisplayName("A student enrolled in the edition is found by number")
+  void enrolledStudentIsFound() {
+    // Arrange
+    when(enrolmentRepository.findBySubjectEditionIdAndStudent_Number(7L, 1001L))
+        .thenReturn(Optional.of(ModelTestData.enrolment(student)));
+
+    // Act + Assert
+    assertSame(student, enrolmentService.getEnrolledStudent(7L, 1001L));
+  }
+
+  @Test
+  @DisplayName("A student who isn't in the edition gets STUDENT_NOT_ENROLLED with their number")
+  void studentNotInEditionIsRefused() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> enrolmentService.getEnrolledStudent(7L, 1001L));
+
+    // Assert
+    assertEquals(ErrorCode.STUDENT_NOT_ENROLLED, e.getCode());
+    assertEquals(Map.of("number", 1001L), e.getParams());
   }
 
   private Enrolment enrolmentWith(long lessons, long unjustifiedAbsences) {
