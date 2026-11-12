@@ -32,8 +32,12 @@ public class AssignmentService {
   // sizes and "only projects can be group work" are refused by the models themselves
   @Transactional
   public AssignmentResponseDTO createAssignment(Long subjectEditionId, CreateAssignmentRequestDTO request) {
-    // locked so two teachers adding at the same time can't both take the same remaining weight
+    // locked so two teachers adding at the same time can't both take the same name or remaining weight
     SubjectEdition edition = subjectEditionService.getLockedEdition(subjectEditionId);
+    String name = request.name().trim();
+    if (assignmentRepository.existsBySubjectEditionAndNameIgnoreCase(edition, name)) {
+      throw new StudyMatchException(ErrorCode.ASSIGNMENT_ALREADY_EXISTS);
+    }
     BigDecimal remaining = BigDecimal.ONE.subtract(usedWeight(edition));
     if (request.weightFraction().compareTo(remaining) > 0) {
       throw new StudyMatchException(ErrorCode.ASSIGNMENT_WEIGHT_EXCEEDED,
@@ -43,7 +47,7 @@ public class AssignmentService {
     CreateAssignmentRequestDTO.Grouping grouping = request.grouping();
     GroupingRule rule = grouping == null ? null
         : new GroupingRule(grouping.minSize(), grouping.optimalSize(), grouping.maxSize(), grouping.sameClass());
-    Assignment assignment = new Assignment(edition, request.name().trim(), request.type(), request.date(),
+    Assignment assignment = new Assignment(edition, name, request.type(), request.date(),
         request.weightFraction(), rule);
 
     // after the assignment so an exam with grouping fails before looking up any student

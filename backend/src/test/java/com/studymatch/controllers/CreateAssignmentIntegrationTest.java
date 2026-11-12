@@ -126,10 +126,11 @@ class CreateAssignmentIntegrationTest {
     return create(TEACHER, edition.getId(), body);
   }
 
+  // named after its type and weight, so assignments of one test don't clash on the name
   private static String individual(String type, int weight) {
     return """
-        {"name":"Final Exam","type":"%s","date":"2093-01-15","weight":%d}
-        """.formatted(type, weight);
+        {"name":"%s %d","type":"%s","date":"2093-01-15","weight":%d}
+        """.formatted(type, weight, type, weight);
   }
 
   private static String groupWork(String type, int minSize, int optimalSize, int maxSize, Long first, Long second) {

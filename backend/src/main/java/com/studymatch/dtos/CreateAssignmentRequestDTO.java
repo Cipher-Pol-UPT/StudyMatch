@@ -7,6 +7,7 @@ import java.util.List;
 import com.studymatch.enums.AssignmentType;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -18,7 +19,7 @@ import jakarta.validation.constraints.Size;
 public record CreateAssignmentRequestDTO(
     @NotBlank @Size(max = 100) String name,
     @NotNull AssignmentType type,
-    @NotNull LocalDate date,
+    @NotNull @FutureOrPresent LocalDate date,
     @NotNull @Min(1) @Max(100) Integer weight,
     @Valid Grouping grouping) {
 

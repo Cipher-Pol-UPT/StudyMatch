@@ -11,4 +11,6 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
 
   List<Assignment> findBySubjectEdition(SubjectEdition subjectEdition);
 
+  boolean existsBySubjectEditionAndNameIgnoreCase(SubjectEdition subjectEdition, String name);
+
 }
