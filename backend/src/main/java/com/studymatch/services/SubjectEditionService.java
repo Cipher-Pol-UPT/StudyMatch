@@ -75,4 +75,10 @@ public class SubjectEditionService {
     }
   }
 
+  // locked until the caller's transaction ends, so changes to the edition happen one at a time
+  public SubjectEdition getLockedEdition(Long editionId) {
+    return subjectEditionRepository.findLockedById(editionId)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
 }

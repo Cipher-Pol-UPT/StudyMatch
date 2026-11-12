@@ -1,6 +1,7 @@
 package com.studymatch.repositories;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,6 +13,8 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
   List<Enrolment> findByStudent(Student student);
 
   List<Enrolment> findBySubjectEditionId(Long subjectEditionId);
+
+  Optional<Enrolment> findBySubjectEditionIdAndStudent_Number(Long subjectEditionId, Long studentNumber);
 
   boolean existsByStudent(Student student);
 
