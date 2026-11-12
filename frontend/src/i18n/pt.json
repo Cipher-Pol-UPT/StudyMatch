@@ -447,6 +447,8 @@
     "SEPARATION_SAME_STUDENT": "Selecione dois estudantes diferentes.",
     "SEPARATION_ALREADY_EXISTS": "Esta separação já existe.",
     "ASSIGNMENT_NOT_GROUP_WORK": "Este trabalho não é de grupo.",
+    "ASSIGNMENT_WEIGHT_EXCEEDED": "Os pesos das avaliações ultrapassariam os 100%. Só restam {{remaining}}%.",
+    "STUDENT_NOT_ENROLLED": "O estudante {{number}} não está inscrito nesta unidade curricular.",
     "APPLICATION_ALREADY_DECIDED": "Esta candidatura já foi decidida.",
     "STUDYROOM_CLOSED": "Esta sala de estudo está encerrada.",
     "STUDYROOM_ALREADY_STARTED": "Esta sala de estudo já começou.",
