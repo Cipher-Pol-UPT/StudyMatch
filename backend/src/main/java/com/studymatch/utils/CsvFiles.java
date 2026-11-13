@@ -55,6 +55,7 @@ public final class CsvFiles {
         .setIgnoreHeaderCase(true)
         .setDuplicateHeaderMode(DuplicateHeaderMode.DISALLOW) // two "name" columns, which one is right?
         .setTrim(true)
+        .setIgnoreEmptyLines(false) // still skipped below, but counted so the row numbers match the spreadsheet
         .get();
 
     List<Line> lines = new ArrayList<>();
