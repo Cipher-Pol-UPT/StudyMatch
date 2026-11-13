@@ -65,6 +65,26 @@ public class SubjectEditionService {
         .toList();
   }
 
+  // enrol students (staff): only the current year's editions can take students
+  @Transactional(readOnly = true)
+  public List<SubjectEditionResponseDTO> listCurrent() {
+    return academicYearService.findCurrent()
+        .map(year -> subjectEditionRepository.findByAcademicYear(year).stream()
+            .map(SubjectEditionResponseDTO::from)
+            .sorted(Comparator.comparing((SubjectEditionResponseDTO edition) -> edition.subject().name())
+                .thenComparing(SubjectEditionResponseDTO::id))
+            .toList())
+        .orElse(List.of());
+  }
+
+  public SubjectEdition getLockedCurrentEdition(Long editionId) {
+    SubjectEdition edition = getLockedEdition(editionId);
+    if (!academicYearService.isCurrent(edition.getAcademicYear())) {
+      throw new StudyMatchException(ErrorCode.SUBJECT_EDITION_NOT_CURRENT);
+    }
+    return edition;
+  }
+
   // a teacher only sees the students of editions they teach
   public void checkTaughtBy(Long editionId, Long teacherNumber) {
     if (!subjectEditionRepository.existsById(editionId)) {

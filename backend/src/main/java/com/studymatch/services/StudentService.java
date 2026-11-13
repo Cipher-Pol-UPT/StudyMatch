@@ -1,6 +1,7 @@
 package com.studymatch.services;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -326,6 +327,12 @@ public class StudentService {
     } catch (MailException e) {
       return false;
     }
+  }
+
+  // numbers that don't exist just aren't in the map
+  public Map<Long, Student> findByNumbers(Collection<Long> studentNumbers) {
+    return studentRepository.findAllById(studentNumbers).stream()
+        .collect(Collectors.toMap(Student::getNumber, student -> student));
   }
 
   private Student getByNumber(Long studentNumber) {

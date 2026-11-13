@@ -29,6 +29,7 @@ class EnrolmentServiceTest {
   private EnrolmentRepository enrolmentRepository;
   private LessonService lessonService;
   private AbsenceService absenceService;
+  private SubjectEditionService subjectEditionService;
   private EnrolmentService enrolmentService;
 
   private Student student;
@@ -38,7 +39,8 @@ class EnrolmentServiceTest {
     enrolmentRepository = mock(EnrolmentRepository.class);
     lessonService = mock(LessonService.class);
     absenceService = mock(AbsenceService.class);
-    enrolmentService = new EnrolmentService(enrolmentRepository, lessonService, absenceService);
+    subjectEditionService = mock(SubjectEditionService.class);
+    enrolmentService = new EnrolmentService(enrolmentRepository, lessonService, absenceService, subjectEditionService);
 
     student = ModelTestData.student("Test Student");
   }
