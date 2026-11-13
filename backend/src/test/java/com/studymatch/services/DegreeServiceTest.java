@@ -137,6 +137,29 @@ class DegreeServiceTest {
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
   }
 
+  // find by id (edit student)
+
+  @Test
+  @DisplayName("Finding a degree by id returns it")
+  void findDegreeById() {
+    // Arrange
+    Degree mathematics = new Degree("Mathematics", 3);
+    when(degreeRepository.findById(1L)).thenReturn(Optional.of(mathematics));
+
+    // Act + Assert
+    assertSame(mathematics, degreeService.findDegree(1L).orElseThrow());
+  }
+
+  @Test
+  @DisplayName("Finding an id with no degree is empty instead of an error, the caller picks the code")
+  void findUnknownDegreeIsEmpty() {
+    // Arrange
+    when(degreeRepository.findById(99L)).thenReturn(Optional.empty());
+
+    // Act + Assert
+    assertTrue(degreeService.findDegree(99L).isEmpty());
+  }
+
   // find by name (register student)
 
   @Test
