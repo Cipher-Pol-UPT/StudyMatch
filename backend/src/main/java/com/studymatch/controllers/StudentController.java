@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.studymatch.dtos.EditStudentRequestDTO;
 import com.studymatch.dtos.ImportPreviewRowDTO;
 import com.studymatch.dtos.ImportResultRowDTO;
 import com.studymatch.dtos.ImportStudentsRequestDTO;
@@ -71,6 +72,16 @@ public class StudentController {
   public ResponseEntity<StudentRecordDTO> getRecord(@PathVariable Long number, Authentication authentication) {
     User staff = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(studentService.getRecord(number, staff));
+  }
+
+  // edit student: answers with the same record as above so the page can just show it
+
+  @PutMapping("{number}")
+  @PreAuthorize("hasRole('STAFF')")
+  public ResponseEntity<StudentRecordDTO> editStudent(@PathVariable Long number,
+      @Valid @RequestBody EditStudentRequestDTO changes, Authentication authentication) {
+    User staff = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(studentService.editStudent(number, changes, staff));
   }
 
   // register student

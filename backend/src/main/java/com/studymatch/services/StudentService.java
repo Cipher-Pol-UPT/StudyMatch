@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.studymatch.dtos.EditStudentRequestDTO;
 import com.studymatch.dtos.EnrolmentRecordDTO;
 import com.studymatch.dtos.FieldErrorDTO;
 import com.studymatch.dtos.ImportPreviewRowDTO;
@@ -139,6 +140,36 @@ public class StudentService {
     return new StudentRecordDTO(getProfile(studentNumber, staff), student.getPersonalEmail(),
         student.getAccountStatus(), student.getStatuteType(), student.getStatuteEndDate(),
         enrolmentService.getAverageGrade(student), enrolmentService.getCategoryLevels(student), enrolments);
+  }
+
+  // edit student (staff): only the admin data, grades, profile and statute have their own use cases.
+  // Enrolments stay as they are when the degree changes, they're the student's history
+  @Transactional
+  public StudentRecordDTO editStudent(Long studentNumber, EditStudentRequestDTO changes, User staff) {
+    Student student = getByNumber(studentNumber);
+    Degree degree = degreeService.findDegree(changes.degreeId())
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.DEGREE_NOT_FOUND));
+    if (!degree.hasCurricularYear(changes.curricularYear())) {
+      throw new StudyMatchException(ErrorCode.CURRICULAR_YEAR_NOT_IN_DEGREE,
+          Map.of("years", degree.getCurricularYears()));
+    }
+    // saving with their own email unchanged isn't a duplicate
+    boolean emailChanged = !changes.personalEmail().equalsIgnoreCase(student.getPersonalEmail());
+    if (emailChanged && userService.isPersonalEmailTaken(changes.personalEmail())) {
+      throw new StudyMatchException(ErrorCode.PERSONAL_EMAIL_ALREADY_EXISTS);
+    }
+
+    student.setName(changes.name());
+    student.setPersonalEmail(changes.personalEmail());
+    student.setDegree(degree);
+    student.setCurricularYear(changes.curricularYear());
+    // two Staff giving out the same email at once both pass the check above, the unique column stops the second
+    try {
+      studentRepository.saveAndFlush(student);
+    } catch (DataIntegrityViolationException e) {
+      throw new StudyMatchException(ErrorCode.PERSONAL_EMAIL_ALREADY_EXISTS);
+    }
+    return getRecord(studentNumber, staff);
   }
 
   @Transactional(readOnly = true)
