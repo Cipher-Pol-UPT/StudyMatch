@@ -24,6 +24,7 @@ import com.studymatch.dtos.SubjectEditionRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.AcademicYear;
+import com.studymatch.models.Category;
 import com.studymatch.models.ClassSection;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Subject;
@@ -226,6 +227,59 @@ class SubjectEditionServiceTest {
   void lockingUnknownEditionIsNotFound() {
     StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectEditionService.getLockedEdition(99L));
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // current year's editions (enrolments)
+
+  @Test
+  @DisplayName("Staff gets the current year's editions sorted by subject name")
+  void listCurrentEditions() {
+    // Arrange
+    Category category = new Category("Test Category");
+    SubjectEdition zeta = new SubjectEdition(new Subject("TZ", "Zeta Subject", 6, category), year2026, Set.of(ana));
+    SubjectEdition alpha = new SubjectEdition(new Subject("TA", "Alpha Subject", 6, category), year2026, Set.of(ana));
+    when(academicYearService.findCurrent()).thenReturn(Optional.of(year2026));
+    when(subjectEditionRepository.findByAcademicYear(year2026)).thenReturn(List.of(zeta, alpha));
+
+    // Act
+    var editions = subjectEditionService.listCurrent();
+
+    // Assert
+    assertEquals(List.of("Alpha Subject", "Zeta Subject"), editions.stream().map(e -> e.subject().name()).toList());
+  }
+
+  @Test
+  @DisplayName("With no academic year registered there are no current editions")
+  void noCurrentYearMeansNoEditions() {
+    // Act + Assert - findCurrent is empty by default
+    assertEquals(List.of(), subjectEditionService.listCurrent());
+  }
+
+  @Test
+  @DisplayName("An edition of the current year can be locked for enrolments")
+  void currentEditionIsLocked() {
+    // Arrange
+    SubjectEdition edition = new SubjectEdition(subject, year2026, Set.of(ana));
+    when(subjectEditionRepository.findLockedById(7L)).thenReturn(Optional.of(edition));
+    when(academicYearService.isCurrent(year2026)).thenReturn(true);
+
+    // Act + Assert
+    assertSame(edition, subjectEditionService.getLockedCurrentEdition(7L));
+  }
+
+  @Test
+  @DisplayName("An edition of an older year gets SUBJECT_EDITION_NOT_CURRENT")
+  void oldEditionIsRefused() {
+    // Arrange - isCurrent is false by default
+    when(subjectEditionRepository.findLockedById(7L))
+        .thenReturn(Optional.of(new SubjectEdition(subject, new AcademicYear(2025), Set.of(ana))));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectEditionService.getLockedCurrentEdition(7L));
+
+    // Assert
+    assertEquals(ErrorCode.SUBJECT_EDITION_NOT_CURRENT, e.getCode());
   }
 
   @Test

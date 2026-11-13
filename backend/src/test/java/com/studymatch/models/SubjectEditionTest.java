@@ -96,4 +96,32 @@ class SubjectEditionTest {
     assertEquals(ErrorCode.CLASS_SECTION_ALREADY_EXISTS, e.getCode());
   }
 
+  @Test
+  @DisplayName("A class is found by its code")
+  void classSectionFoundByCode() {
+    // Arrange
+    edition.addClassSection("T1");
+    edition.addClassSection("PL1");
+
+    // Act
+    ClassSection found = edition.getClassSection("PL1");
+
+    // Assert
+    assertEquals("PL1", found.getCode());
+    assertSame(edition, found.getSubjectEdition());
+  }
+
+  @Test
+  @DisplayName("A code the edition doesn't have gets CLASS_SECTION_NOT_IN_SUBJECT_EDITION, codes are exact")
+  void unknownClassSectionIsRefused() {
+    // Arrange
+    edition.addClassSection("T1");
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> edition.getClassSection("t1"));
+
+    // Assert
+    assertEquals(ErrorCode.CLASS_SECTION_NOT_IN_SUBJECT_EDITION, e.getCode());
+  }
+
 }

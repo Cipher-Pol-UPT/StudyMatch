@@ -6,7 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -16,12 +20,17 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
+import com.studymatch.dtos.EnrolmentResultDTO;
+import com.studymatch.dtos.EnrolmentResultDTO.Result;
+import com.studymatch.enums.EnrolmentStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
+import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.EnrolmentRepository;
 
 class EnrolmentServiceTest {
@@ -168,6 +177,102 @@ class EnrolmentServiceTest {
     // Assert
     assertEquals(ErrorCode.STUDENT_NOT_ENROLLED, e.getCode());
     assertEquals(Map.of("number", 1001L), e.getParams());
+  }
+
+  // enrol students
+
+  private SubjectEdition editionWithT1() {
+    SubjectEdition edition = ModelTestData.subjectEdition();
+    edition.addClassSection("T1");
+    when(subjectEditionService.getLockedCurrentEdition(7L)).thenReturn(edition);
+    return edition;
+  }
+
+  @Test
+  @DisplayName("A student is enrolled in the chosen class, spaces around the class code don't matter")
+  void studentIsEnrolled() {
+    // Arrange
+    editionWithT1();
+
+    // Act
+    List<EnrolmentResultDTO> results = enrolmentService.enrolStudents(7L, " T1 ", List.of(1001L),
+        Map.of(1001L, student));
+
+    // Assert
+    assertEquals(List.of(EnrolmentResultDTO.of(1001L, "Test Student", Result.ENROLLED)), results);
+    ArgumentCaptor<Enrolment> saved = ArgumentCaptor.forClass(Enrolment.class);
+    verify(enrolmentRepository).save(saved.capture());
+    assertSame(student, saved.getValue().getStudent());
+    assertEquals("T1", saved.getValue().getClassSection().getCode());
+  }
+
+  @Test
+  @DisplayName("Every number gets a result in the order sent: unknown, already enrolled and already passed are skipped")
+  void skippedStudentsAreListed() {
+    // Arrange
+    SubjectEdition edition = editionWithT1();
+    Student enrolled = ModelTestData.student("Enrolled Student");
+    Student passed = ModelTestData.student("Passed Student");
+    when(enrolmentRepository.existsByStudentAndSubjectEdition(enrolled, edition)).thenReturn(true);
+    when(enrolmentRepository.existsByStudentAndSubjectEdition_SubjectAndStatus(passed, edition.getSubject(),
+        EnrolmentStatus.PASSED)).thenReturn(true);
+
+    // Act
+    List<EnrolmentResultDTO> results = enrolmentService.enrolStudents(7L, "T1", List.of(9999L, 1002L, 1003L),
+        Map.of(1002L, enrolled, 1003L, passed));
+
+    // Assert
+    assertEquals(List.of(
+        EnrolmentResultDTO.of(9999L, null, Result.NOT_FOUND),
+        EnrolmentResultDTO.of(1002L, "Enrolled Student", Result.ALREADY_ENROLLED),
+        EnrolmentResultDTO.of(1003L, "Passed Student", Result.ALREADY_PASSED)), results);
+    verify(enrolmentRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A number sent twice is only enrolled once")
+  void repeatedNumberCountsOnce() {
+    // Arrange
+    editionWithT1();
+
+    // Act
+    List<EnrolmentResultDTO> results = enrolmentService.enrolStudents(7L, "T1", List.of(1001L, 1001L),
+        Map.of(1001L, student));
+
+    // Assert
+    assertEquals(1, results.size());
+    verify(enrolmentRepository, times(1)).save(any());
+  }
+
+  @Test
+  @DisplayName("A class the edition doesn't have gets CLASS_SECTION_NOT_IN_SUBJECT_EDITION and nobody is enrolled")
+  void unknownClassIsRefused() {
+    // Arrange
+    editionWithT1();
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> enrolmentService.enrolStudents(7L, "T9", List.of(1001L), Map.of(1001L, student)));
+
+    // Assert
+    assertEquals(ErrorCode.CLASS_SECTION_NOT_IN_SUBJECT_EDITION, e.getCode());
+    verify(enrolmentRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("An edition that isn't current: SUBJECT_EDITION_NOT_CURRENT goes through and nobody is enrolled")
+  void notCurrentEditionIsRefused() {
+    // Arrange
+    when(subjectEditionService.getLockedCurrentEdition(7L))
+        .thenThrow(new StudyMatchException(ErrorCode.SUBJECT_EDITION_NOT_CURRENT));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> enrolmentService.enrolStudents(7L, "T1", List.of(1001L), Map.of(1001L, student)));
+
+    // Assert
+    assertEquals(ErrorCode.SUBJECT_EDITION_NOT_CURRENT, e.getCode());
+    verify(enrolmentRepository, never()).save(any());
   }
 
   private Enrolment enrolmentWith(long lessons, long unjustifiedAbsences) {
