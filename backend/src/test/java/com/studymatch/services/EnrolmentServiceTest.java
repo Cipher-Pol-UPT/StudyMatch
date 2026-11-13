@@ -32,6 +32,7 @@ import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.EnrolmentRepository;
+import com.studymatch.utils.EnrolmentCsvReader;
 
 class EnrolmentServiceTest {
 
@@ -273,6 +274,26 @@ class EnrolmentServiceTest {
     // Assert
     assertEquals(ErrorCode.SUBJECT_EDITION_NOT_CURRENT, e.getCode());
     verify(enrolmentRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("CSV: every row gets its result and row, bad and repeated numbers are listed, only the good one is enrolled")
+  void importListsEveryRow() {
+    // Arrange
+    editionWithT1();
+    List<EnrolmentCsvReader.Row> rows = List.of(new EnrolmentCsvReader.Row(2, 1001L),
+        new EnrolmentCsvReader.Row(3, null), new EnrolmentCsvReader.Row(4, 1001L), new EnrolmentCsvReader.Row(5, 9999L));
+
+    // Act
+    List<EnrolmentResultDTO> results = enrolmentService.importEnrolments(7L, "T1", rows, Map.of(1001L, student));
+
+    // Assert
+    assertEquals(List.of(
+        new EnrolmentResultDTO(2, 1001L, "Test Student", Result.ENROLLED),
+        new EnrolmentResultDTO(3, null, null, Result.INVALID_NUMBER),
+        new EnrolmentResultDTO(4, 1001L, null, Result.DUPLICATE_IN_FILE),
+        new EnrolmentResultDTO(5, 9999L, null, Result.NOT_FOUND)), results);
+    verify(enrolmentRepository, times(1)).save(any());
   }
 
   private Enrolment enrolmentWith(long lessons, long unjustifiedAbsences) {

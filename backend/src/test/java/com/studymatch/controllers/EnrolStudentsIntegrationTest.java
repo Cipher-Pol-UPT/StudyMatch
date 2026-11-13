@@ -4,13 +4,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Set;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -210,6 +216,65 @@ class EnrolStudentsIntegrationTest {
     enrol("T1")
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[0].field").value("studentNumbers"));
+  }
+
+  // CSV import
+
+  private ResultActions importCsv(String csv, String classSection) throws Exception {
+    MockMultipartFile file = new MockMultipartFile("file", "enrolments.csv", "text/csv",
+        csv.getBytes(StandardCharsets.UTF_8));
+    var request = multipart("/subject-editions/" + currentEdition.getId() + "/enrolments/import").file(file)
+        .with(csrf()).session(loginAs(STAFF));
+    return mockMvc.perform(classSection == null ? request : request.param("classSection", classSection));
+  }
+
+  @Test
+  @DisplayName("CSV: every row gets its result and row number, only the valid new students are enrolled")
+  void csvImport() throws Exception {
+    // Arrange - row 4 isn't a number, row 5 repeats ana
+    String csv = "studentNumber\n" + ana.getNumber() + "\n" + rui.getNumber() + "\nabc\n" + ana.getNumber()
+        + "\n99999999\n";
+
+    // Act + Assert
+    importCsv(csv, "T1")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(5))
+        .andExpect(jsonPath("$[0].row").value(2))
+        .andExpect(jsonPath("$[0].result").value("ENROLLED"))
+        .andExpect(jsonPath("$[1].result").value("ALREADY_PASSED"))
+        .andExpect(jsonPath("$[2].row").value(4))
+        .andExpect(jsonPath("$[2].result").value("INVALID_NUMBER"))
+        .andExpect(jsonPath("$[2].number").doesNotExist())
+        .andExpect(jsonPath("$[3].result").value("DUPLICATE_IN_FILE"))
+        .andExpect(jsonPath("$[4].result").value("NOT_FOUND"));
+    assertEquals("T1", enrolmentRepository.findBySubjectEditionIdAndStudent_Number(currentEdition.getId(),
+        ana.getNumber()).orElseThrow().getClassSection().getCode());
+  }
+
+  @Test
+  @DisplayName("CSV without the class is a NOT_NULL field error on classSection")
+  void csvWithoutClass() throws Exception {
+    importCsv("studentNumber\n" + ana.getNumber() + "\n", null)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("classSection"))
+        .andExpect(jsonPath("$.fieldErrors[0].code").value("NOT_NULL"));
+  }
+
+  @Test
+  @DisplayName("CSV without the studentNumber column is 400 CSV_MISSING_COLUMNS")
+  void csvWithoutColumn() throws Exception {
+    importCsv("number\n1\n", "T1")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("CSV_MISSING_COLUMNS"));
+  }
+
+  @Test
+  @DisplayName("The template downloads as a CSV with the studentNumber column")
+  void csvTemplate() throws Exception {
+    mockMvc.perform(get("/subject-editions/enrolments/import/template").session(loginAs(STAFF)))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Content-Disposition", "attachment; filename=\"enrolments.csv\""))
+        .andExpect(content().string(Matchers.endsWith("studentNumber\r\n")));
   }
 
   // who can enrol
