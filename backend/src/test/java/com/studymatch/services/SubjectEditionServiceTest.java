@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -204,6 +205,26 @@ class SubjectEditionServiceTest {
   @DisplayName("An edition that doesn't exist is NOT_FOUND")
   void unknownEdition() {
     StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectEditionService.checkTaughtBy(99L, 1L));
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // locked edition (for changes like adding assignments)
+
+  @Test
+  @DisplayName("The locked edition is the one the repository finds")
+  void lockedEditionIsFound() {
+    // Arrange
+    SubjectEdition edition = ModelTestData.subjectEdition();
+    when(subjectEditionRepository.findLockedById(7L)).thenReturn(Optional.of(edition));
+
+    // Act + Assert
+    assertSame(edition, subjectEditionService.getLockedEdition(7L));
+  }
+
+  @Test
+  @DisplayName("Locking an edition that doesn't exist is NOT_FOUND")
+  void lockingUnknownEditionIsNotFound() {
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectEditionService.getLockedEdition(99L));
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
   }
 

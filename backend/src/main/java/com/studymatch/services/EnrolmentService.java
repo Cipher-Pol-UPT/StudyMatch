@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.studymatch.dtos.CategoryLevelDTO;
 import com.studymatch.dtos.EditionStudentDTO;
 import com.studymatch.dtos.PersonalityProfileDTO;
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Category;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.Student;
@@ -64,6 +66,13 @@ public class EnrolmentService {
 
   public List<Enrolment> getEnrolments(Student student) {
     return enrolmentRepository.findByStudent(student);
+  }
+
+  // only students of this edition can be picked, the number goes back so the message can say which one
+  public Student getEnrolledStudent(Long subjectEditionId, Long studentNumber) {
+    return enrolmentRepository.findBySubjectEditionIdAndStudent_Number(subjectEditionId, studentNumber)
+        .map(Enrolment::getStudent)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.STUDENT_NOT_ENROLLED, Map.of("number", studentNumber)));
   }
 
   // view students (teacher): an edition has a few hundred students at most, so filtering here is fine
