@@ -13,7 +13,6 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -59,7 +58,7 @@ class AssignmentServiceTest {
     ana = numbered("Ana", 1001L);
     rui = numbered("Rui", 1002L);
     when(subjectEditionService.getLockedEdition(EDITION_ID)).thenReturn(edition);
-    when(assignmentRepository.findBySubjectEdition(edition)).thenReturn(List.of());
+    when(assignmentRepository.sumWeightBySubjectEdition(edition)).thenReturn(BigDecimal.ZERO);
     when(enrolmentService.getEnrolledStudent(EDITION_ID, 1001L)).thenReturn(ana);
     when(enrolmentService.getEnrolledStudent(EDITION_ID, 1002L)).thenReturn(rui);
 
@@ -74,11 +73,9 @@ class AssignmentServiceTest {
     return student;
   }
 
-  // the edition already has assignments with these weights
-  private void alreadyUsed(String... weights) {
-    when(assignmentRepository.findBySubjectEdition(edition)).thenReturn(Arrays.stream(weights)
-        .map(weight -> new Assignment(edition, "Old", AssignmentType.EXAM, DATE, new BigDecimal(weight), null))
-        .toList());
+  // the edition's assignments already add up to this
+  private void alreadyUsed(String total) {
+    when(assignmentRepository.sumWeightBySubjectEdition(edition)).thenReturn(new BigDecimal(total));
   }
 
   private static CreateAssignmentRequestDTO exam(int weight) {
@@ -154,7 +151,7 @@ class AssignmentServiceTest {
   @DisplayName("The weights can add up to exactly 100%: 70% used + 30% (boundary)")
   void weightsUpToExactlyFull() {
     // Arrange
-    alreadyUsed("0.40", "0.30");
+    alreadyUsed("0.70");
 
     // Act
     assignmentService.createAssignment(EDITION_ID, exam(30));
@@ -167,7 +164,7 @@ class AssignmentServiceTest {
   @DisplayName("70% used + 31% gets ASSIGNMENT_WEIGHT_EXCEEDED with the 30% left, and nothing is saved (boundary)")
   void weightsOverFullAreRefused() {
     // Arrange
-    alreadyUsed("0.40", "0.30");
+    alreadyUsed("0.70");
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
@@ -183,7 +180,7 @@ class AssignmentServiceTest {
   @DisplayName("An edition already at 100% has 0% left, even for a 1% assignment")
   void fullEditionIsRefused() {
     // Arrange
-    alreadyUsed("0.50", "0.50");
+    alreadyUsed("1.00");
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,

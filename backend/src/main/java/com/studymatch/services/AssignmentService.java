@@ -38,7 +38,7 @@ public class AssignmentService {
     if (assignmentRepository.existsBySubjectEditionAndNameIgnoreCase(edition, name)) {
       throw new StudyMatchException(ErrorCode.ASSIGNMENT_ALREADY_EXISTS);
     }
-    BigDecimal remaining = BigDecimal.ONE.subtract(usedWeight(edition));
+    BigDecimal remaining = BigDecimal.ONE.subtract(assignmentRepository.sumWeightBySubjectEdition(edition));
     if (request.weightFraction().compareTo(remaining) > 0) {
       throw new StudyMatchException(ErrorCode.ASSIGNMENT_WEIGHT_EXCEEDED,
           Map.of("remaining", remaining.movePointRight(2).intValue()));
@@ -58,12 +58,6 @@ public class AssignmentService {
       }
     }
     return AssignmentResponseDTO.from(assignmentRepository.save(assignment));
-  }
-
-  private BigDecimal usedWeight(SubjectEdition edition) {
-    return assignmentRepository.findBySubjectEdition(edition).stream()
-        .map(Assignment::getWeight)
-        .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
 }

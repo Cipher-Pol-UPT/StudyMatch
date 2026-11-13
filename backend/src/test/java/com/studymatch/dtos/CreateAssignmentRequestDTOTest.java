@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -185,6 +186,42 @@ class CreateAssignmentRequestDTOTest {
   }
 
   @Test
+  @DisplayName("A group can have up to 20 students (boundary)")
+  void groupOfTwentyIsValid() {
+    // Act
+    Set<ConstraintViolation<CreateAssignmentRequestDTO>> violations =
+        validator.validate(withGrouping(new CreateAssignmentRequestDTO.Grouping(2, 20, 20, false, null)));
+
+    // Assert
+    assertTrue(violations.isEmpty());
+  }
+
+  @Test
+  @DisplayName("A group of 21 is too big (boundary)")
+  void groupOfTwentyOneIsInvalid() {
+    // Act + Assert
+    assertOnlyViolation(withGrouping(new CreateAssignmentRequestDTO.Grouping(2, 20, 21, false, null)),
+        "grouping.maxSize");
+  }
+
+  @Test
+  @DisplayName("Up to 50 separations are allowed (boundary)")
+  void fiftySeparationsAreValid() {
+    // Act
+    Set<ConstraintViolation<CreateAssignmentRequestDTO>> violations = validator.validate(withSeparations(50));
+
+    // Assert
+    assertTrue(violations.isEmpty());
+  }
+
+  @Test
+  @DisplayName("51 separations are too many (boundary)")
+  void fiftyOneSeparationsAreInvalid() {
+    // Act + Assert
+    assertOnlyViolation(withSeparations(51), "grouping.separations");
+  }
+
+  @Test
   @DisplayName("A separation needs both students")
   void separationWithoutStudentIsInvalid() {
     // Arrange
@@ -226,6 +263,13 @@ class CreateAssignmentRequestDTOTest {
 
   private static CreateAssignmentRequestDTO withDate(LocalDate date) {
     return new CreateAssignmentRequestDTO("Final Exam", AssignmentType.EXAM, date, 30, null);
+  }
+
+  private static CreateAssignmentRequestDTO withSeparations(int count) {
+    List<CreateAssignmentRequestDTO.Separation> separations = IntStream.rangeClosed(1, count)
+        .mapToObj(i -> new CreateAssignmentRequestDTO.Separation((long) i, (long) i + 1))
+        .toList();
+    return withGrouping(new CreateAssignmentRequestDTO.Grouping(2, 3, 4, false, separations));
   }
 
   private static CreateAssignmentRequestDTO withGrouping(CreateAssignmentRequestDTO.Grouping grouping) {

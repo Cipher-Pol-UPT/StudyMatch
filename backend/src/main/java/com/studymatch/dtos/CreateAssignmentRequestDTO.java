@@ -28,11 +28,15 @@ public record CreateAssignmentRequestDTO(
   }
 
   public record Grouping(
-      @NotNull Integer minSize,
-      @NotNull Integer optimalSize,
-      @NotNull Integer maxSize,
+      @NotNull @Max(MAX_GROUP_SIZE) Integer minSize,
+      @NotNull @Max(MAX_GROUP_SIZE) Integer optimalSize,
+      @NotNull @Max(MAX_GROUP_SIZE) Integer maxSize,
       boolean sameClass,
-      List<@NotNull @Valid Separation> separations) {
+      @Size(max = MAX_SEPARATIONS) List<@NotNull @Valid Separation> separations) {
+
+    // caps so a huge request can't keep the edition locked through hundreds of student lookups
+    public static final int MAX_GROUP_SIZE = 20;
+    public static final int MAX_SEPARATIONS = 50;
 
     public List<Separation> separationsOrEmpty() {
       return separations == null ? List.of() : separations;
