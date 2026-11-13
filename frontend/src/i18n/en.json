@@ -345,6 +345,14 @@
     "PASSED": "Passed",
     "FAILED": "Failed"
   },
+  "enrolmentResults": {
+    "ENROLLED": "Enrolled",
+    "ALREADY_ENROLLED": "Already enrolled",
+    "ALREADY_PASSED": "Already passed this subject",
+    "NOT_FOUND": "No student with this number",
+    "INVALID_NUMBER": "Not a valid student number",
+    "DUPLICATE_IN_FILE": "Repeated in the file"
+  },
   "tutorApplicationStatuses": {
     "PENDING": "Pending",
     "APPROVED": "Approved",
@@ -442,6 +450,7 @@
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Select at least one teacher.",
     "CLASS_SECTION_ALREADY_EXISTS": "This class section already exists.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "The class section does not belong to this subject edition.",
+    "SUBJECT_EDITION_NOT_CURRENT": "Students can only be enrolled in subject editions of the current academic year.",
     "GROUP_WORK_NOT_ALLOWED_FOR_EXAMS": "Group work is not allowed for exams.",
     "INVALID_GROUP_SIZES": "The group sizes are invalid.",
     "SEPARATION_SAME_STUDENT": "Select two different students.",
