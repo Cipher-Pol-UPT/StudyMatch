@@ -1,9 +1,14 @@
 package com.studymatch.controllers;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -13,7 +18,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.studymatch.dtos.AssignmentResponseDTO;
 import com.studymatch.dtos.CreateAssignmentRequestDTO;
@@ -28,6 +35,7 @@ import com.studymatch.services.EnrolmentService;
 import com.studymatch.services.StudentService;
 import com.studymatch.services.SubjectEditionService;
 import com.studymatch.services.UserService;
+import com.studymatch.utils.EnrolmentCsvReader;
 
 import jakarta.validation.Valid;
 
@@ -40,14 +48,17 @@ public class SubjectEditionController {
   private final UserService userService;
   private final AssignmentService assignmentService;
   private final StudentService studentService;
+  private final EnrolmentCsvReader enrolmentCsvReader;
 
   public SubjectEditionController(SubjectEditionService subjectEditionService, EnrolmentService enrolmentService,
-      UserService userService, AssignmentService assignmentService, StudentService studentService) {
+      UserService userService, AssignmentService assignmentService, StudentService studentService,
+      EnrolmentCsvReader enrolmentCsvReader) {
     this.subjectEditionService = subjectEditionService;
     this.enrolmentService = enrolmentService;
     this.userService = userService;
     this.assignmentService = assignmentService;
     this.studentService = studentService;
+    this.enrolmentCsvReader = enrolmentCsvReader;
   }
 
   @GetMapping
@@ -72,6 +83,28 @@ public class SubjectEditionController {
     Map<Long, Student> students = studentService.findByNumbers(request.studentNumbers());
     return ResponseEntity.ok(enrolmentService.enrolStudents(id, request.classSection(), request.studentNumbers(),
         students));
+  }
+
+  @GetMapping("enrolments/import/template")
+  @PreAuthorize("hasRole('STAFF')")
+  public ResponseEntity<String> enrolmentsTemplate() {
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"enrolments.csv\"")
+        .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+        .body(enrolmentCsvReader.template());
+  }
+
+  // enrol students (CSV): one step, the valid rows are enrolled and every row gets its result
+  @PostMapping(value = "{id}/enrolments/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("hasRole('STAFF')")
+  public ResponseEntity<List<EnrolmentResultDTO>> importEnrolments(@PathVariable Long id,
+      @RequestPart("file") MultipartFile file, @RequestParam String classSection) throws IOException {
+    List<EnrolmentCsvReader.Row> rows = enrolmentCsvReader.read(file.getBytes());
+    Map<Long, Student> students = studentService.findByNumbers(rows.stream()
+        .map(EnrolmentCsvReader.Row::number)
+        .filter(Objects::nonNull)
+        .toList());
+    return ResponseEntity.ok(enrolmentService.importEnrolments(id, classSection, rows, students));
   }
 
   // view students (teacher): only for teachers of this edition

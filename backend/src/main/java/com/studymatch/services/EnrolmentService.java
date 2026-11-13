@@ -2,9 +2,11 @@ package com.studymatch.services;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ import com.studymatch.models.Enrolment;
 import com.studymatch.models.Student;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.EnrolmentRepository;
+import com.studymatch.utils.EnrolmentCsvReader;
 
 @Service
 public class EnrolmentService {
@@ -52,6 +55,29 @@ public class EnrolmentService {
     List<EnrolmentResultDTO> results = new ArrayList<>();
     for (Long number : new LinkedHashSet<>(studentNumbers)) {
       results.add(enrol(number, students.get(number), edition, classSection));
+    }
+    return results;
+  }
+
+  // enrol students (CSV): bad and repeated rows are listed, the others get the same checks as above
+  @Transactional
+  public List<EnrolmentResultDTO> importEnrolments(Long subjectEditionId, String classSectionCode,
+      List<EnrolmentCsvReader.Row> rows, Map<Long, Student> students) {
+    SubjectEdition edition = subjectEditionService.getLockedCurrentEdition(subjectEditionId);
+    ClassSection classSection = edition.getClassSection(classSectionCode.trim());
+
+    Set<Long> numbersInFile = new HashSet<>();
+    List<EnrolmentResultDTO> results = new ArrayList<>();
+    for (EnrolmentCsvReader.Row row : rows) {
+      EnrolmentResultDTO result;
+      if (row.number() == null) {
+        result = EnrolmentResultDTO.of(null, null, Result.INVALID_NUMBER);
+      } else if (!numbersInFile.add(row.number())) {
+        result = EnrolmentResultDTO.of(row.number(), null, Result.DUPLICATE_IN_FILE);
+      } else {
+        result = enrol(row.number(), students.get(row.number()), edition, classSection);
+      }
+      results.add(result.atRow(row.row()));
     }
     return results;
   }
