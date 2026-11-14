@@ -15,10 +15,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -268,6 +271,57 @@ class AssignmentServiceTest {
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
     verify(assignmentRepository, never()).save(any());
+  }
+
+  // grading helpers
+
+  private Assignment saved(String name, LocalDate date) {
+    return new Assignment(edition, name, AssignmentType.EXAM, date, new BigDecimal("0.10"), null);
+  }
+
+  @Test
+  @DisplayName("An assignment of the edition is found")
+  void assignmentIsFound() {
+    // Arrange
+    Assignment exam = saved("Exam", DATE);
+    when(assignmentRepository.findByIdAndSubjectEditionId(3L, EDITION_ID)).thenReturn(Optional.of(exam));
+
+    // Act + Assert
+    assertSame(exam, assignmentService.getAssignment(EDITION_ID, 3L));
+  }
+
+  @Test
+  @DisplayName("An assignment of another edition is NOT_FOUND")
+  void otherEditionsAssignmentIsNotFound() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> assignmentService.getAssignment(EDITION_ID, 3L));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Assignments are listed by date, same date by name")
+  void assignmentsInDateOrder() {
+    // Arrange
+    Assignment exam = saved("Exam", DATE.plusDays(10));
+    Assignment report = saved("Report", DATE);
+    Assignment essay = saved("Essay", DATE);
+    when(assignmentRepository.findBySubjectEdition(edition)).thenReturn(List.of(exam, report, essay));
+
+    // Act + Assert
+    assertEquals(List.of(essay, report, exam), assignmentService.listAssignments(edition));
+  }
+
+  @ParameterizedTest(name = "{0} -> {1}")
+  @CsvSource({ "0, false", "0.99, false", "1.00, true", "1.0000, true" })
+  @DisplayName("The weights are full only at exactly 100%, however many decimals the database gives")
+  void fullWeight(String total, boolean full) {
+    // Arrange
+    alreadyUsed(total);
+
+    // Act + Assert
+    assertEquals(full, assignmentService.hasFullWeight(edition));
   }
 
 }
