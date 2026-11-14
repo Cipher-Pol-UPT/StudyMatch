@@ -387,7 +387,14 @@
       "description": "Recognition for supporting students."
     },
     "export": "Export certificate",
-    "certificate": "Achievement certificate"
+    "certificate": "Achievement certificate",
+    "earnedOn": "Earned on {{date}}",
+    "rarity": {
+      "common": "Common",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary"
+    }
   },
   "home": {
     "greeting": "Hello, {{name}}.",

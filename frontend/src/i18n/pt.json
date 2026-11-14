@@ -387,7 +387,14 @@
       "description": "Reconhecimento pelo apoio aos estudantes."
     },
     "export": "Exportar certificado",
-    "certificate": "Certificado de conquista"
+    "certificate": "Certificado de conquista",
+    "earnedOn": "Obtida a {{date}}",
+    "rarity": {
+      "common": "Comum",
+      "rare": "Rara",
+      "epic": "Épica",
+      "legendary": "Lendária"
+    }
   },
   "home": {
     "greeting": "Olá, {{name}}.",
