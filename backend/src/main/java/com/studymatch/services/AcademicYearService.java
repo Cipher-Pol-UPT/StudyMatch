@@ -1,6 +1,7 @@
 package com.studymatch.services;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,15 @@ public class AcademicYearService {
   public AcademicYear getAcademicYear(int startYear) {
     return academicYearRepository.findById(startYear)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  // the newest registered year is the current one, starting a new year just adds a newer one
+  public Optional<AcademicYear> findCurrent() {
+    return academicYearRepository.findFirstByOrderByStartYearDesc();
+  }
+
+  public boolean isCurrent(AcademicYear year) {
+    return findCurrent().map(current -> current.getStartYear() == year.getStartYear()).orElse(false);
   }
 
 }

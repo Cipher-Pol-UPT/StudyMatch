@@ -14,8 +14,10 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.TutorBadgeDTO;
+import com.studymatch.dtos.TutorSubjectDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.ModelTestData;
@@ -112,6 +114,33 @@ class TutorRoleServiceTest {
 
     // Assert
     assertEquals(ErrorCode.ACCESS_DENIED, e.getCode());
+  }
+
+  // subjects a tutor can pick (create StudyRoom)
+
+  @Test
+  @DisplayName("Each tutor role becomes its subject's id and name, in the order the repository sorted them")
+  void tutoredSubjects() {
+    // Arrange
+    TutorRole tutorRole = ModelTestData.tutorRole(tutor);
+    ReflectionTestUtils.setField(tutorRole.getSubject(), "id", 7L);
+    when(tutorRoleRepository.findByStudentNumberOrderBySubjectNameAsc(50001L)).thenReturn(List.of(tutorRole));
+
+    // Act
+    List<TutorSubjectDTO> subjects = tutorRoleService.getTutoredSubjects(50001L);
+
+    // Assert
+    assertEquals(List.of(new TutorSubjectDTO(7L, "Test Subject")), subjects);
+  }
+
+  @Test
+  @DisplayName("A student who doesn't tutor anything gets an empty list")
+  void noTutoredSubjects() {
+    // Arrange
+    when(tutorRoleRepository.findByStudentNumberOrderBySubjectNameAsc(50001L)).thenReturn(List.of());
+
+    // Act + Assert
+    assertTrue(tutorRoleService.getTutoredSubjects(50001L).isEmpty());
   }
 
 }

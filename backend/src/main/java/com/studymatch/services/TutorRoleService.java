@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.studymatch.dtos.TutorBadgeDTO;
+import com.studymatch.dtos.TutorSubjectDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Student;
@@ -25,6 +26,13 @@ public class TutorRoleService {
   public List<TutorBadgeDTO> getTutorBadges(Student student) {
     return tutorRoleRepository.findByStudent(student).stream()
         .map(this::toTutorBadge)
+        .toList();
+  }
+
+  // create StudyRoom: the subjects a tutor can pick, empty for students who don't tutor anything
+  public List<TutorSubjectDTO> getTutoredSubjects(Long studentNumber) {
+    return tutorRoleRepository.findByStudentNumberOrderBySubjectNameAsc(studentNumber).stream()
+        .map(TutorSubjectDTO::from)
         .toList();
   }
 
