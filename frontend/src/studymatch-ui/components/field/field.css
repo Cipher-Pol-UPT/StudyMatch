@@ -61,7 +61,7 @@
   color: var(--sm-text);
   letter-spacing: -0.01em;
 }
-.sm-field__input::placeholder { color: var(--sm-gray-400); opacity: 1; }
+.sm-field__input::placeholder { color: var(--sm-text-3); opacity: 1; }
 .sm-field__input:disabled { cursor: not-allowed; }
 .sm-field__input[type='number']::-webkit-inner-spin-button { opacity: 0.5; }
 textarea.sm-field__input { resize: vertical; min-height: 72px; padding-top: 2px; }
@@ -145,7 +145,7 @@ textarea.sm-field__input { resize: vertical; min-height: 72px; padding-top: 2px;
   color: var(--sm-text);
 }
 .sm-search input::-webkit-search-cancel-button { display: none; }
-.sm-search input::placeholder { color: var(--sm-gray-400); }
+.sm-search input::placeholder { color: var(--sm-text-3); }
 .sm-search__clear {
   flex-shrink: 0;
   width: 22px;

@@ -22,7 +22,7 @@
   border: 0;
   border-radius: 14px;
   background: none;
-  color: var(--sm-gray-400);
+  color: var(--sm-text-3);
   font: 500 11px var(--sm-font);
   text-decoration: none;
   cursor: pointer;
@@ -82,7 +82,7 @@
 }
 .sm-nav-item:hover { background: var(--sm-fill); color: var(--sm-text); }
 .sm-nav-item[aria-current='page'] { background: var(--sm-violet-a12); color: var(--sm-violet-ink); }
-.sm-nav-item[aria-current='page'] svg { color: var(--sm-violet); }
+.sm-nav-item[aria-current='page'] svg { color: var(--sm-violet-ink); }
 .sm-nav-item:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-nav-item .sm-badge { margin-left: auto; }
 .sm-shell__foot { margin-top: auto; padding-top: 12px; }

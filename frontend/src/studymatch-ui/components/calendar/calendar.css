@@ -26,7 +26,7 @@
 .sm-cal__day:active:not(:disabled) { transform: scale(0.9); }
 .sm-cal__day:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-cal__day[data-outside='true'] { color: var(--sm-text-3); }
-.sm-cal__day[data-today='true'] { font-weight: 600; color: var(--sm-violet); }
+.sm-cal__day[data-today='true'] { font-weight: 600; color: var(--sm-violet-ink); }
 .sm-cal__day[data-selected='true'] { background: var(--sm-violet); color: var(--sm-on-accent); box-shadow: var(--sm-shadow-violet); }
 .sm-cal__day:disabled { opacity: 0.3; cursor: not-allowed; }
 .sm-cal__dots { position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); display: flex; gap: 2px; }

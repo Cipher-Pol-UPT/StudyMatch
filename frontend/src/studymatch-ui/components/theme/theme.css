@@ -16,7 +16,7 @@
 .sm-theme-selector__mini-card em { width: 42%; height: 13px; border-radius: 8px; background: var(--preview-accent); }
 .sm-theme-selector__mini-card small { width: 13px; height: 13px; border-radius: 50%; background: var(--preview-spark); }
 .sm-theme-selector__name { display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 14px; font-weight: 600; }
-.sm-theme-selector__name svg { color: var(--sm-violet); }
+.sm-theme-selector__name svg { color: var(--sm-violet-ink); }
 .sm-theme-selector__mode { display: flex; align-items: center; gap: 4px; color: var(--sm-text-2); font-size: 11px; }
 .sm-theme-selector__description { color: var(--sm-text-2); font-size: 11px; line-height: 1.5; }
 @media (max-width: 620px) { .sm-theme-selector { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
