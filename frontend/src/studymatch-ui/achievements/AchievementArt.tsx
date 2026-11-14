@@ -79,7 +79,7 @@ const ART: Record<AchievementId, (u: U) => ReactNode> = {
     </>
   ),
 
-  // a full house ticket (the library's full-house)
+  // a ticket with a heart (the library's full-house, without its english text)
   DEDICATED_TUTOR: (u) => (
     <>
       <defs>
@@ -98,12 +98,7 @@ const ART: Record<AchievementId, (u: U) => ReactNode> = {
         </g>
         <rect x="14" y="38" width="92" height="48" fill={url(u('a'))} mask={url(u('m'))} />
         <line x1="78" y1="46" x2="78" y2="78" stroke="#fff" strokeWidth="2" strokeDasharray="2 4" strokeLinecap="round" opacity=".8" />
-        <text x="47" y="65" textAnchor="middle" fontFamily="var(--sm-font), sans-serif" fontWeight="700" fontSize="19" fill="#fff" letterSpacing=".5">
-          FULL
-        </text>
-        <text x="47" y="76" textAnchor="middle" fontFamily="var(--sm-mono), monospace" fontSize="7.5" fill="#fff" opacity=".85" letterSpacing="1.5">
-          HOUSE
-        </text>
+        <path d="M47 73 C 39 67, 34 62, 34 56.5 C 34 52.5, 37 49.5, 41 49.5 C 43.6 49.5, 45.7 51, 47 53 C 48.3 51, 50.4 49.5, 53 49.5 C 57 49.5, 60 52.5, 60 56.5 C 60 62, 55 67, 47 73 Z" fill="#fff" />
         <Sparkle x={92} y={62} s={8} fill="#fff" />
         <Shine u={u} cx={36} cy={44} rx={14} ry={3} rot={0} o={0.6} />
       </g>
