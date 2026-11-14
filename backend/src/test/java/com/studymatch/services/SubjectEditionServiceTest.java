@@ -315,4 +315,25 @@ class SubjectEditionServiceTest {
     assertEquals(List.of(), editions);
   }
 
+  @Test
+  @DisplayName("An existing edition is found by id")
+  void editionIsFound() {
+    // Arrange
+    SubjectEdition edition = ModelTestData.subjectEdition();
+    when(subjectEditionRepository.findById(7L)).thenReturn(Optional.of(edition));
+
+    // Act + Assert
+    assertSame(edition, subjectEditionService.getEdition(7L));
+  }
+
+  @Test
+  @DisplayName("An edition that doesn't exist is NOT_FOUND")
+  void unknownEditionIsNotFound() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectEditionService.getEdition(99L));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
 }

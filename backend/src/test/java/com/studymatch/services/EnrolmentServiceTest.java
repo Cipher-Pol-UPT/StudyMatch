@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.EnrolmentResultDTO.Result;
@@ -313,6 +314,38 @@ class EnrolmentServiceTest {
         new EnrolmentResultDTO(4, 1001L, null, Result.DUPLICATE),
         new EnrolmentResultDTO(5, 9999L, null, Result.NOT_FOUND)), results);
     verify(enrolmentRepository, times(1)).save(any());
+  }
+
+  // grading
+
+  private static Enrolment enrolmentOf(String name, Long number) {
+    Student student = ModelTestData.student(name);
+    ReflectionTestUtils.setField(student, "number", number);
+    return ModelTestData.enrolment(student);
+  }
+
+  @Test
+  @DisplayName("The whole enrolment of a student in the edition is found by number")
+  void enrolmentIsFound() {
+    // Arrange
+    Enrolment enrolment = ModelTestData.enrolment(student);
+    when(enrolmentRepository.findBySubjectEditionIdAndStudent_Number(7L, 1001L)).thenReturn(Optional.of(enrolment));
+
+    // Act + Assert
+    assertSame(enrolment, enrolmentService.getEnrolment(7L, 1001L));
+  }
+
+  @Test
+  @DisplayName("The edition's enrolments are listed by name, same name by number")
+  void enrolmentsByName() {
+    // Arrange
+    Enrolment bruno = enrolmentOf("Bruno", 1001L);
+    Enrolment secondAna = enrolmentOf("Ana", 1003L);
+    Enrolment firstAna = enrolmentOf("Ana", 1002L);
+    when(enrolmentRepository.findBySubjectEditionId(7L)).thenReturn(List.of(bruno, secondAna, firstAna));
+
+    // Act + Assert
+    assertEquals(List.of(firstAna, secondAna, bruno), enrolmentService.listEnrolments(7L));
   }
 
   private Enrolment enrolmentWith(long lessons, long unjustifiedAbsences) {

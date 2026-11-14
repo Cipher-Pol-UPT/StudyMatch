@@ -2,6 +2,7 @@ package com.studymatch.repositories;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +13,8 @@ import com.studymatch.models.SubjectEdition;
 public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
 
   List<Assignment> findBySubjectEdition(SubjectEdition subjectEdition);
+
+  Optional<Assignment> findByIdAndSubjectEditionId(Long id, Long subjectEditionId);
 
   boolean existsBySubjectEditionAndNameIgnoreCase(SubjectEdition subjectEdition, String name);
 
