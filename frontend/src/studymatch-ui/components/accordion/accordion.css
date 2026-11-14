@@ -25,6 +25,6 @@
 .sm-accordion__title { flex: 1; min-width: 0; }
 .sm-accordion__meta { font-size: 14px; font-weight: 400; color: var(--sm-text-2); }
 .sm-accordion__chev { flex-shrink: 0; color: var(--sm-text-3); transition: transform var(--sm-dur-3) var(--sm-ease-out); }
-.sm-accordion__item[data-open='true'] .sm-accordion__chev { transform: rotate(180deg); color: var(--sm-violet); }
+.sm-accordion__item[data-open='true'] .sm-accordion__chev { transform: rotate(180deg); color: var(--sm-violet-ink); }
 .sm-accordion__panel { padding: 0 20px 20px; font-size: 15px; line-height: 1.5; color: var(--sm-text-2); }
 .sm-accordion--plain .sm-accordion__panel { padding-left: 4px; padding-right: 4px; }

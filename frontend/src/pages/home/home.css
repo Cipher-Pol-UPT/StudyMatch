@@ -26,7 +26,7 @@
 .home-cal__table td + td { border-left: 1px solid var(--sm-border); }
 .home-cal__table td.is-today { background: var(--sm-violet-50); }
 .home-cal__num { display: block; margin-bottom: 2px; color: var(--sm-text-3); font-size: 12px; font-variant-numeric: tabular-nums; }
-.is-today .home-cal__num { color: var(--sm-violet); font-weight: 600; }
+.is-today .home-cal__num { color: var(--sm-violet-ink); font-weight: 600; }
 .home-cal__tasks { display: grid; gap: 2px; }
 .home-task { display: flex; align-items: center; gap: var(--sm-s1); width: 100%; padding: 0; border: 0; border-radius: var(--sm-r-xs); background: none; color: var(--sm-text); font: 400 12px var(--sm-font); text-align: left; white-space: nowrap; overflow: hidden; }
 button.home-task { cursor: pointer; }

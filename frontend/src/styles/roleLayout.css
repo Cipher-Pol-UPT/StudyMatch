@@ -2,7 +2,7 @@
 .role-page > header > h1 { margin: 6px 0 12px; }
 .role-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .role-card { display: grid; align-content: start; gap: 12px; padding: 24px; color: var(--sm-text); text-decoration: none; border: 1px solid var(--sm-border); border-radius: var(--sm-radius-lg, 20px); background: var(--sm-surface); }
-.role-card > svg, .role-card > span { color: var(--sm-violet); }
+.role-card > svg, .role-card > span { color: var(--sm-violet-ink); }
 .role-card h2 { margin: 0; font-size: 18px; }
 .role-card p { margin: 0; color: var(--sm-text-2); font-size: 14px; line-height: 1.6; }
 .role-card:hover { border-color: var(--sm-violet); }
