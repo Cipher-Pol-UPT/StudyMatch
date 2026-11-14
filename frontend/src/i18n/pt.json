@@ -208,7 +208,18 @@
     "enter": "Entrar na reunião",
     "details": "Detalhes",
     "create": "Criar sala de estudo",
-    "attendance": "Confirmar presenças"
+    "attendance": "Confirmar presenças",
+    "newRoom": "Nova sala de estudo",
+    "newRoomDescription": "Sessão online no Google Meet.",
+    "subjectHint": "Unidades curriculares em que é tutor aprovado.",
+    "date": "Data",
+    "start": "Início",
+    "end": "Fim",
+    "places": "Lugares",
+    "placesHint": "{{min}}–{{max}} participantes",
+    "meetLink": "Ligação do Google Meet",
+    "descriptionPlaceholder": "O que vai abordar? O que devem trazer os participantes?",
+    "created": "Sala de estudo criada."
   },
   "studyRooms": {
     "heading": "Salas de estudo",
