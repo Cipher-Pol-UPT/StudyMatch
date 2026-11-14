@@ -208,7 +208,18 @@
     "enter": "Enter meeting",
     "details": "Details",
     "create": "Create StudyRoom",
-    "attendance": "Confirm attendance"
+    "attendance": "Confirm attendance",
+    "newRoom": "New StudyRoom",
+    "newRoomDescription": "Online session on Google Meet.",
+    "subjectHint": "Subjects where you're an approved tutor.",
+    "date": "Date",
+    "start": "Start",
+    "end": "End",
+    "places": "Places",
+    "placesHint": "{{min}}–{{max}} participants",
+    "meetLink": "Google Meet link",
+    "descriptionPlaceholder": "What will you cover? What should people bring?",
+    "created": "StudyRoom created."
   },
   "studyRooms": {
     "heading": "Study rooms",
@@ -345,6 +356,14 @@
     "PASSED": "Passed",
     "FAILED": "Failed"
   },
+  "enrolmentResults": {
+    "ENROLLED": "Enrolled",
+    "ALREADY_ENROLLED": "Already enrolled",
+    "ALREADY_PASSED": "Already passed this subject",
+    "NOT_FOUND": "No student with this number",
+    "INVALID_NUMBER": "Not a valid student number",
+    "DUPLICATE": "Repeated, only the first one counts"
+  },
   "tutorApplicationStatuses": {
     "PENDING": "Pending",
     "APPROVED": "Approved",
@@ -368,7 +387,14 @@
       "description": "Recognition for supporting students."
     },
     "export": "Export certificate",
-    "certificate": "Achievement certificate"
+    "certificate": "Achievement certificate",
+    "earnedOn": "Earned on {{date}}",
+    "rarity": {
+      "common": "Common",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary"
+    }
   },
   "home": {
     "greeting": "Hello, {{name}}.",
@@ -442,6 +468,7 @@
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Select at least one teacher.",
     "CLASS_SECTION_ALREADY_EXISTS": "This class section already exists.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "The class section does not belong to this subject edition.",
+    "SUBJECT_EDITION_NOT_CURRENT": "Students can only be enrolled in subject editions of the current academic year.",
     "GROUP_WORK_NOT_ALLOWED_FOR_EXAMS": "Group work is not allowed for exams.",
     "INVALID_GROUP_SIZES": "The group sizes are invalid.",
     "SEPARATION_SAME_STUDENT": "Select two different students.",

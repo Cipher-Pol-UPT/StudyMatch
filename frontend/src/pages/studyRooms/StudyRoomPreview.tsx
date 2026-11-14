@@ -28,7 +28,7 @@ export function StudyRoomPreview({ room, studentId, onToggleMembership }: StudyR
           <span>{format({ month: 'short' })}</span>
         </div>
         <div className="study-room-preview__title">
-          <span className="sm-eyebrow">{t(`studyRooms.subjects.${room.subjectId}`)}</span>
+          <span className="sm-eyebrow">{t(`studyRooms.subjects.${room.subjectId}`, { defaultValue: room.subject })}</span>
           <h3 id={titleId}>{room.topic}</h3>
         </div>
         <span className="study-room-preview__status" data-state={state}>

@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -36,6 +37,13 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MissingServletRequestPartException.class)
   public ResponseEntity<ErrorResponseDTO> handleMissingFile(MissingServletRequestPartException e) {
     FieldErrorDTO missing = new FieldErrorDTO(e.getRequestPartName(), "NOT_NULL", Map.of());
+    return ResponseEntity.badRequest().body(ErrorResponseDTO.validationFailed(List.of(missing)));
+  }
+
+  // a required ?param (or form field) that wasn't sent
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<ErrorResponseDTO> handleMissingParameter(MissingServletRequestParameterException e) {
+    FieldErrorDTO missing = new FieldErrorDTO(e.getParameterName(), "NOT_NULL", Map.of());
     return ResponseEntity.badRequest().body(ErrorResponseDTO.validationFailed(List.of(missing)));
   }
 

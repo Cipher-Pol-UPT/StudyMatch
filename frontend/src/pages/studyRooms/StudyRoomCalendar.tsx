@@ -80,7 +80,7 @@ export function StudyRoomCalendar({ month, onMonthChange, rooms, selectedRoomId,
                             title={`${room.topic} · ${timeFormat.format(room.start)}`}
                             onClick={() => onSelect(room)}
                           >
-                            <i style={{ background: DEMO_SUBJECTS.find((subject) => subject.id === room.subjectId)?.color }} aria-hidden />
+                            <i style={{ background: DEMO_SUBJECTS.find((subject) => subject.id === room.subjectId)?.color ?? 'var(--sm-violet)' }} aria-hidden />
                             <span><b>{room.topic}</b><small>{timeFormat.format(room.start)}</small></span>
                           </button>
                         ))}

@@ -208,7 +208,18 @@
     "enter": "Entrar na reunião",
     "details": "Detalhes",
     "create": "Criar sala de estudo",
-    "attendance": "Confirmar presenças"
+    "attendance": "Confirmar presenças",
+    "newRoom": "Nova sala de estudo",
+    "newRoomDescription": "Sessão online no Google Meet.",
+    "subjectHint": "Unidades curriculares em que é tutor aprovado.",
+    "date": "Data",
+    "start": "Início",
+    "end": "Fim",
+    "places": "Lugares",
+    "placesHint": "{{min}}–{{max}} participantes",
+    "meetLink": "Ligação do Google Meet",
+    "descriptionPlaceholder": "O que vai abordar? O que devem trazer os participantes?",
+    "created": "Sala de estudo criada."
   },
   "studyRooms": {
     "heading": "Salas de estudo",
@@ -345,6 +356,14 @@
     "PASSED": "Aprovada",
     "FAILED": "Reprovada"
   },
+  "enrolmentResults": {
+    "ENROLLED": "Inscrito",
+    "ALREADY_ENROLLED": "Já inscrito",
+    "ALREADY_PASSED": "Já aprovado nesta unidade curricular",
+    "NOT_FOUND": "Não existe nenhum estudante com este número",
+    "INVALID_NUMBER": "Número de estudante inválido",
+    "DUPLICATE": "Repetido, só conta o primeiro"
+  },
   "tutorApplicationStatuses": {
     "PENDING": "Pendente",
     "APPROVED": "Aprovada",
@@ -368,7 +387,14 @@
       "description": "Reconhecimento pelo apoio aos estudantes."
     },
     "export": "Exportar certificado",
-    "certificate": "Certificado de conquista"
+    "certificate": "Certificado de conquista",
+    "earnedOn": "Obtida a {{date}}",
+    "rarity": {
+      "common": "Comum",
+      "rare": "Rara",
+      "epic": "Épica",
+      "legendary": "Lendária"
+    }
   },
   "home": {
     "greeting": "Olá, {{name}}.",
@@ -442,6 +468,7 @@
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Selecione pelo menos um docente.",
     "CLASS_SECTION_ALREADY_EXISTS": "Esta turma já existe.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "A turma não pertence a esta edição da unidade curricular.",
+    "SUBJECT_EDITION_NOT_CURRENT": "Só é possível inscrever estudantes em edições do ano letivo atual.",
     "GROUP_WORK_NOT_ALLOWED_FOR_EXAMS": "Os exames não permitem trabalho de grupo.",
     "INVALID_GROUP_SIZES": "Os tamanhos dos grupos são inválidos.",
     "SEPARATION_SAME_STUDENT": "Selecione dois estudantes diferentes.",
