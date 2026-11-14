@@ -2,6 +2,7 @@ package com.studymatch.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -185,6 +186,21 @@ class EnrolStudentsIntegrationTest {
         .andExpect(jsonPath("$[3].result").value("NOT_FOUND"))
         .andExpect(jsonPath("$[3].name").doesNotExist());
     assertFalse(enrolmentRepository.findBySubjectEditionIdAndStudent_Number(currentEdition.getId(), rui.getNumber())
+        .isPresent());
+  }
+
+  @Test
+  @DisplayName("The list gives repeated and negative numbers a result too, like the CSV")
+  void repeatedAndNegativeNumbers() throws Exception {
+    // Act + Assert
+    enrol("T1", ana.getNumber(), ana.getNumber(), -5L)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(3))
+        .andExpect(jsonPath("$[0].result").value("ENROLLED"))
+        .andExpect(jsonPath("$[1].result").value("DUPLICATE"))
+        .andExpect(jsonPath("$[2].result").value("INVALID_NUMBER"))
+        .andExpect(jsonPath("$[2].number").value(-5));
+    assertTrue(enrolmentRepository.findBySubjectEditionIdAndStudent_Number(currentEdition.getId(), ana.getNumber())
         .isPresent());
   }
 

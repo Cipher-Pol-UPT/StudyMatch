@@ -36,6 +36,16 @@ class EnrolmentCsvReaderTest {
     assertEquals(List.of(new EnrolmentCsvReader.Row(2, 50001L), new EnrolmentCsvReader.Row(4, 50002L)), rows);
   }
 
+  @Test
+  @DisplayName("Empty lines above the header are skipped but counted, and ; is still picked up")
+  void emptyLinesAboveHeader() {
+    // Act
+    List<EnrolmentCsvReader.Row> rows = read("\r\n;\nstudentNumber;name\n50001;Ana\n");
+
+    // Assert - the header is row 3
+    assertEquals(List.of(new EnrolmentCsvReader.Row(4, 50001L)), rows);
+  }
+
   @ParameterizedTest
   @ValueSource(strings = { "abc", "50001.5", "5O001" })
   @DisplayName("A value that isn't a whole number comes out as null")

@@ -20,6 +20,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import com.studymatch.dtos.EnrolmentResultDTO;
@@ -245,6 +247,21 @@ class EnrolmentServiceTest {
         EnrolmentResultDTO.of(1001L, "Test Student", Result.ENROLLED),
         EnrolmentResultDTO.of(1001L, null, Result.DUPLICATE)), results);
     verify(enrolmentRepository, times(1)).save(any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(longs = { 0, -1 })
+  @DisplayName("A number of 0 or below is INVALID_NUMBER and keeps what was sent")
+  void notPositiveNumberIsInvalid(long number) {
+    // Arrange
+    editionWithT1();
+
+    // Act
+    List<EnrolmentResultDTO> results = enrolmentService.enrolStudents(7L, "T1", List.of(number), Map.of());
+
+    // Assert
+    assertEquals(List.of(EnrolmentResultDTO.of(number, null, Result.INVALID_NUMBER)), results);
+    verify(enrolmentRepository, never()).save(any());
   }
 
   @Test
