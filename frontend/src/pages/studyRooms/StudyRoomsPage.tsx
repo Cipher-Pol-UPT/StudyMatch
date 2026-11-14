@@ -1,15 +1,27 @@
-import { BookOpen, CalendarDays, Check, ListChecks, Users } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ListChecks, Plus, Users } from 'lucide-react';
 import { useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Dialog, EmptyState } from '../../studymatch-ui';
+import { createStudyRoom } from '../../api/studyRooms';
+import { Button, CreateStudyRoomForm, Dialog, EmptyState, useToast, type StudyRoomDraft, type StudyRoomPerson } from '../../studymatch-ui';
+import type { StudyRoomData } from '../../types/studyRooms';
 import { createDemoStudyRooms, dateKey, DEMO_SUBJECTS, demoStudent, monthStart, type DemoStudent, type DemoStudyRoom, type StudyRoomsView, type SubjectId } from './demoStudyRooms';
 import { StudyRoomCalendar, StudyRoomMiniCalendar } from './StudyRoomCalendar';
 import { StudyRoomPreview } from './StudyRoomPreview';
+import { useTutorSubjects } from './useTutorSubjects';
 import './studyRoom.css';
 
 interface StudyRoomsPageProps {
   currentUser: DemoStudent;
   initialDate?: Date;
+}
+
+// a created room in the demo list's shape, until #137 loads the rooms from the backend
+function toCalendarRoom(room: StudyRoomData, tutor: StudyRoomPerson, rating: number, ratingCount: number): DemoStudyRoom {
+  return {
+    id: `room-${room.id}`, subjectId: `${room.subjectId}`, subject: room.subjectName, topic: room.description || room.subjectName,
+    description: room.description ?? undefined, start: new Date(room.startsAt), end: new Date(room.endsAt), tutor,
+    capacity: room.capacity, participants: [], meetUrl: room.link, status: room.status, rating, ratingCount,
+  };
 }
 
 export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps) {
@@ -23,6 +35,9 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [notice, setNotice] = useState('');
   const student = demoStudent(currentUser);
+  const toast = useToast();
+  const tutorSubjects = useTutorSubjects();
+  const [creating, setCreating] = useState(false);
 
   const joinedRooms = rooms.filter((room) => room.participants.some((person) => person.id === student.id));
   const createdRooms = rooms.filter((room) => room.tutor.id === student.id);
@@ -39,6 +54,18 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
     setMonth(monthStart(date));
     setSelectedId(null);
     setSelectedDay(null);
+  };
+
+  // the backend checks everything, if it refuses the error goes back to the form
+  const createRoom = async (draft: StudyRoomDraft) => {
+    const created = await createStudyRoom({ ...draft, description: draft.description || null });
+    const hosted = rooms.find((room) => room.tutor.id === student.id);
+    const room = toCalendarRoom(created, student, hosted?.rating ?? 0, hosted?.ratingCount ?? 0);
+    setRooms((previous) => [...previous, room].sort((a, b) => a.start.getTime() - b.start.getTime()));
+    setCreating(false);
+    setView('calendar');
+    changeMonth(room.start);
+    toast.success(t('rooms.created'));
   };
 
   const selectRoom = (room: DemoStudyRoom) => {
@@ -65,7 +92,19 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
           <h1>{t('studyRooms.heading')}</h1>
           <p>{t('studyRooms.intro')}</p>
           <span className="study-rooms__hint"><CalendarDays size={16} aria-hidden />{t('studyRooms.selectHint')}</span>
+          {tutorSubjects.length > 0 && (
+            <Button icon={Plus} className="study-rooms__create" onClick={() => setCreating(true)}>{t('rooms.newRoom')}</Button>
+          )}
       </header>
+
+      <Dialog open={creating} onClose={() => setCreating(false)} title={t('rooms.newRoom')} description={t('rooms.newRoomDescription')} size="lg">
+        <CreateStudyRoomForm
+          subjects={tutorSubjects.map((subject) => ({ id: subject.subjectId, name: subject.subjectName }))}
+          now={today}
+          onCancel={() => setCreating(false)}
+          onSubmit={createRoom}
+        />
+      </Dialog>
 
       <Dialog open={view === 'calendar' && !!selectedRoom} onClose={() => setSelectedId(null)} title={t('studyRooms.selectedRoom')} className="study-rooms-dialog">
         {selectedRoom && <StudyRoomPreview room={selectedRoom} studentId={student.id} onToggleMembership={toggleMembership} />}

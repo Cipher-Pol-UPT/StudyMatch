@@ -208,7 +208,18 @@
     "enter": "Enter meeting",
     "details": "Details",
     "create": "Create StudyRoom",
-    "attendance": "Confirm attendance"
+    "attendance": "Confirm attendance",
+    "newRoom": "New StudyRoom",
+    "newRoomDescription": "Online session on Google Meet.",
+    "subjectHint": "Subjects where you're an approved tutor.",
+    "date": "Date",
+    "start": "Start",
+    "end": "End",
+    "places": "Places",
+    "placesHint": "{{min}}–{{max}} participants",
+    "meetLink": "Google Meet link",
+    "descriptionPlaceholder": "What will you cover? What should people bring?",
+    "created": "StudyRoom created."
   },
   "studyRooms": {
     "heading": "Study rooms",
