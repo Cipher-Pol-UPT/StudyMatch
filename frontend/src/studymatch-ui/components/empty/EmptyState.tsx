@@ -14,7 +14,7 @@ export interface EmptyStateProps {
 }
 
 const TONE: Record<NonNullable<EmptyStateProps['tone']>, [string, string]> = {
-  lavender: ['var(--sm-tint-lavender)', 'var(--sm-violet)'],
+  lavender: ['var(--sm-tint-lavender)', 'var(--sm-violet-ink)'],
   sky: ['var(--sm-tint-sky)', '#1f86c0'],
   peach: ['var(--sm-tint-peach)', '#d4561f'],
   mint: ['var(--sm-tint-mint)', '#13915f'],

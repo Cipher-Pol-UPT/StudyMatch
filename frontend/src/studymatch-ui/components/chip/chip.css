@@ -81,7 +81,7 @@
   font: 400 16px var(--sm-font);
   color: var(--sm-text);
 }
-.sm-tags input::placeholder { color: var(--sm-text-3); }
+.sm-tags input::placeholder { color: var(--sm-text-2); }
 .sm-tags__suggest { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 4px 0; }
 .sm-tags__suggest button {
   height: 28px;

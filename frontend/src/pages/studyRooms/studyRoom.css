@@ -50,7 +50,7 @@
 .study-rooms-mini__grid > button[data-outside='true'] { color: var(--sm-text-3); }
 .study-rooms-mini__grid > button[data-event='true']::after { position: absolute; bottom: 1px; width: 3px; height: 3px; border-radius: 50%; background: var(--sm-violet); content: ''; }
 .study-rooms-mini__grid > button:hover { background: var(--sm-fill); }
-.study-rooms-mini__grid > button[aria-pressed='true'] { background: var(--sm-violet); color: white; }
+.study-rooms-mini__grid > button[aria-pressed='true'] { background: var(--sm-violet); color: var(--sm-on-accent); }
 .study-rooms-mini__grid > button[aria-pressed='true']::after { background: white; }
 
 .study-rooms-calendar { min-width: 0; overflow: hidden; border: 1px solid var(--sm-border); border-radius: 22px; background: var(--sm-surface); box-shadow: var(--sm-shadow-sm); }
@@ -67,7 +67,7 @@
 .study-rooms-calendar__table td[data-outside='true'] { background: var(--sm-gray-25); }
 .study-rooms-calendar__day { display: grid; place-items: center; width: 22px; height: 22px; margin-bottom: 5px; border-radius: 50%; color: var(--sm-text-2); font-size: 10px; font-variant-numeric: tabular-nums; }
 td[data-outside='true'] .study-rooms-calendar__day { color: var(--sm-text-3); }
-td[data-today='true'] .study-rooms-calendar__day { background: var(--sm-violet); color: white; }
+td[data-today='true'] .study-rooms-calendar__day { background: var(--sm-violet); color: var(--sm-on-accent); }
 .study-rooms-calendar__events { display: grid; gap: 5px; }
 .study-rooms-calendar__event { display: flex; align-items: stretch; gap: 5px; width: 100%; min-height: 34px; padding: 4px 3px; border: 0; border-radius: 6px; background: transparent; color: var(--sm-text); text-align: left; cursor: pointer; }
 .study-rooms-calendar__event > i { flex: none; width: 4px; min-height: 18px; border-radius: 4px; }
