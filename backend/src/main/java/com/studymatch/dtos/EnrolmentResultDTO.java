@@ -12,7 +12,7 @@ public record EnrolmentResultDTO(Integer row, Long number, String name, Result r
     ALREADY_PASSED,
     NOT_FOUND,
     INVALID_NUMBER,
-    DUPLICATE_IN_FILE,
+    DUPLICATE,
   }
 
   public static EnrolmentResultDTO of(Long number, String name, Result result) {

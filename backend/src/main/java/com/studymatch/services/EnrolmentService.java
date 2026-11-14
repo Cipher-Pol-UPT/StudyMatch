@@ -3,11 +3,11 @@ package com.studymatch.services;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,36 +48,37 @@ public class EnrolmentService {
   @Transactional
   public List<EnrolmentResultDTO> enrolStudents(Long subjectEditionId, String classSectionCode,
       List<Long> studentNumbers, Map<Long, Student> students) {
+    return enrolAll(subjectEditionId, classSectionCode, studentNumbers, students);
+  }
+
+  // enrol students (CSV): same as above, each result just gets its spreadsheet row
+  @Transactional
+  public List<EnrolmentResultDTO> importEnrolments(Long subjectEditionId, String classSectionCode,
+      List<EnrolmentCsvReader.Row> rows, Map<Long, Student> students) {
+    List<EnrolmentResultDTO> results = enrolAll(subjectEditionId, classSectionCode,
+        rows.stream().map(EnrolmentCsvReader.Row::number).toList(), students);
+    return IntStream.range(0, rows.size())
+        .mapToObj(i -> results.get(i).atRow(rows.get(i).row()))
+        .toList();
+  }
+
+  // one result per number in the order sent, so both endpoints treat bad and repeated numbers the same
+  private List<EnrolmentResultDTO> enrolAll(Long subjectEditionId, String classSectionCode, List<Long> numbers,
+      Map<Long, Student> students) {
     // locked so two Staff enrolling at the same time can't both enrol the same student
     SubjectEdition edition = subjectEditionService.getLockedCurrentEdition(subjectEditionId);
     ClassSection classSection = edition.getClassSection(classSectionCode.trim());
 
+    Set<Long> seen = new HashSet<>();
     List<EnrolmentResultDTO> results = new ArrayList<>();
-    for (Long number : new LinkedHashSet<>(studentNumbers)) {
-      results.add(enrol(number, students.get(number), edition, classSection));
-    }
-    return results;
-  }
-
-  // enrol students (CSV): bad and repeated rows are listed, the others get the same checks as above
-  @Transactional
-  public List<EnrolmentResultDTO> importEnrolments(Long subjectEditionId, String classSectionCode,
-      List<EnrolmentCsvReader.Row> rows, Map<Long, Student> students) {
-    SubjectEdition edition = subjectEditionService.getLockedCurrentEdition(subjectEditionId);
-    ClassSection classSection = edition.getClassSection(classSectionCode.trim());
-
-    Set<Long> numbersInFile = new HashSet<>();
-    List<EnrolmentResultDTO> results = new ArrayList<>();
-    for (EnrolmentCsvReader.Row row : rows) {
-      EnrolmentResultDTO result;
-      if (row.number() == null) {
-        result = EnrolmentResultDTO.of(null, null, Result.INVALID_NUMBER);
-      } else if (!numbersInFile.add(row.number())) {
-        result = EnrolmentResultDTO.of(row.number(), null, Result.DUPLICATE_IN_FILE);
+    for (Long number : numbers) {
+      if (number == null || number <= 0) {
+        results.add(EnrolmentResultDTO.of(number, null, Result.INVALID_NUMBER));
+      } else if (!seen.add(number)) {
+        results.add(EnrolmentResultDTO.of(number, null, Result.DUPLICATE));
       } else {
-        result = enrol(row.number(), students.get(row.number()), edition, classSection);
+        results.add(enrol(number, students.get(number), edition, classSection));
       }
-      results.add(result.atRow(row.row()));
     }
     return results;
   }

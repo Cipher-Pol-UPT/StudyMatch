@@ -245,7 +245,7 @@ class EnrolStudentsIntegrationTest {
         .andExpect(jsonPath("$[2].row").value(4))
         .andExpect(jsonPath("$[2].result").value("INVALID_NUMBER"))
         .andExpect(jsonPath("$[2].number").doesNotExist())
-        .andExpect(jsonPath("$[3].result").value("DUPLICATE_IN_FILE"))
+        .andExpect(jsonPath("$[3].result").value("DUPLICATE"))
         .andExpect(jsonPath("$[4].result").value("NOT_FOUND"));
     assertEquals("T1", enrolmentRepository.findBySubjectEditionIdAndStudent_Number(currentEdition.getId(),
         ana.getNumber()).orElseThrow().getClassSection().getCode());

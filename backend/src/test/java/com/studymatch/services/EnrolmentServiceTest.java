@@ -231,7 +231,7 @@ class EnrolmentServiceTest {
   }
 
   @Test
-  @DisplayName("A number sent twice is only enrolled once")
+  @DisplayName("A number sent twice is only enrolled once, the second one comes back as DUPLICATE")
   void repeatedNumberCountsOnce() {
     // Arrange
     editionWithT1();
@@ -241,7 +241,9 @@ class EnrolmentServiceTest {
         Map.of(1001L, student));
 
     // Assert
-    assertEquals(1, results.size());
+    assertEquals(List.of(
+        EnrolmentResultDTO.of(1001L, "Test Student", Result.ENROLLED),
+        EnrolmentResultDTO.of(1001L, null, Result.DUPLICATE)), results);
     verify(enrolmentRepository, times(1)).save(any());
   }
 
@@ -291,7 +293,7 @@ class EnrolmentServiceTest {
     assertEquals(List.of(
         new EnrolmentResultDTO(2, 1001L, "Test Student", Result.ENROLLED),
         new EnrolmentResultDTO(3, null, null, Result.INVALID_NUMBER),
-        new EnrolmentResultDTO(4, 1001L, null, Result.DUPLICATE_IN_FILE),
+        new EnrolmentResultDTO(4, 1001L, null, Result.DUPLICATE),
         new EnrolmentResultDTO(5, 9999L, null, Result.NOT_FOUND)), results);
     verify(enrolmentRepository, times(1)).save(any());
   }

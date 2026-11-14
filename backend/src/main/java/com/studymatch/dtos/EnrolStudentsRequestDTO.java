@@ -2,6 +2,8 @@ package com.studymatch.dtos;
 
 import java.util.List;
 
+import com.studymatch.utils.CsvFiles;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -12,6 +14,6 @@ public record EnrolStudentsRequestDTO(
     @NotBlank @Size(max = 20) String classSection,
     @NotEmpty @Size(max = MAX_STUDENTS) List<@NotNull Long> studentNumbers) {
 
-  public static final int MAX_STUDENTS = 200;
+  public static final int MAX_STUDENTS = CsvFiles.MAX_ROWS;
 
 }

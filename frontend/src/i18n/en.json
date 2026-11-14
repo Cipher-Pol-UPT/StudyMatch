@@ -351,7 +351,7 @@
     "ALREADY_PASSED": "Already passed this subject",
     "NOT_FOUND": "No student with this number",
     "INVALID_NUMBER": "Not a valid student number",
-    "DUPLICATE_IN_FILE": "Repeated in the file"
+    "DUPLICATE": "Repeated, only the first one counts"
   },
   "tutorApplicationStatuses": {
     "PENDING": "Pending",
