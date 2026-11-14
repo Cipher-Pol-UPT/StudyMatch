@@ -345,6 +345,14 @@
     "PASSED": "Aprovada",
     "FAILED": "Reprovada"
   },
+  "enrolmentResults": {
+    "ENROLLED": "Inscrito",
+    "ALREADY_ENROLLED": "Já inscrito",
+    "ALREADY_PASSED": "Já aprovado nesta unidade curricular",
+    "NOT_FOUND": "Não existe nenhum estudante com este número",
+    "INVALID_NUMBER": "Número de estudante inválido",
+    "DUPLICATE_IN_FILE": "Repetido no ficheiro"
+  },
   "tutorApplicationStatuses": {
     "PENDING": "Pendente",
     "APPROVED": "Aprovada",
@@ -442,6 +450,7 @@
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Selecione pelo menos um docente.",
     "CLASS_SECTION_ALREADY_EXISTS": "Esta turma já existe.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "A turma não pertence a esta edição da unidade curricular.",
+    "SUBJECT_EDITION_NOT_CURRENT": "Só é possível inscrever estudantes em edições do ano letivo atual.",
     "GROUP_WORK_NOT_ALLOWED_FOR_EXAMS": "Os exames não permitem trabalho de grupo.",
     "INVALID_GROUP_SIZES": "Os tamanhos dos grupos são inválidos.",
     "SEPARATION_SAME_STUDENT": "Selecione dois estudantes diferentes.",

@@ -88,4 +88,11 @@ public class SubjectEdition {
     classSections.add(new ClassSection(this, code));
   }
 
+  public ClassSection getClassSection(String code) {
+    return classSections.stream()
+        .filter(cs -> cs.getCode().equals(code))
+        .findFirst()
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.CLASS_SECTION_NOT_IN_SUBJECT_EDITION));
+  }
+
 }

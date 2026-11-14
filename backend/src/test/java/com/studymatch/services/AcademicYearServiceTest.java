@@ -1,8 +1,10 @@
 package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -62,6 +64,36 @@ class AcademicYearServiceTest {
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // current year
+
+  @Test
+  @DisplayName("The newest registered year is the current one")
+  void newestYearIsCurrent() {
+    // Arrange
+    when(academicYearRepository.findFirstByOrderByStartYearDesc()).thenReturn(Optional.of(new AcademicYear(2027)));
+
+    // Act + Assert - another object for the same year still counts
+    assertTrue(academicYearService.isCurrent(new AcademicYear(2027)));
+  }
+
+  @Test
+  @DisplayName("An older year isn't current")
+  void olderYearIsNotCurrent() {
+    // Arrange
+    when(academicYearRepository.findFirstByOrderByStartYearDesc()).thenReturn(Optional.of(new AcademicYear(2027)));
+
+    // Act + Assert
+    assertFalse(academicYearService.isCurrent(new AcademicYear(2026)));
+  }
+
+  @Test
+  @DisplayName("With no years registered nothing is current")
+  void noYearsMeansNoCurrent() {
+    // Act + Assert - the mock returns an empty Optional by default
+    assertTrue(academicYearService.findCurrent().isEmpty());
+    assertFalse(academicYearService.isCurrent(new AcademicYear(2026)));
   }
 
 }

@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -130,6 +131,18 @@ class GlobalExceptionHandlerTest {
     // Assert
     assertEquals(400, response.getStatusCode().value());
     assertEquals(List.of(new FieldErrorDTO("file", "NOT_NULL", Map.of())), response.getBody().fieldErrors());
+  }
+
+  @Test
+  @DisplayName("A required parameter that wasn't sent is a field error on that parameter")
+  void missingParameter() {
+    // Act
+    ResponseEntity<ErrorResponseDTO> response = handler.handleMissingParameter(
+        new MissingServletRequestParameterException("classSection", "String"));
+
+    // Assert
+    assertEquals(400, response.getStatusCode().value());
+    assertEquals(List.of(new FieldErrorDTO("classSection", "NOT_NULL", Map.of())), response.getBody().fieldErrors());
   }
 
   // bodies that can't even be read

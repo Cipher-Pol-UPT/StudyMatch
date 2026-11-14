@@ -1,8 +1,12 @@
 package com.studymatch.services;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -10,13 +14,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.CategoryLevelDTO;
 import com.studymatch.dtos.EditionStudentDTO;
+import com.studymatch.dtos.EnrolmentResultDTO;
+import com.studymatch.dtos.EnrolmentResultDTO.Result;
 import com.studymatch.dtos.PersonalityProfileDTO;
+import com.studymatch.enums.EnrolmentStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Category;
+import com.studymatch.models.ClassSection;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.Student;
+import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.EnrolmentRepository;
+import com.studymatch.utils.EnrolmentCsvReader;
 
 @Service
 public class EnrolmentService {
@@ -24,12 +34,68 @@ public class EnrolmentService {
   private final EnrolmentRepository enrolmentRepository;
   private final LessonService lessonService;
   private final AbsenceService absenceService;
+  private final SubjectEditionService subjectEditionService;
 
   public EnrolmentService(EnrolmentRepository enrolmentRepository, LessonService lessonService,
-      AbsenceService absenceService) {
+      AbsenceService absenceService, SubjectEditionService subjectEditionService) {
     this.enrolmentRepository = enrolmentRepository;
     this.lessonService = lessonService;
     this.absenceService = absenceService;
+    this.subjectEditionService = subjectEditionService;
+  }
+
+  // enrol students: the students come from the controller since StudentService already depends on this service
+  @Transactional
+  public List<EnrolmentResultDTO> enrolStudents(Long subjectEditionId, String classSectionCode,
+      List<Long> studentNumbers, Map<Long, Student> students) {
+    // locked so two Staff enrolling at the same time can't both enrol the same student
+    SubjectEdition edition = subjectEditionService.getLockedCurrentEdition(subjectEditionId);
+    ClassSection classSection = edition.getClassSection(classSectionCode.trim());
+
+    List<EnrolmentResultDTO> results = new ArrayList<>();
+    for (Long number : new LinkedHashSet<>(studentNumbers)) {
+      results.add(enrol(number, students.get(number), edition, classSection));
+    }
+    return results;
+  }
+
+  // enrol students (CSV): bad and repeated rows are listed, the others get the same checks as above
+  @Transactional
+  public List<EnrolmentResultDTO> importEnrolments(Long subjectEditionId, String classSectionCode,
+      List<EnrolmentCsvReader.Row> rows, Map<Long, Student> students) {
+    SubjectEdition edition = subjectEditionService.getLockedCurrentEdition(subjectEditionId);
+    ClassSection classSection = edition.getClassSection(classSectionCode.trim());
+
+    Set<Long> numbersInFile = new HashSet<>();
+    List<EnrolmentResultDTO> results = new ArrayList<>();
+    for (EnrolmentCsvReader.Row row : rows) {
+      EnrolmentResultDTO result;
+      if (row.number() == null) {
+        result = EnrolmentResultDTO.of(null, null, Result.INVALID_NUMBER);
+      } else if (!numbersInFile.add(row.number())) {
+        result = EnrolmentResultDTO.of(row.number(), null, Result.DUPLICATE_IN_FILE);
+      } else {
+        result = enrol(row.number(), students.get(row.number()), edition, classSection);
+      }
+      results.add(result.atRow(row.row()));
+    }
+    return results;
+  }
+
+  private EnrolmentResultDTO enrol(Long number, Student student, SubjectEdition edition, ClassSection classSection) {
+    if (student == null) {
+      return EnrolmentResultDTO.of(number, null, Result.NOT_FOUND);
+    }
+    Result result = Result.ENROLLED;
+    if (enrolmentRepository.existsByStudentAndSubjectEdition(student, edition)) {
+      result = Result.ALREADY_ENROLLED;
+    } else if (enrolmentRepository.existsByStudentAndSubjectEdition_SubjectAndStatus(student, edition.getSubject(),
+        EnrolmentStatus.PASSED)) {
+      result = Result.ALREADY_PASSED;
+    } else {
+      enrolmentRepository.save(new Enrolment(student, classSection));
+    }
+    return EnrolmentResultDTO.of(number, student.getName(), result);
   }
 
   public boolean isTaughtBy(Student student, Long teacherNumber) {
