@@ -70,9 +70,20 @@ public class EnrolmentService {
 
   // only students of this edition can be picked, the number goes back so the message can say which one
   public Student getEnrolledStudent(Long subjectEditionId, Long studentNumber) {
+    return getEnrolment(subjectEditionId, studentNumber).getStudent();
+  }
+
+  public Enrolment getEnrolment(Long subjectEditionId, Long studentNumber) {
     return enrolmentRepository.findBySubjectEditionIdAndStudent_Number(subjectEditionId, studentNumber)
-        .map(Enrolment::getStudent)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.STUDENT_NOT_ENROLLED, Map.of("number", studentNumber)));
+  }
+
+  // grade sheet rows, by name like the student list
+  public List<Enrolment> listEnrolments(Long subjectEditionId) {
+    return enrolmentRepository.findBySubjectEditionId(subjectEditionId).stream()
+        .sorted(Comparator.comparing((Enrolment enrolment) -> enrolment.getStudent().getName())
+            .thenComparing(enrolment -> enrolment.getStudent().getNumber()))
+        .toList();
   }
 
   // view students (teacher): an edition has a few hundred students at most, so filtering here is fine

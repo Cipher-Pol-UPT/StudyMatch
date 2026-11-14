@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,10 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.studymatch.dtos.AssignmentResponseDTO;
 import com.studymatch.dtos.CreateAssignmentRequestDTO;
 import com.studymatch.dtos.EditionStudentDTO;
+import com.studymatch.dtos.GradeRequestDTO;
+import com.studymatch.dtos.GradeResponseDTO;
+import com.studymatch.dtos.GradeSheetDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.models.User;
 import com.studymatch.services.AssignmentService;
 import com.studymatch.services.EnrolmentService;
+import com.studymatch.services.GradeService;
 import com.studymatch.services.SubjectEditionService;
 import com.studymatch.services.UserService;
 
@@ -34,13 +39,15 @@ public class SubjectEditionController {
   private final EnrolmentService enrolmentService;
   private final UserService userService;
   private final AssignmentService assignmentService;
+  private final GradeService gradeService;
 
   public SubjectEditionController(SubjectEditionService subjectEditionService, EnrolmentService enrolmentService,
-      UserService userService, AssignmentService assignmentService) {
+      UserService userService, AssignmentService assignmentService, GradeService gradeService) {
     this.subjectEditionService = subjectEditionService;
     this.enrolmentService = enrolmentService;
     this.userService = userService;
     this.assignmentService = assignmentService;
+    this.gradeService = gradeService;
   }
 
   @GetMapping
@@ -69,6 +76,25 @@ public class SubjectEditionController {
     User teacher = userService.getByInstitutionalEmail(authentication.getName());
     subjectEditionService.checkTaughtBy(id, teacher.getNumber());
     return ResponseEntity.status(HttpStatus.CREATED).body(assignmentService.createAssignment(id, request));
+  }
+
+  // grade student: the sheet the teacher picks from
+  @GetMapping("{id}/grades")
+  @PreAuthorize("hasRole('TEACHER')")
+  public ResponseEntity<GradeSheetDTO> getGradeSheet(@PathVariable Long id, Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    return ResponseEntity.ok(gradeService.getGradeSheet(id));
+  }
+
+  // grade student: PUT since giving a grade again just replaces it
+  @PutMapping("{id}/assignments/{assignmentId}/grades/{studentNumber}")
+  @PreAuthorize("hasRole('TEACHER')")
+  public ResponseEntity<GradeResponseDTO> gradeStudent(@PathVariable Long id, @PathVariable Long assignmentId,
+      @PathVariable Long studentNumber, @Valid @RequestBody GradeRequestDTO request, Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    return ResponseEntity.ok(gradeService.gradeStudent(id, assignmentId, studentNumber, request.value()));
   }
 
 }

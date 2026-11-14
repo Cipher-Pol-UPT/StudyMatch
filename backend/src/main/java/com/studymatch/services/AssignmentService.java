@@ -1,6 +1,8 @@
 package com.studymatch.services;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
@@ -58,6 +60,24 @@ public class AssignmentService {
       }
     }
     return AssignmentResponseDTO.from(assignmentRepository.save(assignment));
+  }
+
+  // one of another edition counts as not found
+  public Assignment getAssignment(Long subjectEditionId, Long assignmentId) {
+    return assignmentRepository.findByIdAndSubjectEditionId(assignmentId, subjectEditionId)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  // in the order they happen, the grade sheet's columns
+  public List<Assignment> listAssignments(SubjectEdition edition) {
+    return assignmentRepository.findBySubjectEdition(edition).stream()
+        .sorted(Comparator.comparing(Assignment::getDate).thenComparing(Assignment::getName))
+        .toList();
+  }
+
+  // final grades only make sense once the weights add up to 100%
+  public boolean hasFullWeight(SubjectEdition edition) {
+    return assignmentRepository.sumWeightBySubjectEdition(edition).compareTo(BigDecimal.ONE) == 0;
   }
 
 }
