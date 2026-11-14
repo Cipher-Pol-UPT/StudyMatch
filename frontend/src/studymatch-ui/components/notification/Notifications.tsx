@@ -29,7 +29,7 @@ export interface NotificationListProps {
 }
 
 const TONE: Record<NonNullable<NotificationItem['tone']>, [string, string]> = {
-  violet: ['var(--sm-violet-50)', 'var(--sm-violet)'],
+  violet: ['var(--sm-violet-50)', 'var(--sm-violet-ink)'],
   success: ['var(--sm-success-50)', 'var(--sm-success)'],
   warning: ['var(--sm-warning-50)', 'var(--sm-warning-ink)'],
   danger: ['var(--sm-danger-50)', 'var(--sm-danger)'],
