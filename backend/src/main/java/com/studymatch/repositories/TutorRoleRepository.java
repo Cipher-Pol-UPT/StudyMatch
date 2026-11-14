@@ -12,6 +12,8 @@ public interface TutorRoleRepository extends JpaRepository<TutorRole, Long> {
 
   List<TutorRole> findByStudent(Student student);
 
+  List<TutorRole> findByStudentNumberOrderBySubjectNameAsc(Long studentNumber);
+
   Optional<TutorRole> findByStudentNumberAndSubjectId(Long studentNumber, Long subjectId);
 
 }
