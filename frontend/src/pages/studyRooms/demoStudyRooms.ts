@@ -14,7 +14,8 @@ export type StudyRoomsView = 'calendar' | 'inscriptions' | 'created';
 export type DemoStudent = Pick<CurrentUser, 'number' | 'name'>;
 
 export interface DemoStudyRoom extends StudyRoom {
-  subjectId: SubjectId;
+  // a demo subject, or the id of a real one for rooms created on the page
+  subjectId: SubjectId | `${number}`;
   start: Date;
   end: Date;
   rating: number;

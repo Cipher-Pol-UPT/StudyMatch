@@ -6,6 +6,7 @@
 .study-rooms__eyebrow > span { margin-left: 4px; padding: 3px 8px; border-radius: 20px; background: var(--sm-violet-50); font: 400 10px var(--sm-mono); text-transform: uppercase; }
 .study-rooms__hint { display: flex; align-items: flex-start; gap: 7px; margin-top: 12px; color: var(--sm-text-2); font-size: 12px; line-height: 1.5; }
 .study-rooms__hint svg { flex: none; margin-top: 1px; color: var(--sm-violet); }
+.study-rooms__create { margin-top: 16px; }
 .sm-dialog.study-rooms-dialog { max-width: 560px; padding: 24px; }
 .study-rooms-dialog .sm-dialog__close { position: absolute; top: 16px; right: 16px; bottom: auto; left: auto; margin: 0; }
 .study-rooms-dialog .sm-dialog__title { display: flex; align-items: center; min-height: 32px; margin: 0 48px 0 0; color: var(--sm-text-2); font-size: 13px; line-height: 1.4; letter-spacing: 0; }

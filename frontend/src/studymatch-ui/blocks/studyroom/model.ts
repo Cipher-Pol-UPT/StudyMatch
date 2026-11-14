@@ -11,6 +11,7 @@ export interface StudyRoomActions {
   canJoin?: boolean; canLeave?: boolean; canEnter?: boolean; canCancel?: boolean;
   canConfirmAttendance?: boolean; joinBlockedCode?: ErrorCode;
 }
+export const CAPACITY_RANGE = { min: 2, max: 20 } as const;
 export const toDate = (value: Date | string) => typeof value === 'string' ? new Date(value) : value;
 export function formatRoomDate(value: Date | string, locale: string) {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(toDate(value));
