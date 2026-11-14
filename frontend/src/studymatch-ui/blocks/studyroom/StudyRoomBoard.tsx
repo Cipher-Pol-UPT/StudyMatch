@@ -58,7 +58,7 @@ export function CreateStudyRoomForm({ subjects, onSubmit, onCancel, now = new Da
     <Textarea label={t('fields.description')} optional showCount maxLength={500} placeholder={t('rooms.descriptionPlaceholder')} value={description}
       disabled={feedback.busy} error={feedback.fieldError('description')} onChange={event => setDescription(event.target.value)} />
     <div className="sm-room-form__actions">
-      {onCancel && <Button variant="secondary" onClick={onCancel} disabled={feedback.busy}>{t('ui.close')}</Button>}
+      {onCancel && <Button variant="secondary" onClick={onCancel} disabled={feedback.busy}>{t('common.cancel')}</Button>}
       <Button type="submit" icon={CalendarPlus} loading={feedback.busy}>{t('rooms.create')}</Button>
     </div>
   </form>;

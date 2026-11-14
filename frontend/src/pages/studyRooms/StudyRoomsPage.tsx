@@ -18,7 +18,7 @@ interface StudyRoomsPageProps {
 // a created room in the demo list's shape, until #137 loads the rooms from the backend
 function toCalendarRoom(room: StudyRoomData, tutor: StudyRoomPerson, rating: number, ratingCount: number): DemoStudyRoom {
   return {
-    id: `room-${room.id}`, subjectId: `${room.subjectId}`, subject: room.subjectName, topic: room.description || room.subjectName,
+    id: `room-${room.id}`, subjectId: `${room.subjectId}`, subject: room.subjectName, topic: room.subjectName,
     description: room.description ?? undefined, start: new Date(room.startsAt), end: new Date(room.endsAt), tutor,
     capacity: room.capacity, participants: [], meetUrl: room.link, status: room.status, rating, ratingCount,
   };

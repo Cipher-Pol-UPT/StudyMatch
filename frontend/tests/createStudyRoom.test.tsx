@@ -64,7 +64,7 @@ describe('create study room', () => {
       subjectId: 9, startsAt: '2026-10-20T18:00', endsAt: '2026-10-20T19:00', capacity: 8,
       link: 'https://meet.google.com/abc-defg-hij', description: 'Test session',
     });
-    expect(screen.getByRole('button', { name: /^View Test session,/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^View Test Physics,/ })).toBeTruthy();
     expect(await screen.findByText('StudyRoom created.')).toBeTruthy();
   });
 
