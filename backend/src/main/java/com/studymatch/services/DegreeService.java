@@ -45,6 +45,11 @@ public class DegreeService {
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
   }
 
+  // for when the degree is part of the data sent, so the caller picks the error
+  public Optional<Degree> findDegree(Long id) {
+    return degreeRepository.findById(id);
+  }
+
   // by name so the student form and the CSV column work the same way
   public Optional<Degree> findByName(String name) {
     return degreeRepository.findByNameIgnoreCase(name.trim());
