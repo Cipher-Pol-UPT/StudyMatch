@@ -10,6 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -26,6 +28,9 @@ public final class CsvFiles {
 
   // the invisible mark Excel puts at the start of UTF-8 files
   private static final String BOM = "\uFEFF";
+
+  // a line with nothing on it, Excel writes empty rows as ",,,"
+  private static final Pattern EMPTY_LINE = Pattern.compile("[ \\t,;]*\\r?\\n");
 
   // row is the line in the spreadsheet (the header is row 1)
   public record Line(int row, CSVRecord record) {
@@ -48,6 +53,14 @@ public final class CsvFiles {
       throw new StudyMatchException(ErrorCode.CSV_EMPTY);
     }
 
+    // empty lines above the header would be read as the header, dropped but still counted for the row numbers
+    int headerRow = 1;
+    Matcher emptyLine;
+    while ((emptyLine = EMPTY_LINE.matcher(text)).lookingAt()) {
+      text = text.substring(emptyLine.end());
+      headerRow++;
+    }
+
     CSVFormat format = CSVFormat.DEFAULT.builder()
         .setDelimiter(guessDelimiter(text))
         .setHeader()
@@ -62,7 +75,7 @@ public final class CsvFiles {
     try (CSVParser parser = CSVParser.parse(new StringReader(text), format)) {
       checkColumns(parser.getHeaderNames(), columns);
 
-      int row = 1;
+      int row = headerRow;
       for (CSVRecord record : parser) {
         row++;
         if (isBlank(record)) {
