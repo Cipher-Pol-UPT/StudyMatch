@@ -12,6 +12,7 @@ import com.studymatch.exceptions.ErrorCode;
 import jakarta.servlet.http.HttpServletResponse;
 import tools.jackson.databind.ObjectMapper;
 
+// filters run before the controllers, so GlobalExceptionHandler never sees their errors; this writes the same JSON
 @Component
 public class SecurityErrorWriter {
 

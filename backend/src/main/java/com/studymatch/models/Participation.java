@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
 
+// a student who joined a StudyRoom, and whether the tutor confirmed they attended
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "study_room_id", "student_id" }))
 public class Participation {

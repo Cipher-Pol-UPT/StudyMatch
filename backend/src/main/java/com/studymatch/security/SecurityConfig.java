@@ -91,6 +91,7 @@ public class SecurityConfig {
     return config.getAuthenticationManager();
   }
 
+  // shared with UserController.login, which saves the login in the session itself since formLogin is off
   @Bean
   public SecurityContextRepository securityContextRepository() {
     return new HttpSessionSecurityContextRepository();

@@ -14,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 
+// how a group assignment's groups are formed: sizes, same class or not, and who to keep apart
 @Entity
 public class GroupingRule {
 

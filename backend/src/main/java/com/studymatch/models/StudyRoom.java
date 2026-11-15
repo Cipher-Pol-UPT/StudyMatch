@@ -162,6 +162,7 @@ public class StudyRoom {
     participations.remove(participation);
   }
 
+  // participants missing from the set count as not attended, and the room is completed
   public void confirmAttendance(Set<Student> attendees) {
     requireOpen();
     if (LocalDateTime.now().isBefore(endsAt)) {

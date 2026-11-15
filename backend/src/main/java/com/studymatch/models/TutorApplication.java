@@ -95,6 +95,7 @@ public class TutorApplication {
     return rejectionReason;
   }
 
+  // the student becomes the subject's tutor, the caller saves the returned role
   public TutorRole approve(Teacher teacher) {
     decide(teacher, TutorApplicationStatus.APPROVED);
     return new TutorRole(this);

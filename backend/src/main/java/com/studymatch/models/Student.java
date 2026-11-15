@@ -84,6 +84,7 @@ public class Student extends User {
     this.curricularYear = curricularYear;
   }
 
+  // <number>@students.<domain>, and the number only exists after the first save
   public void generateInstitutionalEmail(String domain) {
     if (getNumber() == null) {
       throw new IllegalStateException("Student must be saved before generating the institutional email");
@@ -205,6 +206,7 @@ public class Student extends User {
     return statuteEndDate;
   }
 
+  // still active on its end date, it expires the day after
   public boolean hasActiveStatute() {
     return statuteType != null && !statuteEndDate.isBefore(LocalDate.now());
   }
@@ -223,6 +225,7 @@ public class Student extends User {
   }
 
   @Override
+  // no profile means no test this year, starting a new academic year wipes them
   public boolean requiresPersonalityTest() {
     return personalityProfile == null;
   }
