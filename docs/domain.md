@@ -74,11 +74,11 @@ Generating groups (#57) will use the best evidence each student has, in this ord
 2. if there are none, their grades and attendance overall
 3. if there are none either, the personality profile only
 
-So the personality test carries the whole decision for a new student. It counts less as their grades and attendance build up, because those take its place. The profile shows `hasAcademicHistory` so a teacher can tell the two cases apart. The full matching strategy gets its own document with #57.
+So the personality test carries the whole decision for a new student. It counts less as their grades and attendance build up, because those take its place. On the profile, `hasAcademicHistory` turns true with the student's first enrolment, while the category levels and the average stay empty until a subject is finished. The full matching strategy gets its own document with #57.
 
 ## Attendance
 
-Attendance is worked out per enrolment: the lessons the student's class has had so far, minus their unjustified absences, divided by the lessons. A justified absence counts as attended. The profile's overall attendance adds up every enrolment the same way.
+Attendance is worked out per enrolment: the lessons stored for the student's class, minus their unjustified absences, divided by the lessons. Every stored lesson counts, so only lessons that already happened get stored. A justified absence counts as attended. The profile's overall attendance adds up every enrolment the same way.
 
 Before the first lesson there's nothing to measure, so attendance is empty, not 100%. A student with an active special statute has no attendance at all: teachers see "not applicable" and never the statute type (GR7). Only Staff sees the type. A statute ends by itself after its end date, which can't be in the past when it's given.
 
