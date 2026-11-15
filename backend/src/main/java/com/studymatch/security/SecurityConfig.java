@@ -34,6 +34,15 @@ import com.studymatch.services.UserService;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+  // POST only, everything else needs a session (Swagger reads this too)
+  public static final List<String> PUBLIC_ENDPOINTS = List.of(
+      "/users/login",
+      "/users/forgot-password",
+      "/users/reset-password");
+
+  // the docs page and its JSON, no data behind them
+  private static final String[] API_DOCS = { "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**" };
+
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityErrorWriter errorWriter,
       UserService userService, SecurityContextRepository securityContextRepository) throws Exception {
@@ -42,7 +51,8 @@ public class SecurityConfig {
         .cors(Customizer.withDefaults())
         .securityContext(context -> context.securityContextRepository(securityContextRepository))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers(HttpMethod.POST, "/users/login", "/users/forgot-password", "/users/reset-password").permitAll()
+            .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
+            .requestMatchers(HttpMethod.GET, API_DOCS).permitAll()
             .anyRequest().authenticated())
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)
