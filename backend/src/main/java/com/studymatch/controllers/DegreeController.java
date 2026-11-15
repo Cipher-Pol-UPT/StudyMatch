@@ -8,12 +8,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.studymatch.dtos.DegreeRequestDTO;
 import com.studymatch.dtos.DegreeResponseDTO;
+import com.studymatch.dtos.RenameDegreeRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.Degree;
@@ -55,6 +57,16 @@ public class DegreeController {
   public ResponseEntity<DegreeResponseDTO> registerDegree(@Valid @RequestBody DegreeRequestDTO registerRequest) {
     Degree degree = degreeService.registerDegree(registerRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(DegreeResponseDTO.from(degree));
+  }
+
+  // update degree: answers with the renamed degree so the page can show it
+  @PutMapping("{id}")
+  @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Rename a degree")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.DEGREE_ALREADY_EXISTS })
+  public ResponseEntity<DegreeResponseDTO> renameDegree(@PathVariable Long id,
+      @Valid @RequestBody RenameDegreeRequestDTO renameRequest) {
+    return ResponseEntity.ok(DegreeResponseDTO.from(degreeService.renameDegree(id, renameRequest)));
   }
 
 }
