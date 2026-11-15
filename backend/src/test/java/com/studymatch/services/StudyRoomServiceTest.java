@@ -1,8 +1,10 @@
 package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -125,6 +127,52 @@ class StudyRoomServiceTest {
 
     // Assert
     verify(studyRoomRepository).save(any(StudyRoom.class));
+  }
+
+  // blocked tutor
+
+  @Test
+  @DisplayName("Blocking a tutor cancels their upcoming rooms without a reason and says how many")
+  void cancelUpcomingRooms() {
+    // Arrange
+    StudyRoom first = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
+    StudyRoom second = new StudyRoom(tutorRole, tomorrowAt(18), tomorrowAt(19), 5, "test room", LINK);
+    when(studyRoomRepository.findUpcoming(eq(TUTOR_NUMBER), any())).thenReturn(List.of(first, second));
+
+    // Act
+    int cancelled = studyRoomService.cancelUpcoming(TUTOR_NUMBER);
+
+    // Assert
+    assertEquals(2, cancelled);
+    assertEquals(StudyRoomStatus.CANCELLED, first.getStatus());
+    assertEquals(StudyRoomStatus.CANCELLED, second.getStatus());
+    assertNull(first.getCancellationReason());
+    verify(studyRoomRepository).saveAll(List.of(first, second));
+  }
+
+  @Test
+  @DisplayName("A tutor without upcoming rooms has nothing cancelled")
+  void noUpcomingRooms() {
+    // Act - findUpcoming is empty by default
+    int cancelled = studyRoomService.cancelUpcoming(TUTOR_NUMBER);
+
+    // Assert
+    assertEquals(0, cancelled);
+  }
+
+  @Test
+  @DisplayName("The upcoming rooms are counted without changing them")
+  void countUpcomingRooms() {
+    // Arrange
+    StudyRoom room = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
+    when(studyRoomRepository.findUpcoming(eq(TUTOR_NUMBER), any())).thenReturn(List.of(room));
+
+    // Act
+    int upcoming = studyRoomService.countUpcoming(TUTOR_NUMBER);
+
+    // Assert
+    assertEquals(1, upcoming);
+    assertEquals(StudyRoomStatus.SCHEDULED, room.getStatus());
   }
 
   // tomorrow at the given hour, so tests never depend on the time they run at

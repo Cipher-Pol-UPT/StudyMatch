@@ -283,6 +283,35 @@ class SubjectEditionServiceTest {
   }
 
   @Test
+  @DisplayName("A teacher's editions this year are looked up in the current year only, sorted by subject name")
+  void listCurrentTaughtEditions() {
+    // Arrange
+    Category category = new Category("Test Category");
+    SubjectEdition zeta = new SubjectEdition(new Subject("TZ", "Zeta Subject", 6, category), year2026, Set.of(ana));
+    SubjectEdition alpha = new SubjectEdition(new Subject("TA", "Alpha Subject", 6, category), year2026, Set.of(ana));
+    when(academicYearService.findCurrent()).thenReturn(Optional.of(year2026));
+    when(subjectEditionRepository.findDistinctByTeachers_NumberAndAcademicYear(7L, year2026))
+        .thenReturn(List.of(zeta, alpha));
+
+    // Act
+    var editions = subjectEditionService.listCurrentTaughtBy(7L);
+
+    // Assert
+    assertEquals(List.of("Alpha Subject", "Zeta Subject"), editions.stream().map(e -> e.subject().name()).toList());
+  }
+
+  @Test
+  @DisplayName("With no academic year registered a teacher has no editions this year")
+  void noCurrentYearMeansNoTaughtEditions() {
+    // Act - findCurrent is empty by default
+    var editions = subjectEditionService.listCurrentTaughtBy(7L);
+
+    // Assert
+    assertEquals(List.of(), editions);
+    verify(subjectEditionRepository, never()).findDistinctByTeachers_NumberAndAcademicYear(any(), any());
+  }
+
+  @Test
   @DisplayName("Teacher editions are returned as complete DTOs, newest academic year first")
   void listTaughtEditions() {
     // Arrange
