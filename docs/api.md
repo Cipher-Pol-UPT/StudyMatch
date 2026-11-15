@@ -1,0 +1,77 @@
+# API
+
+This is the map of the backend's endpoints. The details (request and response bodies, every error code per endpoint) are in Swagger UI at http://localhost:8080/swagger-ui.html while the backend is running, and the raw OpenAPI JSON is at `/v3/api-docs`.
+
+The backend runs on `http://localhost:8080`; the frontend calls the same paths with `/api` in front. Every endpoint needs a login except the first three under Users. Requests that change something (POST, PUT, PATCH, DELETE) need the `X-XSRF-TOKEN` header, see [architecture.md](architecture.md#csrf).
+
+Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` with the code's HTTP status, see [conventions.md](conventions.md#error-codes). A logged-in user who is blocked, hasn't changed their first password or hasn't taken this year's personality test gets 403 on almost everything, see [architecture.md](architecture.md#account-state).
+
+"Logged in" in the tables means any role.
+
+## Users
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| POST | `/users/login` | anyone | log in with the institutional email, starts the session |
+| POST | `/users/forgot-password` | anyone | email a reset code to the personal email (always 204) |
+| POST | `/users/reset-password` | anyone | set a new password with the reset code |
+| POST | `/users/logout` | logged in | end the session (204) |
+| GET | `/users/me` | logged in | who's logged in, and whether they still have to change their password or take the personality test |
+| PUT | `/users/change-password` | logged in | change your own password |
+| POST | `/users/` | Admin | create a Staff or Teacher account |
+
+## Students
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/students/` | Staff | search students, 20 per page, filtered by name or number, degree, year and account status |
+| GET | `/students/{number}` | Staff | a student's full record: profile, average grade, category levels, enrolments |
+| PUT | `/students/{number}` | Staff | edit name, personal email, degree and curricular year |
+| POST | `/students/` | Staff | register one student and email their credentials |
+| POST | `/students/{number}/resend-credentials` | Staff | new one-time password by email, optionally to a corrected address |
+| GET | `/students/import/template` | Staff | the empty CSV for importing students |
+| POST | `/students/import/preview` | Staff | check a CSV row by row without saving anything |
+| POST | `/students/import` | Staff | create the previewed rows |
+| GET | `/students/me/profile` | Student | your own profile |
+| PUT | `/students/me/profile` | Student | edit your banner, photo, about me, skills, interests and languages |
+| GET | `/students/{number}/profile` | logged in | a student's profile, with the private part only for them, Staff and their teachers |
+| POST | `/students/personality-test` | Student | send the 15 answers, once per academic year |
+
+## Degrees, categories, subjects and academic years
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/degrees/`, `/degrees/{id}` | logged in | list degrees, or one |
+| POST | `/degrees/` | Staff | register a degree |
+| GET | `/categories/`, `/categories/{id}` | logged in | list categories, or one |
+| POST | `/categories/` | Staff | register a category |
+| GET | `/subjects/`, `/subjects/{id}` | logged in | list subjects with their category and degrees, or one |
+| POST | `/subjects/` | Staff | register a subject and its first edition |
+| POST | `/subjects/{id}/editions` | Staff | add an edition of an existing subject for another year |
+| GET | `/academic-years/` | logged in | academic years, newest (the current one) first |
+| GET | `/teachers/` | Staff | every teacher, to pick an edition's teachers |
+
+## Subject editions
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/subject-editions/` | Teacher | the editions you teach |
+| GET | `/subject-editions/current` | Staff | this year's editions, the ones open for enrolment |
+| POST | `/subject-editions/{id}/enrolments` | Staff | enrol students by number in one class, with a result per student |
+| GET | `/subject-editions/enrolments/import/template` | Staff | the empty CSV for enrolments |
+| POST | `/subject-editions/{id}/enrolments/import` | Staff | enrol the students in a CSV, with a result per row |
+| GET | `/subject-editions/{id}/students` | Teacher of the edition | its students, with personality, category level and attendance |
+| POST | `/subject-editions/{id}/assignments` | Teacher of the edition | add an assignment, with group sizes and separations for group work |
+| GET | `/subject-editions/{id}/grades` | Teacher of the edition | the grade sheet |
+| PUT | `/subject-editions/{id}/assignments/{assignmentId}/grades/{studentNumber}` | Teacher of the edition | give or change a grade; sets the final grade once everything's graded |
+
+## Tutors and StudyRooms
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/tutors/me/subjects` | Student | the subjects you tutor |
+| POST | `/study-rooms/` | Student who tutors the subject | create a StudyRoom |
+
+## Coming next
+
+The other use cases (groups, attendance, StudyRoom join and leave, tutor applications, ratings, achievements, statutes, blocking accounts, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
