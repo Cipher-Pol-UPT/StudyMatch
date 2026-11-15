@@ -11,8 +11,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.studymatch.dtos.TeacherSummaryDTO;
 import com.studymatch.services.TeacherService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/teachers/")
+@Tag(name = "Teachers")
 public class TeacherController {
 
   private final TeacherService teacherService;
@@ -24,6 +28,7 @@ public class TeacherController {
   // Staff picks the teachers of a subject edition from this list
   @GetMapping
   @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Every teacher, to pick the teachers of an edition")
   public ResponseEntity<List<TeacherSummaryDTO>> listTeachers() {
     return ResponseEntity.ok(teacherService.listTeachers().stream().map(TeacherSummaryDTO::from).toList());
   }

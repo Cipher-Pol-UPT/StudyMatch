@@ -11,14 +11,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.studymatch.dtos.CreateStudyRoomRequestDTO;
 import com.studymatch.dtos.StudyRoomDTO;
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.User;
 import com.studymatch.services.StudyRoomService;
 import com.studymatch.services.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/study-rooms/")
+@Tag(name = "StudyRooms", description = "Online study sessions hosted by tutors")
 public class StudyRoomController {
 
   private final StudyRoomService studyRoomService;
@@ -31,6 +36,8 @@ public class StudyRoomController {
 
   @PostMapping
   @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "Create a StudyRoom for a subject you tutor. ACCESS_DENIED if you don't tutor it")
+  @ErrorCodes({ ErrorCode.STUDYROOM_IN_PAST, ErrorCode.STUDYROOM_ENDS_BEFORE_START, ErrorCode.STUDYROOM_OVERLAP })
   public ResponseEntity<StudyRoomDTO> create(@Valid @RequestBody CreateStudyRoomRequestDTO request,
       Authentication authentication) {
     User tutor = userService.getByInstitutionalEmail(authentication.getName());
