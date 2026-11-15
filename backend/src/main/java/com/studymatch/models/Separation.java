@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotNull;
 
+// two students the teacher wants in different groups
 @Entity
 public class Separation {
 

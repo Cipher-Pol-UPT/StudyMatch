@@ -103,6 +103,7 @@ public class EnrolmentService {
     return enrolmentRepository.existsByStudentAndSubjectEdition_Teachers_Number(student, teacherNumber);
   }
 
+  // any enrolment counts, even one still in progress
   public boolean hasAcademicHistory(Student student) {
     return enrolmentRepository.existsByStudent(student);
   }

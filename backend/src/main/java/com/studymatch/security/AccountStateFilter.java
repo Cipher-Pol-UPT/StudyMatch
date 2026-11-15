@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
+// after login: blocks blocked accounts, and holds back users who still owe a password change or the personality test
 public class AccountStateFilter extends OncePerRequestFilter {
 
   private static final Set<String> ALLOWED_BEFORE_PASSWORD_CHANGE = Set.of(

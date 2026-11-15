@@ -36,15 +36,20 @@ import com.studymatch.dtos.StudentRecordDTO;
 import com.studymatch.dtos.StudentSummaryDTO;
 import com.studymatch.dtos.UpdateProfileRequestDTO;
 import com.studymatch.enums.AccountStatus;
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.User;
 import com.studymatch.services.StudentService;
 import com.studymatch.services.UserService;
 import com.studymatch.utils.StudentCsvReader;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/students/")
+@Tag(name = "Students", description = "Registering and editing students (staff), profiles and the personality test")
 public class StudentController {
 
   private final StudentService studentService;
@@ -61,6 +66,7 @@ public class StudentController {
 
   @GetMapping
   @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Search students by name or number, 20 per page, every filter optional")
   public ResponseEntity<PageDTO<StudentSummaryDTO>> listStudents(@RequestParam(required = false) String search,
       @RequestParam(required = false) Long degreeId, @RequestParam(required = false) Integer curricularYear,
       @RequestParam(required = false) AccountStatus status, @RequestParam(defaultValue = "0") int page) {
@@ -69,6 +75,8 @@ public class StudentController {
 
   @GetMapping("{number}")
   @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "A student's full record: profile, average grade, category levels and enrolments")
+  @ErrorCodes(ErrorCode.NOT_FOUND)
   public ResponseEntity<StudentRecordDTO> getRecord(@PathVariable Long number, Authentication authentication) {
     User staff = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(studentService.getRecord(number, staff));
@@ -78,6 +86,9 @@ public class StudentController {
 
   @PutMapping("{number}")
   @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Edit a student's name, personal email, degree and curricular year")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.DEGREE_NOT_FOUND, ErrorCode.CURRICULAR_YEAR_NOT_IN_DEGREE,
+      ErrorCode.PERSONAL_EMAIL_ALREADY_EXISTS })
   public ResponseEntity<StudentRecordDTO> editStudent(@PathVariable Long number,
       @Valid @RequestBody EditStudentRequestDTO changes, Authentication authentication) {
     User staff = userService.getByInstitutionalEmail(authentication.getName());
@@ -88,12 +99,18 @@ public class StudentController {
 
   @PostMapping
   @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Register one student, the credentials go to their personal email (emailSent says if it worked)")
+  @ErrorCodes({ ErrorCode.DEGREE_NOT_FOUND, ErrorCode.CURRICULAR_YEAR_NOT_IN_DEGREE,
+      ErrorCode.PERSONAL_EMAIL_ALREADY_EXISTS })
   public ResponseEntity<RegisteredStudentDTO> registerStudent(@Valid @RequestBody RegisterStudentRequestDTO request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(studentService.registerStudent(request));
   }
 
   @PostMapping("{number}/resend-credentials")
   @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "New one-time password by email, optionally to a corrected personal email")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.CREDENTIALS_ALREADY_USED, ErrorCode.PERSONAL_EMAIL_ALREADY_EXISTS,
+      ErrorCode.EMAIL_NOT_SENT })
   public ResponseEntity<Void> resendCredentials(@PathVariable Long number,
       @Valid @RequestBody(required = false) ResendCredentialsRequestDTO request) {
     studentService.resendCredentials(number, request);
@@ -102,6 +119,7 @@ public class StudentController {
 
   @GetMapping("import/template")
   @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Empty students.csv with the columns the import expects")
   public ResponseEntity<String> importTemplate() {
     return ResponseEntity.ok()
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"students.csv\"")
@@ -112,6 +130,9 @@ public class StudentController {
   // nothing is saved here, it only shows what would happen
   @PostMapping(value = "import/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Read a students CSV and check every row, nothing is saved. Row problems come in each row's errors")
+  @ErrorCodes({ ErrorCode.CSV_EMPTY, ErrorCode.CSV_MISSING_COLUMNS, ErrorCode.CSV_TOO_MANY_ROWS,
+      ErrorCode.CSV_WRONG_ENCODING, ErrorCode.CSV_INVALID, ErrorCode.FILE_TOO_LARGE })
   public ResponseEntity<List<ImportPreviewRowDTO>> previewImport(@RequestPart("file") MultipartFile file)
       throws IOException {
     return ResponseEntity.ok(studentService.previewImport(csvReader.read(file.getBytes())));
@@ -119,6 +140,8 @@ public class StudentController {
 
   @PostMapping("import")
   @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Create the previewed rows, checked again here. Each row comes back created or rejected")
+  @ErrorCodes(ErrorCode.CSV_TOO_MANY_ROWS)
   public ResponseEntity<List<ImportResultRowDTO>> importStudents(@Valid @RequestBody ImportStudentsRequestDTO request) {
     return ResponseEntity.ok(studentService.importStudents(request.rows()));
   }
@@ -127,6 +150,7 @@ public class StudentController {
 
   @GetMapping("me/profile")
   @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "Your own profile, private part included")
   public ResponseEntity<StudentProfileDTO> getMyProfile(Authentication authentication) {
     User student = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(studentService.getProfile(student.getNumber(), student));
@@ -134,6 +158,8 @@ public class StudentController {
 
   @PutMapping("me/profile")
   @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "Edit your banner, photo, about me, skills, interests and languages")
+  @ErrorCodes({ ErrorCode.INVALID_BANNER, ErrorCode.INVALID_PROFILE_PHOTO, ErrorCode.AT_LEAST_ONE_LANGUAGE_REQUIRED })
   public ResponseEntity<StudentProfileDTO> updateMyProfile(@Valid @RequestBody UpdateProfileRequestDTO changes,
       Authentication authentication) {
     User student = userService.getByInstitutionalEmail(authentication.getName());
@@ -141,6 +167,8 @@ public class StudentController {
   }
 
   @GetMapping("{number}/profile")
+  @Operation(summary = "A student's profile. privateProfile is null unless you're them, staff or one of their teachers")
+  @ErrorCodes(ErrorCode.NOT_FOUND)
   public ResponseEntity<StudentProfileDTO> getProfile(@PathVariable Long number, Authentication authentication) {
     User viewer = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(studentService.getProfile(number, viewer));
@@ -148,6 +176,8 @@ public class StudentController {
 
   @PostMapping("personality-test")
   @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "Send the 15 answers (1 to 5), once per academic year. Returns the four profile scores")
+  @ErrorCodes(ErrorCode.PERSONALITY_TEST_ALREADY_TAKEN)
   public ResponseEntity<PersonalityProfileDTO> takePersonalityTest(@Valid @RequestBody PersonalityTestRequestDTO test,
       Authentication authentication) {
     User student = userService.getByInstitutionalEmail(authentication.getName());

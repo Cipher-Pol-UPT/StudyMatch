@@ -11,6 +11,7 @@ import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+// one class of an edition, like T1 or PL2; students are enrolled in a class, and lessons belong to one
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "subject_edition_id", "code" }))
 public class ClassSection {

@@ -17,6 +17,7 @@ public class StudyMatchUserDetailsService implements UserDetailsService {
     this.userService = userService;
   }
 
+  // Spring calls it the username, for us it's the institutional email
   @Override
   public UserDetails loadUserByUsername(String institutionalEmail) throws UsernameNotFoundException {
     User user = userService.findByInstitutionalEmail(institutionalEmail)

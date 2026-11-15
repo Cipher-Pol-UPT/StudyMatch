@@ -14,6 +14,7 @@ public class LessonService {
     this.lessonRepository = lessonRepository;
   }
 
+  // every stored lesson counts for attendance, so only lessons that already happened should be stored
   public long countLessons(ClassSection classSection) {
     return lessonRepository.countByClassSection(classSection);
   }

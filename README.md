@@ -8,7 +8,7 @@
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4-6DB33F?logo=springboot&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-database-4169E1?logo=postgresql&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
 
 </div>
 
@@ -22,9 +22,11 @@ For every group assignment, StudyMatch looks at each student's **attendance**, t
 
 Around that core, StudyMatch helps students support each other. Students who finished a subject near the top of their class can become **tutors** and host online study sessions (**StudyRooms**) for students still taking it. Tutors earn **achievements** they can export as a certificate.
 
-> Software Quality project, built across several sprints. The current sprint is **Sprint 1 - Project Foundation**.
+> Software Quality project, built across three sprints. We're in **Sprint 3: automatic group formation, software quality and the final release**, due 6 December 2026.
 
 ## Features
+
+This is the whole product as planned. Not all of it is built yet; the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1) shows what's done and what's left.
 
 **For students**
 - Take a yearly personality test that shapes how groups are formed
@@ -57,26 +59,32 @@ Around that core, StudyMatch helps students support each other. Students who fin
 
 ## Tech stack
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | React 19, TypeScript, Vite |
-| Backend | Java 21, Spring Boot 4 |
-| Database | PostgreSQL |
-| Build | Maven |
-| Project management | GitHub Issues, Projects and Pull Requests |
+| Layer | Technology | Why |
+| --- | --- | --- |
+| Frontend | React 19, TypeScript, Vite | TypeScript catches a wrong field name before the browser does, and Vite's dev server proxies `/api` to the backend, so there's no CORS setup while developing. |
+| Backend | Java 21, Spring Boot 4 | Java is what the course's labs and testing tools (JUnit 5, JaCoCo) use. Spring gives us sessions, CSRF protection, validation and JPA without writing them ourselves. |
+| Database | PostgreSQL 17 (Docker) | Our data is relational (students, enrolments, grades, groups), and the unique constraints and row locks are what stop two Staff from enrolling the same student at once. Docker gives everyone the same version. |
+| Build | Maven (wrapper) | `./mvnw` downloads the right Maven, so nobody has to install it, and the JaCoCo report comes out of the same build. |
+| API docs | springdoc-openapi (Swagger UI) | Built from the controllers, so it can't fall behind the code the way a hand-written list would. |
+| Tests | JUnit 5, Mockito, JaCoCo, Vitest, Testing Library | JUnit 5 and JaCoCo are what the course asks for; Vitest runs with the same config as Vite. |
+| Local email | Mailpit (Docker) | Catches every email the backend sends (credentials, reset codes) so we can read them without a real mail server. |
+| Project management | GitHub Issues, Projects and Pull Requests | Every change can be traced from its issue to its branch, PR and review. |
 
 ## Project structure
 
 ```
 StudyMatch/
-├── backend/          # Spring Boot REST API (package com.studymatch)
-│   ├── src/main/java
-│   ├── src/main/resources/application.properties
-│   ├── src/test/java
+├── backend/                  # Spring Boot REST API (package com.studymatch)
+│   ├── src/main/java         # controllers, services, repositories, models, dtos...
+│   ├── src/main/resources    # application.properties, data.sql (demo data)
+│   ├── src/test/java         # unit and integration tests
+│   ├── docker-compose.yml    # PostgreSQL + Mailpit
 │   └── pom.xml
-├── frontend/         # React + TypeScript single-page app (Vite)
-│   ├── src/
+├── frontend/                 # React + TypeScript single-page app (Vite)
+│   ├── src/                  # pages, api client, studymatch-ui components, i18n
+│   ├── tests/                # Vitest tests
 │   └── package.json
+├── docs/                     # architecture, domain, conventions, contributing, testing, api
 └── README.md
 ```
 
@@ -89,9 +97,9 @@ StudyMatch/
 | [Git](https://git-scm.com/) | any recent version |
 | [JDK](https://adoptium.net/) | 21 |
 | [Node.js](https://nodejs.org/) | 22 LTS (20.19 or newer) |
-| [PostgreSQL](https://www.postgresql.org/download/) |
+| [Docker](https://docs.docker.com/get-docker/) with Compose | any recent version |
 
-Maven does not need to be installed: the backend uses the Maven Wrapper (`mvnw`).
+Maven doesn't need to be installed, the backend uses the Maven Wrapper (`mvnw`). PostgreSQL doesn't either, it runs in Docker. If you also have a local PostgreSQL running, stop it first: it takes port 5432 and the backend ends up talking to the wrong database (`role "studymatch" does not exist`).
 
 ### 1. Clone the repository
 
@@ -100,65 +108,118 @@ git clone https://github.com/Cipher-Pol-UPT/StudyMatch.git
 cd StudyMatch
 ```
 
-### 2. Run the backend
-
-Spring Boot reads the database connection from environment variables, so no credentials are committed to the repository.
-
-**macOS / Linux**
+### 2. Start the database and the mail server
 
 ```bash
 cd backend
-export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/studymatch
-export SPRING_DATASOURCE_USERNAME=studymatch
-export SPRING_DATASOURCE_PASSWORD=studymatch
-./mvnw spring-boot:run
+docker compose up -d
 ```
 
-**Windows (PowerShell)**
+This starts PostgreSQL on port 5432 and Mailpit on 1025 (SMTP) and 8025 (web inbox). The data stays in a Docker volume between runs.
 
-```powershell
-cd backend
-$env:SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5432/studymatch"
-$env:SPRING_DATASOURCE_USERNAME="studymatch"
-$env:SPRING_DATASOURCE_PASSWORD="studymatch"
-.\mvnw.cmd spring-boot:run
+| Command (in `backend/`) | What it does |
+| --- | --- |
+| `docker compose down` | stops both, keeps the data |
+| `docker compose down -v` | stops both and deletes the database |
+| `docker compose exec db psql -U studymatch -d studymatch` | opens psql (`\dt` lists the tables, `\q` quits) |
+
+### 3. Run the backend
+
+```bash
+./mvnw spring-boot:run        # macOS / Linux
+.\mvnw.cmd spring-boot:run    # Windows
 ```
 
-The API starts on **http://localhost:8080**.
+The API starts on **http://localhost:8080**. Hibernate creates the tables on the first run, and `data.sql` fills them with demo data on every start (it skips rows that already exist).
 
-### 3. Run the frontend
+### 4. Run the frontend
 
 In a second terminal:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
 The app opens on **http://localhost:5173**.
 
+### Configuration
+
+Everything has a default that matches `docker-compose.yml`, so nothing needs to be set to run it locally. Set these environment variables to point somewhere else:
+
+| Variable | Default | Used for |
+| --- | --- | --- |
+| `DB_NAME` | `studymatch` | database name (also read by `docker compose`) |
+| `DB_USER` | `studymatch` | database user (also read by `docker compose`) |
+| `DB_PASSWORD` | `studymatch` | database password (also read by `docker compose`) |
+| `MAIL_HOST` | `localhost` | SMTP server |
+| `MAIL_PORT` | `1025` | SMTP port |
+| `MAIL_USERNAME` | empty | SMTP login |
+| `MAIL_PASSWORD` | empty | SMTP password |
+| `MAIL_AUTH` | `false` | `true` if the SMTP server needs a login |
+| `MAIL_STARTTLS` | `false` | `true` to use STARTTLS |
+| `MAIL_FROM` | `no-reply@studymatch.com` | sender of every email |
+
+On a real server, also set `springdoc.api-docs.enabled=false` and `springdoc.swagger-ui.enabled=false` to hide the API docs.
+
+### Demo accounts
+
+All of them use the password **`Demo1234`**. They come from `backend/src/main/resources/data.sql` and aren't real people.
+
+| Role | Login | What's there |
+| --- | --- | --- |
+| Admin | `ana.admin@studymatch.com` | |
+| Staff | `sofia.staff@studymatch.com` | |
+| Teacher | `tiago.teacher@studymatch.com` | Programming I/II, Databases, Software Quality, plus Inês' tutor application |
+| Teacher | `marta.teacher@studymatch.com` | Calculus I, Statistics, Project Management, Software Quality |
+| Teacher | `rui.teacher@studymatch.com` | Software Engineering, UX Design |
+| Student | `50003@students.studymatch.com` | Diogo Student, CS 3rd year, grades from last year, tutor of Programming I with StudyRooms |
+| Student | `50006@students.studymatch.com` | Inês Duarte, CS 2nd year, best grades, pending tutor application |
+| Student | `50007@students.studymatch.com` | João Pereira, CS 2nd year, failed Programming I, low attendance |
+| Student | `50008@students.studymatch.com` | Beatriz Lopes, CS 1st year, working-student statute (no attendance) |
+| Student | `50009@students.studymatch.com` | Rafael Matos, CS 1st year, hasn't taken the personality test |
+| Student | `50010@students.studymatch.com` | Carolina Reis, CS 1st year, first login (has to change the password) |
+| Student | `50011@students.studymatch.com` | Miguel Sousa, Business Management 2nd year |
+| Student | `50012@students.studymatch.com` | Leonor Faria, Communication Design 1st year |
+| Student | `50013@students.studymatch.com` | Pedro Nunes, CS 2nd year, blocked account |
+
+The student numbers are the ones a fresh database gets. If you registered students before `data.sql` ran, they'll be different; `docker compose down -v` gives you a clean start.
+
+### Useful links
+
+| URL | What |
+| --- | --- |
+| http://localhost:5173 | the app |
+| http://localhost:8080/swagger-ui.html | API docs, every endpoint with its roles and error codes |
+| http://localhost:8025 | Mailpit, the emails the backend sent |
+
 ### Useful commands
 
 | Where | Command | What it does |
 | --- | --- | --- |
-| `backend` | `./mvnw spring-boot:run` | Starts the API |
-| `backend` | `./mvnw test` | Runs the tests |
-| `backend` | `./mvnw verify` | Builds and tests the project |
-| `frontend` | `npm run dev` | Starts the dev server |
-| `frontend` | `npm run lint` | Checks the code with ESLint |
-| `frontend` | `npm run build` | Type-checks and builds for production |
+| `backend` | `./mvnw spring-boot:run` | starts the API |
+| `backend` | `./mvnw test` | runs the tests |
+| `backend` | `./mvnw verify` | builds, runs the tests and writes the coverage report to `target/site/jacoco/index.html` |
+| `frontend` | `npm run dev` | starts the dev server |
+| `frontend` | `npm test` | runs the tests |
+| `frontend` | `npm run lint` | checks the code with ESLint |
+| `frontend` | `npm run build` | type-checks and builds for production |
+
+## Documentation
+
+| File | What's in it |
+| --- | --- |
+| [docs/architecture.md](docs/architecture.md) | the layers from React to PostgreSQL, where the business rules live, login and CSRF |
+| [docs/domain.md](docs/domain.md) | the class diagram and the rules it can't show: profile, category levels, cold start, attendance, tutors |
+| [docs/conventions.md](docs/conventions.md) | packages and naming, error codes, DTOs vs models, how the frontend is organised |
+| [docs/contributing.md](docs/contributing.md) | issues, branches, commits, reviews and the Definition of Done |
+| [docs/testing.md](docs/testing.md) | running the tests, the coverage report, and how we write tests |
+| [docs/api.md](docs/api.md) | the endpoints per area and role (the details are in Swagger UI) |
 
 ## How we work
 
-Every change follows the same flow:
-
-**Issue → Branch → Pull Request → Review → Merge**
-
-- Each task is a GitHub Issue. Use cases are split into a Frontend and a Backend issue.
-- Work happens on a branch created for the issue, never directly on `main`.
-- Every Pull Request is reviewed and approved by another team member before it is merged.
-- The branch is deleted after the merge.
+Every change starts as an issue and reaches `main` through a reviewed pull request. Use cases are split into a Frontend and a Backend issue. The work happens on its own branch, someone other than the author approves the PR, and the branch is deleted after the merge. A PR that changes behaviour also updates the docs it touches. The details are in [docs/contributing.md](docs/contributing.md).
 
 ## Team
 

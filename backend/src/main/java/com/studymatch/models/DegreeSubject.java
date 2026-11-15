@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
+// a subject inside one degree, with the curricular year and semester it has there
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "degree_id", "subject_id" }))
 public class DegreeSubject {

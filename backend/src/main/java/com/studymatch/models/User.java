@@ -146,6 +146,7 @@ public abstract class User {
     this.resetCodeAttempts = 0;
   }
 
+  // a code was sent and hasn't expired, a burned one is already cleared
   public boolean hasActiveResetCode() {
     return resetCodeHash != null && LocalDateTime.now().isBefore(resetCodeExpiresAt);
   }

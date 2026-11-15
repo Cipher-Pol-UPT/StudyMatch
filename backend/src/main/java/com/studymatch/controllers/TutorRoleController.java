@@ -14,8 +14,12 @@ import com.studymatch.models.User;
 import com.studymatch.services.TutorRoleService;
 import com.studymatch.services.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/tutors/")
+@Tag(name = "Tutors", description = "Students who tutor a subject")
 public class TutorRoleController {
 
   private final TutorRoleService tutorRoleService;
@@ -29,6 +33,7 @@ public class TutorRoleController {
   // create StudyRoom: the subjects the logged-in student tutors, sorted by name
   @GetMapping("me/subjects")
   @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "The subjects you tutor, by name. Empty if you don't tutor any")
   public ResponseEntity<List<TutorSubjectDTO>> getMySubjects(Authentication authentication) {
     User student = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(tutorRoleService.getTutoredSubjects(student.getNumber()));
