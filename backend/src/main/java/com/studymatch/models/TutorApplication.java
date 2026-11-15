@@ -106,6 +106,11 @@ public class TutorApplication {
     this.rejectionReason = rejectionReason;
   }
 
+  // the student's account was blocked, nobody decided it so there's no teacher
+  public void cancel() {
+    decide(null, TutorApplicationStatus.CANCELLED);
+  }
+
   private void decide(Teacher teacher, TutorApplicationStatus status) {
     if (this.status != TutorApplicationStatus.PENDING) {
       throw new StudyMatchException(ErrorCode.APPLICATION_ALREADY_DECIDED);

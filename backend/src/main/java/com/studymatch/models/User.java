@@ -6,6 +6,8 @@ import org.hibernate.annotations.ColumnDefault;
 
 import com.studymatch.enums.AccountStatus;
 import com.studymatch.enums.Role;
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.StudyMatchException;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +23,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "users")
@@ -56,6 +59,9 @@ public abstract class User {
   @Enumerated(EnumType.STRING)
   @NotNull
   private AccountStatus accountStatus;
+
+  @Size(max = 500)
+  private String blockReason;
 
   // forgot password: only the hash of the code is stored, never the code itself
   private String resetCodeHash;
@@ -133,6 +139,26 @@ public abstract class User {
 
   public boolean isBlocked() {
     return accountStatus == AccountStatus.BLOCKED;
+  }
+
+  // admins can't be blocked, so there's always one left who can unblock
+  public void checkCanBeBlocked() {
+    if (getRole() == Role.ADMIN) {
+      throw new StudyMatchException(ErrorCode.ADMIN_CANNOT_BE_BLOCKED);
+    }
+    if (isBlocked()) {
+      throw new StudyMatchException(ErrorCode.ACCOUNT_ALREADY_BLOCKED);
+    }
+  }
+
+  public void block(String reason) {
+    checkCanBeBlocked();
+    this.accountStatus = AccountStatus.BLOCKED;
+    this.blockReason = reason;
+  }
+
+  public String getBlockReason() {
+    return blockReason;
   }
 
   public boolean requiresPersonalityTest() {

@@ -19,4 +19,12 @@ public interface StudyRoomRepository extends JpaRepository<StudyRoom, Long> {
       order by r.startsAt""")
   List<StudyRoom> findOverlapping(Long tutorNumber, LocalDateTime startsAt, LocalDateTime endsAt);
 
+  // the tutor's rooms that can still be cancelled: open and not started yet
+  @Query("""
+      select r from StudyRoom r
+      where r.tutorRole.student.number = :tutorNumber
+        and r.status = com.studymatch.enums.StudyRoomStatus.SCHEDULED
+        and r.startsAt > :now""")
+  List<StudyRoom> findUpcoming(Long tutorNumber, LocalDateTime now);
+
 }

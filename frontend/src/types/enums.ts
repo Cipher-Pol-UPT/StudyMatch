@@ -22,7 +22,7 @@ export type StatuteType = typeof StatuteType[number];
 export const StudyRoomStatus = ["SCHEDULED", "FULL", "CANCELLED", "COMPLETED"] as const;
 export type StudyRoomStatus = typeof StudyRoomStatus[number];
 
-export const TutorApplicationStatus = ["PENDING", "APPROVED", "REJECTED"] as const;
+export const TutorApplicationStatus = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"] as const;
 export type TutorApplicationStatus = typeof TutorApplicationStatus[number];
 
 export const Role = ["ADMIN", "STAFF", "TEACHER", "STUDENT"] as const;

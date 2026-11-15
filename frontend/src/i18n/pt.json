@@ -367,7 +367,8 @@
   "tutorApplicationStatuses": {
     "PENDING": "Pendente",
     "APPROVED": "Aprovada",
-    "REJECTED": "Rejeitada"
+    "REJECTED": "Rejeitada",
+    "CANCELLED": "Cancelada"
   },
   "achievements": {
     "FIRST_STUDYROOM": {
@@ -490,7 +491,9 @@
     "NOT_A_PARTICIPANT": "Não está inscrito nesta sala de estudo.",
     "CAPACITY_BELOW_PARTICIPANTS": "A capacidade não pode ser inferior a {{participants}} participantes.",
     "ATTENDANCE_NOT_CONFIRMED": "As presenças ainda não foram confirmadas.",
-    "RATING_WINDOW_CLOSED": "O período de avaliação terminou."
+    "RATING_WINDOW_CLOSED": "O período de avaliação terminou.",
+    "ADMIN_CANNOT_BE_BLOCKED": "Não é possível bloquear contas de Administrador.",
+    "ACCOUNT_ALREADY_BLOCKED": "Esta conta já está bloqueada."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",

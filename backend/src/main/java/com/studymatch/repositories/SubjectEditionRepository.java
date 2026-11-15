@@ -22,6 +22,8 @@ public interface SubjectEditionRepository extends JpaRepository<SubjectEdition, 
 
   List<SubjectEdition> findByAcademicYear(AcademicYear academicYear);
 
+  List<SubjectEdition> findDistinctByTeachers_NumberAndAcademicYear(Long teacherNumber, AcademicYear academicYear);
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   Optional<SubjectEdition> findLockedById(Long id);
 

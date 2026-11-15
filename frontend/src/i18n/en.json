@@ -367,7 +367,8 @@
   "tutorApplicationStatuses": {
     "PENDING": "Pending",
     "APPROVED": "Approved",
-    "REJECTED": "Rejected"
+    "REJECTED": "Rejected",
+    "CANCELLED": "Cancelled"
   },
   "achievements": {
     "FIRST_STUDYROOM": {
@@ -490,7 +491,9 @@
     "NOT_A_PARTICIPANT": "You are not a participant in this StudyRoom.",
     "CAPACITY_BELOW_PARTICIPANTS": "Capacity cannot be below {{participants}} participants.",
     "ATTENDANCE_NOT_CONFIRMED": "Attendance has not been confirmed.",
-    "RATING_WINDOW_CLOSED": "The rating period is closed."
+    "RATING_WINDOW_CLOSED": "The rating period is closed.",
+    "ADMIN_CANNOT_BE_BLOCKED": "Admin accounts cannot be blocked.",
+    "ACCOUNT_ALREADY_BLOCKED": "This account is already blocked."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

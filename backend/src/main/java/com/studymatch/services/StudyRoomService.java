@@ -1,5 +1,6 @@
 package com.studymatch.services;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +46,19 @@ public class StudyRoomService {
     }
 
     return StudyRoomDTO.from(studyRoomRepository.save(room));
+  }
+
+  public int countUpcoming(Long tutorNumber) {
+    return studyRoomRepository.findUpcoming(tutorNumber, LocalDateTime.now()).size();
+  }
+
+  // block account: the tutor's rooms that haven't started are cancelled, the block reason stays private
+  @Transactional
+  public int cancelUpcoming(Long tutorNumber) {
+    List<StudyRoom> rooms = studyRoomRepository.findUpcoming(tutorNumber, LocalDateTime.now());
+    rooms.forEach(room -> room.cancel(null));
+    studyRoomRepository.saveAll(rooms);
+    return rooms.size();
   }
 
 }
