@@ -99,6 +99,7 @@ export { ACHIEVEMENT_ART,type AchievementId,type AchievementState } from './achi
 export { BlockAccountDialog,CreateAccountForm,RegisterStudentForm,type BlockAccountDialogProps,type CreateAccountFormProps,type RegisterStudentFormProps } from './blocks/accounts/AccountForms';
 export { ActivateAccount,type ActivateAccountProps } from './blocks/auth/ActivateAccount';
 export { AuthHeader,AuthLayout,type AuthHeaderProps,type AuthLayoutProps } from './blocks/auth/AuthLayout';
+export { LoadingScreen } from './blocks/auth/LoadingScreen';
 export { LoginForm,type LoginFormProps } from './blocks/auth/LoginForm';
 export { ChangePasswordForm,ForgotPasswordForm,ResetPasswordForm,type ChangePasswordFormProps,type ForgotPasswordFormProps,type ResetPasswordFormProps } from './blocks/auth/PasswordForms';
 export { AuthStatus,BlockedNotice,CheckEmail,VerifyEmail,type AuthStatusProps,type BlockedNoticeProps,type CheckEmailProps,type VerifyEmailProps } from './blocks/auth/StatusScreens';
