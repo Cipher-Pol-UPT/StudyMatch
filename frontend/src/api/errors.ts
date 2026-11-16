@@ -63,6 +63,7 @@ export const ERROR_CODES = [
   "CAPACITY_BELOW_PARTICIPANTS",
   "ATTENDANCE_NOT_CONFIRMED",
   "RATING_WINDOW_CLOSED",
+  "LESSON_IN_FUTURE",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;

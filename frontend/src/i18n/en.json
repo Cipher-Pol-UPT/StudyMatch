@@ -490,7 +490,8 @@
     "NOT_A_PARTICIPANT": "You are not a participant in this StudyRoom.",
     "CAPACITY_BELOW_PARTICIPANTS": "Capacity cannot be below {{participants}} participants.",
     "ATTENDANCE_NOT_CONFIRMED": "Attendance has not been confirmed.",
-    "RATING_WINDOW_CLOSED": "The rating period is closed."
+    "RATING_WINDOW_CLOSED": "The rating period is closed.",
+    "LESSON_IN_FUTURE": "This lesson hasn't happened yet, attendance can only be registered after it starts."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

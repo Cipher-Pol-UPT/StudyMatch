@@ -1,10 +1,13 @@
 package com.studymatch.services;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -12,6 +15,8 @@ import java.util.stream.IntStream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.dtos.AttendanceRequestDTO;
+import com.studymatch.dtos.AttendanceSheetDTO;
 import com.studymatch.dtos.CategoryLevelDTO;
 import com.studymatch.dtos.EditionStudentDTO;
 import com.studymatch.dtos.EnrolmentResultDTO;
@@ -20,9 +25,11 @@ import com.studymatch.dtos.PersonalityProfileDTO;
 import com.studymatch.enums.EnrolmentStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.models.Absence;
 import com.studymatch.models.Category;
 import com.studymatch.models.ClassSection;
 import com.studymatch.models.Enrolment;
+import com.studymatch.models.Lesson;
 import com.studymatch.models.Student;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.EnrolmentRepository;
@@ -132,6 +139,66 @@ public class EnrolmentService {
     return 100.0 * (lessons - absences) / lessons;
   }
 
+  // students with an active statute show "attendance not applicable" (GR7)
+  private Double attendanceUnlessStatute(Enrolment enrolment) {
+    return enrolment.getStudent().hasActiveStatute() ? null : getSubjectAttendanceRate(enrolment);
+  }
+
+  // register attendance: the sheet Staff fills in, with the existing record if the lesson was registered before
+  @Transactional(readOnly = true)
+  public AttendanceSheetDTO getAttendanceSheet(Long subjectEditionId, String classSectionCode,
+      LocalDateTime startsAt) {
+    ClassSection classSection = subjectEditionService.getEdition(subjectEditionId)
+        .getClassSection(classSectionCode.trim());
+    LocalDateTime start = lessonService.lessonStart(startsAt);
+    return attendanceSheet(classSection, start, lessonService.findLesson(classSection, start));
+  }
+
+  // register attendance: the first record and a correction are the same call
+  @Transactional
+  public AttendanceSheetDTO registerAttendance(Long subjectEditionId, AttendanceRequestDTO request) {
+    // locked so two Staff saving the same lesson at once can't both create it
+    ClassSection classSection = subjectEditionService.getLockedCurrentEdition(subjectEditionId)
+        .getClassSection(request.classSection().trim());
+    LocalDateTime start = lessonService.lessonStart(request.startsAt());
+    List<Enrolment> enrolments = classEnrolments(classSection);
+
+    Map<Long, Enrolment> byNumber = enrolments.stream()
+        .collect(Collectors.toMap(enrolment -> enrolment.getStudent().getNumber(), enrolment -> enrolment));
+    // a number sent twice keeps its last justified value
+    Map<Enrolment, Boolean> absent = new HashMap<>();
+    for (AttendanceRequestDTO.AbsentStudent student : request.absences()) {
+      Enrolment enrolment = byNumber.get(student.studentNumber());
+      if (enrolment == null) {
+        throw new StudyMatchException(ErrorCode.STUDENT_NOT_ENROLLED, Map.of("number", student.studentNumber()));
+      }
+      absent.put(enrolment, student.justified());
+    }
+
+    Lesson lesson = lessonService.getOrCreateLesson(classSection, start);
+    absenceService.registerAbsences(lesson, enrolments, absent);
+    return attendanceSheet(classSection, start, Optional.of(lesson));
+  }
+
+  private AttendanceSheetDTO attendanceSheet(ClassSection classSection, LocalDateTime startsAt,
+      Optional<Lesson> lesson) {
+    Map<Enrolment, Absence> absences = lesson.map(absenceService::listAbsences).orElse(List.of()).stream()
+        .collect(Collectors.toMap(Absence::getEnrolment, absence -> absence));
+    List<AttendanceSheetDTO.Row> rows = classEnrolments(classSection).stream()
+        .map(enrolment -> AttendanceSheetDTO.Row.from(enrolment, absences.get(enrolment),
+            attendanceUnlessStatute(enrolment)))
+        .toList();
+    return new AttendanceSheetDTO(classSection.getCode(), startsAt, lesson.isPresent(), rows);
+  }
+
+  // by name like the other lists
+  private List<Enrolment> classEnrolments(ClassSection classSection) {
+    return enrolmentRepository.findByClassSection(classSection).stream()
+        .sorted(Comparator.comparing((Enrolment enrolment) -> enrolment.getStudent().getName())
+            .thenComparing(enrolment -> enrolment.getStudent().getNumber()))
+        .toList();
+  }
+
   public List<Enrolment> getEnrolments(Student student) {
     return enrolmentRepository.findByStudent(student);
   }
@@ -175,11 +242,9 @@ public class EnrolmentService {
 
   private EditionStudentDTO toEditionStudent(Enrolment enrolment) {
     Student student = enrolment.getStudent();
-    // students with an active statute show "attendance not applicable"
-    Double attendance = student.hasActiveStatute() ? null : getSubjectAttendanceRate(enrolment);
     return new EditionStudentDTO(student.getNumber(), student.getName(), enrolment.getClassSection().getCode(),
         PersonalityProfileDTO.from(student.getPersonalityProfile()),
-        getCategoryLevel(student, categoryOf(enrolment).getId()), attendance);
+        getCategoryLevel(student, categoryOf(enrolment).getId()), attendanceUnlessStatute(enrolment));
   }
 
   // finished subjects only, weighted by ECTS, so a 10 ECTS subject counts twice as much as a 5 ECTS one

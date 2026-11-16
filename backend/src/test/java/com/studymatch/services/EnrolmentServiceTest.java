@@ -13,6 +13,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,12 +27,18 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.studymatch.dtos.AttendanceRequestDTO;
+import com.studymatch.dtos.AttendanceSheetDTO;
 import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.EnrolmentResultDTO.Result;
 import com.studymatch.enums.EnrolmentStatus;
+import com.studymatch.enums.StatuteType;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.models.Absence;
+import com.studymatch.models.ClassSection;
 import com.studymatch.models.Enrolment;
+import com.studymatch.models.Lesson;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
 import com.studymatch.models.SubjectEdition;
@@ -346,6 +354,137 @@ class EnrolmentServiceTest {
 
     // Act + Assert
     assertEquals(List.of(firstAna, secondAna, bruno), enrolmentService.listEnrolments(7L));
+  }
+
+  // attendance
+
+  private static final LocalDateTime LESSON_START = LocalDateTime.of(2026, 11, 10, 9, 0);
+
+  // students of the same class T1, so the sheet can list them together
+  private static Enrolment enrolmentIn(ClassSection classSection, String name, Long number) {
+    Student student = ModelTestData.student(name);
+    ReflectionTestUtils.setField(student, "number", number);
+    return new Enrolment(student, classSection);
+  }
+
+  private ClassSection classSectionOfEdition7() {
+    SubjectEdition edition = ModelTestData.subjectEdition();
+    edition.addClassSection("T1");
+    when(subjectEditionService.getEdition(7L)).thenReturn(edition);
+    when(subjectEditionService.getLockedCurrentEdition(7L)).thenReturn(edition);
+    when(lessonService.lessonStart(LESSON_START)).thenReturn(LESSON_START);
+    return edition.getClassSection("T1");
+  }
+
+  @Test
+  @DisplayName("A lesson nobody registered yet shows the class by name, everyone present")
+  void sheetOfNewLesson() {
+    // Arrange
+    ClassSection classSection = classSectionOfEdition7();
+    Enrolment bruno = enrolmentIn(classSection, "Bruno", 1001L);
+    Enrolment ana = enrolmentIn(classSection, "Ana", 1002L);
+    when(enrolmentRepository.findByClassSection(classSection)).thenReturn(List.of(bruno, ana));
+    when(lessonService.findLesson(classSection, LESSON_START)).thenReturn(Optional.empty());
+
+    // Act
+    AttendanceSheetDTO sheet = enrolmentService.getAttendanceSheet(7L, "T1", LESSON_START);
+
+    // Assert
+    assertFalse(sheet.recorded());
+    assertEquals("T1", sheet.classSection());
+    assertEquals(LESSON_START, sheet.startsAt());
+    assertEquals(List.of("Ana", "Bruno"), sheet.students().stream().map(AttendanceSheetDTO.Row::name).toList());
+    assertTrue(sheet.students().stream().noneMatch(AttendanceSheetDTO.Row::absent));
+    assertNull(sheet.students().getFirst().attendance());
+  }
+
+  @Test
+  @DisplayName("A lesson registered before shows who was absent and if it was justified")
+  void sheetOfRecordedLesson() {
+    // Arrange
+    ClassSection classSection = classSectionOfEdition7();
+    Enrolment ana = enrolmentIn(classSection, "Ana", 1001L);
+    Enrolment bruno = enrolmentIn(classSection, "Bruno", 1002L);
+    Lesson lesson = new Lesson(classSection, LESSON_START);
+    when(enrolmentRepository.findByClassSection(classSection)).thenReturn(List.of(ana, bruno));
+    when(lessonService.findLesson(classSection, LESSON_START)).thenReturn(Optional.of(lesson));
+    when(absenceService.listAbsences(lesson)).thenReturn(List.of(new Absence(lesson, ana, true)));
+    when(lessonService.countLessons(classSection)).thenReturn(4L);
+    when(absenceService.countUnjustifiedAbsences(bruno)).thenReturn(1L);
+
+    // Act
+    AttendanceSheetDTO sheet = enrolmentService.getAttendanceSheet(7L, "T1", LESSON_START);
+
+    // Assert
+    assertTrue(sheet.recorded());
+    AttendanceSheetDTO.Row anaRow = sheet.students().get(0);
+    AttendanceSheetDTO.Row brunoRow = sheet.students().get(1);
+    assertTrue(anaRow.absent());
+    assertTrue(anaRow.justified());
+    assertEquals(100.0, anaRow.attendance());
+    assertFalse(brunoRow.absent());
+    assertFalse(brunoRow.justified());
+    assertEquals(75.0, brunoRow.attendance());
+  }
+
+  @Test
+  @DisplayName("A student with an active statute has no attendance on the sheet, only the statute flag")
+  void statuteStudentIsNotApplicable() {
+    // Arrange
+    ClassSection classSection = classSectionOfEdition7();
+    Enrolment ana = enrolmentIn(classSection, "Ana", 1001L);
+    ana.getStudent().assignStatute(StatuteType.WORKING_STUDENT, LocalDate.now());
+    when(enrolmentRepository.findByClassSection(classSection)).thenReturn(List.of(ana));
+    when(lessonService.findLesson(classSection, LESSON_START)).thenReturn(Optional.empty());
+    when(lessonService.countLessons(classSection)).thenReturn(4L);
+
+    // Act
+    AttendanceSheetDTO.Row row = enrolmentService.getAttendanceSheet(7L, "T1", LESSON_START).students().getFirst();
+
+    // Assert
+    assertTrue(row.statute());
+    assertNull(row.attendance());
+  }
+
+  @Test
+  @DisplayName("Registering saves the lesson and the absences, a number sent twice keeps its last value")
+  void attendanceIsRegistered() {
+    // Arrange
+    ClassSection classSection = classSectionOfEdition7();
+    Enrolment ana = enrolmentIn(classSection, "Ana", 1001L);
+    Enrolment bruno = enrolmentIn(classSection, "Bruno", 1002L);
+    Lesson lesson = new Lesson(classSection, LESSON_START);
+    when(enrolmentRepository.findByClassSection(classSection)).thenReturn(List.of(bruno, ana));
+    when(lessonService.getOrCreateLesson(classSection, LESSON_START)).thenReturn(lesson);
+    AttendanceRequestDTO request = new AttendanceRequestDTO(" T1 ", LESSON_START, List.of(
+        new AttendanceRequestDTO.AbsentStudent(1001L, false), new AttendanceRequestDTO.AbsentStudent(1001L, true)));
+
+    // Act
+    AttendanceSheetDTO sheet = enrolmentService.registerAttendance(7L, request);
+
+    // Assert
+    verify(absenceService).registerAbsences(lesson, List.of(ana, bruno), Map.of(ana, true));
+    assertTrue(sheet.recorded());
+  }
+
+  @Test
+  @DisplayName("A student who isn't in the class is refused before anything is saved")
+  void studentOutsideClassIsRefused() {
+    // Arrange
+    ClassSection classSection = classSectionOfEdition7();
+    when(enrolmentRepository.findByClassSection(classSection))
+        .thenReturn(List.of(enrolmentIn(classSection, "Ana", 1001L)));
+    AttendanceRequestDTO request = new AttendanceRequestDTO("T1", LESSON_START,
+        List.of(new AttendanceRequestDTO.AbsentStudent(9999L, false)));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> enrolmentService.registerAttendance(7L, request));
+
+    // Assert
+    assertEquals(ErrorCode.STUDENT_NOT_ENROLLED, e.getCode());
+    assertEquals(Map.of("number", 9999L), e.getParams());
+    verify(lessonService, never()).getOrCreateLesson(any(), any());
   }
 
   private Enrolment enrolmentWith(long lessons, long unjustifiedAbsences) {

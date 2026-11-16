@@ -1,8 +1,14 @@
 package com.studymatch.services;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 
+import com.studymatch.models.Absence;
 import com.studymatch.models.Enrolment;
+import com.studymatch.models.Lesson;
 import com.studymatch.repositories.AbsenceRepository;
 
 @Service
@@ -18,6 +24,29 @@ public class AbsenceService {
   public long countUnjustifiedAbsences(Enrolment enrolment) {
     return absenceRepository.countByEnrolmentAndJustifiedFalseAndLesson_ClassSection(enrolment,
         enrolment.getClassSection());
+  }
+
+  public List<Absence> listAbsences(Lesson lesson) {
+    return absenceRepository.findByLesson(lesson);
+  }
+
+  // justified by enrolment, a missing one was present; only this class is touched, someone who moved keeps theirs
+  public void registerAbsences(Lesson lesson, List<Enrolment> enrolments, Map<Enrolment, Boolean> absent) {
+    Map<Enrolment, Absence> existing = listAbsences(lesson).stream()
+        .collect(Collectors.toMap(Absence::getEnrolment, absence -> absence));
+    for (Enrolment enrolment : enrolments) {
+      Absence absence = existing.get(enrolment);
+      Boolean justified = absent.get(enrolment);
+      if (justified == null) {
+        if (absence != null) {
+          absenceRepository.delete(absence);
+        }
+      } else if (absence == null) {
+        absenceRepository.save(new Absence(lesson, enrolment, justified));
+      } else {
+        absence.setJustified(justified);
+      }
+    }
   }
 
 }
