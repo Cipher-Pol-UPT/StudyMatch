@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../src/App';
 import i18n from '../src/i18n';
@@ -32,6 +32,15 @@ afterEach(() => {
 });
 
 describe('app start', () => {
+  it('shows the loading screen until the session is known', async () => {
+    mockCurrentUserResponse(401, { code: 'UNAUTHENTICATED' });
+    renderApp();
+
+    expect(screen.getByRole('status', { name: 'Loading' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Log in' })).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole('status', { name: 'Loading' })).toBeNull());
+  });
+
   it('shows the login page when there is no session', async () => {
     mockCurrentUserResponse(401, { code: 'UNAUTHENTICATED' });
     renderApp();

@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { getCurrentUser } from './api/auth';
@@ -8,6 +9,7 @@ import { StudentArea } from './pages/student/StudentArea';
 import { AdminArea } from './pages/admin/AdminArea';
 import { StaffArea } from './pages/staff/StaffArea';
 import { TeacherArea } from './pages/teacher/TeacherArea';
+import { LoadingScreen } from './studymatch-ui';
 import type { CurrentUser } from './types/currentUser';
 
 export default function App() {
@@ -25,10 +27,20 @@ function ApplicationSession() {
       .finally(() => setIsCheckingSession(false));
   }, []);
 
-  if (isCheckingSession) {
-    return null;
-  }
+  return (
+    <>
+      <AnimatePresence>{isCheckingSession && <LoadingScreen key="loading" />}</AnimatePresence>
+      {!isCheckingSession && <SessionPage currentUser={currentUser} setCurrentUser={setCurrentUser} />}
+    </>
+  );
+}
 
+interface SessionPageProps {
+  currentUser: CurrentUser | null;
+  setCurrentUser: (user: CurrentUser | null) => void;
+}
+
+function SessionPage({ currentUser, setCurrentUser }: SessionPageProps) {
   if (currentUser === null) {
     return <LoginPage onLoggedIn={setCurrentUser} />;
   }

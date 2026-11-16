@@ -201,6 +201,14 @@
     "credentialsSent": "O email institucional e uma palavra-passe temporária foram enviados para o email pessoal.",
     "createAnother": "Criar outra conta"
   },
+  "catalogue": {
+    "categoriesIntro": "As categorias agrupam unidades curriculares relacionadas. Cada estudante tem um nível em cada categoria.",
+    "newCategory": "Nova categoria",
+    "registerCategory": "Registar categoria",
+    "categoryRegistered": "Categoria {{name}} registada.",
+    "noCategories": "Ainda não existem categorias",
+    "noCategoriesBody": "Registe a primeira para a poder escolher nas unidades curriculares."
+  },
   "rooms": {
     "title": "Salas de estudo",
     "join": "Participar",
@@ -228,7 +236,7 @@
     "filters": "Filtros",
     "filterHint": "Escolha uma unidade curricular para ver as respetivas salas de estudo.",
     "allSubjects": "Mostrar todas as unidades curriculares",
-    "others": "Outros",
+    "others": "Ver",
     "views": "Vistas das salas de estudo",
     "calendar": "Calendário",
     "inscriptions": "As minhas inscrições",

@@ -201,6 +201,14 @@
     "credentialsSent": "The institutional email and a one-time password were sent to the personal email.",
     "createAnother": "Create another account"
   },
+  "catalogue": {
+    "categoriesIntro": "Categories group related subjects. Each student gets a level in every category.",
+    "newCategory": "New category",
+    "registerCategory": "Register category",
+    "categoryRegistered": "Category {{name}} registered.",
+    "noCategories": "No categories yet",
+    "noCategoriesBody": "Register the first one so it can be chosen for subjects."
+  },
   "rooms": {
     "title": "StudyRooms",
     "join": "Join",
@@ -222,17 +230,17 @@
     "created": "StudyRoom created."
   },
   "studyRooms": {
-    "heading": "Study rooms",
+    "heading": "StudyRooms",
     "intro": "A shared space to focus, ask questions and make progress together. Find a session that works for you.",
     "demo": "Demo",
     "filters": "Filters",
     "filterHint": "Choose a subject to see its study rooms.",
     "allSubjects": "Show all subjects",
-    "others": "Others",
+    "others": "View",
     "views": "Study room views",
     "calendar": "Calendar",
-    "inscriptions": "My inscriptions",
-    "created": "My study rooms",
+    "inscriptions": "Joined",
+    "created": "Hosting",
     "inscriptionsHint": "The study sessions you have joined.",
     "createdHint": "The study sessions you are hosting.",
     "selectedRoom": "Selected study room",
