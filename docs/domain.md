@@ -80,6 +80,8 @@ So the personality test carries the whole decision for a new student. It counts 
 
 Attendance is worked out per enrolment: the lessons stored for the student's class, minus their unjustified absences, divided by the lessons. Every stored lesson counts, so only lessons that already happened get stored. A justified absence counts as attended. The profile's overall attendance adds up every enrolment the same way.
 
+Staff registers it one lesson at a time: the class plus the date and start time, since a class can have more than one lesson a day. Only the absent students are sent, each one justified or not, and everyone else was present. Saving the same lesson again corrects it. A lesson that hasn't started yet is refused (`LESSON_IN_FUTURE`) because it would already count as held, and the seconds are dropped, so 9:00 and 9:00:30 are the same lesson. Only editions of the current year take new records.
+
 Before the first lesson there's nothing to measure, so attendance is empty, not 100%. A student with an active special statute has no attendance at all: teachers see "not applicable" and never the statute type (GR7). Only Staff sees the type. A statute ends by itself after its end date, which can't be in the past when it's given.
 
 ## The current academic year

@@ -67,6 +67,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/subject-editions/{id}/assignments` | Teacher of the edition | add an assignment, with group sizes and separations for group work |
 | GET | `/subject-editions/{id}/grades` | Teacher of the edition | the grade sheet |
 | PUT | `/subject-editions/{id}/assignments/{assignmentId}/grades/{studentNumber}` | Teacher of the edition | give or change a grade; sets the final grade once everything's graded |
+| GET | `/subject-editions/{id}/attendance?classSection=&startsAt=` | Staff | one lesson's attendance sheet, with the saved record if there is one |
+| PUT | `/subject-editions/{id}/attendance` | Staff | register or correct a lesson's absences (current year only) |
 
 ## Tutors and StudyRooms
 
@@ -77,4 +79,4 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 ## Coming next
 
-The other use cases (groups, attendance, StudyRoom join and leave, tutor applications, ratings, achievements, statutes, unblocking accounts, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (groups, StudyRoom join and leave, tutor applications, ratings, achievements, statutes, unblocking accounts, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

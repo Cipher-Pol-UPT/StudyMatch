@@ -10,7 +10,7 @@ export const STAFF_SECTIONS: NavigationSection[] = [
   { key: 'attendance', path: '/attendance', icon: ClipboardList },
   { key: 'subjects', path: '/subjects', icon: BookOpen },
   { key: 'degrees', path: '/degrees', icon: GraduationCap },
-  { key: 'categories', path: '/categories', icon: Layers },
+  { key: 'categories', path: '/categories', icon: Layers, ready: true },
   { key: 'academicYear', path: '/academic-year', icon: CalendarDays },
   { key: 'analytics', path: '/analytics', icon: BarChart3 },
 ];

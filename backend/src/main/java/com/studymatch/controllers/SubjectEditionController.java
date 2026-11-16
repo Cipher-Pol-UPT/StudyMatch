@@ -2,10 +2,12 @@ package com.studymatch.controllers;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.studymatch.dtos.AssignmentResponseDTO;
+import com.studymatch.dtos.AttendanceRequestDTO;
+import com.studymatch.dtos.AttendanceSheetDTO;
 import com.studymatch.dtos.CreateAssignmentRequestDTO;
 import com.studymatch.dtos.EditionStudentDTO;
 import com.studymatch.dtos.EnrolStudentsRequestDTO;
@@ -178,6 +182,29 @@ public class SubjectEditionController {
     User teacher = userService.getByInstitutionalEmail(authentication.getName());
     subjectEditionService.checkTaughtBy(id, teacher.getNumber());
     return ResponseEntity.ok(gradeService.gradeStudent(id, assignmentId, studentNumber, request.value()));
+  }
+
+  // register attendance: the class's students for one lesson, with the record if it was registered before
+  @GetMapping("{id}/attendance")
+  @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Attendance sheet of one lesson (class and start time): who was absent, justified or not, "
+      + "and each student's attendance")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.CLASS_SECTION_NOT_IN_SUBJECT_EDITION, ErrorCode.LESSON_IN_FUTURE })
+  public ResponseEntity<AttendanceSheetDTO> getAttendanceSheet(@PathVariable Long id,
+      @RequestParam String classSection,
+      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startsAt) {
+    return ResponseEntity.ok(enrolmentService.getAttendanceSheet(id, classSection, startsAt));
+  }
+
+  // register attendance: PUT since saving the same lesson again replaces its record
+  @PutMapping("{id}/attendance")
+  @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Register or correct a lesson's attendance. Students not listed as absent were present")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.SUBJECT_EDITION_NOT_CURRENT,
+      ErrorCode.CLASS_SECTION_NOT_IN_SUBJECT_EDITION, ErrorCode.LESSON_IN_FUTURE, ErrorCode.STUDENT_NOT_ENROLLED })
+  public ResponseEntity<AttendanceSheetDTO> registerAttendance(@PathVariable Long id,
+      @Valid @RequestBody AttendanceRequestDTO request) {
+    return ResponseEntity.ok(enrolmentService.registerAttendance(id, request));
   }
 
 }
