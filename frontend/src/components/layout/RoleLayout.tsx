@@ -2,7 +2,7 @@ import { Bell, House } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { AppShell, EmptyState, Logo, type NavItem } from '../../studymatch-ui';
+import { AppShell, EmptyState, Logo, type NavItem, type NavSection } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import type { NavigationSection } from '../../types/navigation';
 import { AccountPasswordPage } from '../../pages/password/AccountPasswordPage';
@@ -27,14 +27,22 @@ export function RoleLayout({ currentUser, sections, onLoggedOut, activePath, chi
   const selectedPath = activePath ?? pathname;
   const current = sections.find(section => section.path === selectedPath)
     ?? sections.find(section => selectedPath.startsWith(`${section.path}/`));
-  const nav: NavItem[] = [
-    { label: t('nav.home'), icon: House, href: '/', active: pathname === '/' },
-    ...sections.map(section => ({
-      label: t(`workspace.sections.${section.key}`),
-      icon: section.icon,
-      href: section.path,
-      active: section === current,
-    })),
+  const toItem = (section: NavigationSection): NavItem => ({
+    label: t(`workspace.sections.${section.key}`),
+    icon: section.icon,
+    href: section.path,
+    active: section === current,
+  });
+  const comingSoon = sections.filter(section => !section.ready);
+  const nav: NavSection[] = [
+    {
+      title: t(`workspace.roles.${currentUser.role}`),
+      items: [
+        { label: t('nav.home'), icon: House, href: '/', active: pathname === '/' },
+        ...sections.filter(section => section.ready).map(toItem),
+      ],
+    },
+    ...(comingSoon.length ? [{ title: t('nav.comingSoon'), items: comingSoon.map(toItem), muted: true }] : []),
   ];
   const title = current ? t(`workspace.sections.${current.key}`)
     : pathname === '/change-password' ? t('auth.changePassword')
@@ -43,7 +51,7 @@ export function RoleLayout({ currentUser, sections, onLoggedOut, activePath, chi
   return (
     <AppShell
       brand={<Logo size={28} />}
-      nav={[{ title: t(`workspace.roles.${currentUser.role}`), items: nav }]}
+      nav={nav}
       title={title}
       actions={<AccountActions user={currentUser} onLoggedOut={onLoggedOut} />}
       linkAs={Link}

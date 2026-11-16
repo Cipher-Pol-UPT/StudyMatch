@@ -738,7 +738,8 @@
     "studentInformation": "Informação do estudante",
     "notifications": "Notificações",
     "logout": "Terminar sessão",
-    "accountMenu": "Menu da conta"
+    "accountMenu": "Menu da conta",
+    "comingSoon": "Brevemente"
   },
   "passwordRules": {
     "length": "Pelo menos 8 caracteres",

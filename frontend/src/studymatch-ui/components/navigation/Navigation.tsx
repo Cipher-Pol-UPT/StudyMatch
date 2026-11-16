@@ -114,6 +114,8 @@ export interface NavItem {
 export interface NavSection {
   title?: string;
   items: NavItem[];
+  // dimmed, for sections that aren't ready yet
+  muted?: boolean;
 }
 
 export interface AppShellProps {
@@ -158,7 +160,7 @@ export function AppShell({ brand, nav, title, actions, sidebarFooter, linkAs, ro
                     linkAs={linkAs}
                     href={it.href}
                     current={it.active}
-                    className="sm-nav-item"
+                    className={cx('sm-nav-item', section.muted && 'sm-nav-item--muted')}
                     onClick={() => {
                       it.onClick?.();
                       setOpen(false);

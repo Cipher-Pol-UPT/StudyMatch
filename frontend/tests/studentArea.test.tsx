@@ -53,7 +53,7 @@ describe('StudentArea', () => {
     fireEvent.click(screen.getByRole('link', { name: 'StudyRooms' }));
     expect(await screen.findByRole('heading', { name: 'StudyRooms' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Joined/ })).toBeTruthy();
-    expect(screen.queryByText('Coming soon')).toBeNull();
+    expect(screen.queryByText('This page is not available yet.')).toBeNull();
   });
 
   it('logs out through the API and then clears the session', async () => {

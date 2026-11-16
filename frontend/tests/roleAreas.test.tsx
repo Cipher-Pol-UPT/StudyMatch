@@ -61,6 +61,15 @@ describe('role areas', () => {
     expect(await screen.findByText(title, { selector: 'p' })).toBeTruthy();
   });
 
+  it('lists the staff sections that are not built yet under coming soon', async () => {
+    backend({ ...base, role: 'STAFF' });
+    start();
+    await screen.findByText('Staff workspace', { selector: 'p' });
+    expect(screen.getByText('Coming soon')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Enrolments' }).classList.contains('sm-nav-item--muted')).toBe(true);
+    expect(screen.getByRole('link', { name: 'Students' }).classList.contains('sm-nav-item--muted')).toBe(false);
+  });
+
   it('opens an unimplemented staff feature as an empty state', async () => {
     backend({ ...base, role: 'STAFF' });
     start();

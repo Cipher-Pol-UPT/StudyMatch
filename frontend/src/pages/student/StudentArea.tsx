@@ -2,12 +2,12 @@ import { House, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../api/auth';
-import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry, type NavItem } from '../../studymatch-ui';
+import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry, type NavItem, type NavSection } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { HomePage } from '../home/HomePage';
 import { ProfilePage } from '../profile/ProfilePage';
 import { StudyRoomsPage } from '../studyRooms/StudyRoomsPage';
-import { ACCOUNT, SECTIONS } from './sections';
+import { ACCOUNT, SECTIONS, type Section } from './sections';
 import '../../styles/appShell.css';
 import './student.css';
 import { useMyProfile } from './useMyProfile';
@@ -25,15 +25,16 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
   const { profile, failed, showSavedProfile } = useMyProfile();
   const pages = [...SECTIONS, ...ACCOUNT];
   const current = pages.find((p) => p.path === pathname);
-  const nav: NavItem[] = [
-    { label: t('nav.home'), icon: House, href: '/', active: pathname === '/' },
-    ...SECTIONS.map((s) => ({ label: t(`nav.${s.key}`), icon: s.icon, href: s.path, active: pathname.startsWith(s.path) })),
+  const toItem = (s: Section): NavItem => ({ label: t(`nav.${s.key}`), icon: s.icon, href: s.path, active: pathname.startsWith(s.path) });
+  const nav: NavSection[] = [
+    { items: [{ label: t('nav.home'), icon: House, href: '/', active: pathname === '/' }, ...SECTIONS.filter((s) => s.ready).map(toItem)] },
+    { title: t('nav.comingSoon'), items: SECTIONS.filter((s) => !s.ready).map(toItem), muted: true },
   ];
 
   return (
     <AppShell
       brand={<Logo size={28} />}
-      nav={[{ items: nav }]}
+      nav={nav}
       title={t(current ? `nav.${current.key}` : 'nav.home')}
       actions={<><ThemeSwitcher /><ProfileMenu user={currentUser} avatarUrl={profile?.avatarUrl ?? undefined} onLoggedOut={onLoggedOut} /></>}
       linkAs={Link}

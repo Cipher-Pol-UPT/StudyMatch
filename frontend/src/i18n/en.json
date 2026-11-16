@@ -738,7 +738,8 @@
     "studentInformation": "Student information",
     "notifications": "Notifications",
     "logout": "Log out",
-    "accountMenu": "Account menu"
+    "accountMenu": "Account menu",
+    "comingSoon": "Coming soon"
   },
   "passwordRules": {
     "length": "At least 8 characters",

@@ -7,10 +7,12 @@ export interface Section {
   icon: IconComponent;
   color?: string;
   bg?: string;
+  // has a real page; the others open a "coming soon" placeholder
+  ready?: boolean;
 }
 
 export const SECTIONS: Section[] = [
-  { key: 'rooms', path: '/study-rooms', icon: BookOpen, color: 'var(--sm-lead)', bg: 'var(--sm-tint-lavender)' },
+  { key: 'rooms', path: '/study-rooms', icon: BookOpen, color: 'var(--sm-lead)', bg: 'var(--sm-tint-lavender)', ready: true },
   { key: 'subjects', path: '/subjects', icon: FolderOpen, color: 'var(--sm-tech)', bg: 'var(--sm-tint-sky)' },
   { key: 'groups', path: '/groups', icon: Users, color: 'var(--sm-creative)', bg: 'var(--sm-tint-peach)' },
   { key: 'assignments', path: '/assignments', icon: ClipboardList, color: 'var(--sm-exec)', bg: 'var(--sm-tint-mint)' },
