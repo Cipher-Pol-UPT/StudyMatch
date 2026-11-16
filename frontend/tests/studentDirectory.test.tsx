@@ -108,7 +108,9 @@ describe('staff student directory', () => {
     expect(screen.getByText('Sep 1, 2030')).toBeTruthy();
     expect(screen.getByText('CS101 · Programming')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit profile' })).toBeNull();
-    const back = new URL(screen.getByRole('link', { name: /Back to students/ }).getAttribute('href')!, 'https://test.invalid');
+    const trail = within(screen.getByRole('navigation', { name: 'Breadcrumb' }));
+    expect(trail.getByText('Ana Silva').getAttribute('aria-current')).toBe('page');
+    const back = new URL(trail.getByRole('link', { name: 'Students' }).getAttribute('href')!, 'https://test.invalid');
     expect(back.searchParams.get('degreeId')).toBe('5');
     expect(back.searchParams.get('search')).toBe('Ana');
   });
@@ -171,6 +173,19 @@ describe('teacher student directory', () => {
     expect(screen.queryByRole('button', { name: 'Edit profile' })).toBeNull();
     expect(fetchMock).toHaveBeenCalledWith('/api/students/50001/profile', expect.objectContaining({ method: 'GET' }));
     expect(fetchMock.mock.calls.some(([url]) => String(url) === '/api/students/50001')).toBe(false);
+  });
+
+  it('shows one trail from the subject to the student and back with the filters', async () => {
+    backend();
+    open('/subject-editions/7/students?classSection=T1', 'TEACHER');
+    fireEvent.click(await screen.findByRole('link', { name: 'Ana Silva' }));
+    await screen.findByRole('heading', { name: 'Ana Silva' });
+    const trails = screen.getAllByRole('navigation', { name: 'Breadcrumb' });
+    expect(trails).toHaveLength(1);
+    expect(within(trails[0]).getByText('50001').getAttribute('aria-current')).toBe('page');
+    const subject = new URL(within(trails[0]).getByRole('link', { name: 'Programming' }).getAttribute('href')!, 'https://test.invalid');
+    expect(subject.pathname).toBe('/subject-editions/7/students');
+    expect(subject.searchParams.get('classSection')).toBe('T1');
   });
 
   it('rechecks enrolment before loading a profile on a direct link', async () => {
