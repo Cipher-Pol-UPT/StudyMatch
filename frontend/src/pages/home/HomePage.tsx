@@ -50,7 +50,7 @@ export function HomePage({ currentUser, profile, failed, tasks = [], average, on
       <section aria-labelledby="home-actions">
         <h2 id="home-actions">{t('home.quickActions')}</h2>
         <div className="home__actions">
-          {SECTIONS.map((s) => (
+          {SECTIONS.filter((s) => s.ready).map((s) => (
             <Link key={s.key} to={s.path} className="home-action">
               <Card>
                 <IconTile icon={s.icon} color={s.color} bg={s.bg} size={48} shape="square" />

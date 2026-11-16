@@ -20,7 +20,7 @@ export function RoleHomePage({ currentUser, sections }: RoleHomePageProps) {
         <p className="sm-caption">{t('workspace.welcome')}</p>
       </header>
       <div className="role-grid">
-        {sections.map(section => (
+        {sections.filter(section => section.ready).map(section => (
           <Link className="role-card" key={section.path} to={section.path}>
             <section.icon size={25} aria-hidden />
             <h2>{t(`workspace.sections.${section.key}`)}</h2>

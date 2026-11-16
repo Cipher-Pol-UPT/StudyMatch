@@ -73,7 +73,9 @@ describe('role areas', () => {
   it('opens an unimplemented staff feature as an empty state', async () => {
     backend({ ...base, role: 'STAFF' });
     start();
-    fireEvent.click(await screen.findByRole('link', { name: /Enrol students in a subject edition/ }));
+    await screen.findByText('Staff workspace', { selector: 'p' });
+    expect(screen.queryByRole('link', { name: /Enrol students in a subject edition/ })).toBeNull();
+    fireEvent.click(screen.getByRole('link', { name: 'Enrolments' }));
     expect(await screen.findByRole('heading', { name: 'Enrolments' })).toBeTruthy();
     expect(screen.getByText(i18n.t('placeholder.comingSoon'))).toBeTruthy();
   });
