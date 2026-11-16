@@ -1,7 +1,7 @@
 import { CalendarDays } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { ACHIEVEMENT_ART, Card, EmptyState, IconTile, StatCard, type StudentProfile } from '../../studymatch-ui';
+import { ACHIEVEMENT_ART, Card, EmptyState, IconTile, StatCard, StudentPass, type StudentProfile } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { SECTIONS } from '../student/sections';
 import './home.css';
@@ -25,11 +25,22 @@ export function HomePage({ currentUser, profile, failed, tasks = [], average, on
   return (
     <div className="home">
       <header className="home__head">
-        <h1>{t('home.greeting', { name: currentUser.name })}</h1>
-        {profile && (
-          <p>{t('home.studentInfo', { programme: profile.programme, year: profile.curricularYear, number: profile.studentNumber })}</p>
+        <div>
+          <h1>{t('home.greeting', { name: currentUser.name })}</h1>
+          {profile && !profile.dominantProfile && (
+            <p>{t('home.studentInfo', { programme: profile.programme, year: profile.curricularYear, number: profile.studentNumber })}</p>
+          )}
+          {failed && <p role="alert">{t('common.unexpectedError')}</p>}
+        </div>
+        {profile?.dominantProfile && (
+          <StudentPass
+            name={profile.name}
+            number={profile.studentNumber}
+            year={profile.curricularYear}
+            programme={profile.programme}
+            profile={profile.dominantProfile}
+          />
         )}
-        {failed && <p role="alert">{t('common.unexpectedError')}</p>}
       </header>
 
       {profile && (
