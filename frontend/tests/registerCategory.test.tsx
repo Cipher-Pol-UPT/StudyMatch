@@ -54,6 +54,19 @@ describe('register category', () => {
     expect(await screen.findByText('Test Maths')).toBeTruthy();
   });
 
+  it('shows a category registered before a retry only once', async () => {
+    vi.mocked(getCategories).mockRejectedValueOnce(new Error('offline'));
+    vi.mocked(registerCategory).mockResolvedValue({ id: 3, name: 'Test Networks' });
+    renderPage();
+    await submitName('Test Networks');
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'New category' })).toBeNull());
+
+    vi.mocked(getCategories).mockResolvedValueOnce([...categories, { id: 3, name: 'Test Networks' }]);
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await screen.findByText('Test Maths');
+    expect(names()).toEqual(['Test Maths', 'Test Networks', 'Test Programming']);
+  });
+
   it('sends the trimmed name, then adds the category in order and confirms it', async () => {
     vi.mocked(registerCategory).mockResolvedValue({ id: 3, name: 'Test Networks' });
     renderPage();

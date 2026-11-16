@@ -17,6 +17,11 @@ export function StaffCategoriesPage() {
   const [registered, setRegistered] = useState<CategoryData[]>([]);
   const [registering, setRegistering] = useState(false);
   const rows = [...(categories.data ?? []), ...registered].sort(byName);
+  // the reloaded list already has the categories registered meanwhile
+  const retry = () => {
+    setRegistered([]);
+    categories.retry();
+  };
   const columns: TableColumn<CategoryData>[] = [{ key: 'name', header: t('fields.name') }];
 
   async function register(name: string) {
@@ -34,7 +39,7 @@ export function StaffCategoriesPage() {
         <Button icon={Plus} className="catalogue-page__create" onClick={() => setRegistering(true)}>{t('catalogue.newCategory')}</Button>
       </header>
       {categories.loading || categories.error !== undefined ? (
-        <DataLoadState error={categories.error} retry={categories.retry} />
+        <DataLoadState error={categories.error} retry={retry} />
       ) : (
         <Table
           label={t('workspace.sections.categories')}
