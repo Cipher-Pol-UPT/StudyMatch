@@ -26,9 +26,10 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
   const pages = [...SECTIONS, ...ACCOUNT];
   const current = pages.find((p) => p.path === pathname);
   const toItem = (s: Section): NavItem => ({ label: t(`nav.${s.key}`), icon: s.icon, href: s.path, active: pathname.startsWith(s.path) });
+  const comingSoon = SECTIONS.filter((s) => !s.ready);
   const nav: NavSection[] = [
     { items: [{ label: t('nav.home'), icon: House, href: '/', active: pathname === '/' }, ...SECTIONS.filter((s) => s.ready).map(toItem)] },
-    { title: t('nav.comingSoon'), items: SECTIONS.filter((s) => !s.ready).map(toItem), muted: true },
+    ...(comingSoon.length ? [{ title: t('nav.comingSoon'), items: comingSoon.map(toItem), muted: true }] : []),
   ];
 
   return (
