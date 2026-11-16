@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { ACHIEVEMENT_ART, Card, EmptyState, IconTile, StatCard, type StudentProfile } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { SECTIONS } from '../student/sections';
-import { DEMO_TASKS } from './demoTasks';
 import './home.css';
 import { TaskCalendar } from './TaskCalendar';
 import type { CalendarTask } from './types';
@@ -18,7 +17,7 @@ export interface HomePageProps {
   onTaskClick?: (task: CalendarTask) => void;
 }
 
-export function HomePage({ currentUser, profile, failed, tasks = DEMO_TASKS, average, onTaskClick }: HomePageProps) {
+export function HomePage({ currentUser, profile, failed, tasks = [], average, onTaskClick }: HomePageProps) {
   const { t } = useTranslation();
   const earned = profile?.achievements?.filter((a) => a.earnedAt).length ?? 0;
   const attendance = profile?.attendance;

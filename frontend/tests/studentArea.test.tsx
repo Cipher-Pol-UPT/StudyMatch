@@ -70,4 +70,10 @@ describe('StudentArea', () => {
     expect(await screen.findByText('90')).toBeTruthy();
     expect(screen.getByText(/Informatics/)).toBeTruthy();
   });
+
+  it('shows no tasks until there are real ones', () => {
+    renderArea();
+    expect(screen.getByText('No upcoming tasks')).toBeTruthy();
+    expect(screen.queryByRole('table', { name: /calendar/i })).toBeNull();
+  });
 });
