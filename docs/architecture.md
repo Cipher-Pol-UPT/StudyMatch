@@ -106,7 +106,7 @@ Not logged in at all gets 401 `UNAUTHENTICATED`, except for `POST /users/login`,
 
 ## Persistence
 
-We use JPA with Hibernate, and `ddl-auto=update` creates and extends the tables from the models when the backend starts. It never drops or renames columns, so after renaming a field the old column stays behind. `docker compose down -v` gives you a clean database.
+We use JPA with Hibernate, and `ddl-auto=update` creates and extends the tables from the models when the backend starts. It never drops or renames columns, so after renaming a field the old column stays behind. It doesn't update the check constraint Hibernate puts on an enum column either, so after adding a value to an enum (like `CANCELLED` for tutor applications) an older database still refuses it. `docker compose down -v` gives you a clean database.
 
 The four kinds of user use `JOINED` inheritance: a `users` table with what every account has, and `admin`, `staff`, `teacher` and `student` tables with the rest.
 
