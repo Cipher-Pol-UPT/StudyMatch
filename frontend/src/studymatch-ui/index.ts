@@ -98,11 +98,11 @@ export { ACHIEVEMENT_ART,type AchievementId,type AchievementState } from './achi
 // Blocks
 export { BlockAccountDialog,CreateAccountForm,RegisterStudentForm,type BlockAccountDialogProps,type CreateAccountFormProps,type RegisterStudentFormProps } from './blocks/accounts/AccountForms';
 export { ActivateAccount,type ActivateAccountProps } from './blocks/auth/ActivateAccount';
-export { CategoryDialog,type CategoryDialogProps } from './blocks/catalogue/CatalogueForms';
 export { AuthHeader,AuthLayout,type AuthHeaderProps,type AuthLayoutProps } from './blocks/auth/AuthLayout';
 export { LoginForm,type LoginFormProps } from './blocks/auth/LoginForm';
 export { ChangePasswordForm,ForgotPasswordForm,ResetPasswordForm,type ChangePasswordFormProps,type ForgotPasswordFormProps,type ResetPasswordFormProps } from './blocks/auth/PasswordForms';
 export { AuthStatus,BlockedNotice,CheckEmail,VerifyEmail,type AuthStatusProps,type BlockedNoticeProps,type CheckEmailProps,type VerifyEmailProps } from './blocks/auth/StatusScreens';
+export { CategoryDialog,type CategoryDialogProps } from './blocks/catalogue/CatalogueForms';
 export { PersonalityTest,type PersonalityQuestion,type PersonalityTestProps } from './blocks/personality/PersonalityTest';
 export { EditProfileForm,type EditProfileFormProps,type ProfileEdits } from './blocks/profile/EditProfileForm';
 export { ImageCropper,type CroppedImage,type ImageCropperProps } from './blocks/profile/ImageCropper';

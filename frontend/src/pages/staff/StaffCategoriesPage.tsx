@@ -27,7 +27,7 @@ export function StaffCategoriesPage() {
   }
 
   return (
-    <div className="role-page catalogue-page">
+    <div className="role-page">
       <header>
         <h1 className="sm-h2">{t('workspace.sections.categories')}</h1>
         <p className="sm-caption">{t('catalogue.categoriesIntro')}</p>
