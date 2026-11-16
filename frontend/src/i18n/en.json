@@ -201,6 +201,14 @@
     "credentialsSent": "The institutional email and a one-time password were sent to the personal email.",
     "createAnother": "Create another account"
   },
+  "catalogue": {
+    "categoriesIntro": "Categories group related subjects. Each student gets a level in every category.",
+    "newCategory": "New category",
+    "registerCategory": "Register category",
+    "categoryRegistered": "Category {{name}} registered.",
+    "noCategories": "No categories yet",
+    "noCategoriesBody": "Register the first one so it can be chosen for subjects."
+  },
   "rooms": {
     "title": "StudyRooms",
     "join": "Join",
