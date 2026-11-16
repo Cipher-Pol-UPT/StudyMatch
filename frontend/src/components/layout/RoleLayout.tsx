@@ -9,6 +9,7 @@ import { AccountPasswordPage } from '../../pages/password/AccountPasswordPage';
 import { FeaturePlaceholder } from '../feedback/FeaturePlaceholder';
 import { AccountActions } from '../navigation/AccountActions';
 import { RoleHomePage } from './RoleHomePage';
+import '../../styles/appShell.css';
 import '../../styles/roleLayout.css';
 
 interface RoleLayoutProps {
@@ -46,7 +47,7 @@ export function RoleLayout({ currentUser, sections, onLoggedOut, activePath, chi
       title={title}
       actions={<AccountActions user={currentUser} onLoggedOut={onLoggedOut} />}
       linkAs={Link}
-      className="role-shell"
+      className="app-shell"
       routeKey={pathname}
     >
       <Routes>

@@ -8,6 +8,7 @@ import { HomePage } from '../home/HomePage';
 import { ProfilePage } from '../profile/ProfilePage';
 import { StudyRoomsPage } from '../studyRooms/StudyRoomsPage';
 import { ACCOUNT, SECTIONS } from './sections';
+import '../../styles/appShell.css';
 import './student.css';
 import { useMyProfile } from './useMyProfile';
 
@@ -36,7 +37,7 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
       title={t(current ? `nav.${current.key}` : 'nav.home')}
       actions={<><ThemeSwitcher /><ProfileMenu user={currentUser} avatarUrl={profile?.avatarUrl ?? undefined} onLoggedOut={onLoggedOut} /></>}
       linkAs={Link}
-      className="student-shell"
+      className="app-shell"
       routeKey={pathname}
     >
       <Routes>
