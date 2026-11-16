@@ -51,8 +51,8 @@ describe('StudentArea', () => {
   it('opens the study rooms demo from the student navigation', async () => {
     renderArea();
     fireEvent.click(screen.getByRole('link', { name: 'StudyRooms' }));
-    expect(await screen.findByRole('heading', { name: 'Study rooms' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /^My inscriptions/ })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'StudyRooms' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Joined/ })).toBeTruthy();
     expect(screen.queryByText('Coming soon')).toBeNull();
   });
 

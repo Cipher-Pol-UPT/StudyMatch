@@ -71,7 +71,7 @@ describe('study rooms demo', () => {
 
   it('shows only enrolled rooms in inscriptions and only hosted rooms in my study rooms', () => {
     renderPage();
-    fireEvent.click(screen.getByRole('button', { name: /^My inscriptions/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Joined/ }));
     expect(screen.getAllByRole('article')).toHaveLength(6);
     expect(screen.getByRole('article', { name: 'Hypothesis tests without fear' })).toBeTruthy();
     expect(screen.queryByRole('article', { name: 'Software quality essentials' })).toBeNull();
@@ -80,7 +80,7 @@ describe('study rooms demo', () => {
     expect(screen.getAllByRole('article')).toHaveLength(3);
     expect(screen.getByRole('article', { name: 'Hypothesis tests without fear' })).toBeTruthy();
     expect(screen.queryByRole('article', { name: 'A better code review' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /^My study rooms/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Hosting/ }));
     expect(screen.queryByRole('article')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show all subjects' }));
     expect(screen.getAllByRole('article')).toHaveLength(3);
@@ -95,7 +95,7 @@ describe('study rooms demo', () => {
     fireEvent.click(within(details()).getByRole('button', { name: 'Join' }));
     expect(within(details()).getByText('6/12 · 6 left')).toBeTruthy();
     await closePopup();
-    fireEvent.click(screen.getByRole('button', { name: /^My inscriptions/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Joined/ }));
     expect(screen.getAllByRole('article')).toHaveLength(7);
     const room = screen.getByRole('article', { name: 'Clean code, clear thinking' });
     fireEvent.click(within(room).getByRole('button', { name: 'Leave' }));
@@ -129,7 +129,7 @@ describe('study rooms demo', () => {
   it('shows an empty personal list for an unmatched subject and resets the filter from browse', () => {
     renderPage();
     fireEvent.click(screen.getByRole('button', { name: 'Statistics' }));
-    fireEvent.click(screen.getByRole('button', { name: /^My study rooms/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Hosting/ }));
     expect(screen.getByText('No study rooms to show')).toBeTruthy();
     expect(screen.queryByRole('article')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Browse study rooms' }));
