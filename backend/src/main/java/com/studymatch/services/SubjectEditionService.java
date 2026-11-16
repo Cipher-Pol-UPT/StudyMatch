@@ -77,6 +77,19 @@ public class SubjectEditionService {
         .orElse(List.of());
   }
 
+  // block account (admin): a teacher's editions this year need another teacher once they're blocked
+  @Transactional(readOnly = true)
+  public List<SubjectEditionResponseDTO> listCurrentTaughtBy(Long teacherNumber) {
+    return academicYearService.findCurrent()
+        .map(year -> subjectEditionRepository.findDistinctByTeachers_NumberAndAcademicYear(teacherNumber, year)
+            .stream()
+            .map(SubjectEditionResponseDTO::from)
+            .sorted(Comparator.comparing((SubjectEditionResponseDTO edition) -> edition.subject().name())
+                .thenComparing(SubjectEditionResponseDTO::id))
+            .toList())
+        .orElse(List.of());
+  }
+
   public SubjectEdition getLockedCurrentEdition(Long editionId) {
     SubjectEdition edition = getLockedEdition(editionId);
     if (!academicYearService.isCurrent(edition.getAcademicYear())) {

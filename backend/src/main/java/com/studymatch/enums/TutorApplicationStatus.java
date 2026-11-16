@@ -4,5 +4,6 @@ public enum TutorApplicationStatus {
 
   PENDING,
   APPROVED,
-  REJECTED
+  REJECTED,
+  CANCELLED
 }

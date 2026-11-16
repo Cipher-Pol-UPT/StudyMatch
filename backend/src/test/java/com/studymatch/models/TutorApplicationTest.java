@@ -126,4 +126,44 @@ class TutorApplicationTest {
     assertEquals(ErrorCode.APPLICATION_ALREADY_DECIDED, e.getCode());
   }
 
+  // cancelled when the student is blocked
+
+  @Test
+  @DisplayName("Cancelling a pending application closes it without a teacher")
+  void cancelPendingApplication() {
+    // Act
+    application.cancel();
+
+    // Assert
+    assertEquals(TutorApplicationStatus.CANCELLED, application.getStatus());
+    assertNotNull(application.getDecidedAt());
+    assertNull(application.getDecidedBy());
+  }
+
+  @Test
+  @DisplayName("An approved application can't be cancelled")
+  void cancelAfterApproveIsRejected() {
+    // Arrange
+    application.approve(teacher);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, application::cancel);
+
+    // Assert
+    assertEquals(ErrorCode.APPLICATION_ALREADY_DECIDED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("A cancelled application can't be approved anymore")
+  void approveAfterCancelIsRejected() {
+    // Arrange
+    application.cancel();
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> application.approve(teacher));
+
+    // Assert
+    assertEquals(ErrorCode.APPLICATION_ALREADY_DECIDED, e.getCode());
+  }
+
 }

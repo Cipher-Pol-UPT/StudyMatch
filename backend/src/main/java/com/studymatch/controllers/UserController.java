@@ -10,19 +10,27 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.studymatch.dtos.AccountSummaryDTO;
+import com.studymatch.dtos.BlockAccountRequestDTO;
+import com.studymatch.dtos.BlockImpactDTO;
+import com.studymatch.dtos.BlockedAccountDTO;
 import com.studymatch.dtos.ChangePasswordRequestDTO;
 import com.studymatch.dtos.CreateAccountRequestDTO;
 import com.studymatch.dtos.CreatedAccountDTO;
 import com.studymatch.dtos.CurrentUserDTO;
 import com.studymatch.dtos.ForgotPasswordRequestDTO;
 import com.studymatch.dtos.LoginRequestDTO;
+import com.studymatch.dtos.PageDTO;
 import com.studymatch.dtos.ResetPasswordRequestDTO;
+import com.studymatch.enums.AccountStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.exceptions.StudyMatchException;
@@ -83,6 +91,34 @@ public class UserController {
   public ResponseEntity<CreatedAccountDTO> createAccount(@Valid @RequestBody CreateAccountRequestDTO createRequest) {
     User user = userService.createAccount(createRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(CreatedAccountDTO.from(user));
+  }
+
+  // block account (admin)
+
+  @GetMapping
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Search accounts of every role by name, institutional email or number, 20 per page")
+  public ResponseEntity<PageDTO<AccountSummaryDTO>> listAccounts(@RequestParam(required = false) String search,
+      @RequestParam(required = false) AccountStatus status, @RequestParam(defaultValue = "0") int page) {
+    return ResponseEntity.ok(userService.listAccounts(search, status, page));
+  }
+
+  @GetMapping("{number}/block-impact")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "What blocking would cancel, and a teacher's editions this year that need another teacher")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ADMIN_CANNOT_BE_BLOCKED, ErrorCode.ACCOUNT_ALREADY_BLOCKED })
+  public ResponseEntity<BlockImpactDTO> getBlockImpact(@PathVariable Long number) {
+    return ResponseEntity.ok(userService.getBlockImpact(number));
+  }
+
+  @PutMapping("{number}/block")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Block an account: it can't log in, and its upcoming StudyRooms and pending tutor "
+      + "applications are cancelled")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ADMIN_CANNOT_BE_BLOCKED, ErrorCode.ACCOUNT_ALREADY_BLOCKED })
+  public ResponseEntity<BlockedAccountDTO> blockAccount(@PathVariable Long number,
+      @Valid @RequestBody BlockAccountRequestDTO blockRequest) {
+    return ResponseEntity.ok(userService.blockAccount(number, blockRequest.reason()));
   }
 
   @GetMapping("me")

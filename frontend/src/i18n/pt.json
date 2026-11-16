@@ -375,7 +375,8 @@
   "tutorApplicationStatuses": {
     "PENDING": "Pendente",
     "APPROVED": "Aprovada",
-    "REJECTED": "Rejeitada"
+    "REJECTED": "Rejeitada",
+    "CANCELLED": "Cancelada"
   },
   "achievements": {
     "FIRST_STUDYROOM": {
@@ -499,7 +500,9 @@
     "CAPACITY_BELOW_PARTICIPANTS": "A capacidade não pode ser inferior a {{participants}} participantes.",
     "ATTENDANCE_NOT_CONFIRMED": "As presenças ainda não foram confirmadas.",
     "RATING_WINDOW_CLOSED": "O período de avaliação terminou.",
-    "LESSON_IN_FUTURE": "Esta aula ainda não aconteceu, as presenças só podem ser registadas depois de começar."
+    "LESSON_IN_FUTURE": "Esta aula ainda não aconteceu, as presenças só podem ser registadas depois de começar.",
+    "ADMIN_CANNOT_BE_BLOCKED": "Não é possível bloquear contas de Administrador.",
+    "ACCOUNT_ALREADY_BLOCKED": "Esta conta já está bloqueada."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",

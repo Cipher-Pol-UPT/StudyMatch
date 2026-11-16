@@ -1,21 +1,32 @@
 package com.studymatch.services;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.dtos.AccountSummaryDTO;
+import com.studymatch.dtos.BlockImpactDTO;
+import com.studymatch.dtos.BlockedAccountDTO;
 import com.studymatch.dtos.ChangePasswordRequestDTO;
 import com.studymatch.dtos.CreateAccountRequestDTO;
+import com.studymatch.dtos.PageDTO;
 import com.studymatch.dtos.ResetPasswordRequestDTO;
+import com.studymatch.enums.AccountStatus;
 import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.utils.EmailSender;
+import com.studymatch.utils.SearchPatterns;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.User;
@@ -26,17 +37,26 @@ import com.studymatch.security.PasswordPolicy;
 public class UserService {
 
   private static final SecureRandom RANDOM = new SecureRandom();
+  private static final int ACCOUNTS_PER_PAGE = 20;
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final EmailSender emailSender;
+  private final StudyRoomService studyRoomService;
+  private final TutorApplicationService tutorApplicationService;
+  private final SubjectEditionService subjectEditionService;
   private final String institutionDomain;
 
   public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailSender emailSender,
+      StudyRoomService studyRoomService, TutorApplicationService tutorApplicationService,
+      SubjectEditionService subjectEditionService,
       @Value("${studymatch.institution-domain}") String institutionDomain) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.emailSender = emailSender;
+    this.studyRoomService = studyRoomService;
+    this.tutorApplicationService = tutorApplicationService;
+    this.subjectEditionService = subjectEditionService;
     this.institutionDomain = institutionDomain;
   }
 
@@ -47,6 +67,60 @@ public class UserService {
   public User getByInstitutionalEmail(String institutionalEmail) {
     return findByInstitutionalEmail(institutionalEmail)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  public User getByNumber(Long number) {
+    return userRepository.findById(number).orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  // block account (admin): every role, both filters optional
+  @Transactional(readOnly = true)
+  public PageDTO<AccountSummaryDTO> listAccounts(String search, AccountStatus status, int page) {
+    List<Specification<User>> filters = new ArrayList<>();
+    if (search != null && !search.isBlank()) {
+      filters.add(matchesSearch(search.trim()));
+    }
+    if (status != null) {
+      filters.add((user, query, where) -> where.equal(user.get("accountStatus"), status));
+    }
+
+    PageRequest pageRequest = PageRequest.of(Math.max(page, 0), ACCOUNTS_PER_PAGE, Sort.by("name", "number"));
+    return PageDTO.from(userRepository.findAll(Specification.allOf(filters), pageRequest), AccountSummaryDTO::from);
+  }
+
+  // part of the name or institutional email, or the exact number when it's all digits
+  private static Specification<User> matchesSearch(String search) {
+    return (user, query, where) -> {
+      String pattern = SearchPatterns.containing(search);
+      var byText = where.or(
+          where.like(where.lower(user.get("name")), pattern, SearchPatterns.ESCAPE),
+          where.like(where.lower(user.get("institutionalEmail")), pattern, SearchPatterns.ESCAPE));
+      if (search.chars().allMatch(Character::isDigit) && search.length() < 19) {
+        return where.or(byText, where.equal(user.get("number"), Long.valueOf(search)));
+      }
+      return byText;
+    };
+  }
+
+  // what blocking would cancel, the queries just come back empty for roles that have none of it
+  @Transactional(readOnly = true)
+  public BlockImpactDTO getBlockImpact(Long number) {
+    User user = getByNumber(number);
+    user.checkCanBeBlocked();
+    return new BlockImpactDTO(AccountSummaryDTO.from(user), studyRoomService.countUpcoming(number),
+        tutorApplicationService.countPending(number), subjectEditionService.listCurrentTaughtBy(number));
+  }
+
+  // the session ends on its next request, AccountStateFilter checks the status every time
+  @Transactional
+  public BlockedAccountDTO blockAccount(Long number, String reason) {
+    User user = getByNumber(number);
+    user.block(reason);
+    userRepository.save(user);
+
+    int cancelledStudyRooms = studyRoomService.cancelUpcoming(number);
+    int cancelledTutorApplications = tutorApplicationService.cancelPending(number);
+    return new BlockedAccountDTO(AccountSummaryDTO.from(user), cancelledStudyRooms, cancelledTutorApplications);
   }
 
   // account + email are all or nothing: if the email fails, the account is rolled back so the admin can fix it and retry
