@@ -49,4 +49,9 @@ public class AbsenceService {
     }
   }
 
+  // every class's absences, a student who moved class still had one in this lesson
+  public void deleteAbsences(Lesson lesson) {
+    absenceRepository.deleteByLesson(lesson);
+  }
+
 }
