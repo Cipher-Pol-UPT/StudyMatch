@@ -164,10 +164,11 @@ class EditStudentStatuteIntegrationTest {
   }
 
   @Test
-  @DisplayName("Ending the statute of a student who has none is still 204")
+  @DisplayName("Ending the statute of a student who has none is 409 STUDENT_HAS_NO_STATUTE")
   void endingMissingStatute() throws Exception {
     removeStatute(staff, ana.getNumber())
-        .andExpect(status().isNoContent());
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("STUDENT_HAS_NO_STATUTE"));
   }
 
   // errors

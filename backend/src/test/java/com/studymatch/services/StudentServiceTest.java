@@ -404,13 +404,15 @@ class StudentServiceTest {
   }
 
   @Test
-  @DisplayName("Ending the statute of a student who has none leaves them without one")
-  void endingMissingStatuteIsFine() {
+  @DisplayName("Ending the statute of a student who has none throws STUDENT_HAS_NO_STATUTE, nothing is saved")
+  void endingMissingStatuteIsRefused() {
     // Act
-    studentService.removeStatute(STUDENT_NUMBER);
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studentService.removeStatute(STUDENT_NUMBER));
 
     // Assert
-    assertNull(student.getStatuteType());
+    assertEquals(ErrorCode.STUDENT_HAS_NO_STATUTE, e.getCode());
+    verify(studentRepository, never()).save(any());
   }
 
   private static Staff staff() {
