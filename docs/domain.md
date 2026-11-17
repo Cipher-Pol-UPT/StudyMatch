@@ -82,7 +82,7 @@ Attendance is worked out per enrolment: the lessons stored for the student's cla
 
 Staff registers it one lesson at a time: the class plus the date and start time, since a class can have more than one lesson a day. Only the absent students are sent, each one justified or not, and everyone else was present. Saving the same lesson again corrects it. A lesson that hasn't started yet is refused (`LESSON_IN_FUTURE`) because it would already count as held, and the seconds are dropped, so 9:00 and 9:00:30 are the same lesson. Only editions of the current year take new records.
 
-Before the first lesson there's nothing to measure, so attendance is empty, not 100%. A student with an active special statute has no attendance at all: teachers see "not applicable" and never the statute type (GR7). Only Staff sees the type. A statute ends by itself after its end date, which can't be in the past when it's given.
+Before the first lesson there's nothing to measure, so attendance is empty, not 100%. A student with an active special statute has no attendance at all: teachers see "not applicable" and never the statute type (GR7). Only Staff sees the type. Staff gives a statute with just the type and the end date, since it starts the day it's added, and giving another one replaces the current one, even of the same type. A statute ends by itself after its end date, which can't be in the past when it's given (today is fine, it's still active that day). Staff can also end it early, which removes it.
 
 ## The current academic year
 
