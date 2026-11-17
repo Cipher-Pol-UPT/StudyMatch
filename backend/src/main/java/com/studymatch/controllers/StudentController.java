@@ -111,8 +111,8 @@ public class StudentController {
 
   @DeleteMapping("{number}/statute")
   @PreAuthorize("hasRole('STAFF')")
-  @Operation(summary = "End the student's statute, also 204 if they didn't have one")
-  @ErrorCodes(ErrorCode.NOT_FOUND)
+  @Operation(summary = "End the student's statute, even an expired one")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.STUDENT_HAS_NO_STATUTE })
   public ResponseEntity<Void> removeStatute(@PathVariable Long number) {
     studentService.removeStatute(number);
     return ResponseEntity.noContent().build();

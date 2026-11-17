@@ -180,7 +180,7 @@ public class StudentService {
     return getRecord(studentNumber, staff);
   }
 
-  // ending one that isn't there is fine, the student ends up without a statute either way
+  // edit student statute, End option: removes it, no history kept (GR7)
   @Transactional
   public void removeStatute(Long studentNumber) {
     Student student = getByNumber(studentNumber);
