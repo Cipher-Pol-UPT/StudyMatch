@@ -29,7 +29,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import com.studymatch.dtos.AchievementBadgeDTO;
 import com.studymatch.dtos.PersonalityProfileDTO;
+import com.studymatch.dtos.StatuteRequestDTO;
 import com.studymatch.dtos.StudentProfileDTO;
+import com.studymatch.dtos.StudentRecordDTO;
 import com.studymatch.dtos.TutorBadgeDTO;
 import com.studymatch.dtos.UpdateProfileRequestDTO;
 import com.studymatch.enums.Achievement;
@@ -306,6 +308,113 @@ class StudentServiceTest {
     // Assert
     assertEquals(ErrorCode.INVALID_PROFILE_PHOTO, e.getCode());
     verify(studentRepository, never()).save(any());
+  }
+
+  // edit student statute
+
+  @Test
+  @DisplayName("Adding a statute saves its type and end date and the record shows them")
+  void addingStatuteSavesIt() {
+    // Arrange
+    LocalDate endDate = LocalDate.now().plusMonths(6);
+
+    // Act
+    StudentRecordDTO record = studentService.setStatute(STUDENT_NUMBER,
+        new StatuteRequestDTO(StatuteType.WORKING_STUDENT, endDate), staff());
+
+    // Assert
+    assertEquals(StatuteType.WORKING_STUDENT, record.statuteType());
+    assertEquals(endDate, record.statuteEndDate());
+    verify(studentRepository).save(student);
+  }
+
+  @Test
+  @DisplayName("Adding a statute replaces the current one, even of the same type (GR7)")
+  void addingStatuteReplacesTheCurrentOne() {
+    // Arrange
+    student.assignStatute(StatuteType.WORKING_STUDENT, LocalDate.now().plusMonths(1));
+    LocalDate newEndDate = LocalDate.now().plusYears(1);
+
+    // Act
+    studentService.setStatute(STUDENT_NUMBER, new StatuteRequestDTO(StatuteType.WORKING_STUDENT, newEndDate),
+        staff());
+
+    // Assert
+    assertEquals(newEndDate, student.getStatuteEndDate());
+  }
+
+  @Test
+  @DisplayName("A statute ending today is accepted, it's still active until the end of the day")
+  void statuteEndingTodayIsAccepted() {
+    // Act
+    studentService.setStatute(STUDENT_NUMBER, new StatuteRequestDTO(StatuteType.STUDENT_PARENT, LocalDate.now()),
+        staff());
+
+    // Assert
+    assertTrue(student.hasActiveStatute());
+  }
+
+  @Test
+  @DisplayName("A statute that ended yesterday throws STATUTE_END_DATE_IN_PAST and the old one stays")
+  void statuteEndingYesterdayIsRejected() {
+    // Arrange
+    LocalDate currentEndDate = LocalDate.now().plusMonths(1);
+    student.assignStatute(StatuteType.WORKING_STUDENT, currentEndDate);
+    StatuteRequestDTO statute = new StatuteRequestDTO(StatuteType.STUDENT_PARENT, LocalDate.now().minusDays(1));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studentService.setStatute(STUDENT_NUMBER, statute, staff()));
+
+    // Assert
+    assertEquals(ErrorCode.STATUTE_END_DATE_IN_PAST, e.getCode());
+    assertEquals(StatuteType.WORKING_STUDENT, student.getStatuteType());
+    assertEquals(currentEndDate, student.getStatuteEndDate());
+    verify(studentRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("Adding a statute to an unknown student throws NOT_FOUND")
+  void addingStatuteToUnknownStudent() {
+    // Arrange
+    StatuteRequestDTO statute = new StatuteRequestDTO(StatuteType.WORKING_STUDENT, LocalDate.now());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studentService.setStatute(99999L, statute, staff()));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Ending a statute removes it")
+  void endingStatuteRemovesIt() {
+    // Arrange
+    student.assignStatute(StatuteType.WORKING_STUDENT, LocalDate.now().plusMonths(1));
+
+    // Act
+    studentService.removeStatute(STUDENT_NUMBER);
+
+    // Assert
+    assertNull(student.getStatuteType());
+    assertNull(student.getStatuteEndDate());
+    assertFalse(student.hasActiveStatute());
+    verify(studentRepository).save(student);
+  }
+
+  @Test
+  @DisplayName("Ending the statute of a student who has none leaves them without one")
+  void endingMissingStatuteIsFine() {
+    // Act
+    studentService.removeStatute(STUDENT_NUMBER);
+
+    // Assert
+    assertNull(student.getStatuteType());
+  }
+
+  private static Staff staff() {
+    return withNumber(new Staff("staff@example.com", "staff@test.com", "Test Staff", "hash"), STAFF_NUMBER);
   }
 
   // personality test
