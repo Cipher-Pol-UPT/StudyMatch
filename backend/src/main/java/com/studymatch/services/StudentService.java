@@ -32,6 +32,7 @@ import com.studymatch.dtos.PrivateProfileDTO;
 import com.studymatch.dtos.RegisterStudentRequestDTO;
 import com.studymatch.dtos.RegisteredStudentDTO;
 import com.studymatch.dtos.ResendCredentialsRequestDTO;
+import com.studymatch.dtos.StatuteRequestDTO;
 import com.studymatch.dtos.StudentProfileDTO;
 import com.studymatch.dtos.StudentRecordDTO;
 import com.studymatch.dtos.StudentSummaryDTO;
@@ -168,6 +169,23 @@ public class StudentService {
       throw new StudyMatchException(ErrorCode.PERSONAL_EMAIL_ALREADY_EXISTS);
     }
     return getRecord(studentNumber, staff);
+  }
+
+  // edit student statute: adding replaces the current one, even of the same type, no history kept (GR7)
+  @Transactional
+  public StudentRecordDTO setStatute(Long studentNumber, StatuteRequestDTO statute, User staff) {
+    Student student = getByNumber(studentNumber);
+    student.assignStatute(statute.type(), statute.endDate());
+    studentRepository.save(student);
+    return getRecord(studentNumber, staff);
+  }
+
+  // ending one that isn't there is fine, the student ends up without a statute either way
+  @Transactional
+  public void removeStatute(Long studentNumber) {
+    Student student = getByNumber(studentNumber);
+    student.removeStatute();
+    studentRepository.save(student);
   }
 
   @Transactional(readOnly = true)
