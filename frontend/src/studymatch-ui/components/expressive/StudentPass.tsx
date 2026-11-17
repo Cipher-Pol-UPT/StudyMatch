@@ -30,7 +30,8 @@ export interface StudentPassProps {
   name: string;
   number: string;
   year: number;
-  group: string;
+  // left out until the student has a group
+  group?: string;
   profile: ProfileKey;
   teammates?: string[];
   color?: string;
@@ -74,7 +75,7 @@ export function StudentPass({ name, number, year, group, profile, teammates = []
             <div>
               <div className="sm-pass__name">{name}</div>
               <div className="sm-pass__meta">
-                {number} · {group}
+                {group ? `${number} · ${group}` : number}
               </div>
             </div>
             <span style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', color: P.color, display: 'grid', placeItems: 'center', flexShrink: 0 }} title={P.label}>
@@ -85,7 +86,7 @@ export function StudentPass({ name, number, year, group, profile, teammates = []
         <div className="sm-pass sm-pass--back">
           <div className="sm-pass__row">
             <span className="sm-eyebrow" style={{ color: 'rgba(255,255,255,.6)' }}>
-              {group} {i18n.t('ui.teammates')}
+              {group && `${group} ${i18n.t('ui.teammates')}`}
             </span>
             <span className="sm-eyebrow" style={{ color: 'var(--sm-spark)' }}>
               {P.short}

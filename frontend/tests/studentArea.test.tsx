@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logout } from '../src/api/auth';
+import { getMyProfile } from '../src/api/students';
 import i18n from '../src/i18n';
 import { StudyMatchProvider } from '../src/studymatch-ui';
 import { StudentArea } from '../src/pages/student/StudentArea';
@@ -53,7 +54,7 @@ describe('StudentArea', () => {
     fireEvent.click(screen.getByRole('link', { name: 'StudyRooms' }));
     expect(await screen.findByRole('heading', { name: 'StudyRooms' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Joined/ })).toBeTruthy();
-    expect(screen.queryByText('Coming soon')).toBeNull();
+    expect(screen.queryByText('This page is not available yet.')).toBeNull();
   });
 
   it('logs out through the API and then clears the session', async () => {
@@ -69,6 +70,18 @@ describe('StudentArea', () => {
     expect(screen.getByRole('heading', { name: 'Hello, Ana Silva.' })).toBeTruthy();
     expect(await screen.findByText('90')).toBeTruthy();
     expect(screen.getByText(/Informatics/)).toBeTruthy();
+  });
+
+  it('shows the student pass once the student has a personality profile', async () => {
+    const profile = await getMyProfile();
+    vi.mocked(getMyProfile).mockResolvedValueOnce({
+      ...profile,
+      privateProfile: { ...profile.privateProfile!, personalityProfile: { leadership: 0.4, problemSolving: 0.9, creativity: 0.5, execution: 0.6 } },
+    });
+    renderArea();
+    expect(await screen.findByRole('button', { name: /Ana Silva’s student pass/ })).toBeTruthy();
+    expect(screen.getByText('45123')).toBeTruthy();
+    expect(screen.queryByText(/Student no\./)).toBeNull();
   });
 
   it('shows no tasks until there are real ones', () => {

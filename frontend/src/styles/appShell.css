@@ -1,0 +1,21 @@
+/* The library's shell keeps the side menu open on desktop and turns it into a drawer below 960px.
+   Below that width the closed drawer is also hidden, so its links can't be reached with Tab. */
+@media (max-width: 960px) {
+  .sm-shell.app-shell .sm-shell__side {
+    inset: 0 auto 0 0; height: auto; max-width: 85vw;
+    background: var(--sm-surface);
+    visibility: hidden;
+  }
+  .sm-shell.app-shell.sm-shell--open .sm-shell__side { visibility: visible; box-shadow: var(--sm-shadow-lg); }
+  .sm-shell.app-shell .sm-shell__scrim {
+    display: block; position: fixed; inset: 0; z-index: 25;
+    background: color-mix(in srgb, var(--sm-ink) 40%, transparent);
+    opacity: 0; pointer-events: none;
+  }
+  .sm-shell.app-shell.sm-shell--open .sm-shell__scrim { opacity: 1; pointer-events: auto; }
+}
+@media (max-width: 960px) and (prefers-reduced-motion: no-preference) {
+  .sm-shell.app-shell .sm-shell__side { transition: transform var(--sm-dur-3) var(--sm-ease-out), visibility 0s linear var(--sm-dur-3); }
+  .sm-shell.app-shell.sm-shell--open .sm-shell__side { transition-delay: 0s; }
+  .sm-shell.app-shell .sm-shell__scrim { transition: opacity var(--sm-dur-2); }
+}

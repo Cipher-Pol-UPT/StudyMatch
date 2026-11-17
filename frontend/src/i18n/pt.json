@@ -87,7 +87,6 @@
     "academicYear": "Ano letivo",
     "class": "Turma",
     "finalGrade": "Classificação final",
-    "backToStudents": "Voltar aos estudantes",
     "staffRecord": "Registo dos serviços académicos",
     "personalEmail": "Email pessoal",
     "specialStatute": "Estatuto especial",
@@ -738,7 +737,8 @@
     "studentInformation": "Informação do estudante",
     "notifications": "Notificações",
     "logout": "Terminar sessão",
-    "accountMenu": "Menu da conta"
+    "accountMenu": "Menu da conta",
+    "comingSoon": "Brevemente"
   },
   "passwordRules": {
     "length": "Pelo menos 8 caracteres",

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useOutletContext, useParams, useSearchParams } from 'react-router-dom';
+import { useOutletContext, useParams } from 'react-router-dom';
 import { getEditionStudents, getStudentProfile } from '../../api/studentDirectory';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
@@ -15,7 +15,6 @@ export function TeacherStudentProfilePage() {
   const { t } = useTranslation();
   const format = useStudentFormatting();
   const { number } = useParams();
-  const [params] = useSearchParams();
   const id = Number(number);
   const load = useCallback(async () => {
     if (!Number.isSafeInteger(id) || id <= 0) throw { code: 'NOT_FOUND' };
@@ -38,9 +37,6 @@ export function TeacherStudentProfilePage() {
 
   return (
     <>
-      <Link className="directory-back" to={`/subject-editions/${edition.id}/students?${params}`}>
-        ← {t('directory.backToStudents')}
-      </Link>
       {detail.loading || detail.error !== undefined ? (
         <DataLoadState error={detail.error} retry={detail.retry} />
       ) : data && profile && (

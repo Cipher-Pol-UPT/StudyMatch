@@ -5,7 +5,7 @@ import { getStudentRecord } from '../../api/studentDirectory';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
 import { useStudentFormatting } from '../../hooks/useStudentFormatting';
-import { Card, ProfileView, StatusPill, Table, type TableColumn } from '../../studymatch-ui';
+import { Breadcrumbs, Card, ProfileView, StatusPill, Table, type TableColumn } from '../../studymatch-ui';
 import type { EnrolmentRecordData } from '../../types/studentDirectory';
 import { toProfileView } from '../profile/toProfileView';
 import '../../styles/studentDirectory.css';
@@ -33,7 +33,10 @@ export function StaffStudentDetailsPage() {
 
   return (
     <div className="role-page directory-page">
-      <Link className="directory-back" to={`/students?${params}`}>← {t('directory.backToStudents')}</Link>
+      <Breadcrumbs
+        linkAs={Link}
+        items={[{ label: t('workspace.sections.students'), href: `/students?${params}` }, { label: data?.profile.name ?? number }]}
+      />
       {record.loading || record.error !== undefined ? (
         <DataLoadState error={record.error} retry={record.retry} />
       ) : data && (

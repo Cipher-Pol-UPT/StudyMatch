@@ -80,6 +80,7 @@
   cursor: pointer;
   transition: background var(--sm-dur-1), color var(--sm-dur-1);
 }
+.sm-nav-item--muted { color: var(--sm-text-3); font-weight: 400; }
 .sm-nav-item:hover { background: var(--sm-fill); color: var(--sm-text); }
 .sm-nav-item[aria-current='page'] { background: var(--sm-violet-a12); color: var(--sm-violet-ink); }
 .sm-nav-item[aria-current='page'] svg { color: var(--sm-violet-ink); }

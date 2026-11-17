@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, Outlet, useParams } from 'react-router-dom';
+import { Link, Outlet, useMatch, useParams, useSearchParams } from 'react-router-dom';
 import { getMySubjectEditions } from '../../api/studentDirectory';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
+import { Breadcrumbs } from '../../studymatch-ui';
 import '../../styles/studentDirectory.css';
 
 export function TeacherSubjectLayout() {
@@ -17,10 +18,23 @@ export function TeacherSubjectLayout() {
     return edition;
   }, [id]);
   const edition = useRemoteData(`edition:${editionId}`, load);
+  // on a student's page the trail goes one step further, and the subject links back to its list
+  const student = useMatch('/subject-editions/:editionId/students/:number');
+  const [params] = useSearchParams();
 
   return (
     <div className="role-page directory-page">
-      <Link className="directory-back" to="/students">← {t('workspace.sections.students')}</Link>
+      <Breadcrumbs
+        linkAs={Link}
+        items={[
+          { label: t('workspace.sections.students'), href: '/students' },
+          {
+            label: edition.data?.subject.name ?? t('directory.subject'),
+            href: student ? `/subject-editions/${editionId}/students?${params}` : undefined,
+          },
+          ...(student ? [{ label: student.params.number }] : []),
+        ]}
+      />
       {edition.loading || edition.error !== undefined ? (
         <DataLoadState error={edition.error} retry={edition.retry} />
       ) : edition.data && (
