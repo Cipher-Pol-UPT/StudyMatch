@@ -380,20 +380,32 @@
   "achievements": {
     "FIRST_STUDYROOM": {
       "name": "First StudyRoom",
-      "description": "Participation in a first StudyRoom."
+      "description": "Participation in a first StudyRoom.",
+      "criteria": "Tutor your first StudyRoom."
     },
     "DEDICATED_TUTOR": {
       "name": "Dedicated tutor",
-      "description": "Recognition for tutoring."
+      "description": "Recognition for tutoring.",
+      "criteria": "Tutor 10 StudyRooms."
     },
     "TOP_RATED": {
       "name": "Top rated",
-      "description": "Recognition for tutor ratings."
+      "description": "Recognition for tutor ratings.",
+      "criteria": "Get an average of 4.5 stars or more in a subject, from at least 5 different students."
     },
     "MENTOR": {
       "name": "Mentor",
-      "description": "Recognition for supporting students."
+      "description": "Recognition for supporting students.",
+      "criteria": "Tutor 15 different students."
     },
+    "title": "Achievements",
+    "earned": "Earned",
+    "toEarn": "Still to earn",
+    "count": "{{earned}} of {{total}} earned",
+    "noneYet": "You have no achievements yet. Below is how to earn them.",
+    "howToEarn": "How to earn it",
+    "countedRooms": "Only StudyRooms with at least 2 confirmed attendees count.",
+    "seeAll": "See all",
     "export": "Export certificate",
     "certificate": "Achievement certificate",
     "earnedOn": "Earned on {{date}}",

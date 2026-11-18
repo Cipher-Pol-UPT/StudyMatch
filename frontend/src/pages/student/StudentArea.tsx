@@ -4,6 +4,7 @@ import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-r
 import { logout } from '../../api/auth';
 import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry, type NavItem, type NavSection } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
+import { AchievementsPage } from '../achievements/AchievementsPage';
 import { HomePage } from '../home/HomePage';
 import { AccountPasswordPage } from '../password/AccountPasswordPage';
 import { ProfilePage } from '../profile/ProfilePage';
@@ -38,7 +39,7 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
     <AppShell
       brand={<Logo size={28} />}
       nav={nav}
-      title={t(current ? `nav.${current.key}` : 'nav.home')}
+      title={t(current ? `nav.${current.key}` : pathname === '/achievements' ? 'achievements.title' : 'nav.home')}
       actions={<><ThemeSwitcher /><ProfileMenu user={currentUser} avatarUrl={profile?.avatarUrl ?? undefined} onLoggedOut={onLoggedOut} /></>}
       linkAs={Link}
       className="app-shell"
@@ -49,6 +50,7 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
         <Route path={PROFILE_PATH} element={<ProfilePage onSaved={showSavedProfile} />} />
         <Route path="/study-rooms" element={<StudyRoomsPage currentUser={currentUser} />} />
         <Route path={CHANGE_PASSWORD_PATH} element={<AccountPasswordPage />} />
+        <Route path="/achievements" element={<AchievementsPage profile={profile} failed={failed} />} />
         {pages.filter((p) => ![PROFILE_PATH, '/study-rooms', CHANGE_PASSWORD_PATH].includes(p.path)).map((p) => (
           <Route key={p.path} path={p.path} element={<EmptyState icon={p.icon} title={t(`nav.${p.key}`)} body={t('placeholder.comingSoon')} />} />
         ))}

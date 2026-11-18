@@ -60,6 +60,14 @@ describe('StudentArea', () => {
     expect((await screen.findByRole('link', { name: 'Change password' })).getAttribute('href')).toBe('/change-password');
   });
 
+  it('opens all the achievements from the badges on the profile', async () => {
+    renderArea();
+    fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'My profile' }));
+    fireEvent.click(await screen.findByRole('link', { name: 'See all' }));
+    expect(await screen.findByRole('heading', { name: 'Still to earn' })).toBeTruthy();
+  });
+
   it('opens the study rooms demo from the student navigation', async () => {
     renderArea();
     fireEvent.click(screen.getByRole('link', { name: 'StudyRooms' }));

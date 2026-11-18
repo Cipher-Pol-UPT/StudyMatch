@@ -1,4 +1,4 @@
-import { KeyRound, RefreshCw, UserRound } from 'lucide-react';
+import { ChevronRight, KeyRound, RefreshCw, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -76,6 +76,12 @@ export function ProfilePage({ onSaved }: ProfilePageProps) {
             <Link className={buttonClass({ variant: 'ghost' })} to="/change-password">
               <KeyRound size={18} strokeWidth={2.25} aria-hidden />
               <span className="sm-btn__label">{t('nav.changePassword')}</span>
+            </Link>
+          }
+          badgesAction={
+            <Link className={buttonClass({ variant: 'ghost', size: 'sm' })} to="/achievements">
+              <span className="sm-btn__label">{t('achievements.seeAll')}</span>
+              <ChevronRight size={16} strokeWidth={2.25} aria-hidden />
             </Link>
           }
         />

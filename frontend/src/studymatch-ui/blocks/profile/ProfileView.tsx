@@ -144,6 +144,8 @@ export interface ProfileViewProps {
   onEdit?: () => void;
   // more of the owner's own actions, after Edit profile
   actions?: ReactNode;
+  // shown in the corner of the Badges card, like a link to all the achievements
+  badgesAction?: ReactNode;
   onAvatarChange?: (image: CroppedImage | null) => void;
   onBannerChange?: (image: CroppedImage | null) => void;
   onBannerPresetChange?: (preset: BannerPreset) => void;
@@ -152,7 +154,7 @@ export interface ProfileViewProps {
   className?: string;
 }
 
-export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit: false }, onEdit, actions, onAvatarChange, onBannerChange, onBannerPresetChange, onExportCertificate, locale = i18n.language, className }: ProfileViewProps) {
+export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit: false }, onEdit, actions, badgesAction, onAvatarChange, onBannerChange, onBannerPresetChange, onExportCertificate, locale = i18n.language, className }: ProfileViewProps) {
   useTranslation();
   const [achievement, setAchievement] = useState<AchievementId | null>(null);
   const [tutor, setTutor] = useState<NonNullable<StudentProfile['tutorBadges']>[number] | null>(null);
@@ -201,7 +203,7 @@ export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit
             </div>
           </Card>
 
-          <Card title={i18n.t('ui.badges')} description={earned.length || p.tutorBadges?.length ? i18n.t('ui.select_a_badge_for_details') : undefined}>
+          <Card title={i18n.t('ui.badges')} description={earned.length || p.tutorBadges?.length ? i18n.t('ui.select_a_badge_for_details') : undefined} action={badgesAction}>
             {p.tutorBadges && p.tutorBadges.length > 0 && (
               <div className="sm-profile-tutor">
                 {p.tutorBadges.map((t) => (
