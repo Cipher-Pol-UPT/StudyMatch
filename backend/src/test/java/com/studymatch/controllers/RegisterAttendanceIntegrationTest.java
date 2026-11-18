@@ -2,6 +2,7 @@ package com.studymatch.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -154,6 +155,13 @@ class RegisterAttendanceIntegrationTest {
     return register(STAFF, edition, "T1", startsAt, absences);
   }
 
+  private ResultActions deleteLesson(String email, SubjectEdition edition, String startsAt) throws Exception {
+    return mockMvc.perform(delete("/subject-editions/" + edition.getId() + "/attendance").with(csrf())
+        .param("classSection", "T1")
+        .param("startsAt", startsAt)
+        .session(loginAs(email)));
+  }
+
   private static String absent(Student student, boolean justified) {
     return "{\"studentNumber\":" + student.getNumber() + ",\"justified\":" + justified + "}";
   }
@@ -244,6 +252,57 @@ class RegisterAttendanceIntegrationTest {
     // Act + Assert
     sheet(LESSON)
         .andExpect(jsonPath("$.recorded").value(true));
+  }
+
+  // delete a lesson
+
+  @Test
+  @DisplayName("Deleting a lesson removes it and its absences, so it stops counting for attendance")
+  void deleteLessonWithAbsences() throws Exception {
+    // Arrange
+    register(LESSON, absent(ana, false)).andExpect(status().isOk());
+
+    // Act
+    deleteLesson(STAFF, edition, LESSON)
+        .andExpect(status().isNoContent());
+
+    // Assert
+    assertEquals(0, lessonsOfT1());
+    assertEquals(0, absenceRepository.findAll().stream()
+        .filter(absence -> absence.getEnrolment().getStudent().getNumber().equals(ana.getNumber())).count());
+    sheet(LESSON)
+        .andExpect(jsonPath("$.recorded").value(false))
+        .andExpect(jsonPath("$.students[0].absent").value(false))
+        .andExpect(jsonPath("$.students[0].attendance").value(Matchers.nullValue()));
+  }
+
+  @Test
+  @DisplayName("Deleting a lesson that was never registered is 404 NOT_FOUND")
+  void deleteUnregisteredLesson() throws Exception {
+    deleteLesson(STAFF, edition, LESSON)
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+  }
+
+  @Test
+  @DisplayName("Deleting a lesson of last year's edition is 409 SUBJECT_EDITION_NOT_CURRENT")
+  void deleteLessonOfLastYear() throws Exception {
+    deleteLesson(STAFF, lastYear, LESSON)
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("SUBJECT_EDITION_NOT_CURRENT"));
+  }
+
+  @Test
+  @DisplayName("A teacher can't delete a lesson, 403 ACCESS_DENIED")
+  void teacherCantDeleteLesson() throws Exception {
+    // Arrange
+    register(LESSON, absent(ana, false)).andExpect(status().isOk());
+
+    // Act + Assert
+    deleteLesson(TEACHER, edition, LESSON)
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+    assertEquals(1, lessonsOfT1());
   }
 
   // errors

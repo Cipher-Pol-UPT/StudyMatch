@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.AttendanceRequestDTO;
@@ -485,6 +487,41 @@ class EnrolmentServiceTest {
     assertEquals(ErrorCode.STUDENT_NOT_ENROLLED, e.getCode());
     assertEquals(Map.of("number", 9999L), e.getParams());
     verify(lessonService, never()).getOrCreateLesson(any(), any());
+  }
+
+  @Test
+  @DisplayName("Deleting a lesson removes its absences first, then the lesson")
+  void lessonIsDeletedWithItsAbsences() {
+    // Arrange
+    ClassSection classSection = classSectionOfEdition7();
+    Lesson lesson = new Lesson(classSection, LESSON_START);
+    when(lessonService.getLesson(classSection, LESSON_START)).thenReturn(lesson);
+
+    // Act
+    enrolmentService.deleteLesson(7L, " T1 ", LESSON_START);
+
+    // Assert
+    InOrder order = inOrder(absenceService, lessonService);
+    order.verify(absenceService).deleteAbsences(lesson);
+    order.verify(lessonService).deleteLesson(lesson);
+  }
+
+  @Test
+  @DisplayName("Deleting a lesson nobody registered is NOT_FOUND and nothing is deleted")
+  void unregisteredLessonIsNotDeleted() {
+    // Arrange
+    ClassSection classSection = classSectionOfEdition7();
+    when(lessonService.getLesson(classSection, LESSON_START))
+        .thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> enrolmentService.deleteLesson(7L, "T1", LESSON_START));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+    verify(absenceService, never()).deleteAbsences(any());
+    verify(lessonService, never()).deleteLesson(any());
   }
 
   private Enrolment enrolmentWith(long lessons, long unjustifiedAbsences) {
