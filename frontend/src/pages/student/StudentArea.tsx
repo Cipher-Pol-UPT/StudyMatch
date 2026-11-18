@@ -5,6 +5,7 @@ import { logout } from '../../api/auth';
 import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry, type NavItem, type NavSection } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { HomePage } from '../home/HomePage';
+import { AccountPasswordPage } from '../password/AccountPasswordPage';
 import { ProfilePage } from '../profile/ProfilePage';
 import { StudyRoomsPage } from '../studyRooms/StudyRoomsPage';
 import { ACCOUNT, SECTIONS, type Section } from './sections';
@@ -13,6 +14,7 @@ import './student.css';
 import { useMyProfile } from './useMyProfile';
 
 const PROFILE_PATH = '/profile';
+const CHANGE_PASSWORD_PATH = '/change-password';
 
 export interface StudentAreaProps {
   currentUser: CurrentUser;
@@ -46,7 +48,8 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
         <Route path="/" element={<HomePage currentUser={currentUser} profile={profile} failed={failed} />} />
         <Route path={PROFILE_PATH} element={<ProfilePage onSaved={showSavedProfile} />} />
         <Route path="/study-rooms" element={<StudyRoomsPage currentUser={currentUser} />} />
-        {pages.filter((p) => p.path !== PROFILE_PATH && p.path !== '/study-rooms').map((p) => (
+        <Route path={CHANGE_PASSWORD_PATH} element={<AccountPasswordPage />} />
+        {pages.filter((p) => ![PROFILE_PATH, '/study-rooms', CHANGE_PASSWORD_PATH].includes(p.path)).map((p) => (
           <Route key={p.path} path={p.path} element={<EmptyState icon={p.icon} title={t(`nav.${p.key}`)} body={t('placeholder.comingSoon')} />} />
         ))}
         <Route path="*" element={<Navigate to="/" replace />} />

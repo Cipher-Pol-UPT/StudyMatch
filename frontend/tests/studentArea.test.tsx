@@ -49,6 +49,17 @@ describe('StudentArea', () => {
     expect(await screen.findByRole('button', { name: 'Edit profile' })).toBeTruthy();
   });
 
+  it('opens change password from the avatar menu and from the profile', async () => {
+    renderArea();
+    fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Change password' }));
+    expect(await screen.findByLabelText('Current password')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'My profile' }));
+    expect((await screen.findByRole('link', { name: 'Change password' })).getAttribute('href')).toBe('/change-password');
+  });
+
   it('opens the study rooms demo from the student navigation', async () => {
     renderArea();
     fireEvent.click(screen.getByRole('link', { name: 'StudyRooms' }));

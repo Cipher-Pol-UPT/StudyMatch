@@ -1,8 +1,9 @@
-import { RefreshCw, UserRound } from 'lucide-react';
+import { KeyRound, RefreshCw, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { getMyProfile } from '../../api/students';
-import { Button, EmptyState, ProfileView, Spinner, useToast } from '../../studymatch-ui';
+import { Button, buttonClass, EmptyState, ProfileView, Spinner, useToast } from '../../studymatch-ui';
 import type { StudentProfileData } from '../../types/studentProfile';
 import { EditProfile } from './EditProfile';
 import { toProfileView } from './toProfileView';
@@ -71,6 +72,12 @@ export function ProfilePage({ onSaved }: ProfilePageProps) {
           profile={toProfileView(profile)}
           viewer={{ showPrivate: true, canEdit: true }}
           onEdit={() => setIsEditing(true)}
+          actions={
+            <Link className={buttonClass({ variant: 'ghost' })} to="/change-password">
+              <KeyRound size={18} strokeWidth={2.25} aria-hidden />
+              <span className="sm-btn__label">{t('nav.changePassword')}</span>
+            </Link>
+          }
         />
       )}
     </div>

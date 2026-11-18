@@ -142,6 +142,8 @@ export interface ProfileViewProps {
   profile: StudentProfile;
   viewer?: ProfileViewer;
   onEdit?: () => void;
+  // more of the owner's own actions, after Edit profile
+  actions?: ReactNode;
   onAvatarChange?: (image: CroppedImage | null) => void;
   onBannerChange?: (image: CroppedImage | null) => void;
   onBannerPresetChange?: (preset: BannerPreset) => void;
@@ -150,7 +152,7 @@ export interface ProfileViewProps {
   className?: string;
 }
 
-export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit: false }, onEdit, onAvatarChange, onBannerChange, onBannerPresetChange, onExportCertificate, locale = i18n.language, className }: ProfileViewProps) {
+export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit: false }, onEdit, actions, onAvatarChange, onBannerChange, onBannerPresetChange, onExportCertificate, locale = i18n.language, className }: ProfileViewProps) {
   useTranslation();
   const [achievement, setAchievement] = useState<AchievementId | null>(null);
   const [tutor, setTutor] = useState<NonNullable<StudentProfile['tutorBadges']>[number] | null>(null);
@@ -170,9 +172,14 @@ export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit
         onBannerChange={onBannerChange}
         onBannerPresetChange={onBannerPresetChange}
         actions={
-          isSelf && onEdit ? (
-            <Button variant="secondary" icon={Pencil} onClick={onEdit}>
-               {i18n.t('ui.edit_profile')} </Button>
+          isSelf && (onEdit || actions) ? (
+            <>
+              {onEdit && (
+                <Button variant="secondary" icon={Pencil} onClick={onEdit}>
+                   {i18n.t('ui.edit_profile')} </Button>
+              )}
+              {actions}
+            </>
           ) : undefined
         }
       />
