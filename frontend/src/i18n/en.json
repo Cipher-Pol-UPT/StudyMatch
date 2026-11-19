@@ -502,7 +502,7 @@
     "LESSON_IN_FUTURE": "This lesson hasn't happened yet, attendance can only be registered after it starts.",
     "ADMIN_CANNOT_BE_BLOCKED": "Admin accounts cannot be blocked.",
     "ACCOUNT_ALREADY_BLOCKED": "This account is already blocked.",
-    "STUDENT_HAS_NO_STATUTE": "This student already has no special statute."
+    "STUDENT_HAS_NO_STATUTE": "This student doesn't have a special statute."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",
