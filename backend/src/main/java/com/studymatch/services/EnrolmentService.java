@@ -22,10 +22,12 @@ import com.studymatch.dtos.EditionStudentDTO;
 import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.EnrolmentResultDTO.Result;
 import com.studymatch.dtos.PersonalityProfileDTO;
+import com.studymatch.dtos.UnfinishedEnrolmentDTO;
 import com.studymatch.enums.EnrolmentStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Absence;
+import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Category;
 import com.studymatch.models.ClassSection;
 import com.studymatch.models.Enrolment;
@@ -228,6 +230,18 @@ public class EnrolmentService {
     return enrolmentRepository.findBySubjectEditionId(subjectEditionId).stream()
         .sorted(Comparator.comparing((Enrolment enrolment) -> enrolment.getStudent().getName())
             .thenComparing(enrolment -> enrolment.getStudent().getNumber()))
+        .toList();
+  }
+
+  // the warning before starting a new year, grouped by subject and class so Staff knows who to chase
+  @Transactional(readOnly = true)
+  public List<UnfinishedEnrolmentDTO> listUnfinished(AcademicYear academicYear) {
+    return enrolmentRepository.findBySubjectEdition_AcademicYearAndFinalGradeIsNull(academicYear).stream()
+        .map(UnfinishedEnrolmentDTO::from)
+        .sorted(Comparator.comparing(UnfinishedEnrolmentDTO::subjectCode)
+            .thenComparing(UnfinishedEnrolmentDTO::classSection)
+            .thenComparing(UnfinishedEnrolmentDTO::studentName)
+            .thenComparing(UnfinishedEnrolmentDTO::studentNumber))
         .toList();
   }
 

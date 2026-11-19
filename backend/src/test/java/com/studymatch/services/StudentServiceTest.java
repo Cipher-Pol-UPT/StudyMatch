@@ -37,8 +37,10 @@ import com.studymatch.dtos.UpdateProfileRequestDTO;
 import com.studymatch.enums.Achievement;
 import com.studymatch.enums.Language;
 import com.studymatch.enums.StatuteType;
+import com.studymatch.events.AcademicYearStartedEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Admin;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.PersonalityProfile;
@@ -413,6 +415,28 @@ class StudentServiceTest {
     // Assert
     assertEquals(ErrorCode.STUDENT_HAS_NO_STATUTE, e.getCode());
     verify(studentRepository, never()).save(any());
+  }
+
+  // start academic year
+
+  @Test
+  @DisplayName("Starting a new year wipes every profile, so each student has to take the test again (GR1)")
+  void newYearWipesProfiles() {
+    // Arrange
+    Student other = withNumber(ModelTestData.student("Other Test Student"), OTHER_STUDENT_NUMBER);
+    other.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    List<Student> withProfile = List.of(student, other);
+    when(studentRepository.findByPersonalityProfileIsNotNull()).thenReturn(withProfile);
+
+    // Act
+    studentService.clearPersonalityProfiles(new AcademicYearStartedEvent(new AcademicYear(2027)));
+
+    // Assert
+    assertNull(student.getPersonalityProfile());
+    assertNull(other.getPersonalityProfile());
+    assertTrue(student.requiresPersonalityTest());
+    assertTrue(other.requiresPersonalityTest());
+    verify(studentRepository).saveAll(withProfile);
   }
 
   private static Staff staff() {

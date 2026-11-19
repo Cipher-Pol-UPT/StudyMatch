@@ -67,6 +67,7 @@ export const ERROR_CODES = [
   "ADMIN_CANNOT_BE_BLOCKED",
   "ACCOUNT_ALREADY_BLOCKED",
   "STUDENT_HAS_NO_STATUTE",
+  "ACADEMIC_YEAR_NOT_NEXT",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;

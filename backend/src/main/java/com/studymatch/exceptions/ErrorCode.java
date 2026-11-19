@@ -71,7 +71,8 @@ public enum ErrorCode {
   LESSON_IN_FUTURE(HttpStatus.BAD_REQUEST),
   ADMIN_CANNOT_BE_BLOCKED(HttpStatus.FORBIDDEN),
   ACCOUNT_ALREADY_BLOCKED(HttpStatus.CONFLICT),
-  STUDENT_HAS_NO_STATUTE(HttpStatus.CONFLICT);
+  STUDENT_HAS_NO_STATUTE(HttpStatus.CONFLICT),
+  ACADEMIC_YEAR_NOT_NEXT(HttpStatus.CONFLICT);
 
   private final HttpStatus status;
 
