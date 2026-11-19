@@ -180,6 +180,16 @@ public class EnrolmentService {
     return attendanceSheet(classSection, start, Optional.of(lesson));
   }
 
+  // a lesson saved with the wrong time or class would count as held for everyone, so it can be removed
+  @Transactional
+  public void deleteLesson(Long subjectEditionId, String classSectionCode, LocalDateTime startsAt) {
+    ClassSection classSection = subjectEditionService.getLockedCurrentEdition(subjectEditionId)
+        .getClassSection(classSectionCode.trim());
+    Lesson lesson = lessonService.getLesson(classSection, lessonService.lessonStart(startsAt));
+    absenceService.deleteAbsences(lesson);
+    lessonService.deleteLesson(lesson);
+  }
+
   private AttendanceSheetDTO attendanceSheet(ClassSection classSection, LocalDateTime startsAt,
       Optional<Lesson> lesson) {
     Map<Enrolment, Absence> absences = lesson.map(absenceService::listAbsences).orElse(List.of()).stream()

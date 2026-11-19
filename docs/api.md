@@ -71,6 +71,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | PUT | `/subject-editions/{id}/assignments/{assignmentId}/grades/{studentNumber}` | Teacher of the edition | give or change a grade; sets the final grade once everything's graded |
 | GET | `/subject-editions/{id}/attendance?classSection=&startsAt=` | Staff | one lesson's attendance sheet, with the saved record if there is one |
 | PUT | `/subject-editions/{id}/attendance` | Staff | register or correct a lesson's absences (current year only) |
+| DELETE | `/subject-editions/{id}/attendance?classSection=&startsAt=` | Staff | delete a lesson registered by mistake, with its absences (current year only) |
 
 ## Tutors and StudyRooms
 

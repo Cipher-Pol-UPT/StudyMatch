@@ -46,4 +46,14 @@ public class LessonService {
         .orElseGet(() -> lessonRepository.save(new Lesson(classSection, startsAt)));
   }
 
+  public Lesson getLesson(ClassSection classSection, LocalDateTime startsAt) {
+    return findLesson(classSection, startsAt)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  // its absences have to go first
+  public void deleteLesson(Lesson lesson) {
+    lessonRepository.delete(lesson);
+  }
+
 }

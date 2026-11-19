@@ -15,4 +15,6 @@ public interface AbsenceRepository extends JpaRepository<Absence, Long> {
 
   List<Absence> findByLesson(Lesson lesson);
 
+  void deleteByLesson(Lesson lesson);
+
 }
