@@ -219,7 +219,11 @@ public class Student extends User {
     this.statuteEndDate = statuteEndDate;
   }
 
+  // an expired one is still stored, so it can be ended too
   public void removeStatute() {
+    if (statuteType == null) {
+      throw new StudyMatchException(ErrorCode.STUDENT_HAS_NO_STATUTE);
+    }
     this.statuteType = null;
     this.statuteEndDate = null;
   }

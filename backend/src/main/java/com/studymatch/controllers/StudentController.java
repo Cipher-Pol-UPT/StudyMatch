@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +32,7 @@ import com.studymatch.dtos.PersonalityTestRequestDTO;
 import com.studymatch.dtos.RegisterStudentRequestDTO;
 import com.studymatch.dtos.RegisteredStudentDTO;
 import com.studymatch.dtos.ResendCredentialsRequestDTO;
+import com.studymatch.dtos.StatuteRequestDTO;
 import com.studymatch.dtos.StudentProfileDTO;
 import com.studymatch.dtos.StudentRecordDTO;
 import com.studymatch.dtos.StudentSummaryDTO;
@@ -93,6 +95,27 @@ public class StudentController {
       @Valid @RequestBody EditStudentRequestDTO changes, Authentication authentication) {
     User staff = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(studentService.editStudent(number, changes, staff));
+  }
+
+  // edit student statute: only staff ever sees the type (GR7)
+
+  @PutMapping("{number}/statute")
+  @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Add a special statute or replace the current one, it starts now and ends on endDate")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.STATUTE_END_DATE_IN_PAST })
+  public ResponseEntity<StudentRecordDTO> setStatute(@PathVariable Long number,
+      @Valid @RequestBody StatuteRequestDTO statute, Authentication authentication) {
+    User staff = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(studentService.setStatute(number, statute, staff));
+  }
+
+  @DeleteMapping("{number}/statute")
+  @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "End the student's statute, even an expired one")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.STUDENT_HAS_NO_STATUTE })
+  public ResponseEntity<Void> removeStatute(@PathVariable Long number) {
+    studentService.removeStatute(number);
+    return ResponseEntity.noContent().build();
   }
 
   // register student

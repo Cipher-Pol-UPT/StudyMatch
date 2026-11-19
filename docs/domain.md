@@ -84,7 +84,7 @@ Staff registers it one lesson at a time: the class plus the date and start time,
 
 A lesson saved with the wrong time or class can't be fixed by saving it again with no absences, because the lesson itself still counts as held for the whole class. Staff deletes it instead, picking it by class and start time like the sheet, and its absences go with it. Deleting a lesson that was never saved gives `NOT_FOUND`.
 
-Before the first lesson there's nothing to measure, so attendance is empty, not 100%. A student with an active special statute has no attendance at all: teachers see "not applicable" and never the statute type (GR7). Only Staff sees the type. A statute ends by itself after its end date, which can't be in the past when it's given.
+Before the first lesson there's nothing to measure, so attendance is empty, not 100%. A student with an active special statute has no attendance at all: teachers see "not applicable" and never the statute type (GR7). Only Staff sees the type. Staff gives a statute with just the type and the end date, since it starts the day it's added, and giving another one replaces the current one, even of the same type. A statute ends by itself after its end date, which can't be in the past when it's given (today is fine, it's still active that day). Staff can also end it early, which removes it, and ending one for a student who has none gives `STUDENT_HAS_NO_STATUTE`.
 
 ## The current academic year
 

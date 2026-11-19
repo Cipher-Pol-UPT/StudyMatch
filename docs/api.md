@@ -32,6 +32,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | PUT | `/students/{number}` | Staff | edit name, personal email, degree and curricular year |
 | POST | `/students/` | Staff | register one student and email their credentials |
 | POST | `/students/{number}/resend-credentials` | Staff | new one-time password by email, optionally to a corrected address |
+| PUT | `/students/{number}/statute` | Staff | add a special statute (type and end date) or replace the current one |
+| DELETE | `/students/{number}/statute` | Staff | end the student's statute |
 | GET | `/students/import/template` | Staff | the empty CSV for importing students |
 | POST | `/students/import/preview` | Staff | check a CSV row by row without saving anything |
 | POST | `/students/import` | Staff | create the previewed rows |
@@ -80,4 +82,4 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 ## Coming next
 
-The other use cases (groups, StudyRoom join and leave, tutor applications, ratings, achievements, statutes, unblocking accounts, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (groups, StudyRoom join and leave, tutor applications, ratings, achievements, unblocking accounts, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
