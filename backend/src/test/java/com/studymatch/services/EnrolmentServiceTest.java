@@ -33,11 +33,13 @@ import com.studymatch.dtos.AttendanceRequestDTO;
 import com.studymatch.dtos.AttendanceSheetDTO;
 import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.EnrolmentResultDTO.Result;
+import com.studymatch.dtos.UnfinishedEnrolmentDTO;
 import com.studymatch.enums.EnrolmentStatus;
 import com.studymatch.enums.StatuteType;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Absence;
+import com.studymatch.models.AcademicYear;
 import com.studymatch.models.ClassSection;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.Lesson;
@@ -356,6 +358,36 @@ class EnrolmentServiceTest {
 
     // Act + Assert
     assertEquals(List.of(firstAna, secondAna, bruno), enrolmentService.listEnrolments(7L));
+  }
+
+  // start academic year warning
+
+  @Test
+  @DisplayName("Enrolments with no final grade are listed by subject, class and name")
+  void unfinishedEnrolmentsAreSorted() {
+    // Arrange
+    SubjectEdition edition = ModelTestData.subjectEdition();
+    edition.addClassSection("T1");
+    edition.addClassSection("T2");
+    Enrolment anaT2 = enrolmentIn(edition.getClassSection("T2"), "Ana", 1001L);
+    Enrolment brunoT1 = enrolmentIn(edition.getClassSection("T1"), "Bruno", 1002L);
+    Enrolment anaT1 = enrolmentIn(edition.getClassSection("T1"), "Ana", 1003L);
+    when(enrolmentRepository.findBySubjectEdition_AcademicYearAndFinalGradeIsNull(edition.getAcademicYear()))
+        .thenReturn(List.of(anaT2, brunoT1, anaT1));
+
+    // Act
+    List<UnfinishedEnrolmentDTO> unfinished = enrolmentService.listUnfinished(edition.getAcademicYear());
+
+    // Assert
+    assertEquals(List.of(1003L, 1002L, 1001L), unfinished.stream().map(UnfinishedEnrolmentDTO::studentNumber).toList());
+    assertEquals(new UnfinishedEnrolmentDTO(1003L, "Ana", "TEST", "Test Subject", "T1"), unfinished.get(0));
+  }
+
+  @Test
+  @DisplayName("When every enrolment has a final grade there's no warning")
+  void noUnfinishedEnrolments() {
+    // Act + Assert - the mock returns an empty list by default
+    assertTrue(enrolmentService.listUnfinished(new AcademicYear(2026)).isEmpty());
   }
 
   // attendance
