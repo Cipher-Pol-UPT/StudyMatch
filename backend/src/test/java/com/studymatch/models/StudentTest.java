@@ -73,7 +73,7 @@ class StudentTest {
   @DisplayName("A student with a personality profile doesn't need the test")
   void doesNotRequirePersonalityTestWithProfile() {
     // Arrange
-    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
 
     // Act + Assert
     assertFalse(student.requiresPersonalityTest());

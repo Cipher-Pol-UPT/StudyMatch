@@ -164,7 +164,7 @@ class BlockAccountIntegrationTest {
     Student student = new Student("it.block.tutor@example.com", "Block Test Tutor", passwordEncoder.encode(PASSWORD),
         degree, 1);
     student.setMustChangePassword(false);
-    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
     student = studentRepository.save(student);
     student.generateInstitutionalEmail("studymatch.com");
     return studentRepository.saveAndFlush(student);
