@@ -54,6 +54,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/subjects/` | Staff | register a subject and its first edition |
 | POST | `/subjects/{id}/editions` | Staff | add an edition of an existing subject for another year |
 | GET | `/academic-years/` | logged in | academic years, newest (the current one) first |
+| GET | `/academic-years/next` | Staff | the year Start Academic Year would create, and the current year's enrolments with no final grade |
+| POST | `/academic-years/` | Staff | start the next academic year (the body repeats its start year), everyone retakes the personality test |
 | GET | `/teachers/` | Staff | every teacher, to pick an edition's teachers |
 
 ## Subject editions

@@ -41,7 +41,7 @@ The self-declared fields (about me, skills, interests, banner) are only for disp
 
 ## Personality test
 
-Every student takes it on their first login, right after changing their password, and once every academic year (GR1). Until they do, they can only see who they are (`GET /users/me`), change their password and take the test; everything else answers `PERSONALITY_TEST_REQUIRED`. Starting a new academic year (#66) will wipe the profiles so everyone takes it again.
+Every student takes it on their first login, right after changing their password, and once every academic year (GR1). Until they do, they can only see who they are (`GET /users/me`), change their password and take the test; everything else answers `PERSONALITY_TEST_REQUIRED`. Starting a new academic year deletes every profile, so everyone takes it again, including students who are logged in at that moment (their next request gets the same answer).
 
 There are 15 questions, answered from 1 (disagree) to 5 (agree), three for each Big Five trait. Questions 6 to 10 are worded the other way round, so their answer is flipped (6 minus the answer). Each trait is the average of its three answers, scaled to 0 to 1. Stability is 1 minus neuroticism. The four scores are a mix of the traits:
 
@@ -88,7 +88,11 @@ Before the first lesson there's nothing to measure, so attendance is empty, not 
 
 ## The current academic year
 
-The newest registered academic year is the current one. There's no flag to keep in sync, so there can only ever be one. Starting a new year (#66) adds the next one, and it becomes current because it's now the newest.
+The newest registered academic year is the current one. There's no flag to keep in sync, so there can only ever be one. Starting a new year adds the next one, and it becomes current because it's now the newest.
+
+Staff never types the year. The next one is the current start year plus one, and when there's no year at all it's the one today falls in: September onwards is this calendar year, January to August the previous one. Before confirming, Staff sees that year and every enrolment of the current year that still has no final grade (`GET /academic-years/next`). That list is only a warning, so they can go ahead anyway.
+
+The confirmation sends back the year Staff saw. If it's no longer the next one, because of a double click or because someone else started it first, the answer is `ACADEMIC_YEAR_NOT_NEXT` and nothing changes. Without that check a second click would start the year after as well. Starting the year deletes every personality profile in the same transaction (GR1). Statutes don't need anything: they already end by themselves after their end date.
 
 Students can only be enrolled in editions of the current year (`SUBJECT_EDITION_NOT_CURRENT` otherwise). Grading isn't limited that way, so a teacher can still fix a grade from last year.
 
