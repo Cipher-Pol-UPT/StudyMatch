@@ -11,6 +11,8 @@ public interface DegreeRepository extends JpaRepository<Degree, Long> {
 
   boolean existsByNameIgnoreCase(String name);
 
+  boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
   Optional<Degree> findByNameIgnoreCase(String name);
 
   List<Degree> findAllByOrderByNameAsc();

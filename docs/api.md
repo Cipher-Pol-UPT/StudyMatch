@@ -48,6 +48,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | --- | --- | --- | --- |
 | GET | `/degrees/`, `/degrees/{id}` | logged in | list degrees, or one |
 | POST | `/degrees/` | Staff | register a degree |
+| PUT | `/degrees/{id}` | Staff | rename a degree, its students and subjects stay linked |
 | GET | `/categories/`, `/categories/{id}` | logged in | list categories, or one |
 | POST | `/categories/` | Staff | register a category |
 | GET | `/subjects/`, `/subjects/{id}` | logged in | list subjects with their category and degrees, or one |
