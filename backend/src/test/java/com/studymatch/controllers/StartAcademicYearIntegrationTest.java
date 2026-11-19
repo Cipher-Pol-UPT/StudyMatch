@@ -2,6 +2,7 @@ package com.studymatch.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -165,8 +167,8 @@ class StartAcademicYearIntegrationTest {
   }
 
   @Test
-  @DisplayName("Confirming the same year twice (a double click) gets 409 ACADEMIC_YEAR_NOT_NEXT")
-  void secondClickIsRefused() throws Exception {
+  @DisplayName("Confirming the same year a second time gets 409 ACADEMIC_YEAR_NOT_NEXT")
+  void secondConfirmationIsRefused() throws Exception {
     // Arrange
     startYear(staff, "{\"startYear\":" + (CURRENT_YEAR + 1) + "}").andExpect(status().isCreated());
 
@@ -187,6 +189,18 @@ class StartAcademicYearIntegrationTest {
     // Assert
     assertTrue(academicYearRepository.findById(CURRENT_YEAR + 2).isEmpty());
     assertEquals(0.5, studentRepository.findById(ana.getNumber()).orElseThrow().getPersonalityProfile().getLeadership());
+  }
+
+  @Test
+  @DisplayName("Saving a year that already exists fails on the primary key instead of merging into it")
+  void existingYearIsNotMerged() {
+    // Arrange - cleared so it's the database refusing it, like a confirmation from another request
+    entityManager.flush();
+    entityManager.clear();
+
+    // Act + Assert
+    assertThrows(DataIntegrityViolationException.class,
+        () -> academicYearRepository.saveAndFlush(new AcademicYear(CURRENT_YEAR)));
   }
 
   @Test

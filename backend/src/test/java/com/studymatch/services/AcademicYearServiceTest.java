@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import com.studymatch.events.AcademicYearStartedEvent;
 import com.studymatch.exceptions.ErrorCode;
@@ -129,19 +130,19 @@ class AcademicYearServiceTest {
   void startNextSavesAndPublishes() {
     // Arrange
     when(academicYearRepository.findFirstByOrderByStartYearDesc()).thenReturn(Optional.of(new AcademicYear(2027)));
-    when(academicYearRepository.save(any(AcademicYear.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(academicYearRepository.saveAndFlush(any(AcademicYear.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     // Act
     AcademicYear started = academicYearService.startNext(2028);
 
     // Assert
     assertEquals(2028, started.getStartYear());
-    verify(academicYearRepository).save(started);
+    verify(academicYearRepository).saveAndFlush(started);
     verify(eventPublisher).publishEvent(new AcademicYearStartedEvent(started));
   }
 
   @Test
-  @DisplayName("Confirming the current year (a second click) gets ACADEMIC_YEAR_NOT_NEXT and changes nothing")
+  @DisplayName("Confirming the current year (a second confirmation) gets ACADEMIC_YEAR_NOT_NEXT and changes nothing")
   void currentYearIsNotNext() {
     // Arrange
     when(academicYearRepository.findFirstByOrderByStartYearDesc()).thenReturn(Optional.of(new AcademicYear(2028)));
@@ -151,7 +152,7 @@ class AcademicYearServiceTest {
 
     // Assert
     assertEquals(ErrorCode.ACADEMIC_YEAR_NOT_NEXT, e.getCode());
-    verify(academicYearRepository, never()).save(any());
+    verify(academicYearRepository, never()).saveAndFlush(any());
     verifyNoInteractions(eventPublisher);
   }
 
@@ -166,7 +167,23 @@ class AcademicYearServiceTest {
 
     // Assert
     assertEquals(ErrorCode.ACADEMIC_YEAR_NOT_NEXT, e.getCode());
-    verify(academicYearRepository, never()).save(any());
+    verify(academicYearRepository, never()).saveAndFlush(any());
+    verifyNoInteractions(eventPublisher);
+  }
+
+  @Test
+  @DisplayName("Two confirmations at the same time: the second one hits the primary key, gets ACADEMIC_YEAR_NOT_NEXT and wipes nothing")
+  void concurrentConfirmationIsNotNext() {
+    // Arrange - both passed the check, the other one inserted the year first
+    when(academicYearRepository.findFirstByOrderByStartYearDesc()).thenReturn(Optional.of(new AcademicYear(2027)));
+    when(academicYearRepository.saveAndFlush(any(AcademicYear.class)))
+        .thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> academicYearService.startNext(2028));
+
+    // Assert
+    assertEquals(ErrorCode.ACADEMIC_YEAR_NOT_NEXT, e.getCode());
     verifyNoInteractions(eventPublisher);
   }
 
