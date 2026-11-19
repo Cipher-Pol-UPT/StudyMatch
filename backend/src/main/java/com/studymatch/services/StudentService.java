@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -38,6 +39,7 @@ import com.studymatch.dtos.StudentRecordDTO;
 import com.studymatch.dtos.StudentSummaryDTO;
 import com.studymatch.dtos.UpdateProfileRequestDTO;
 import com.studymatch.enums.AccountStatus;
+import com.studymatch.events.AcademicYearStartedEvent;
 import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -186,6 +188,14 @@ public class StudentService {
     Student student = getByNumber(studentNumber);
     student.removeStatute();
     studentRepository.save(student);
+  }
+
+  // start academic year: everyone takes the personality test again (GR1), the old profiles are deleted
+  @EventListener
+  public void clearPersonalityProfiles(AcademicYearStartedEvent event) {
+    List<Student> students = studentRepository.findByPersonalityProfileIsNotNull();
+    students.forEach(student -> student.setPersonalityProfile(null));
+    studentRepository.saveAll(students);
   }
 
   @Transactional(readOnly = true)
