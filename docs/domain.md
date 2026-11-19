@@ -92,7 +92,7 @@ The newest registered academic year is the current one. There's no flag to keep 
 
 Staff never types the year. The next one is the current start year plus one, and when there's no year at all it's the one today falls in: September onwards is this calendar year, January to August the previous one. Before confirming, Staff sees that year and every enrolment of the current year that still has no final grade (`GET /academic-years/next`). That list is only a warning, so they can go ahead anyway.
 
-The confirmation sends back the year Staff saw. If it's no longer the next one, because of a double click or because someone else started it first, the answer is `ACADEMIC_YEAR_NOT_NEXT` and nothing changes. Without that check a second click would start the year after as well. Starting the year deletes every personality profile in the same transaction (GR1). Statutes don't need anything: they already end by themselves after their end date.
+The confirmation sends back the year Staff saw. If it's no longer the next one, because the same confirmation was sent twice or another Staff member started it first, the answer is `ACADEMIC_YEAR_NOT_NEXT` and nothing changes. Without that check a second confirmation would start the year after as well. Two confirmations at the same moment both pass the check, so the second one is stopped by the year's primary key and gets the same code. Starting the year deletes every personality profile in the same transaction (GR1). Statutes don't need anything: they already end by themselves after their end date.
 
 Students can only be enrolled in editions of the current year (`SUBJECT_EDITION_NOT_CURRENT` otherwise). Grading isn't limited that way, so a teacher can still fix a grade from last year.
 
