@@ -39,8 +39,8 @@ import com.studymatch.dtos.StudentRecordDTO;
 import com.studymatch.dtos.StudentSummaryDTO;
 import com.studymatch.dtos.UpdateProfileRequestDTO;
 import com.studymatch.enums.AccountStatus;
-import com.studymatch.events.AcademicYearStartedEvent;
 import com.studymatch.enums.Role;
+import com.studymatch.events.AcademicYearStartedEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Degree;
@@ -190,7 +190,8 @@ public class StudentService {
     studentRepository.save(student);
   }
 
-  // start academic year: everyone takes the personality test again (GR1), the old profiles are deleted
+  // start academic year: everyone takes the personality test again (GR1), the old profiles are deleted.
+  // one by one on purpose, a bulk update skips orphanRemoval and the profile rows would stay in the table
   @EventListener
   public void clearPersonalityProfiles(AcademicYearStartedEvent event) {
     List<Student> students = studentRepository.findByPersonalityProfileIsNotNull();
