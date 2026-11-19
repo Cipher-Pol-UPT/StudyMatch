@@ -190,56 +190,56 @@ ON CONFLICT DO NOTHING;
 -- Rafael and Carolina have none, so they get the personality test.
 
 WITH profile AS (
-  INSERT INTO personality_profile (leadership, problem_solving, creativity, execution)
-  SELECT 0.7, 0.6, 0.8, 0.5 FROM student s JOIN users u ON u.number = s.number
+  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
+  SELECT 0.75, 0.55, 0.65, 0.6, 0.4 FROM student s JOIN users u ON u.number = s.number
   WHERE u.personal_email = 'diogo.student@example.com' AND s.personality_profile_id IS NULL
   RETURNING id)
 UPDATE student SET personality_profile_id = (SELECT id FROM profile)
 WHERE number = (SELECT number FROM users WHERE personal_email = 'diogo.student@example.com') AND personality_profile_id IS NULL;
 
 WITH profile AS (
-  INSERT INTO personality_profile (leadership, problem_solving, creativity, execution)
-  SELECT 0.55, 0.9, 0.6, 0.85 FROM student s JOIN users u ON u.number = s.number
+  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
+  SELECT 0.6, 0.9, 0.45, 0.7, 0.3 FROM student s JOIN users u ON u.number = s.number
   WHERE u.personal_email = 'ines.duarte@example.com' AND s.personality_profile_id IS NULL
   RETURNING id)
 UPDATE student SET personality_profile_id = (SELECT id FROM profile)
 WHERE number = (SELECT number FROM users WHERE personal_email = 'ines.duarte@example.com') AND personality_profile_id IS NULL;
 
 WITH profile AS (
-  INSERT INTO personality_profile (leadership, problem_solving, creativity, execution)
-  SELECT 0.4, 0.5, 0.75, 0.3 FROM student s JOIN users u ON u.number = s.number
+  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
+  SELECT 0.75, 0.3, 0.35, 0.65, 0.6 FROM student s JOIN users u ON u.number = s.number
   WHERE u.personal_email = 'joao.pereira@example.com' AND s.personality_profile_id IS NULL
   RETURNING id)
 UPDATE student SET personality_profile_id = (SELECT id FROM profile)
 WHERE number = (SELECT number FROM users WHERE personal_email = 'joao.pereira@example.com') AND personality_profile_id IS NULL;
 
 WITH profile AS (
-  INSERT INTO personality_profile (leadership, problem_solving, creativity, execution)
-  SELECT 0.65, 0.45, 0.4, 0.9 FROM student s JOIN users u ON u.number = s.number
+  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
+  SELECT 0.4, 0.9, 0.55, 0.75, 0.35 FROM student s JOIN users u ON u.number = s.number
   WHERE u.personal_email = 'beatriz.lopes@example.com' AND s.personality_profile_id IS NULL
   RETURNING id)
 UPDATE student SET personality_profile_id = (SELECT id FROM profile)
 WHERE number = (SELECT number FROM users WHERE personal_email = 'beatriz.lopes@example.com') AND personality_profile_id IS NULL;
 
 WITH profile AS (
-  INSERT INTO personality_profile (leadership, problem_solving, creativity, execution)
-  SELECT 0.9, 0.5, 0.55, 0.7 FROM student s JOIN users u ON u.number = s.number
+  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
+  SELECT 0.6, 0.7, 0.9, 0.55, 0.25 FROM student s JOIN users u ON u.number = s.number
   WHERE u.personal_email = 'miguel.sousa@example.com' AND s.personality_profile_id IS NULL
   RETURNING id)
 UPDATE student SET personality_profile_id = (SELECT id FROM profile)
 WHERE number = (SELECT number FROM users WHERE personal_email = 'miguel.sousa@example.com') AND personality_profile_id IS NULL;
 
 WITH profile AS (
-  INSERT INTO personality_profile (leadership, problem_solving, creativity, execution)
-  SELECT 0.35, 0.55, 0.95, 0.6 FROM student s JOIN users u ON u.number = s.number
+  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
+  SELECT 0.95, 0.6, 0.4, 0.7, 0.5 FROM student s JOIN users u ON u.number = s.number
   WHERE u.personal_email = 'leonor.faria@example.com' AND s.personality_profile_id IS NULL
   RETURNING id)
 UPDATE student SET personality_profile_id = (SELECT id FROM profile)
 WHERE number = (SELECT number FROM users WHERE personal_email = 'leonor.faria@example.com') AND personality_profile_id IS NULL;
 
 WITH profile AS (
-  INSERT INTO personality_profile (leadership, problem_solving, creativity, execution)
-  SELECT 0.5, 0.6, 0.5, 0.45 FROM student s JOIN users u ON u.number = s.number
+  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
+  SELECT 0.5, 0.5, 0.5, 0.55, 0.45 FROM student s JOIN users u ON u.number = s.number
   WHERE u.personal_email = 'pedro.nunes@example.com' AND s.personality_profile_id IS NULL
   RETURNING id)
 UPDATE student SET personality_profile_id = (SELECT id FROM profile)
