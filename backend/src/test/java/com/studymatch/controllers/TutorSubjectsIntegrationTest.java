@@ -95,7 +95,7 @@ class TutorSubjectsIntegrationTest {
     Degree degree = degreeRepository.save(new Degree("IT Tutor Subjects Degree " + name, 3));
     Student student = new Student(personalEmail, name, passwordEncoder.encode(PASSWORD), degree, 1);
     student.setMustChangePassword(false);
-    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
     student = studentRepository.save(student);
     student.generateInstitutionalEmail("studymatch.com");
     return studentRepository.saveAndFlush(student);
