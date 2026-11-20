@@ -24,18 +24,18 @@ export function HomePage({ currentUser, profile, failed, tasks = [], onTaskClick
       <header className="home__head">
         <div>
           <h1>{t('home.greeting', { name: currentUser.name })}</h1>
-          {profile && !profile.dominantProfile && (
+          {profile && !profile.personality && (
             <p>{t('home.studentInfo', { programme: profile.programme, year: profile.curricularYear, number: profile.studentNumber })}</p>
           )}
           {failed && <p role="alert">{t('common.unexpectedError')}</p>}
         </div>
-        {profile?.dominantProfile && (
+        {profile?.personality && (
           <StudentPass
             name={profile.name}
             number={profile.studentNumber}
             year={profile.curricularYear}
             programme={profile.programme}
-            profile={profile.dominantProfile}
+            traits={profile.personality}
           />
         )}
       </header>

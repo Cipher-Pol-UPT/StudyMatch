@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logout } from '../src/api/auth';
@@ -39,6 +39,23 @@ describe('StudentArea', () => {
     renderArea();
     expect(screen.getByRole('link', { name: 'StudyRooms' }).getAttribute('href')).toBe('/study-rooms');
     expect(screen.getByRole('link', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
+  });
+
+  it('shows the big five traits on the back of the student pass while there is no group', async () => {
+    const profile = await getMyProfile();
+    vi.mocked(getMyProfile).mockResolvedValueOnce({
+      ...profile,
+      privateProfile: { ...profile.privateProfile!, personalityProfile: { openness: 0.4, conscientiousness: 0.9, extraversion: 0.5, agreeableness: 0.6, neuroticism: 0.2 } },
+    });
+    renderArea();
+    const pass = await screen.findByRole('button', { name: /Ana Silva’s student pass/ });
+    const back = within(pass.querySelector('.sm-pass--back') as HTMLElement);
+    expect(back.getByText('Conscientiousness')).toBeTruthy();
+    expect(back.getByText('90%')).toBeTruthy();
+    expect(back.getByText('Neuroticism')).toBeTruthy();
+    expect(back.queryByText('No group yet')).toBeNull();
+    fireEvent.click(pass);
+    expect(pass.getAttribute('aria-label')).toContain('Showing the personality profile');
   });
 
   it('opens the profile page from the avatar menu', async () => {
@@ -125,7 +142,7 @@ describe('StudentArea', () => {
     const profile = await getMyProfile();
     vi.mocked(getMyProfile).mockResolvedValueOnce({
       ...profile,
-      privateProfile: { ...profile.privateProfile!, personalityProfile: { leadership: 0.4, problemSolving: 0.9, creativity: 0.5, execution: 0.6 } },
+      privateProfile: { ...profile.privateProfile!, personalityProfile: { openness: 0.4, conscientiousness: 0.9, extraversion: 0.5, agreeableness: 0.6, neuroticism: 0.2 } },
     });
     renderArea();
     expect(await screen.findByRole('button', { name: /Ana Silva’s student pass/ })).toBeTruthy();

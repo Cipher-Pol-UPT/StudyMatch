@@ -1,6 +1,7 @@
 export interface PersonalityProfileData {
-  leadership: number;
-  problemSolving: number;
-  creativity: number;
-  execution: number;
+  openness: number;
+  conscientiousness: number;
+  extraversion: number;
+  agreeableness: number;
+  neuroticism: number;
 }
