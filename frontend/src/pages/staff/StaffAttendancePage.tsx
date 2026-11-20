@@ -1,13 +1,14 @@
-import { BookOpen, CalendarClock } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAttendanceSheet } from '../../api/attendance';
-import { getCurrentEditions } from '../../api/enrolments';
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
 import { EmptyState, Select, TextField } from '../../studymatch-ui';
 import { AttendanceSheet } from './AttendanceSheet';
+import { CurrentEditionPage } from './CurrentEditionPage';
+import { useCurrentEdition } from './useCurrentEdition';
 import './attendance.css';
 
 const dateInput = (date: Date) =>
@@ -15,15 +16,10 @@ const dateInput = (date: Date) =>
 
 export function StaffAttendancePage() {
   const { t } = useTranslation();
-  const editions = useRemoteData('current-editions', getCurrentEditions);
-  const [editionId, setEditionId] = useState('');
-  const [classSection, setClassSection] = useState('');
+  const current = useCurrentEdition();
+  const { editions, edition, section } = current;
   const [date, setDate] = useState(() => dateInput(new Date()));
   const [time, setTime] = useState('');
-
-  // the first edition and its first class are picked until Staff chooses
-  const edition = editions.data?.find(item => String(item.id) === editionId) ?? editions.data?.[0];
-  const section = edition?.classSections.includes(classSection) ? classSection : edition?.classSections[0] ?? '';
   const startsAt = date && time ? `${date}T${time}:00` : '';
   const lessonId = edition && section && startsAt ? edition.id : undefined;
 
@@ -33,22 +29,14 @@ export function StaffAttendancePage() {
   const future = isBackendError(sheet.error) && sheet.error.code === 'LESSON_IN_FUTURE';
 
   return (
-    <div className="role-page directory-page">
-      <header>
-        <h1 className="sm-h2">{t('workspace.sections.attendance')}</h1>
-        <p className="sm-caption">{t('attendance.intro')}</p>
-      </header>
-      {editions.loading || editions.error !== undefined ? (
-        <DataLoadState error={editions.error} retry={editions.retry} />
-      ) : !edition ? (
-        <EmptyState icon={BookOpen} title={t('enrolments.noEditions')} body={t('attendance.noEditionsBody')} />
-      ) : (
+    <CurrentEditionPage title={t('workspace.sections.attendance')} intro={t('attendance.intro')} emptyBody={t('attendance.noEditionsBody')} current={current}>
+      {chosen => (
         <div className="attendance">
           <div className="attendance__lesson">
-            <Select label={t('directory.subject')} value={String(edition.id)} onChange={event => setEditionId(event.target.value)}
+            <Select label={t('directory.subject')} value={String(chosen.id)} onChange={event => current.setEditionId(event.target.value)}
               options={(editions.data ?? []).map(item => ({ value: String(item.id), label: `${item.subject.code} · ${item.subject.name}` }))} />
-            <Select label={t('directory.class')} value={section} onChange={event => setClassSection(event.target.value)}
-              options={edition.classSections.map(code => ({ value: code, label: code }))} />
+            <Select label={t('directory.class')} value={section} onChange={event => current.setClassSection(event.target.value)}
+              options={chosen.classSections.map(code => ({ value: code, label: code }))} />
             <TextField label={t('rooms.date')} type="date" value={date} onChange={event => setDate(event.target.value)}
               error={future ? t('errors.LESSON_IN_FUTURE') : undefined} />
             <TextField label={t('rooms.start')} type="time" value={time} onChange={event => setTime(event.target.value)} />
@@ -58,10 +46,10 @@ export function StaffAttendancePage() {
           ) : future ? null : sheet.loading || sheet.error !== undefined || !sheet.data ? (
             <DataLoadState error={sheet.error} retry={sheet.retry} />
           ) : (
-            <AttendanceSheet key={`${lessonId}|${section}|${startsAt}`} editionId={lessonId} subject={edition.subject.name} sheet={sheet.data} />
+            <AttendanceSheet key={`${lessonId}|${section}|${startsAt}`} editionId={lessonId} subject={chosen.subject.name} sheet={sheet.data} />
           )}
         </div>
       )}
-    </div>
+    </CurrentEditionPage>
   );
 }
