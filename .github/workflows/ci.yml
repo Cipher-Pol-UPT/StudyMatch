@@ -72,7 +72,6 @@ jobs:
           name: backend-for-sonar
           path: |
             backend/target/classes
-            backend/target/test-classes
             backend/target/site/jacoco/jacoco.xml
           if-no-files-found: error
           retention-days: 1

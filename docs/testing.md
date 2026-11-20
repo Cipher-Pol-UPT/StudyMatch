@@ -54,6 +54,8 @@ On a push to `main`, it updates the full analysis of the project, which is where
 
 Coverage counts the backend and the frontend, except `frontend/src/studymatch-ui`. That's our component library: the pages that use it are what we test, and it's left out of the coverage numbers on purpose. It's still analysed for bugs, code smells, duplication and security. To see the frontend coverage locally, run `npm run test:coverage` and open `frontend/coverage/lcov-report/index.html`. When this was written it was 94% of lines and 90% of branches.
 
+The tests themselves (`backend/src/test` and `frontend/tests`) aren't analysed. The scanner ignores `sonar.tests`, so without excluding them it treated test code as production code: every new test counted as uncovered code, shared test setup counted as duplication, and the assertions were reported as bugs. Their coverage still shows up, because it comes from the JaCoCo and Vitest reports.
+
 ## How we write backend tests
 
 ### Structure
