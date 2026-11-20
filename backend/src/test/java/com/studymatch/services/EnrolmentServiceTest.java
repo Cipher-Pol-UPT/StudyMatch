@@ -31,6 +31,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.AttendanceRequestDTO;
 import com.studymatch.dtos.AttendanceSheetDTO;
+import com.studymatch.dtos.EnrolmentRecordDTO;
 import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.EnrolmentResultDTO.Result;
 import com.studymatch.dtos.UnfinishedEnrolmentDTO;
@@ -326,6 +327,95 @@ class EnrolmentServiceTest {
         new EnrolmentResultDTO(4, 1001L, null, Result.DUPLICATE),
         new EnrolmentResultDTO(5, 9999L, null, Result.NOT_FOUND)), results);
     verify(enrolmentRepository, times(1)).save(any());
+  }
+
+  // change class
+
+  private Enrolment enrolledInT1Of(SubjectEdition edition) {
+    Enrolment enrolment = enrolmentIn(edition.getClassSection("T1"), "Ana", 1001L);
+    when(enrolmentRepository.findBySubjectEditionIdAndStudent_Number(7L, 1001L)).thenReturn(Optional.of(enrolment));
+    return enrolment;
+  }
+
+  @Test
+  @DisplayName("A student moves to another class of the edition, spaces around the class code don't matter")
+  void studentChangesClass() {
+    // Arrange
+    SubjectEdition edition = editionWithT1();
+    edition.addClassSection("T2");
+    Enrolment enrolment = enrolledInT1Of(edition);
+
+    // Act
+    EnrolmentRecordDTO record = enrolmentService.changeClass(7L, 1001L, " T2 ");
+
+    // Assert
+    assertSame(edition.getClassSection("T2"), enrolment.getClassSection());
+    assertEquals("T2", record.classSection());
+  }
+
+  @Test
+  @DisplayName("Moving keeps the final grade, it's the same enrolment")
+  void changingClassKeepsTheGrade() {
+    // Arrange
+    SubjectEdition edition = editionWithT1();
+    edition.addClassSection("T2");
+    Enrolment enrolment = enrolledInT1Of(edition);
+    enrolment.setFinalGrade(14);
+
+    // Act
+    EnrolmentRecordDTO record = enrolmentService.changeClass(7L, 1001L, "T2");
+
+    // Assert
+    assertEquals(14, record.finalGrade());
+    assertEquals(EnrolmentStatus.PASSED, record.status());
+    verify(enrolmentRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A class the edition doesn't have is CLASS_SECTION_NOT_IN_SUBJECT_EDITION and the student stays")
+  void unknownClassCantBeMovedTo() {
+    // Arrange
+    SubjectEdition edition = editionWithT1();
+    Enrolment enrolment = enrolledInT1Of(edition);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> enrolmentService.changeClass(7L, 1001L, "T9"));
+
+    // Assert
+    assertEquals(ErrorCode.CLASS_SECTION_NOT_IN_SUBJECT_EDITION, e.getCode());
+    assertSame(edition.getClassSection("T1"), enrolment.getClassSection());
+  }
+
+  @Test
+  @DisplayName("A student who isn't in the edition is STUDENT_NOT_ENROLLED with their number")
+  void notEnrolledStudentCantChangeClass() {
+    // Arrange
+    editionWithT1();
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> enrolmentService.changeClass(7L, 9999L, "T1"));
+
+    // Assert
+    assertEquals(ErrorCode.STUDENT_NOT_ENROLLED, e.getCode());
+    assertEquals(Map.of("number", 9999L), e.getParams());
+  }
+
+  @Test
+  @DisplayName("An edition that isn't current: SUBJECT_EDITION_NOT_CURRENT and the student stays")
+  void notCurrentEditionCantChangeClass() {
+    // Arrange
+    when(subjectEditionService.getLockedCurrentEdition(7L))
+        .thenThrow(new StudyMatchException(ErrorCode.SUBJECT_EDITION_NOT_CURRENT));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> enrolmentService.changeClass(7L, 1001L, "T2"));
+
+    // Assert
+    assertEquals(ErrorCode.SUBJECT_EDITION_NOT_CURRENT, e.getCode());
+    verify(enrolmentRepository, never()).findBySubjectEditionIdAndStudent_Number(any(), any());
   }
 
   // grading
