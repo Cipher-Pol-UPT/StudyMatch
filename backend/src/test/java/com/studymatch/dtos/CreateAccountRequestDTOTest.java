@@ -76,6 +76,16 @@ class CreateAccountRequestDTOTest {
     assertEquals(Set.of("username=Size"), failures(withUsername("a".repeat(65))));
   }
 
+  @Test
+  @DisplayName("A huge username is just too long, the pattern doesn't overflow the stack (SonarQube S5998)")
+  void hugeUsernameDoesNotOverflow() {
+    // Arrange - 1 MB of a.a.a..., the old pattern threw StackOverflowError on this
+    String huge = "a.".repeat(500_000) + "a";
+
+    // Act + Assert
+    assertEquals(Set.of("username=Size"), failures(withUsername(huge)));
+  }
+
   // the other fields
 
   @Test
