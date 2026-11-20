@@ -56,7 +56,9 @@ export function AssignmentForm({ remaining, students, onSubmit, onCancel, today 
   function addPair() {
     if (!pair) return;
     const [first, second] = [Number(pair.first), Number(pair.second)];
-    const exists = separations.some(item => [item.firstStudent, item.secondStudent].sort().join() === [first, second].sort().join());
+    // the same two students in either order
+    const exists = separations.some(item => (item.firstStudent === first && item.secondStudent === second)
+      || (item.firstStudent === second && item.secondStudent === first));
     if (!exists) setSeparations(list => [...list, { firstStudent: first, secondStudent: second }]);
     setPair(null);
   }

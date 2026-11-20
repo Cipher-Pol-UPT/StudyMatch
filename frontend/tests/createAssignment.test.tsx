@@ -88,6 +88,24 @@ describe('create an assignment (teacher)', () => {
     } });
   });
 
+  it('keeps a pair apart only once, even when added again the other way round', async () => {
+    const created = backend([sheet([])], () => reply({ id: 2, name: 'Final exam', type: 'PROJECT', date: '2099-12-18', weight: 30, grouping: null }, 201));
+    const dialog = await openForm();
+    fireEvent.click(dialog.getByRole('switch', { name: i18n.t('assignments.groupWork') }));
+    for (const [first, second] of [['50001', '50002'], ['50002', '50001']]) {
+      fireEvent.click(dialog.getByRole('button', { name: i18n.t('assignments.addPair') }));
+      fireEvent.change(dialog.getByLabelText(i18n.t('assignments.firstStudent')), { target: { value: first } });
+      fireEvent.change(dialog.getByLabelText(i18n.t('assignments.secondStudent')), { target: { value: second } });
+      fireEvent.click(dialog.getByRole('button', { name: i18n.t('assignments.addPair') }));
+    }
+
+    expect(dialog.getAllByText(/Ana Silva ↔ Rui Costa|Rui Costa ↔ Ana Silva/)).toHaveLength(1);
+    create(dialog);
+
+    await waitFor(() => expect(created).toHaveLength(1));
+    expect((created[0] as { grouping: { separations: unknown[] } }).grouping.separations).toEqual([{ firstStudent: 50001, secondStudent: 50002 }]);
+  });
+
   it('says how much weight is left instead of sending too much, and shows the backend weight error there too', async () => {
     const created = backend([sheet([project])], () => reply({ code: 'ASSIGNMENT_WEIGHT_EXCEEDED', params: { remaining: 10 } }, 409));
     const dialog = await openForm();
