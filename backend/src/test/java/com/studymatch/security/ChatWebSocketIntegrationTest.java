@@ -23,6 +23,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -301,6 +303,24 @@ class ChatWebSocketIntegrationTest {
     // Assert
     assertNotNull(errors.poll(WAIT_SECONDS, TimeUnit.SECONDS));
     assertNull(received.poll(500, TimeUnit.MILLISECONDS));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "/topic/chats/*", "/topic/chats/**", "/topic/chats/{id}", "/topic/chats/?", "/topic/**" })
+  @DisplayName("Someone who isn't in the chat can't listen to it with a pattern instead of the id")
+  void nonMemberPatternSubscribeIsRefused(String destination) throws Exception {
+    // Arrange
+    BlockingQueue<String> errors = new LinkedBlockingQueue<>();
+    StompSession session = connect(login(eva.getInstitutionalEmail()), true, errors);
+
+    // Act - publishes for a while, a pattern that got through would have received something by then
+    BlockingQueue<Map<String, Object>> received = subscribe(session, destination);
+    Map<String, Object> frame = publishUntilReceived(
+        new ChatEvent(chat.getId(), ChatEventType.MESSAGE_CREATED, Map.of("text", "secret")), received);
+
+    // Assert
+    assertNull(frame);
+    assertNotNull(errors.poll(WAIT_SECONDS, TimeUnit.SECONDS));
   }
 
   @Test

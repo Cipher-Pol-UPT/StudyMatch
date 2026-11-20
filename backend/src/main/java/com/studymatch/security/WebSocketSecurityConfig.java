@@ -20,13 +20,14 @@ public class WebSocketSecurityConfig {
     return new CsrfChannelInterceptor();
   }
 
-  // the browser only listens, pushes come from the server, so sending to /topic or /queue is refused
+  // the browser only listens, pushes come from the server, so sending to /topic or /queue is refused.
+  // a chat topic needs a numeric id, so a pattern like /topic/chats/* can't listen to every chat
   @Bean
   public AuthorizationManager<Message<?>> messageAuthorizationManager(
       MessageMatcherDelegatingAuthorizationManager.Builder messages) {
     return messages
         .nullDestMatcher().authenticated()
-        .simpSubscribeDestMatchers("/topic/chats/*", "/user/queue/chats").authenticated()
+        .simpSubscribeDestMatchers("/topic/chats/{chatId:\\d+}", "/user/queue/chats").authenticated()
         .simpDestMatchers("/app/**").authenticated()
         .anyMessage().denyAll()
         .build();

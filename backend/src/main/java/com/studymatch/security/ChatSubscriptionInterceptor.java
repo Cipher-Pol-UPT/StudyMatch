@@ -20,6 +20,8 @@ import com.studymatch.services.UserService;
 @Component
 public class ChatSubscriptionInterceptor implements ChannelInterceptor {
 
+  // every topic is a chat for now
+  private static final String TOPICS = "/topic";
   private static final Pattern CHAT_TOPIC = Pattern.compile("^/topic/chats/(\\d++)$");
 
   private final ChatService chatService;
@@ -37,12 +39,19 @@ public class ChatSubscriptionInterceptor implements ChannelInterceptor {
       return message;
     }
 
-    Matcher chatTopic = CHAT_TOPIC.matcher(accessor.getDestination());
-    if (chatTopic.matches()) {
-      User user = userService.findByInstitutionalEmail(accessor.getUser().getName())
-          .orElseThrow(() -> new StudyMatchException(ErrorCode.UNAUTHENTICATED));
-      chatService.getChatFor(Long.valueOf(chatTopic.group(1)), user);
+    String destination = accessor.getDestination();
+    if (destination == null || !destination.startsWith(TOPICS)) {
+      return message;
     }
+
+    // the broker reads *, ** or {id} in a subscription as a pattern matching every chat, so only an exact id gets in
+    Matcher chatTopic = CHAT_TOPIC.matcher(destination);
+    if (!chatTopic.matches()) {
+      throw new StudyMatchException(ErrorCode.NOT_FOUND);
+    }
+    User user = userService.findByInstitutionalEmail(accessor.getUser().getName())
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.UNAUTHENTICATED));
+    chatService.getChatFor(Long.valueOf(chatTopic.group(1)), user);
     return message;
   }
 

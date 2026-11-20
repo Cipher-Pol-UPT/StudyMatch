@@ -120,8 +120,8 @@ Every push looks like `{ "type": ..., "payload": ... }`. `/app` is for frames th
 The checks happen in three places:
 
 1. The handshake is a normal HTTP request, so it goes through the filter chain above with the session cookie. Only Students and Teachers get through (GR8). Staff and Admin get 403, and someone not logged in gets 401.
-2. `WebSocketSecurityConfig` puts Spring Security on every STOMP frame. CONNECT has to carry the `X-XSRF-TOKEN` header with the cookie's value, the same as a POST. After that the browser can only subscribe to a chat topic or its own queue and send to `/app`; anything else is refused, so nobody can send straight to `/topic/chats/5` and fake a message.
-3. `ChatSubscriptionInterceptor` refuses a SUBSCRIBE to a chat the user isn't a member of, using the same check as the REST endpoints (`ChatService.getChatFor`). The browser gets an ERROR frame.
+2. `WebSocketSecurityConfig` puts Spring Security on every STOMP frame. CONNECT has to carry the `X-XSRF-TOKEN` header with the cookie's value, the same as a POST. After that the browser can only subscribe to a chat topic with a numeric id or its own queue and send to `/app`; anything else is refused, so nobody can send straight to `/topic/chats/5` and fake a message.
+3. `ChatSubscriptionInterceptor` refuses a SUBSCRIBE to a chat the user isn't a member of, using the same check as the REST endpoints (`ChatService.getChatFor`). It also refuses any other `/topic` destination, because the broker reads `*`, `**` or `{id}` in a subscription as a pattern, and `/topic/chats/*` would get every chat's messages. The browser gets an ERROR frame.
 
 Spring's default CSRF check for WebSockets wants the masked token it puts in server-rendered forms, and our frontend only has the cookie's value. We swapped in the plain check (`CsrfChannelInterceptor`), which compares that value, the same thing `csrf.spa()` accepts on REST.
 
