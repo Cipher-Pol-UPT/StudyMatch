@@ -392,11 +392,6 @@ public class StudentService {
         .collect(Collectors.toMap(Student::getNumber, student -> student));
   }
 
-  // join StudyRoom (#45): a student by number, NOT_FOUND if it doesn't exist
-  public Student getStudent(Long number) {
-    return getByNumber(number);
-  }
-
   private Student getByNumber(Long studentNumber) {
     return studentRepository.findById(studentNumber)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));

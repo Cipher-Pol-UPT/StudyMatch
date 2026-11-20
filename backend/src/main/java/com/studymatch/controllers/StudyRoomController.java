@@ -27,7 +27,6 @@ import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.Student;
 import com.studymatch.models.User;
 import com.studymatch.services.RatingService;
-import com.studymatch.services.StudentService;
 import com.studymatch.services.StudyRoomService;
 import com.studymatch.services.UserService;
 
@@ -42,14 +41,12 @@ public class StudyRoomController {
 
   private final StudyRoomService studyRoomService;
   private final RatingService ratingService;
-  private final StudentService studentService;
   private final UserService userService;
 
   public StudyRoomController(StudyRoomService studyRoomService, RatingService ratingService,
-      StudentService studentService, UserService userService) {
+      UserService userService) {
     this.studyRoomService = studyRoomService;
     this.ratingService = ratingService;
-    this.studentService = studentService;
     this.userService = userService;
   }
 
@@ -124,8 +121,8 @@ public class StudyRoomController {
       ErrorCode.STUDYROOM_CLOSED, ErrorCode.STUDYROOM_ALREADY_STARTED, ErrorCode.TUTOR_CANNOT_JOIN_OWN_STUDYROOM,
       ErrorCode.ALREADY_JOINED_STUDYROOM, ErrorCode.STUDYROOM_FULL })
   public ResponseEntity<StudyRoomDTO> join(@PathVariable Long id, Authentication authentication) {
-    User user = userService.getByInstitutionalEmail(authentication.getName());
-    Student student = studentService.getStudent(user.getNumber());
+    // hasRole('STUDENT') guarantees this is a Student
+    Student student = (Student) userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.status(HttpStatus.CREATED).body(studyRoomService.join(student, id));
   }
 

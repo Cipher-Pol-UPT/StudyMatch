@@ -563,7 +563,7 @@
     "ATTENDEE_NOT_A_PARTICIPANT": "Student {{number}} didn't join this StudyRoom.",
     "ROOM_ALREADY_RATED": "You have already rated this StudyRoom.",
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Only Students enrolled in this Subject who haven't passed it can join.",
-    "JOINED_STUDYROOM_OVERLAP": "This overlaps a StudyRoom you already joined ({{subject}}, {{startsAt}} – {{endsAt}})."
+    "JOINED_STUDYROOM_OVERLAP": "This overlaps a StudyRoom you already joined or are hosting ({{subject}}, {{startsAt}} – {{endsAt}})."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",
