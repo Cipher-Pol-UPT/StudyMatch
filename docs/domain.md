@@ -106,6 +106,8 @@ A student can apply to tutor a subject they passed if their final grade is in th
 
 A tutor can create StudyRooms for the subjects they tutor (built). A room can't start in the past or end before it starts, and a tutor can't have two rooms at overlapping times. Students who attended a room will be able to rate the tutor from 1 to 5 stars within 7 days after it ends (#61); the badge on the tutor's profile shows the average and how many ratings it's from.
 
+Once a room has ended, its tutor ticks who actually came (`POST /study-rooms/{id}/attendance` with their student numbers, the list comes from `GET /study-rooms/{id}/participants`). Everyone else counts as absent, and the room becomes Completed, so it can only be confirmed once. Ticking someone who never joined gives `ATTENDEE_NOT_A_PARTICIPANT`. The tutor has 48 hours after the end. After that the room is Completed with nobody attended, and confirming gives `STUDYROOM_CLOSED`. Nothing runs at the 48-hour mark: the status is worked out when the room is read, the same way Full is. Only the people who attended can rate the tutor. Telling them they can rate waits for the notifications (#144), and checking the tutor's achievements waits for #70.
+
 ## Achievements
 
 Tutors earn achievements automatically (#70). Only StudyRooms with at least two confirmed attendees count, and an achievement is never taken away once earned.
