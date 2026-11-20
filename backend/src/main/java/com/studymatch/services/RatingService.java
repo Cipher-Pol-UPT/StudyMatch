@@ -3,12 +3,15 @@ package com.studymatch.services;
 import java.util.List;
 import java.util.OptionalDouble;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.RateTutorRequestDTO;
 import com.studymatch.dtos.RatingDTO;
+import com.studymatch.enums.Achievement.SubjectRating;
+import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Participation;
@@ -21,10 +24,13 @@ public class RatingService {
 
   private final RatingRepository ratingRepository;
   private final ParticipationService participationService;
+  private final ApplicationEventPublisher eventPublisher;
 
-  public RatingService(RatingRepository ratingRepository, ParticipationService participationService) {
+  public RatingService(RatingRepository ratingRepository, ParticipationService participationService,
+      ApplicationEventPublisher eventPublisher) {
     this.ratingRepository = ratingRepository;
     this.participationService = participationService;
+    this.eventPublisher = eventPublisher;
   }
 
   // the model checks the attendance was confirmed and it's within 7 days of the end
@@ -42,15 +48,23 @@ public class RatingService {
     } catch (DataIntegrityViolationException e) {
       throw new StudyMatchException(ErrorCode.ROOM_ALREADY_RATED);
     }
-    // the tutor's achievements are checked here once #70 is in
+    eventPublisher.publishEvent(new TutorActivityEvent(rating.getTutorRole().getStudent()));
     return RatingDTO.from(rating);
   }
 
   // the average of each student's average, so one student rating many times counts once. null with no ratings
   public Double getAverageStars(TutorRole tutorRole) {
-    OptionalDouble average = ratingRepository.findAverageStarsPerStudent(tutorRole).stream()
-        .mapToDouble(Double::doubleValue)
-        .average();
+    return average(ratingRepository.findAverageStarsPerStudent(tutorRole));
+  }
+
+  // achievements: the same average, and how many different students it's from
+  public SubjectRating getSubjectRating(TutorRole tutorRole) {
+    List<Double> perStudent = ratingRepository.findAverageStarsPerStudent(tutorRole);
+    return new SubjectRating(average(perStudent), perStudent.size());
+  }
+
+  private static Double average(List<Double> perStudent) {
+    OptionalDouble average = perStudent.stream().mapToDouble(Double::doubleValue).average();
     return average.isPresent() ? average.getAsDouble() : null;
   }
 
