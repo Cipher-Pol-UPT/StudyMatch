@@ -106,13 +106,13 @@ A student can apply to tutor a subject they passed if their final grade is in th
 
 A tutor can create StudyRooms for the subjects they tutor (built). A room can't start in the past or end before it starts, and a tutor can't have two rooms at overlapping times.
 
-Once a room has ended, its tutor ticks who actually came (`POST /study-rooms/{id}/attendance` with their student numbers, the list comes from `GET /study-rooms/{id}/participants`). Everyone else counts as absent, and the room becomes Completed, so it can only be confirmed once. Ticking someone who never joined gives `ATTENDEE_NOT_A_PARTICIPANT`. The tutor has 48 hours after the end. After that the room is Completed with nobody attended, and confirming gives `STUDYROOM_CLOSED`. Nothing runs at the 48-hour mark: the status is worked out when the room is read, the same way Full is. Only the people who attended can rate the tutor. Telling them they can rate waits for the notifications (#144), and checking the tutor's achievements waits for #70.
+Once a room has ended, its tutor ticks who actually came (`POST /study-rooms/{id}/attendance` with their student numbers, the list comes from `GET /study-rooms/{id}/participants`). Everyone else counts as absent, and the room becomes Completed, so it can only be confirmed once. Ticking someone who never joined gives `ATTENDEE_NOT_A_PARTICIPANT`. The tutor has 48 hours after the end. After that the room is Completed with nobody attended, and confirming gives `STUDYROOM_CLOSED`. Nothing runs at the 48-hour mark: the status is worked out when the room is read, the same way Full is. Only the people who attended can rate the tutor. Confirming also checks the tutor's achievements (see below). Telling the attendees they can rate waits for the notifications (#144).
 
 A student whose attendance was confirmed rates the tutor once per room, from 1 to 5 stars with an optional comment, up to 7 days after the room ended (`POST /study-rooms/{id}/rating`). A second rating of the same room gives `ROOM_ALREADY_RATED`, and rating again is only possible after attending another of the tutor's rooms. Comments are public: anyone logged in sees them on the tutor's ratings (`GET /students/{number}/ratings`), but never who wrote them. The badge on the tutor's profile averages each student's own average first, so a student who rated three times counts as much as one who rated once. Ana's 5, 5 and 5 with Bruno's 3 give 4.0, not 4.5. The number next to it is still every rating, 4 in that example.
 
 ## Achievements
 
-Tutors earn achievements automatically (#70). Only StudyRooms with at least two confirmed attendees count, and an achievement is never taken away once earned.
+Tutors earn achievements automatically. Only StudyRooms with at least two confirmed attendees count, and an achievement is never taken away once earned. They're checked every time the tutor confirms a room's attendance or gets rated, in the same transaction, so a rating that fails doesn't leave a badge behind. If two ratings at the same time both earn the tutor the same badge, the second one just skips it, so neither rating fails. "Different students tutored" are the students who attended those counted rooms, and the subject average is the same one the profile badge shows. Checking when a tutor application is approved waits for #81, and telling the tutor about a new achievement waits for the notifications (#144).
 
 | Achievement | Criteria |
 | --- | --- |
@@ -130,6 +130,8 @@ An Admin can block any account except another Admin's, so there's always someone
 A blocked account can't log in, and a session it already had ends on its next request (`AccountStateFilter` checks the status every time). Blocking a tutor also cancels their StudyRooms that haven't started yet, without a reason (the block reason stays private), and their pending tutor applications get the status Cancelled. A room already in progress or finished is left as it is. The participants of the cancelled rooms aren't notified yet, that comes with the notifications (#144).
 
 Before confirming, the Admin sees what blocking would cancel (`GET /users/{number}/block-impact`). For a teacher it also lists their editions this year, because Staff has to give them another teacher; that's a warning, the block still goes through.
+
+Unblocking (`PUT /users/{number}/unblock`) makes the account active again and clears the reason, and it can log in straight away. Nothing the block cancelled comes back: the StudyRooms and tutor applications stay cancelled. The user is placed in groups generated after that, like any other active account. Unblocking an account that isn't blocked gives `ACCOUNT_NOT_BLOCKED`. Telling the user they were unblocked waits for the notifications (#144).
 
 ## Groups
 

@@ -29,4 +29,11 @@ public interface StudyRoomRepository extends JpaRepository<StudyRoom, Long>, Jpa
         and r.startsAt > :now""")
   List<StudyRoom> findUpcoming(Long tutorNumber, LocalDateTime now);
 
+  // achievements: the tutor's rooms where at least minAttendees were confirmed as attending
+  @Query("""
+      select count(r) from StudyRoom r
+      where r.tutorRole.student.number = :tutorNumber
+        and (select count(p) from Participation p where p.studyRoom = r and p.attended = true) >= :minAttendees""")
+  long countWithAttendees(Long tutorNumber, long minAttendees);
+
 }

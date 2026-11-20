@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,8 +29,10 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.enums.Achievement;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
+import com.studymatch.models.EarnedAchievement;
 import com.studymatch.models.Participation;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Student;
@@ -40,6 +43,7 @@ import com.studymatch.models.TutorApplication;
 import com.studymatch.models.TutorRole;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
+import com.studymatch.repositories.EarnedAchievementRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.StudyRoomRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -86,6 +90,10 @@ class ConfirmAttendanceIntegrationTest {
   @Autowired
   private StudyRoomRepository studyRoomRepository;
 
+  @Autowired
+  private EarnedAchievementRepository earnedAchievementRepository;
+
+  private Student tutor;
   private Student ana;
   private Student bruno;
   private StudyRoom room;
@@ -98,7 +106,7 @@ class ConfirmAttendanceIntegrationTest {
         "Test Teacher", passwordEncoder.encode(PASSWORD)));
     Category category = categoryRepository.save(new Category("IT Attendance Category"));
     Subject maths = subjectRepository.save(new Subject("IT-CA-MATH", "Test Maths", 6, category));
-    Student tutor = saveStudent("it.ca.tutor@example.com", "Tutor Test");
+    tutor = saveStudent("it.ca.tutor@example.com", "Tutor Test");
     TutorRole role = tutorRoleRepository.save(tutorApplicationRepository
         .save(new TutorApplication(tutor, maths, "test motivation")).approve(teacher));
     ana = saveStudent("it.ca.ana@example.com", "Ana Test");
@@ -147,6 +155,12 @@ class ConfirmAttendanceIntegrationTest {
         .content(body));
   }
 
+  private List<Achievement> achievementsOf(Student student) {
+    return earnedAchievementRepository.findByStudentOrderByEarnedAtDesc(student).stream()
+        .map(EarnedAchievement::getAchievement)
+        .toList();
+  }
+
   private boolean attended(Student student) {
     return studyRoomRepository.findById(room.getId()).orElseThrow().getParticipations().stream()
         .filter(p -> p.getStudent().getNumber().equals(student.getNumber()))
@@ -192,6 +206,45 @@ class ConfirmAttendanceIntegrationTest {
     // Assert
     assertFalse(attended(ana));
     assertFalse(attended(bruno));
+  }
+
+  // award achievement (#70)
+
+  @Test
+  @DisplayName("Two confirmed attendees make the room count and the tutor earns First StudyRoom")
+  void twoAttendeesAwardFirstStudyRoom() throws Exception {
+    // Act
+    confirm(room.getId(), "{\"attendeeNumbers\": [" + ana.getNumber() + ", " + bruno.getNumber() + "]}")
+        .andExpect(status().isOk());
+
+    // Assert
+    assertEquals(List.of(Achievement.FIRST_STUDYROOM), achievementsOf(tutor));
+  }
+
+  @Test
+  @DisplayName("With one attendee the room doesn't count and nothing is earned")
+  void oneAttendeeAwardsNothing() throws Exception {
+    // Act
+    confirm(room.getId(), "{\"attendeeNumbers\": [" + ana.getNumber() + "]}")
+        .andExpect(status().isOk());
+
+    // Assert
+    assertTrue(achievementsOf(tutor).isEmpty());
+  }
+
+  @Test
+  @DisplayName("A badge another request already saved is skipped, without failing on the unique key")
+  void badgeSavedTwiceIsSkipped() {
+    // Arrange - two ratings at the same time both decided the tutor earned it
+    int first = earnedAchievementRepository.saveIfNew(new EarnedAchievement(tutor, Achievement.TOP_RATED));
+
+    // Act
+    int second = earnedAchievementRepository.saveIfNew(new EarnedAchievement(tutor, Achievement.TOP_RATED));
+
+    // Assert
+    assertEquals(1, first);
+    assertEquals(0, second);
+    assertEquals(List.of(Achievement.TOP_RATED), achievementsOf(tutor));
   }
 
   @Test

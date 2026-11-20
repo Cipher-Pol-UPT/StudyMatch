@@ -22,6 +22,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/users/` | Admin | search accounts of every role by name, institutional email or number, 20 per page, optionally by status |
 | GET | `/users/{number}/block-impact` | Admin | what blocking would cancel, and a teacher's editions this year that need another teacher |
 | PUT | `/users/{number}/block` | Admin | block an account with a reason, cancelling its upcoming StudyRooms and pending tutor applications |
+| PUT | `/users/{number}/unblock` | Admin | unblock an account so it can log in again, what the block cancelled stays cancelled |
 
 ## Students
 
@@ -91,4 +92,4 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 ## Coming next
 
-The other use cases (groups, StudyRoom join and leave, tutor applications, achievements, unblocking accounts, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (groups, StudyRoom join and leave, tutor applications, achievements, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

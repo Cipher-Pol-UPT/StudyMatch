@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,9 @@ import com.studymatch.dtos.CreateStudyRoomRequestDTO;
 import com.studymatch.dtos.ParticipantDTO;
 import com.studymatch.dtos.StudyRoomDTO;
 import com.studymatch.dtos.StudyRoomDetailDTO;
+import com.studymatch.enums.Achievement;
 import com.studymatch.enums.StudyRoomStatus;
+import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.StudyRoom;
@@ -31,12 +34,14 @@ public class StudyRoomService {
   private final StudyRoomRepository studyRoomRepository;
   private final TutorRoleService tutorRoleService;
   private final RatingService ratingService;
+  private final ApplicationEventPublisher eventPublisher;
 
   public StudyRoomService(StudyRoomRepository studyRoomRepository, TutorRoleService tutorRoleService,
-      RatingService ratingService) {
+      RatingService ratingService, ApplicationEventPublisher eventPublisher) {
     this.studyRoomRepository = studyRoomRepository;
     this.tutorRoleService = tutorRoleService;
     this.ratingService = ratingService;
+    this.eventPublisher = eventPublisher;
   }
 
   @Transactional
@@ -119,6 +124,11 @@ public class StudyRoomService {
     return studyRoomRepository.findUpcoming(tutorNumber, LocalDateTime.now()).size();
   }
 
+  // achievements: the tutor's rooms with enough confirmed attendees to count
+  public long countCounted(Long tutorNumber) {
+    return studyRoomRepository.countWithAttendees(tutorNumber, Achievement.MIN_ATTENDEES);
+  }
+
   // block account: the tutor's rooms that haven't started are cancelled, the block reason stays private
   @Transactional
   public int cancelUpcoming(Long tutorNumber) {
@@ -140,8 +150,10 @@ public class StudyRoomService {
   public StudyRoomDTO confirmAttendance(Long tutorNumber, Long roomId, Set<Long> attendeeNumbers) {
     StudyRoom room = getHostedRoom(tutorNumber, roomId);
     room.confirmAttendance(attendeeNumbers);
-    // telling the attendees they can rate comes with notifications (#144), the achievements check with #70
-    return StudyRoomDTO.from(studyRoomRepository.save(room));
+    // telling the attendees they can rate comes with notifications (#144)
+    StudyRoom saved = studyRoomRepository.save(room);
+    eventPublisher.publishEvent(new TutorActivityEvent(saved.getTutorRole().getStudent()));
+    return StudyRoomDTO.from(saved);
   }
 
   // only the tutor who hosts the room can see who joined and confirm it
