@@ -34,6 +34,7 @@ import com.studymatch.models.ClassSection;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.Lesson;
 import com.studymatch.models.Student;
+import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.EnrolmentRepository;
 import com.studymatch.utils.EnrolmentCsvReader;
@@ -45,13 +46,16 @@ public class EnrolmentService {
   private final LessonService lessonService;
   private final AbsenceService absenceService;
   private final SubjectEditionService subjectEditionService;
+  private final AcademicYearService academicYearService;
 
   public EnrolmentService(EnrolmentRepository enrolmentRepository, LessonService lessonService,
-      AbsenceService absenceService, SubjectEditionService subjectEditionService) {
+      AbsenceService absenceService, SubjectEditionService subjectEditionService,
+      AcademicYearService academicYearService) {
     this.enrolmentRepository = enrolmentRepository;
     this.lessonService = lessonService;
     this.absenceService = absenceService;
     this.subjectEditionService = subjectEditionService;
+    this.academicYearService = academicYearService;
   }
 
   // enrol students: the students come from the controller since StudentService already depends on this service
@@ -127,6 +131,19 @@ public class EnrolmentService {
   // any enrolment counts, even one still in progress
   public boolean hasAcademicHistory(Student student) {
     return enrolmentRepository.existsByStudent(student);
+  }
+
+  // join StudyRoom (#45): the student is enrolled in the subject's newest (current) edition
+  public boolean isEnrolledInCurrentEdition(Long studentNumber, Subject subject) {
+    return academicYearService.findCurrent()
+        .map(year -> enrolmentRepository
+            .existsByStudent_NumberAndSubjectEdition_SubjectAndSubjectEdition_AcademicYear(studentNumber, subject, year))
+        .orElse(false);
+  }
+
+  public boolean hasPassed(Long studentNumber, Subject subject) {
+    return enrolmentRepository.existsByStudent_NumberAndSubjectEdition_SubjectAndStatus(studentNumber, subject,
+        EnrolmentStatus.PASSED);
   }
 
   public Double getAttendanceRate(Student student) {

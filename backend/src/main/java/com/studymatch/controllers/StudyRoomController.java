@@ -1,5 +1,6 @@
 package com.studymatch.controllers;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.studymatch.dtos.ConfirmAttendanceRequestDTO;
@@ -19,6 +21,7 @@ import com.studymatch.dtos.ParticipantDTO;
 import com.studymatch.dtos.RateTutorRequestDTO;
 import com.studymatch.dtos.RatingDTO;
 import com.studymatch.dtos.StudyRoomDTO;
+import com.studymatch.dtos.StudyRoomDetailDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.User;
@@ -54,6 +57,27 @@ public class StudyRoomController {
       Authentication authentication) {
     User tutor = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.status(HttpStatus.CREATED).body(studyRoomService.create(tutor.getNumber(), request));
+  }
+
+  @GetMapping
+  @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "The StudyRooms still open, sorted by start, filtered by subject, tutor, topic or date. "
+      + "The link is null unless you're the tutor or already joined")
+  public ResponseEntity<List<StudyRoomDTO>> list(@RequestParam(required = false) Long subjectId,
+      @RequestParam(required = false) String tutor, @RequestParam(required = false) String topic,
+      @RequestParam(required = false) LocalDate date, Authentication authentication) {
+    User viewer = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(studyRoomService.listRooms(viewer.getNumber(), subjectId, tutor, topic, date));
+  }
+
+  @GetMapping("{id}")
+  @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "One StudyRoom's full description, the tutor's rating in that subject, and whether you can join. "
+      + "The link is null unless you're the tutor or already joined")
+  @ErrorCodes(ErrorCode.NOT_FOUND)
+  public ResponseEntity<StudyRoomDetailDTO> get(@PathVariable Long id, Authentication authentication) {
+    User viewer = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(studyRoomService.getRoom(id, viewer.getNumber()));
   }
 
   @GetMapping("{id}/participants")

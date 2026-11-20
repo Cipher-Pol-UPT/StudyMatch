@@ -52,6 +52,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | PUT | `/degrees/{id}` | Staff | rename a degree, its students and subjects stay linked |
 | GET | `/categories/`, `/categories/{id}` | logged in | list categories, or one |
 | POST | `/categories/` | Staff | register a category |
+| PUT | `/categories/{id}` | Staff | rename a category, its subjects (and so the students' levels in it) stay linked |
 | GET | `/subjects/`, `/subjects/{id}` | logged in | list subjects with their category and degrees, or one |
 | POST | `/subjects/` | Staff | register a subject and its first edition |
 | PUT | `/subjects/{id}` | Staff | change name and ECTS (code and category stay), and optionally this year's edition's teachers, keeping at least one |
@@ -86,6 +87,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | --- | --- | --- | --- |
 | GET | `/tutors/me/subjects` | Student | the subjects you tutor |
 | POST | `/study-rooms/` | Student who tutors the subject | create a StudyRoom |
+| GET | `/study-rooms/` | Student | the open StudyRooms (not cancelled, not completed), filtered by subject, tutor, topic or date |
+| GET | `/study-rooms/{id}` | Student | one StudyRoom's description, the tutor's rating in that subject, and whether you can join |
 | GET | `/study-rooms/{id}/participants` | the room's tutor | who joined, and whether they attended |
 | POST | `/study-rooms/{id}/attendance` | the room's tutor | confirm who attended once the room ended, within 48 hours |
 | POST | `/study-rooms/{id}/rating` | Student who attended | rate the tutor, 1 to 5 stars and an optional comment, once per room within 7 days |
