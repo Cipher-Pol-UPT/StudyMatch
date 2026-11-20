@@ -530,7 +530,7 @@
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Select at least one teacher.",
     "CLASS_SECTION_ALREADY_EXISTS": "This class section already exists.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "The class section does not belong to this subject edition.",
-    "SUBJECT_EDITION_NOT_CURRENT": "Students can only be enrolled in subject editions of the current academic year.",
+    "SUBJECT_EDITION_NOT_CURRENT": "Only subject editions of the current academic year can be changed.",
     "GROUP_WORK_NOT_ALLOWED_FOR_EXAMS": "Group work is not allowed for exams.",
     "INVALID_GROUP_SIZES": "The group sizes are invalid.",
     "SEPARATION_SAME_STUDENT": "Select two different students.",
@@ -862,5 +862,25 @@
       "INVALID_NUMBER": "Not a valid student number",
       "DUPLICATE": "Appears more than once"
     }
+  },
+  "attendance": {
+    "intro": "Choose the lesson, then mark who missed it.",
+    "chooseLesson": "Choose the lesson",
+    "chooseLessonBody": "Pick the date and start time to see the class.",
+    "noEditionsBody": "Attendance can only be registered for editions of the current academic year.",
+    "sheet": "Attendance",
+    "student": "Student",
+    "absent": "Absent",
+    "justified": "Justified",
+    "absentLabel": "{{name}} was absent",
+    "justifiedLabel": "{{name}}'s absence is justified",
+    "statute": "Not applicable · Special Statute",
+    "noStudents": "No students in this class",
+    "noStudentsBody": "Students enrolled in this class show up here.",
+    "recordedTitle": "This lesson already has a record",
+    "recordedBody": "{{lesson}}. You're correcting it; saving replaces the absences.",
+    "save": "Save attendance · {{count}} absent",
+    "saved_one": "Attendance saved: {{count}} absent.",
+    "saved_other": "Attendance saved: {{count}} absent."
   }
 }

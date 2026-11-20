@@ -19,6 +19,7 @@ import com.studymatch.dtos.AttendanceRequestDTO;
 import com.studymatch.dtos.AttendanceSheetDTO;
 import com.studymatch.dtos.CategoryLevelDTO;
 import com.studymatch.dtos.EditionStudentDTO;
+import com.studymatch.dtos.EnrolmentRecordDTO;
 import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.EnrolmentResultDTO.Result;
 import com.studymatch.dtos.PersonalityProfileDTO;
@@ -33,6 +34,7 @@ import com.studymatch.models.ClassSection;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.Lesson;
 import com.studymatch.models.Student;
+import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.EnrolmentRepository;
 import com.studymatch.utils.EnrolmentCsvReader;
@@ -44,13 +46,16 @@ public class EnrolmentService {
   private final LessonService lessonService;
   private final AbsenceService absenceService;
   private final SubjectEditionService subjectEditionService;
+  private final AcademicYearService academicYearService;
 
   public EnrolmentService(EnrolmentRepository enrolmentRepository, LessonService lessonService,
-      AbsenceService absenceService, SubjectEditionService subjectEditionService) {
+      AbsenceService absenceService, SubjectEditionService subjectEditionService,
+      AcademicYearService academicYearService) {
     this.enrolmentRepository = enrolmentRepository;
     this.lessonService = lessonService;
     this.absenceService = absenceService;
     this.subjectEditionService = subjectEditionService;
+    this.academicYearService = academicYearService;
   }
 
   // enrol students: the students come from the controller since StudentService already depends on this service
@@ -108,6 +113,17 @@ public class EnrolmentService {
     return EnrolmentResultDTO.of(number, student.getName(), result);
   }
 
+  // change class: the same enrolment moves, so its grades and absences stay with the student
+  @Transactional
+  public EnrolmentRecordDTO changeClass(Long subjectEditionId, Long studentNumber, String classSectionCode) {
+    // locked so a lesson of either class can't be registered halfway through the move
+    SubjectEdition edition = subjectEditionService.getLockedCurrentEdition(subjectEditionId);
+    ClassSection classSection = edition.getClassSection(classSectionCode.trim());
+    Enrolment enrolment = getEnrolment(subjectEditionId, studentNumber);
+    enrolment.changeClassSection(classSection);
+    return EnrolmentRecordDTO.from(enrolment);
+  }
+
   public boolean isTaughtBy(Student student, Long teacherNumber) {
     return enrolmentRepository.existsByStudentAndSubjectEdition_Teachers_Number(student, teacherNumber);
   }
@@ -115,6 +131,19 @@ public class EnrolmentService {
   // any enrolment counts, even one still in progress
   public boolean hasAcademicHistory(Student student) {
     return enrolmentRepository.existsByStudent(student);
+  }
+
+  // join StudyRoom (#45): the student is enrolled in the subject's newest (current) edition
+  public boolean isEnrolledInCurrentEdition(Long studentNumber, Subject subject) {
+    return academicYearService.findCurrent()
+        .map(year -> enrolmentRepository
+            .existsByStudent_NumberAndSubjectEdition_SubjectAndSubjectEdition_AcademicYear(studentNumber, subject, year))
+        .orElse(false);
+  }
+
+  public boolean hasPassed(Long studentNumber, Subject subject) {
+    return enrolmentRepository.existsByStudent_NumberAndSubjectEdition_SubjectAndStatus(studentNumber, subject,
+        EnrolmentStatus.PASSED);
   }
 
   public Double getAttendanceRate(Student student) {

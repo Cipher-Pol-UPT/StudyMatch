@@ -52,9 +52,12 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | PUT | `/degrees/{id}` | Staff | rename a degree, its students and subjects stay linked |
 | GET | `/categories/`, `/categories/{id}` | logged in | list categories, or one |
 | POST | `/categories/` | Staff | register a category |
+| PUT | `/categories/{id}` | Staff | rename a category, its subjects (and so the students' levels in it) stay linked |
 | GET | `/subjects/`, `/subjects/{id}` | logged in | list subjects with their category and degrees, or one |
 | POST | `/subjects/` | Staff | register a subject and its first edition |
+| PUT | `/subjects/{id}` | Staff | change name and ECTS (code and category stay), and optionally this year's edition's teachers, keeping at least one |
 | POST | `/subjects/{id}/editions` | Staff | add an edition of an existing subject for another year |
+| GET | `/subjects/{id}/editions/current` | Staff | the subject's edition this year with its teachers, to edit them |
 | GET | `/academic-years/` | logged in | academic years, newest (the current one) first |
 | GET | `/academic-years/next` | Staff | the year Start Academic Year would create, and the current year's enrolments with no final grade |
 | POST | `/academic-years/` | Staff | start the next academic year (the body repeats its start year), everyone retakes the personality test |
@@ -67,6 +70,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/subject-editions/` | Teacher | the editions you teach |
 | GET | `/subject-editions/current` | Staff | this year's editions, the ones open for enrolment |
 | POST | `/subject-editions/{id}/enrolments` | Staff | enrol students by number in one class, with a result per student |
+| PUT | `/subject-editions/{id}/enrolments/{studentNumber}/class-section` | Staff | move an enrolled student to another class of the edition, keeping their grades and absences |
 | GET | `/subject-editions/enrolments/import/template` | Staff | the empty CSV for enrolments |
 | POST | `/subject-editions/{id}/enrolments/import` | Staff | enrol the students in a CSV, with a result per row |
 | GET | `/subject-editions/{id}/students` | Teacher of the edition | its students, with personality, category level and attendance |
@@ -83,6 +87,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | --- | --- | --- | --- |
 | GET | `/tutors/me/subjects` | Student | the subjects you tutor |
 | POST | `/study-rooms/` | Student who tutors the subject | create a StudyRoom |
+| GET | `/study-rooms/` | Student | the open StudyRooms (not cancelled, not completed), filtered by subject, tutor, topic or date |
+| GET | `/study-rooms/{id}` | Student | one StudyRoom's description, the tutor's rating in that subject, and whether you can join |
 | GET | `/study-rooms/{id}/participants` | the room's tutor | who joined, and whether they attended |
 | POST | `/study-rooms/{id}/attendance` | the room's tutor | confirm who attended once the room ended, within 48 hours |
 | POST | `/study-rooms/{id}/rating` | Student who attended | rate the tutor, 1 to 5 stars and an optional comment, once per room within 7 days |
