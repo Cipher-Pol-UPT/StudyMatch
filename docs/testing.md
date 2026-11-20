@@ -30,6 +30,30 @@ npx vitest      # Vitest in watch mode, reruns on save
 
 The tests are in `frontend/tests` and run in jsdom, a fake browser. They never call the real backend: each test replaces `fetch` with `vi.stubGlobal` and decides what the "backend" answers. `tests/contracts.test.ts` is the exception; it reads the backend's `ErrorCode.java` and enums from disk to check the frontend's copies match.
 
+### In CI
+
+GitHub Actions runs the same commands on every pull request and every push to `main`, on a clean machine:
+
+Everything is in `.github/workflows/ci.yml`, as three jobs (each one is a check on the PR):
+
+| Job | What it runs |
+| --- | --- |
+| Backend build and tests | `./mvnw -B verify`, with a PostgreSQL 17 container next to it (same database and user as `docker-compose.yml`, with no password check since it only exists inside the job) |
+| Frontend lint, tests and build | `npm ci --ignore-scripts`, `npm run lint`, `npm run test:coverage` and `npm run build` |
+| SonarQube analysis | starts once the other two passed, takes their coverage reports and compiled classes, and sends the whole repo to SonarQube |
+
+All three have to pass before a PR can be merged. Each backend run keeps the JaCoCo report as an artifact called `jacoco-report`; download it from the bottom of the run's page on the Actions tab. When a backend run fails, it also keeps the Surefire test reports (`surefire-reports`), which show which test broke and why.
+
+### SonarQube
+
+The SonarQube job sends the whole repo (backend and frontend) to [SonarQube Cloud](https://sonarcloud.io/project/overview?id=Cipher-Pol-UPT_StudyMatch), with the JaCoCo report from the backend job and the Vitest `lcov.info` from the frontend job. It doesn't build anything itself. The settings are in `sonar-project.properties` at the root.
+
+On a pull request, SonarQube only judges the code the PR changes, against the default quality gate (Sonar way). The new code needs at least 80% coverage, at most 3% duplicated lines, an A for reliability, security and maintainability (so no new bugs or vulnerabilities), and every new security hotspot reviewed. It comments on the PR with the result. If the gate fails, the SonarQube check goes red and the PR can't be merged. Security hotspots have to be marked as reviewed on SonarQube Cloud; whoever's PR adds one reviews it.
+
+On a push to `main`, it updates the full analysis of the project, which is where the numbers for the quality report come from.
+
+Coverage counts the backend and the frontend, except `frontend/src/studymatch-ui`. That's our component library: the pages that use it are what we test, and it's left out of the coverage numbers on purpose. It's still analysed for bugs, code smells, duplication and security. To see the frontend coverage locally, run `npm run test:coverage` and open `frontend/coverage/lcov-report/index.html`. When this was written it was 94% of lines and 90% of branches.
+
 ## How we write backend tests
 
 ### Structure

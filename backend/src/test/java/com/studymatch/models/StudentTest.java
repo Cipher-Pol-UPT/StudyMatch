@@ -182,6 +182,31 @@ class StudentTest {
   }
 
   @Test
+  @DisplayName("Removing the statute of a student who has none throws STUDENT_HAS_NO_STATUTE")
+  void removeMissingStatuteIsRefused() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> student.removeStatute());
+
+    // Assert
+    assertEquals(ErrorCode.STUDENT_HAS_NO_STATUTE, e.getCode());
+  }
+
+  @Test
+  @DisplayName("An expired statute is still stored, so it can be removed")
+  void removeExpiredStatute() {
+    // Arrange - assignStatute refuses past dates, this is one that ran out
+    ReflectionTestUtils.setField(student, "statuteType", StatuteType.WORKING_STUDENT);
+    ReflectionTestUtils.setField(student, "statuteEndDate", LocalDate.now().minusDays(1));
+
+    // Act
+    student.removeStatute();
+
+    // Assert
+    assertNull(student.getStatuteType());
+    assertNull(student.getStatuteEndDate());
+  }
+
+  @Test
   @DisplayName("A PNG banner is saved")
   void pngBannerIsSaved() {
     // Arrange

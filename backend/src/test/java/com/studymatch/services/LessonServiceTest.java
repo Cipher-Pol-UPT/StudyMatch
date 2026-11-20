@@ -125,6 +125,51 @@ class LessonServiceTest {
     assertEquals(startsAt, saved.getValue().getStartsAt());
   }
 
+  @Test
+  @DisplayName("A registered lesson is found by its class and start")
+  void registeredLessonIsFound() {
+    // Arrange
+    ClassSection classSection = classSection();
+    LocalDateTime startsAt = LocalDateTime.of(2026, 11, 10, 9, 0);
+    Lesson lesson = new Lesson(classSection, startsAt);
+    when(lessonRepository.findByClassSectionAndStartsAt(classSection, startsAt)).thenReturn(Optional.of(lesson));
+
+    // Act
+    Lesson result = lessonService.getLesson(classSection, startsAt);
+
+    // Assert
+    assertSame(lesson, result);
+  }
+
+  @Test
+  @DisplayName("A lesson nobody registered is NOT_FOUND")
+  void unregisteredLessonIsNotFound() {
+    // Arrange
+    ClassSection classSection = classSection();
+    LocalDateTime startsAt = LocalDateTime.of(2026, 11, 10, 9, 0);
+    when(lessonRepository.findByClassSectionAndStartsAt(classSection, startsAt)).thenReturn(Optional.empty());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> lessonService.getLesson(classSection, startsAt));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Deleting a lesson removes it from the repository")
+  void deleteLessonRemovesIt() {
+    // Arrange
+    Lesson lesson = new Lesson(classSection(), LocalDateTime.of(2026, 11, 10, 9, 0));
+
+    // Act
+    lessonService.deleteLesson(lesson);
+
+    // Assert
+    verify(lessonRepository).delete(lesson);
+  }
+
   private static ClassSection classSection() {
     return ModelTestData.enrolment(ModelTestData.student("Test Student")).getClassSection();
   }

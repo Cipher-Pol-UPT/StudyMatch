@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.studymatch.dtos.DegreeRequestDTO;
 import com.studymatch.dtos.DegreeResponseDTO;
+import com.studymatch.dtos.RenameDegreeRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Degree;
@@ -58,6 +59,38 @@ class DegreeControllerTest {
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class, () -> controller.registerDegree(REGISTER));
+
+    // Assert
+    assertEquals(ErrorCode.DEGREE_ALREADY_EXISTS, e.getCode());
+  }
+
+  // rename degree
+
+  @Test
+  @DisplayName("Renaming a degree is 200 with the renamed degree's data")
+  void renameDegreeIs200() {
+    // Arrange
+    RenameDegreeRequestDTO rename = new RenameDegreeRequestDTO("Applied Mathematics");
+    when(degreeService.renameDegree(1L, rename)).thenReturn(new Degree("Applied Mathematics", 3));
+
+    // Act
+    ResponseEntity<DegreeResponseDTO> result = controller.renameDegree(1L, rename);
+
+    // Assert
+    assertEquals(200, result.getStatusCode().value());
+    assertEquals("Applied Mathematics", result.getBody().name());
+    assertEquals(3, result.getBody().curricularYears());
+  }
+
+  @Test
+  @DisplayName("When the new name is taken, the service's error goes through to the handler")
+  void renameToTakenNameIsPassedOn() {
+    // Arrange
+    RenameDegreeRequestDTO rename = new RenameDegreeRequestDTO("Biology");
+    when(degreeService.renameDegree(1L, rename)).thenThrow(new StudyMatchException(ErrorCode.DEGREE_ALREADY_EXISTS));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> controller.renameDegree(1L, rename));
 
     // Assert
     assertEquals(ErrorCode.DEGREE_ALREADY_EXISTS, e.getCode());

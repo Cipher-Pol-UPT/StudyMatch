@@ -32,6 +32,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | PUT | `/students/{number}` | Staff | edit name, personal email, degree and curricular year |
 | POST | `/students/` | Staff | register one student and email their credentials |
 | POST | `/students/{number}/resend-credentials` | Staff | new one-time password by email, optionally to a corrected address |
+| PUT | `/students/{number}/statute` | Staff | add a special statute (type and end date) or replace the current one |
+| DELETE | `/students/{number}/statute` | Staff | end the student's statute |
 | GET | `/students/import/template` | Staff | the empty CSV for importing students |
 | POST | `/students/import/preview` | Staff | check a CSV row by row without saving anything |
 | POST | `/students/import` | Staff | create the previewed rows |
@@ -46,12 +48,15 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | --- | --- | --- | --- |
 | GET | `/degrees/`, `/degrees/{id}` | logged in | list degrees, or one |
 | POST | `/degrees/` | Staff | register a degree |
+| PUT | `/degrees/{id}` | Staff | rename a degree, its students and subjects stay linked |
 | GET | `/categories/`, `/categories/{id}` | logged in | list categories, or one |
 | POST | `/categories/` | Staff | register a category |
 | GET | `/subjects/`, `/subjects/{id}` | logged in | list subjects with their category and degrees, or one |
 | POST | `/subjects/` | Staff | register a subject and its first edition |
 | POST | `/subjects/{id}/editions` | Staff | add an edition of an existing subject for another year |
 | GET | `/academic-years/` | logged in | academic years, newest (the current one) first |
+| GET | `/academic-years/next` | Staff | the year Start Academic Year would create, and the current year's enrolments with no final grade |
+| POST | `/academic-years/` | Staff | start the next academic year (the body repeats its start year), everyone retakes the personality test |
 | GET | `/teachers/` | Staff | every teacher, to pick an edition's teachers |
 
 ## Subject editions
@@ -69,6 +74,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | PUT | `/subject-editions/{id}/assignments/{assignmentId}/grades/{studentNumber}` | Teacher of the edition | give or change a grade; sets the final grade once everything's graded |
 | GET | `/subject-editions/{id}/attendance?classSection=&startsAt=` | Staff | one lesson's attendance sheet, with the saved record if there is one |
 | PUT | `/subject-editions/{id}/attendance` | Staff | register or correct a lesson's absences (current year only) |
+| DELETE | `/subject-editions/{id}/attendance?classSection=&startsAt=` | Staff | delete a lesson registered by mistake, with its absences (current year only) |
 
 ## Tutors and StudyRooms
 
@@ -79,4 +85,4 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 ## Coming next
 
-The other use cases (groups, StudyRoom join and leave, tutor applications, ratings, achievements, statutes, unblocking accounts, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (groups, StudyRoom join and leave, tutor applications, ratings, achievements, unblocking accounts, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
