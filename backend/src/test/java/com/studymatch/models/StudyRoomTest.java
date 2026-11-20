@@ -21,9 +21,9 @@ import com.studymatch.exceptions.StudyMatchException;
 class StudyRoomTest {
 
   private static final String LINK = "https://meet.google.com/test-link";
-  private static final Long ANA = 1L;
-  private static final Long BRUNO = 2L;
-  private static final Long CARLA = 3L;
+  private static final Long ANA_NUMBER = 1L;
+  private static final Long BRUNO_NUMBER = 2L;
+  private static final Long CARLA_NUMBER = 3L;
 
   private Student tutor;
   private TutorRole tutorRole;
@@ -42,9 +42,9 @@ class StudyRoomTest {
     bruno = ModelTestData.student("Bruno Test");
     carla = ModelTestData.student("Carla Test");
     // attendance is confirmed by student number, the database would set these
-    ReflectionTestUtils.setField(ana, "number", ANA);
-    ReflectionTestUtils.setField(bruno, "number", BRUNO);
-    ReflectionTestUtils.setField(carla, "number", CARLA);
+    ReflectionTestUtils.setField(ana, "number", ANA_NUMBER);
+    ReflectionTestUtils.setField(bruno, "number", BRUNO_NUMBER);
+    ReflectionTestUtils.setField(carla, "number", CARLA_NUMBER);
   }
 
   // the constructor won't accept past dates, so to simulate time passing we move the room afterwards
@@ -334,7 +334,7 @@ class StudyRoomTest {
     moveRoomToThePast();
 
     // Act - only ana showed up
-    room.confirmAttendance(Set.of(ANA));
+    room.confirmAttendance(Set.of(ANA_NUMBER));
 
     // Assert
     assertEquals(StudyRoomStatus.COMPLETED, room.getStatus());
@@ -377,7 +377,7 @@ class StudyRoomTest {
     // Arrange
     room.join(ana);
     moveRoomToThePast();
-    room.confirmAttendance(Set.of(ANA));
+    room.confirmAttendance(Set.of(ANA_NUMBER));
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class, () -> room.confirmAttendance(Set.of()));
@@ -396,11 +396,11 @@ class StudyRoomTest {
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
-        () -> room.confirmAttendance(Set.of(ANA, CARLA)));
+        () -> room.confirmAttendance(Set.of(ANA_NUMBER, CARLA_NUMBER)));
 
     // Assert
     assertEquals(ErrorCode.ATTENDEE_NOT_A_PARTICIPANT, e.getCode());
-    assertEquals(CARLA, e.getParams().get("number"));
+    assertEquals(CARLA_NUMBER, e.getParams().get("number"));
     assertEquals(StudyRoomStatus.SCHEDULED, room.getStatus());
     assertFalse(participationOf(ana).isAttended());
   }
@@ -414,7 +414,7 @@ class StudyRoomTest {
     moveRoomTo(endsAt.minusHours(2), endsAt);
 
     // Act
-    room.confirmAttendance(Set.of(ANA));
+    room.confirmAttendance(Set.of(ANA_NUMBER));
 
     // Assert
     assertEquals(StudyRoomStatus.COMPLETED, room.getStatus());
@@ -446,7 +446,7 @@ class StudyRoomTest {
     moveRoomTo(endsAt.minusHours(2), endsAt);
 
     // Act
-    StudyMatchException e = assertThrows(StudyMatchException.class, () -> room.confirmAttendance(Set.of(ANA)));
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> room.confirmAttendance(Set.of(ANA_NUMBER)));
 
     // Assert
     assertEquals(ErrorCode.STUDYROOM_CLOSED, e.getCode());
