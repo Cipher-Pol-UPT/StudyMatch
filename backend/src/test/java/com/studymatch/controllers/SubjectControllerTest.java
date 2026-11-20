@@ -20,6 +20,7 @@ import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.dtos.SubjectRequestDTO;
 import com.studymatch.dtos.SubjectResponseDTO;
 import com.studymatch.dtos.TeacherSummaryDTO;
+import com.studymatch.dtos.UpdateSubjectRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.AcademicYear;
@@ -204,6 +205,56 @@ class SubjectControllerTest {
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // update subject
+
+  @Test
+  @DisplayName("Updating a subject is 200 with the updated subject")
+  void updateSubjectIs200() {
+    // Arrange
+    UpdateSubjectRequestDTO update = new UpdateSubjectRequestDTO("Calculus I", 7, List.of(1L));
+    Subject updated = new Subject("MAT1", "Calculus I", 7, new Category("Mathematics"));
+    when(subjectService.updateSubject(1L, update)).thenReturn(updated);
+
+    // Act
+    ResponseEntity<SubjectResponseDTO> result = controller.updateSubject(1L, update);
+
+    // Assert
+    assertEquals(200, result.getStatusCode().value());
+    assertEquals("MAT1", result.getBody().code());
+    assertEquals("Calculus I", result.getBody().name());
+    assertEquals(7, result.getBody().ects());
+  }
+
+  @Test
+  @DisplayName("When the update is refused, the service's error goes through to the handler")
+  void updateErrorIsPassedOn() {
+    // Arrange
+    UpdateSubjectRequestDTO update = new UpdateSubjectRequestDTO("Calculus I", 7, List.of());
+    when(subjectService.updateSubject(1L, update))
+        .thenThrow(new StudyMatchException(ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> controller.updateSubject(1L, update));
+
+    // Assert
+    assertEquals(ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Getting the current edition is 200 with the edition the service mapped")
+  void currentEditionIs200() {
+    // Arrange
+    SubjectEditionResponseDTO current = SubjectEditionResponseDTO.from(edition(subject("MAT1"), teacher("Ana")));
+    when(subjectService.getCurrentEdition(1L)).thenReturn(current);
+
+    // Act
+    ResponseEntity<SubjectEditionResponseDTO> result = controller.getCurrentEdition(1L);
+
+    // Assert
+    assertEquals(200, result.getStatusCode().value());
+    assertEquals(current, result.getBody());
   }
 
 }
