@@ -73,7 +73,7 @@ export function AvatarUploader({ name, src, onChange, size = 120, maxSize = DEFA
   useTranslation();
   const picker = useImagePicker(maxSize);
   const btn = (
-    <button type="button" className="sm-avatar-up__btn" aria-label={src ? i18n.t('ui.change_profile_photo') : i18n.t('ui.add_profile_photo')} disabled={disabled}>
+    <button type="button" className="sm-avatar-up__btn" aria-label={src ? i18n.t('ui.change_profile_photo') : i18n.t('ui.add_profile_photo')} disabled={disabled} onClick={src ? undefined : picker.open}>
       <Camera size={Math.max(14, size * 0.14)} strokeWidth={2.25} />
     </button>
   );
@@ -94,7 +94,7 @@ export function AvatarUploader({ name, src, onChange, size = 120, maxSize = DEFA
               ]}
             />
           ) : (
-            <span onClick={picker.open}>{btn}</span>
+            btn
           )}
         </span>
       )}

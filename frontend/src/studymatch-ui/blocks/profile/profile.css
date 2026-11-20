@@ -24,7 +24,7 @@
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--sm-dur-2);
-  background:
+  background-image:
     linear-gradient(90deg, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.6) 33.33%, transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.6) 66.66%, transparent calc(66.66% + 0.5px)),
     linear-gradient(0deg, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.6) 33.33%, transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.6) 66.66%, transparent calc(66.66% + 0.5px));
 }
