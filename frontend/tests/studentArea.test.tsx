@@ -41,6 +41,23 @@ describe('StudentArea', () => {
     expect(screen.getByRole('link', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
   });
 
+  it('shows the big five traits on the back of the student pass while there is no group', async () => {
+    const profile = await getMyProfile();
+    vi.mocked(getMyProfile).mockResolvedValueOnce({
+      ...profile,
+      privateProfile: { ...profile.privateProfile!, personalityProfile: { openness: 0.4, conscientiousness: 0.9, extraversion: 0.5, agreeableness: 0.6, neuroticism: 0.2 } },
+    });
+    renderArea();
+    const pass = await screen.findByRole('button', { name: /Ana Silva’s student pass/ });
+    const back = within(pass.querySelector('.sm-pass--back') as HTMLElement);
+    expect(back.getByText('Conscientiousness')).toBeTruthy();
+    expect(back.getByText('90%')).toBeTruthy();
+    expect(back.getByText('Neuroticism')).toBeTruthy();
+    expect(back.queryByText('No group yet')).toBeNull();
+    fireEvent.click(pass);
+    expect(pass.getAttribute('aria-label')).toContain('Showing the personality profile');
+  });
+
   it('opens the profile page from the avatar menu', async () => {
     renderArea();
     expect(screen.queryByRole('menuitem', { name: 'My profile' })).toBeNull();
@@ -82,23 +99,6 @@ describe('StudentArea', () => {
     expect(await screen.findByRole('button', { name: /Ana Silva’s student pass/ })).toBeTruthy();
     expect(screen.getByText('45123')).toBeTruthy();
     expect(screen.queryByText(/Student no\./)).toBeNull();
-  });
-
-  it('shows the big five traits on the back of the student pass instead of the group', async () => {
-    const profile = await getMyProfile();
-    vi.mocked(getMyProfile).mockResolvedValueOnce({
-      ...profile,
-      privateProfile: { ...profile.privateProfile!, personalityProfile: { openness: 0.4, conscientiousness: 0.9, extraversion: 0.5, agreeableness: 0.6, neuroticism: 0.2 } },
-    });
-    renderArea();
-    const pass = await screen.findByRole('button', { name: /Ana Silva’s student pass/ });
-    const back = within(pass.querySelector('.sm-pass--back') as HTMLElement);
-    expect(back.getByText('Conscientiousness')).toBeTruthy();
-    expect(back.getByText('90%')).toBeTruthy();
-    expect(back.getByText('Neuroticism')).toBeTruthy();
-    expect(back.queryByText('No group yet')).toBeNull();
-    fireEvent.click(pass);
-    expect(pass.getAttribute('aria-label')).toContain('Showing the personality profile');
   });
 
   it('shows no tasks until there are real ones', () => {
