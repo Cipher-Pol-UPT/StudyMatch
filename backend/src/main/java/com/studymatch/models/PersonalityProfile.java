@@ -50,31 +50,37 @@ public class PersonalityProfile {
 
   @DecimalMin("0.0")
   @DecimalMax("1.0")
-  private double leadership;
+  private double openness;
 
   @DecimalMin("0.0")
   @DecimalMax("1.0")
-  private double problemSolving;
+  private double conscientiousness;
 
   @DecimalMin("0.0")
   @DecimalMax("1.0")
-  private double creativity;
+  private double extraversion;
 
   @DecimalMin("0.0")
   @DecimalMax("1.0")
-  private double execution;
+  private double agreeableness;
+
+  @DecimalMin("0.0")
+  @DecimalMax("1.0")
+  private double neuroticism;
 
   protected PersonalityProfile() {
   }
 
-  public PersonalityProfile(double leadership, double problemSolving, double creativity, double execution) {
-    this.leadership = leadership;
-    this.problemSolving = problemSolving;
-    this.creativity = creativity;
-    this.execution = execution;
+  public PersonalityProfile(double openness, double conscientiousness, double extraversion, double agreeableness,
+      double neuroticism) {
+    this.openness = openness;
+    this.conscientiousness = conscientiousness;
+    this.extraversion = extraversion;
+    this.agreeableness = agreeableness;
+    this.neuroticism = neuroticism;
   }
 
-  // answers go from 1 to 5; each Big Five trait is averaged and scaled to 0-1, then mixed into the four profile scores
+  // answers go from 1 to 5; each Big Five trait is the average of its answers, scaled to 0-1
   public static PersonalityProfile fromAnswers(List<Integer> answers) {
     if (answers.size() != QUESTION_COUNT) {
       throw new StudyMatchException(ErrorCode.VALIDATION_FAILED);
@@ -95,54 +101,32 @@ public class PersonalityProfile {
       traits.put(trait, (mean - 1) / 4);
     }
 
-    double o = traits.get(Trait.OPENNESS);
-    double c = traits.get(Trait.CONSCIENTIOUSNESS);
-    double e = traits.get(Trait.EXTRAVERSION);
-    double a = traits.get(Trait.AGREEABLENESS);
-    double s = 1 - traits.get(Trait.NEUROTICISM);
-
-    double leadership = 0.50 * e + 0.20 * c + 0.15 * s + 0.15 * o;
-    double problemSolving = 0.45 * o + 0.30 * c + 0.25 * s;
-    double creativity = 0.75 * o + 0.25 * e;
-    double execution = 0.60 * c + 0.20 * s + 0.20 * a;
-
-    return new PersonalityProfile(leadership, problemSolving, creativity, execution);
+    return new PersonalityProfile(traits.get(Trait.OPENNESS), traits.get(Trait.CONSCIENTIOUSNESS),
+        traits.get(Trait.EXTRAVERSION), traits.get(Trait.AGREEABLENESS), traits.get(Trait.NEUROTICISM));
   }
 
   public Long getId() {
     return id;
   }
 
-  public double getLeadership() {
-    return leadership;
+  public double getOpenness() {
+    return openness;
   }
 
-  public void setLeadership(double leadership) {
-    this.leadership = leadership;
+  public double getConscientiousness() {
+    return conscientiousness;
   }
 
-  public double getProblemSolving() {
-    return problemSolving;
+  public double getExtraversion() {
+    return extraversion;
   }
 
-  public void setProblemSolving(double problemSolving) {
-    this.problemSolving = problemSolving;
+  public double getAgreeableness() {
+    return agreeableness;
   }
 
-  public double getCreativity() {
-    return creativity;
-  }
-
-  public void setCreativity(double creativity) {
-    this.creativity = creativity;
-  }
-
-  public double getExecution() {
-    return execution;
-  }
-
-  public void setExecution(double execution) {
-    this.execution = execution;
+  public double getNeuroticism() {
+    return neuroticism;
   }
 
 }

@@ -121,7 +121,7 @@ class StudentProfileIntegrationTest {
         .andExpect(jsonPath("$.name").value("Test Student"))
         .andExpect(jsonPath("$.languages[0]").value("PORTUGUESE"))
         .andExpect(jsonPath("$.privateProfile.institutionalEmail").value(student.getInstitutionalEmail()))
-        .andExpect(jsonPath("$.privateProfile.personalityProfile.leadership").value(0.5))
+        .andExpect(jsonPath("$.privateProfile.personalityProfile.openness").value(0.5))
         .andExpect(jsonPath("$.privateProfile.hasAcademicHistory").value(true));
   }
 
@@ -333,7 +333,7 @@ class StudentProfileIntegrationTest {
   private Student saveStudent(String emailName, String name) {
     Student newStudent = new Student(emailName + "@example.com", name, passwordEncoder.encode(PASSWORD), degree, 1);
     newStudent.setMustChangePassword(false);
-    newStudent.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    newStudent.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
     newStudent.setLanguages(Set.of(Language.PORTUGUESE));
     newStudent = studentRepository.save(newStudent);
     newStudent.generateInstitutionalEmail("studymatch.com");

@@ -81,10 +81,11 @@ class PersonalityTestIntegrationTest {
     // Act
     submitTest(session)
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.leadership").value(closeTo(0.6417, DELTA), Double.class))
-        .andExpect(jsonPath("$.problemSolving").value(closeTo(0.6333, DELTA), Double.class))
-        .andExpect(jsonPath("$.creativity").value(closeTo(0.9375, DELTA), Double.class))
-        .andExpect(jsonPath("$.execution").value(closeTo(0.4333, DELTA), Double.class));
+        .andExpect(jsonPath("$.openness").value(closeTo(1.0, DELTA), Double.class))
+        .andExpect(jsonPath("$.conscientiousness").value(closeTo(0.3333, DELTA), Double.class))
+        .andExpect(jsonPath("$.extraversion").value(closeTo(0.75, DELTA), Double.class))
+        .andExpect(jsonPath("$.agreeableness").value(closeTo(0.8333, DELTA), Double.class))
+        .andExpect(jsonPath("$.neuroticism").value(closeTo(0.6667, DELTA), Double.class));
 
     // Assert - same session, no new login needed
     mockMvc.perform(get("/users/me").session(session))
@@ -92,7 +93,7 @@ class PersonalityTestIntegrationTest {
         .andExpect(jsonPath("$.personalityTestRequired").value(false));
     mockMvc.perform(get("/students/me/profile").session(session))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.privateProfile.personalityProfile.creativity").value(closeTo(0.9375, DELTA),
+        .andExpect(jsonPath("$.privateProfile.personalityProfile.openness").value(closeTo(1.0, DELTA),
             Double.class));
   }
 

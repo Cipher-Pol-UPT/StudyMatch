@@ -84,7 +84,7 @@ class StudentServiceTest {
 
     student = withNumber(ModelTestData.student("Test Student"), STUDENT_NUMBER);
     student.setLanguages(Set.of(Language.PORTUGUESE));
-    student.setPersonalityProfile(new PersonalityProfile(0.8, 0.6, 0.4, 0.7));
+    student.setPersonalityProfile(new PersonalityProfile(0.8, 0.6, 0.4, 0.7, 0.3));
     when(studentRepository.findById(STUDENT_NUMBER)).thenReturn(Optional.of(student));
   }
 
@@ -98,7 +98,7 @@ class StudentServiceTest {
     assertEquals("Test Student", profile.name());
     assertNotNull(profile.privateProfile());
     assertEquals(1, profile.privateProfile().curricularYear());
-    assertEquals(0.8, profile.privateProfile().personalityProfile().leadership());
+    assertEquals(0.8, profile.privateProfile().personalityProfile().openness());
   }
 
   @Test
@@ -424,7 +424,7 @@ class StudentServiceTest {
   void newYearWipesProfiles() {
     // Arrange
     Student other = withNumber(ModelTestData.student("Other Test Student"), OTHER_STUDENT_NUMBER);
-    other.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    other.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
     List<Student> withProfile = List.of(student, other);
     when(studentRepository.findByPersonalityProfileIsNotNull()).thenReturn(withProfile);
 
@@ -457,7 +457,7 @@ class StudentServiceTest {
 
     // Assert
     verify(studentRepository).save(student);
-    assertEquals(new PersonalityProfileDTO(0.5, 0.5, 0.5, 0.5), result);
+    assertEquals(new PersonalityProfileDTO(0.5, 0.5, 0.5, 0.5, 0.5), result);
     assertEquals(PersonalityProfileDTO.from(student.getPersonalityProfile()), result);
   }
 
