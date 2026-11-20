@@ -26,7 +26,6 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.studymatch.enums.AccountStatus;
 import com.studymatch.models.Degree;
 import com.studymatch.models.Student;
 import com.studymatch.models.Teacher;
@@ -136,7 +135,7 @@ class AccountStateFilterTest {
   void blockedUserIsKickedOut() throws Exception {
     // Arrange - blocked while logged in
     Teacher blocked = activeTeacher();
-    blocked.setAccountStatus(AccountStatus.BLOCKED);
+    blocked.block("test reason");
     logInAs(blocked);
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/degrees/");
     MockHttpSession session = new MockHttpSession();

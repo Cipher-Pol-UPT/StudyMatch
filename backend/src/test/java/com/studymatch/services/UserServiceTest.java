@@ -36,7 +36,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.studymatch.dtos.ChangePasswordRequestDTO;
 import com.studymatch.dtos.CreateAccountRequestDTO;
 import com.studymatch.dtos.ResetPasswordRequestDTO;
-import com.studymatch.enums.AccountStatus;
 import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -390,7 +389,7 @@ class UserServiceTest {
   void requestForBlockedAccount() {
     // Arrange
     anaIsInTheSystem(false);
-    ana.setAccountStatus(AccountStatus.BLOCKED);
+    ana.block("test reason");
 
     // Act
     userService.requestPasswordReset("ana@test.com");

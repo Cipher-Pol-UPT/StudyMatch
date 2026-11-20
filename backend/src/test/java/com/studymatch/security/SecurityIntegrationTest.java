@@ -27,7 +27,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.studymatch.enums.AccountStatus;
 import com.studymatch.models.Degree;
 import com.studymatch.models.Student;
 import com.studymatch.models.Teacher;
@@ -169,7 +168,7 @@ class SecurityIntegrationTest {
   void blockedUserCannotLogIn() throws Exception {
     // Arrange
     Teacher teacher = saveTeacher("it.teacher", false);
-    teacher.setAccountStatus(AccountStatus.BLOCKED);
+    teacher.block("test reason");
 
     // Act
     MvcResult result = login("it.teacher@studymatch.com", PASSWORD);
@@ -190,7 +189,7 @@ class SecurityIntegrationTest {
     MockHttpSession session = loginAndGetSession("it.teacher@studymatch.com");
 
     // Act - an admin blocks them
-    teacher.setAccountStatus(AccountStatus.BLOCKED);
+    teacher.block("test reason");
 
     // Assert
     mockMvc.perform(get("/users/me").session(session))
