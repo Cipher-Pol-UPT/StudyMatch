@@ -1,13 +1,16 @@
 package com.studymatch.services;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.CreateStudyRoomRequestDTO;
+import com.studymatch.dtos.ParticipantDTO;
 import com.studymatch.dtos.StudyRoomDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -59,6 +62,32 @@ public class StudyRoomService {
     rooms.forEach(room -> room.cancel(null));
     studyRoomRepository.saveAll(rooms);
     return rooms.size();
+  }
+
+  @Transactional(readOnly = true)
+  public List<ParticipantDTO> listParticipants(Long tutorNumber, Long roomId) {
+    return getHostedRoom(tutorNumber, roomId).getParticipations().stream()
+        .map(ParticipantDTO::from)
+        .sorted(Comparator.comparing(ParticipantDTO::name))
+        .toList();
+  }
+
+  @Transactional
+  public StudyRoomDTO confirmAttendance(Long tutorNumber, Long roomId, Set<Long> attendeeNumbers) {
+    StudyRoom room = getHostedRoom(tutorNumber, roomId);
+    room.confirmAttendance(attendeeNumbers);
+    // telling the attendees they can rate comes with notifications (#144), the achievements check with #70
+    return StudyRoomDTO.from(studyRoomRepository.save(room));
+  }
+
+  // only the tutor who hosts the room can see who joined and confirm it
+  private StudyRoom getHostedRoom(Long tutorNumber, Long roomId) {
+    StudyRoom room = studyRoomRepository.findById(roomId)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    if (!room.getTutorRole().getStudent().getNumber().equals(tutorNumber)) {
+      throw new StudyMatchException(ErrorCode.ACCESS_DENIED);
+    }
+    return room;
   }
 
 }

@@ -1,0 +1,4 @@
+# results and dashboards are made by each run, the numbers are in docs/performance.md
+*.jtl
+*-report/
+jmeter.log
