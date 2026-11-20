@@ -68,7 +68,7 @@ The author answers every comment, either with a fix or with a reason for leaving
 
 ## 6. Merge
 
-The reviewer merges after approving (merge commit, not squash, so the commits keep their issue numbers). Then the branch is deleted, on GitHub with the button on the PR and locally with `git branch -d <branch>`. Check that the issue closed and moved to Done.
+The reviewer merges after approving, once the three checks on the PR are green: Backend, Frontend and SonarQube (merge commit, not squash, so the commits keep their issue numbers). If a check fails, its run on the Actions tab shows which step broke, a failed backend run has the test reports attached, and a failed SonarQube check means the quality gate failed: SonarQube's comment on the PR says which condition. Then the branch is deleted, on GitHub with the button on the PR and locally with `git branch -d <branch>`. Check that the issue closed and moved to Done.
 
 ## Definition of Done
 
@@ -82,6 +82,6 @@ A pull request is ready for review when all of these are true:
 - [ ] The docs are up to date: each new or changed endpoint has its `@Operation` summary and `@ErrorCodes`, the right file in `docs/` reflects the change (a new rule goes in `domain.md`, a new endpoint in `api.md`), and the README is updated if the setup changed.
 - [ ] No secrets, passwords or personal files in the diff.
 
-It's done when, on top of that, another team member approved it, it's merged, the branch is deleted and the issue is in Done.
+It's done when, on top of that, the Backend, Frontend and SonarQube checks passed, another team member approved it, it's merged, the branch is deleted and the issue is in Done.
 
 A pull request that adds or changes behaviour without updating the docs it affects doesn't get approved.
