@@ -1,9 +1,10 @@
-import { Trophy } from 'lucide-react';
+import { Download, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { AchievementDialog, AchievementGrid, Breadcrumbs, EmptyState, ProgressBar, Spinner, type AchievementId, type StudentProfile } from '../../studymatch-ui';
+import { AchievementDialog, AchievementGrid, Breadcrumbs, Button, EmptyState, ProgressBar, Spinner, type AchievementId, type StudentProfile } from '../../studymatch-ui';
 import { Achievement } from '../../types/enums';
+import { ExportCertificateDialog } from './ExportCertificateDialog';
 import './achievements.css';
 
 export interface AchievementsPageProps {
@@ -15,6 +16,7 @@ export interface AchievementsPageProps {
 export function AchievementsPage({ profile, failed }: AchievementsPageProps) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<AchievementId | null>(null);
+  const [exporting, setExporting] = useState<AchievementId[] | null>(null);
 
   if (failed) {
     return <EmptyState icon={Trophy} title={t('common.unexpectedError')} />;
@@ -37,6 +39,9 @@ export function AchievementsPage({ profile, failed }: AchievementsPageProps) {
           <h1>{t('achievements.title')}</h1>
           <ProgressBar value={earned.length} max={Achievement.length} label={count} showLabel />
         </div>
+        {earned.length > 0 && (
+          <Button variant="secondary" icon={Download} onClick={() => setExporting(earned.map((a) => a.id))}>{t('achievements.export')}</Button>
+        )}
       </header>
 
       <section>
@@ -54,7 +59,9 @@ export function AchievementsPage({ profile, failed }: AchievementsPageProps) {
         </section>
       )}
 
-      <AchievementDialog id={selected} earnedAt={opened?.earnedAt} onClose={() => setSelected(null)} />
+      <AchievementDialog id={selected} earnedAt={opened?.earnedAt} onClose={() => setSelected(null)}
+        onExportCertificate={(id) => { setSelected(null); setExporting([id]); }} />
+      <ExportCertificateDialog open={exporting !== null} earned={earned} chosen={exporting ?? []} onClose={() => setExporting(null)} />
     </div>
   );
 }
