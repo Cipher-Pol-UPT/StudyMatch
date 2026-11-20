@@ -124,7 +124,7 @@ class ChatWebSocketIntegrationTest {
   private Student saveStudent(String personalEmail, String name) {
     Student student = new Student(personalEmail, name, passwordEncoder.encode(PASSWORD), degree, 1);
     student.setMustChangePassword(false);
-    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
     student = studentRepository.save(student);
     student.generateInstitutionalEmail("studymatch.com");
     return studentRepository.save(student);
