@@ -84,6 +84,15 @@ describe('StudentArea', () => {
     expect(logout).toHaveBeenCalledTimes(1);
   });
 
+  it('stays logged in and warns when the session could not be ended', async () => {
+    vi.mocked(logout).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    const onLoggedOut = renderArea();
+    fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Log out' }));
+    expect(await screen.findByText('Could not end your session. Check your connection and try again.')).toBeTruthy();
+    expect(onLoggedOut).not.toHaveBeenCalled();
+  });
+
   it('greets the student and shows what to do next instead of the attendance', async () => {
     renderArea();
     expect(screen.getByRole('heading', { name: 'Hello, Ana Silva.' })).toBeTruthy();
