@@ -62,6 +62,38 @@ class CategoryControllerTest {
     assertEquals(ErrorCode.CATEGORY_ALREADY_EXISTS, e.getCode());
   }
 
+  // rename category
+
+  @Test
+  @DisplayName("Renaming a category is 200 with the renamed category's data")
+  void renameCategoryIs200() {
+    // Arrange
+    CategoryRequestDTO rename = new CategoryRequestDTO("Applied Mathematics");
+    when(categoryService.renameCategory(1L, rename)).thenReturn(new Category("Applied Mathematics"));
+
+    // Act
+    ResponseEntity<CategoryResponseDTO> result = controller.renameCategory(1L, rename);
+
+    // Assert
+    assertEquals(200, result.getStatusCode().value());
+    assertEquals("Applied Mathematics", result.getBody().name());
+  }
+
+  @Test
+  @DisplayName("When the new name is taken, the service's error goes through to the handler")
+  void renameToTakenNameIsPassedOn() {
+    // Arrange
+    CategoryRequestDTO rename = new CategoryRequestDTO("Programming");
+    when(categoryService.renameCategory(1L, rename))
+        .thenThrow(new StudyMatchException(ErrorCode.CATEGORY_ALREADY_EXISTS));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> controller.renameCategory(1L, rename));
+
+    // Assert
+    assertEquals(ErrorCode.CATEGORY_ALREADY_EXISTS, e.getCode());
+  }
+
   // list categories
 
   @Test

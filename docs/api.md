@@ -52,6 +52,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | PUT | `/degrees/{id}` | Staff | rename a degree, its students and subjects stay linked |
 | GET | `/categories/`, `/categories/{id}` | logged in | list categories, or one |
 | POST | `/categories/` | Staff | register a category |
+| PUT | `/categories/{id}` | Staff | rename a category, its subjects (and so the students' levels in it) stay linked |
 | GET | `/subjects/`, `/subjects/{id}` | logged in | list subjects with their category and degrees, or one |
 | POST | `/subjects/` | Staff | register a subject and its first edition |
 | PUT | `/subjects/{id}` | Staff | change name and ECTS (code and category stay), and optionally this year's edition's teachers, keeping at least one |
