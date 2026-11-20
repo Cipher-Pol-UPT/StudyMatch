@@ -172,6 +172,36 @@ public class StudyRoomService {
   }
 
   @Transactional
+  public StudyRoomDTO join(Student student, Long roomId) {
+    StudyRoom room = studyRoomRepository.findById(roomId)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    Long studentNumber = student.getNumber();
+
+    // eligibility (#45): enrolled in the subject's current edition and hasn't passed it
+    if (!enrolmentService.isEnrolledInCurrentEdition(studentNumber, room.getTutorRole().getSubject())
+        || enrolmentService.hasPassed(studentNumber, room.getTutorRole().getSubject())) {
+      throw new StudyMatchException(ErrorCode.NOT_ELIGIBLE_FOR_STUDYROOM);
+    }
+
+    // a student can't be in two rooms at the same time
+    List<StudyRoom> overlapping = studyRoomRepository.findJoinedOverlapping(studentNumber, roomId, room.getStartsAt(),
+        room.getEndsAt());
+    if (!overlapping.isEmpty()) {
+      StudyRoom conflict = overlapping.get(0);
+      throw new StudyMatchException(ErrorCode.JOINED_STUDYROOM_OVERLAP, Map.of(
+          "id", conflict.getId(),
+          "subject", conflict.getTutorRole().getSubject().getName(),
+          "startsAt", conflict.getStartsAt().toString(),
+          "endsAt", conflict.getEndsAt().toString()));
+    }
+
+    // the model checks it's open, not started, not the tutor, not already joined, and not full
+    room.join(student);
+    // notifying the tutor comes with notifications (#144)
+    return StudyRoomDTO.from(studyRoomRepository.save(room));
+  }
+
+  @Transactional
   public StudyRoomDTO leave(Long studentNumber, Long roomId) {
     StudyRoom room = studyRoomRepository.findById(roomId)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));

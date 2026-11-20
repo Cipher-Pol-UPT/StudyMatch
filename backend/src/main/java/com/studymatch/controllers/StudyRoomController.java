@@ -24,8 +24,10 @@ import com.studymatch.dtos.StudyRoomDTO;
 import com.studymatch.dtos.StudyRoomDetailDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
+import com.studymatch.models.Student;
 import com.studymatch.models.User;
 import com.studymatch.services.RatingService;
+import com.studymatch.services.StudentService;
 import com.studymatch.services.StudyRoomService;
 import com.studymatch.services.UserService;
 
@@ -40,12 +42,14 @@ public class StudyRoomController {
 
   private final StudyRoomService studyRoomService;
   private final RatingService ratingService;
+  private final StudentService studentService;
   private final UserService userService;
 
   public StudyRoomController(StudyRoomService studyRoomService, RatingService ratingService,
-      UserService userService) {
+      StudentService studentService, UserService userService) {
     this.studyRoomService = studyRoomService;
     this.ratingService = ratingService;
+    this.studentService = studentService;
     this.userService = userService;
   }
 
@@ -111,6 +115,18 @@ public class StudyRoomController {
       Authentication authentication) {
     User student = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.status(HttpStatus.CREATED).body(ratingService.rate(id, student.getNumber(), request));
+  }
+
+  @PostMapping("{id}/join")
+  @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "Join an open StudyRoom, if you're enrolled in the subject and haven't passed it")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NOT_ELIGIBLE_FOR_STUDYROOM, ErrorCode.JOINED_STUDYROOM_OVERLAP,
+      ErrorCode.STUDYROOM_CLOSED, ErrorCode.STUDYROOM_ALREADY_STARTED, ErrorCode.TUTOR_CANNOT_JOIN_OWN_STUDYROOM,
+      ErrorCode.ALREADY_JOINED_STUDYROOM, ErrorCode.STUDYROOM_FULL })
+  public ResponseEntity<StudyRoomDTO> join(@PathVariable Long id, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    Student student = studentService.getStudent(user.getNumber());
+    return ResponseEntity.status(HttpStatus.CREATED).body(studyRoomService.join(student, id));
   }
 
   @PostMapping("{id}/leave")

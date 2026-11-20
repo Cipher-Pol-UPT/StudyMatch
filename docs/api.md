@@ -92,9 +92,10 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/study-rooms/{id}/participants` | the room's tutor | who joined, and whether they attended |
 | POST | `/study-rooms/{id}/attendance` | the room's tutor | confirm who attended once the room ended, within 48 hours |
 | POST | `/study-rooms/{id}/rating` | Student who attended | rate the tutor, 1 to 5 stars and an optional comment, once per room within 7 days |
+| POST | `/study-rooms/{id}/join` | Student enrolled in the subject | join an open StudyRoom, becoming a participant |
 | POST | `/study-rooms/{id}/leave` | Student who joined | leave a StudyRoom before it starts, freeing the place |
 | GET | `/students/{number}/ratings` | Anyone logged in | a tutor's ratings and comments, newest first, without who wrote them |
 
 ## Coming next
 
-The other use cases (groups, StudyRoom join, tutor applications, achievements, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (groups, tutor applications, achievements, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
