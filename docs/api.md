@@ -95,6 +95,13 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/study-rooms/{id}/leave` | Student who joined | leave a StudyRoom before it starts, freeing the place |
 | GET | `/students/{number}/ratings` | Anyone logged in | a tutor's ratings and comments, newest first, without who wrote them |
 
+## Achievements
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| POST | `/achievements/certificate` | Student | the PDF certificate of the achievements chosen (one achievement, or a record with several), in English or Portuguese |
+| GET | `/achievements/certificates/{code}` | Anyone, no login | what a certificate's QR code checks: who earned which achievements and when |
+
 ## Coming next
 
-The other use cases (groups, StudyRoom join, tutor applications, achievements, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (groups, StudyRoom join, tutor applications, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

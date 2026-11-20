@@ -81,7 +81,8 @@ public class OpenApiConfig {
     boolean isGet = Arrays.asList(mapping.method()).contains(RequestMethod.GET);
 
     List<ErrorCode> codes = new ArrayList<>();
-    if (!SecurityConfig.PUBLIC_ENDPOINTS.contains(pathOf(handlerMethod, mapping))) {
+    String path = pathOf(handlerMethod, mapping);
+    if (!SecurityConfig.PUBLIC_ENDPOINTS.contains(path) && !SecurityConfig.PUBLIC_GET_ENDPOINTS.contains(path)) {
       codes.add(ErrorCode.UNAUTHENTICATED);
     }
     if (handlerMethod.hasMethodAnnotation(PreAuthorize.class)) {

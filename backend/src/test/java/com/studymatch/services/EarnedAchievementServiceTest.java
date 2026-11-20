@@ -22,6 +22,7 @@ import com.studymatch.models.EarnedAchievement;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
 import com.studymatch.repositories.EarnedAchievementRepository;
+import com.studymatch.utils.CertificatePdfWriter;
 
 class EarnedAchievementServiceTest {
 
@@ -42,7 +43,7 @@ class EarnedAchievementServiceTest {
     participationService = mock(ParticipationService.class);
     tutorRoleService = mock(TutorRoleService.class);
     earnedAchievementService = new EarnedAchievementService(earnedAchievementRepository, studyRoomService,
-        participationService, tutorRoleService);
+        participationService, tutorRoleService, mock(AchievementRecordService.class), mock(CertificatePdfWriter.class));
 
     student = ModelTestData.student("Test Student");
     ReflectionTestUtils.setField(student, "number", TUTOR_NUMBER);

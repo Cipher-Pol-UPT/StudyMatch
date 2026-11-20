@@ -118,7 +118,7 @@ Tutors earn achievements automatically. Only StudyRooms with at least two confir
 | Top Rated | an average of 4.5 or more in a subject, from at least 5 different students |
 | Mentor | 15 different students tutored |
 
-Each one has a verification code, so the PDF certificate (#32) can be checked.
+Each one has a verification code, so the PDF certificate can be checked. A student exports one achievement as a certificate (A4 landscape), or several as a record on one page (A4 portrait) with its own code. The PDF has a QR code and the link written out to `/verify/{code}` on the frontend, a public page that asks `GET /achievements/certificates/{code}`, no login needed. The first time an achievement goes on a certificate, the tutor's figures are saved with it (counted rooms, students tutored, and their best rated subject with its average), and later certificates show those same figures, so a printed certificate and its verify page always agree.
 
 ## Blocked accounts
 
