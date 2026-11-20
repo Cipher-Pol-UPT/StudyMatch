@@ -186,64 +186,31 @@ FROM (VALUES
 JOIN users u ON u.personal_email = v.personal_email
 ON CONFLICT DO NOTHING;
 
--- personality profiles: one statement per student, since each profile row belongs to one student.
+-- personality profiles (Big Five traits, 0 to 1). Ids are taken from the table's sequence first,
+-- so each new profile can be linked back to its student in the same statement.
 -- Rafael and Carolina have none, so they get the personality test.
 
-WITH profile AS (
-  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
-  SELECT 0.75, 0.55, 0.65, 0.6, 0.4 FROM student s JOIN users u ON u.number = s.number
-  WHERE u.personal_email = 'diogo.student@example.com' AND s.personality_profile_id IS NULL
-  RETURNING id)
-UPDATE student SET personality_profile_id = (SELECT id FROM profile)
-WHERE number = (SELECT number FROM users WHERE personal_email = 'diogo.student@example.com') AND personality_profile_id IS NULL;
-
-WITH profile AS (
-  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
-  SELECT 0.6, 0.9, 0.45, 0.7, 0.3 FROM student s JOIN users u ON u.number = s.number
-  WHERE u.personal_email = 'ines.duarte@example.com' AND s.personality_profile_id IS NULL
-  RETURNING id)
-UPDATE student SET personality_profile_id = (SELECT id FROM profile)
-WHERE number = (SELECT number FROM users WHERE personal_email = 'ines.duarte@example.com') AND personality_profile_id IS NULL;
-
-WITH profile AS (
-  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
-  SELECT 0.75, 0.3, 0.35, 0.65, 0.6 FROM student s JOIN users u ON u.number = s.number
-  WHERE u.personal_email = 'joao.pereira@example.com' AND s.personality_profile_id IS NULL
-  RETURNING id)
-UPDATE student SET personality_profile_id = (SELECT id FROM profile)
-WHERE number = (SELECT number FROM users WHERE personal_email = 'joao.pereira@example.com') AND personality_profile_id IS NULL;
-
-WITH profile AS (
-  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
-  SELECT 0.4, 0.9, 0.55, 0.75, 0.35 FROM student s JOIN users u ON u.number = s.number
-  WHERE u.personal_email = 'beatriz.lopes@example.com' AND s.personality_profile_id IS NULL
-  RETURNING id)
-UPDATE student SET personality_profile_id = (SELECT id FROM profile)
-WHERE number = (SELECT number FROM users WHERE personal_email = 'beatriz.lopes@example.com') AND personality_profile_id IS NULL;
-
-WITH profile AS (
-  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
-  SELECT 0.6, 0.7, 0.9, 0.55, 0.25 FROM student s JOIN users u ON u.number = s.number
-  WHERE u.personal_email = 'miguel.sousa@example.com' AND s.personality_profile_id IS NULL
-  RETURNING id)
-UPDATE student SET personality_profile_id = (SELECT id FROM profile)
-WHERE number = (SELECT number FROM users WHERE personal_email = 'miguel.sousa@example.com') AND personality_profile_id IS NULL;
-
-WITH profile AS (
-  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
-  SELECT 0.95, 0.6, 0.4, 0.7, 0.5 FROM student s JOIN users u ON u.number = s.number
-  WHERE u.personal_email = 'leonor.faria@example.com' AND s.personality_profile_id IS NULL
-  RETURNING id)
-UPDATE student SET personality_profile_id = (SELECT id FROM profile)
-WHERE number = (SELECT number FROM users WHERE personal_email = 'leonor.faria@example.com') AND personality_profile_id IS NULL;
-
-WITH profile AS (
-  INSERT INTO personality_profile (openness, conscientiousness, extraversion, agreeableness, neuroticism)
-  SELECT 0.5, 0.5, 0.5, 0.55, 0.45 FROM student s JOIN users u ON u.number = s.number
-  WHERE u.personal_email = 'pedro.nunes@example.com' AND s.personality_profile_id IS NULL
-  RETURNING id)
-UPDATE student SET personality_profile_id = (SELECT id FROM profile)
-WHERE number = (SELECT number FROM users WHERE personal_email = 'pedro.nunes@example.com') AND personality_profile_id IS NULL;
+WITH profile AS MATERIALIZED (
+  SELECT s.number, nextval(pg_get_serial_sequence('personality_profile', 'id')) AS id,
+    v.openness, v.conscientiousness, v.extraversion, v.agreeableness, v.neuroticism
+  FROM (VALUES
+    ('diogo.student@example.com', 0.75, 0.55, 0.65, 0.6, 0.4),
+    ('ines.duarte@example.com', 0.6, 0.9, 0.45, 0.7, 0.3),
+    ('joao.pereira@example.com', 0.75, 0.3, 0.35, 0.65, 0.6),
+    ('beatriz.lopes@example.com', 0.4, 0.9, 0.55, 0.75, 0.35),
+    ('miguel.sousa@example.com', 0.6, 0.7, 0.9, 0.55, 0.25),
+    ('leonor.faria@example.com', 0.95, 0.6, 0.4, 0.7, 0.5),
+    ('pedro.nunes@example.com', 0.5, 0.5, 0.5, 0.55, 0.45)
+  ) AS v(personal_email, openness, conscientiousness, extraversion, agreeableness, neuroticism)
+  JOIN users u ON u.personal_email = v.personal_email
+  JOIN student s ON s.number = u.number
+  WHERE s.personality_profile_id IS NULL),
+inserted AS (
+  INSERT INTO personality_profile (id, openness, conscientiousness, extraversion, agreeableness, neuroticism)
+  SELECT id, openness, conscientiousness, extraversion, agreeableness, neuroticism FROM profile)
+UPDATE student s SET personality_profile_id = p.id
+FROM profile p
+WHERE s.number = p.number;
 
 -- academic years: 2025 is finished (grades), 2026 is the current one
 

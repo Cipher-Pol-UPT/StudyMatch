@@ -1,6 +1,7 @@
 package com.studymatch.models;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -16,6 +17,32 @@ import com.studymatch.exceptions.StudyMatchException;
 class PersonalityProfileTest {
 
   private static final double DELTA = 1e-4;
+
+  @Test
+  @DisplayName("The constructor keeps each trait in its own field")
+  void constructorKeepsTraitOrder() {
+    // Act
+    PersonalityProfile profile = new PersonalityProfile(0.1, 0.2, 0.3, 0.4, 0.5);
+
+    // Assert
+    assertNull(profile.getId());
+    assertEquals(0.1, profile.getOpenness(), DELTA);
+    assertEquals(0.2, profile.getConscientiousness(), DELTA);
+    assertEquals(0.3, profile.getExtraversion(), DELTA);
+    assertEquals(0.4, profile.getAgreeableness(), DELTA);
+    assertEquals(0.5, profile.getNeuroticism(), DELTA);
+  }
+
+  @Test
+  @DisplayName("The empty constructor JPA uses starts every trait at 0")
+  void emptyConstructorStartsAtZero() {
+    // Act
+    PersonalityProfile profile = new PersonalityProfile();
+
+    // Assert
+    assertEquals(0.0, profile.getOpenness(), DELTA);
+    assertEquals(0.0, profile.getNeuroticism(), DELTA);
+  }
 
   @Test
   @DisplayName("The worked example from the spec gives the expected traits")
