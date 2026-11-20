@@ -446,10 +446,23 @@
       "groups": "Consulte os seus grupos e conheça a sua equipa.",
       "assignments": "Veja o que está para entregar e acompanhe as suas entregas."
     },
-    "achievements": "Conquistas",
-    "average": "Média",
-    "upcomingTasks": "Próximas tarefas",
-    "noTasks": "Sem tarefas por agora",
+    "nextAchievement": "Próxima conquista",
+    "seeAchievements": "Ver conquistas",
+    "gettingStarted": {
+      "title": "Comece por aqui",
+      "body": "Um perfil completo ajuda o seu grupo a conhecê-lo.",
+      "photo": "Adicionar uma fotografia de perfil",
+      "aboutMe": "Escrever algumas palavras sobre si",
+      "skills": "Indicar as suas competências",
+      "interests": "Adicionar os seus interesses",
+      "done": "{{done}} de {{total}} concluídos",
+      "action": "Completar perfil"
+    },
+    "tutoring": {
+      "title": "Tutoria",
+      "newRoom": "Nova sala de estudo"
+    },
+    "thisWeek": "Esta semana",
     "noTasksBody": "Os prazos e as salas de estudo vão aparecer aqui.",
     "calendar": {
       "label": "Calendário de tarefas",

@@ -446,10 +446,23 @@
       "groups": "Check your matches and meet your study group.",
       "assignments": "See what is due and keep track of your deliveries."
     },
-    "achievements": "Achievements",
-    "average": "Average",
-    "upcomingTasks": "Upcoming tasks",
-    "noTasks": "No upcoming tasks",
+    "nextAchievement": "Next achievement",
+    "seeAchievements": "See achievements",
+    "gettingStarted": {
+      "title": "Get started",
+      "body": "A complete profile helps your group get to know you.",
+      "photo": "Add a profile photo",
+      "aboutMe": "Write a few words about you",
+      "skills": "List your skills",
+      "interests": "Add your interests",
+      "done": "{{done}} of {{total}} done",
+      "action": "Complete profile"
+    },
+    "tutoring": {
+      "title": "Tutoring",
+      "newRoom": "New StudyRoom"
+    },
+    "thisWeek": "This week",
     "noTasksBody": "Deadlines and StudyRooms will show up here.",
     "calendar": {
       "label": "Task calendar",

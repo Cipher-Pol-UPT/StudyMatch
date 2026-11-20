@@ -110,11 +110,32 @@ describe('StudentArea', () => {
     expect(onLoggedOut).not.toHaveBeenCalled();
   });
 
-  it('greets the student and shows attendance from the profile', async () => {
+  it('greets the student and shows what to do next instead of the attendance', async () => {
     renderArea();
     expect(screen.getByRole('heading', { name: 'Hello, Ana Silva.' })).toBeTruthy();
-    expect(await screen.findByText('90')).toBeTruthy();
-    expect(screen.getByText(/Informatics/)).toBeTruthy();
+    expect(await screen.findByText(/Informatics/)).toBeTruthy();
+    expect(screen.queryByText('90')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Get started' })).toBeTruthy();
+    expect(screen.getByText('Write a few words about you')).toBeTruthy();
+    // not a tutor, so no achievement can be earned yet
+    expect(screen.queryByRole('heading', { name: 'Next achievement' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Tutoring' })).toBeNull();
+  });
+
+  it('shows tutors their subjects and hides the checklist once the profile is complete', async () => {
+    const profile = await getMyProfile();
+    vi.mocked(getMyProfile).mockResolvedValueOnce({
+      ...profile, pfp: 'data:image/png;base64,AA', aboutMe: 'Hi', skills: ['Java'], interests: ['Games'],
+      tutorBadges: [{ subject: 'Programming I', averageRating: 4.5, ratingCount: 2 }],
+    });
+    renderArea();
+    expect(await screen.findByRole('heading', { name: 'Tutoring' })).toBeTruthy();
+    expect(screen.getByText('Programming I')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'New StudyRoom' }).getAttribute('href')).toBe('/study-rooms');
+    expect(screen.queryByRole('heading', { name: 'Get started' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Next achievement' })).toBeTruthy();
+    expect(screen.getByText('Tutor your first StudyRoom.')).toBeTruthy();
+    expect(screen.getByText('Only StudyRooms with at least 2 confirmed attendees count.')).toBeTruthy();
   });
 
   it('shows the student pass once the student has a personality profile', async () => {
@@ -129,9 +150,10 @@ describe('StudentArea', () => {
     expect(screen.queryByText(/Student no\./)).toBeNull();
   });
 
-  it('shows no tasks until there are real ones', () => {
+  it('always shows this week, and says where tasks will come from while there are none', () => {
     renderArea();
-    expect(screen.getByText('No upcoming tasks')).toBeTruthy();
-    expect(screen.queryByRole('table', { name: /calendar/i })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'This week' })).toBeTruthy();
+    expect(screen.getAllByRole('columnheader')).toHaveLength(7);
+    expect(screen.getByText('Deadlines and StudyRooms will show up here.')).toBeTruthy();
   });
 });

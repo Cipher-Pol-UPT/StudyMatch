@@ -51,7 +51,7 @@ export function StudyRoomCalendar({ month, onMonthChange, rooms, selectedRoomId,
         </div>
       </header>
 
-      <div className="study-rooms-calendar__scroll" tabIndex={0} role="region" aria-label={t('studyRooms.calendarLabel')}>
+      <div className="study-rooms-calendar__scroll" role="region" aria-label={t('studyRooms.calendarLabel')}>
         <table className="study-rooms-calendar__table">
           <caption className="sm-visually-hidden">{monthLabel}</caption>
           <thead>
