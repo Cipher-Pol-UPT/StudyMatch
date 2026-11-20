@@ -12,6 +12,7 @@
 
 [![Backend](https://github.com/Cipher-Pol-UPT/StudyMatch/actions/workflows/backend.yml/badge.svg)](https://github.com/Cipher-Pol-UPT/StudyMatch/actions/workflows/backend.yml)
 [![Frontend](https://github.com/Cipher-Pol-UPT/StudyMatch/actions/workflows/frontend.yml/badge.svg)](https://github.com/Cipher-Pol-UPT/StudyMatch/actions/workflows/frontend.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=Cipher-Pol-UPT_StudyMatch&metric=alert_status)](https://sonarcloud.io/project/overview?id=Cipher-Pol-UPT_StudyMatch)
 
 </div>
 
