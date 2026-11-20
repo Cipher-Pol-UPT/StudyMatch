@@ -69,7 +69,7 @@ class ViewAchievementsIntegrationTest {
     Degree degree = degreeRepository.save(new Degree("Integration Test Degree", 3));
     student = new Student("student.it@example.com", "Test Student", passwordEncoder.encode(PASSWORD), degree, 1);
     student.setMustChangePassword(false);
-    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
     student.setLanguages(Set.of(Language.PORTUGUESE));
     student = studentRepository.save(student);
     student.generateInstitutionalEmail("studymatch.com");
