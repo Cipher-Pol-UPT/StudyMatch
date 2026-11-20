@@ -29,9 +29,11 @@ import org.springframework.web.multipart.MultipartFile;
 import com.studymatch.dtos.AssignmentResponseDTO;
 import com.studymatch.dtos.AttendanceRequestDTO;
 import com.studymatch.dtos.AttendanceSheetDTO;
+import com.studymatch.dtos.ChangeClassRequestDTO;
 import com.studymatch.dtos.CreateAssignmentRequestDTO;
 import com.studymatch.dtos.EditionStudentDTO;
 import com.studymatch.dtos.EnrolStudentsRequestDTO;
+import com.studymatch.dtos.EnrolmentRecordDTO;
 import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.GradeRequestDTO;
 import com.studymatch.dtos.GradeResponseDTO;
@@ -105,6 +107,17 @@ public class SubjectEditionController {
     Map<Long, Student> students = studentService.findByNumbers(request.studentNumbers());
     return ResponseEntity.ok(enrolmentService.enrolStudents(id, request.classSection(), request.studentNumbers(),
         students));
+  }
+
+  // change class: PUT since moving to the class the student is already in changes nothing
+  @PutMapping("{id}/enrolments/{studentNumber}/class-section")
+  @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Move an enrolled student to another class of the same edition, keeping grades and absences")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.SUBJECT_EDITION_NOT_CURRENT,
+      ErrorCode.CLASS_SECTION_NOT_IN_SUBJECT_EDITION, ErrorCode.STUDENT_NOT_ENROLLED })
+  public ResponseEntity<EnrolmentRecordDTO> changeClass(@PathVariable Long id, @PathVariable Long studentNumber,
+      @Valid @RequestBody ChangeClassRequestDTO request) {
+    return ResponseEntity.ok(enrolmentService.changeClass(id, studentNumber, request.classSection()));
   }
 
   @GetMapping("enrolments/import/template")

@@ -19,6 +19,7 @@ import com.studymatch.dtos.AttendanceRequestDTO;
 import com.studymatch.dtos.AttendanceSheetDTO;
 import com.studymatch.dtos.CategoryLevelDTO;
 import com.studymatch.dtos.EditionStudentDTO;
+import com.studymatch.dtos.EnrolmentRecordDTO;
 import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.EnrolmentResultDTO.Result;
 import com.studymatch.dtos.PersonalityProfileDTO;
@@ -110,6 +111,17 @@ public class EnrolmentService {
       enrolmentRepository.save(new Enrolment(student, classSection));
     }
     return EnrolmentResultDTO.of(number, student.getName(), result);
+  }
+
+  // change class: the same enrolment moves, so its grades and absences stay with the student
+  @Transactional
+  public EnrolmentRecordDTO changeClass(Long subjectEditionId, Long studentNumber, String classSectionCode) {
+    // locked so a lesson of either class can't be registered halfway through the move
+    SubjectEdition edition = subjectEditionService.getLockedCurrentEdition(subjectEditionId);
+    ClassSection classSection = edition.getClassSection(classSectionCode.trim());
+    Enrolment enrolment = getEnrolment(subjectEditionId, studentNumber);
+    enrolment.changeClassSection(classSection);
+    return EnrolmentRecordDTO.from(enrolment);
   }
 
   public boolean isTaughtBy(Student student, Long teacherNumber) {

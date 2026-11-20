@@ -70,6 +70,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/subject-editions/` | Teacher | the editions you teach |
 | GET | `/subject-editions/current` | Staff | this year's editions, the ones open for enrolment |
 | POST | `/subject-editions/{id}/enrolments` | Staff | enrol students by number in one class, with a result per student |
+| PUT | `/subject-editions/{id}/enrolments/{studentNumber}/class-section` | Staff | move an enrolled student to another class of the edition, keeping their grades and absences |
 | GET | `/subject-editions/enrolments/import/template` | Staff | the empty CSV for enrolments |
 | POST | `/subject-editions/{id}/enrolments/import` | Staff | enrol the students in a CSV, with a result per row |
 | GET | `/subject-editions/{id}/students` | Teacher of the edition | its students, with personality, category level and attendance |
