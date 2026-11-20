@@ -8,11 +8,11 @@ interface HomeCardProps {
   profile: StudentProfile;
 }
 
-// the first achievement still locked, with what it takes to earn it
+// the first achievement still locked, with what it takes to earn it. Only tutors can earn them, so only tutors see it
 export function NextAchievementCard({ profile }: HomeCardProps) {
   const { t } = useTranslation();
   const next = Achievement.find((id) => !profile.achievements?.some((a) => a.id === id && a.earnedAt));
-  if (!next) return null;
+  if (!next || !profile.tutorBadges?.length) return null;
 
   return (
     <Card title={t('home.nextAchievement')} className="home-card">
@@ -21,6 +21,7 @@ export function NextAchievementCard({ profile }: HomeCardProps) {
         <div>
           <b>{t(`achievements.${next}.name`)}</b>
           <p>{t(`achievements.${next}.criteria`)}</p>
+          <p>{t('achievements.countedRooms')}</p>
         </div>
       </div>
       <Link className={buttonClass({ variant: 'ghost', size: 'sm' })} to="/achievements">

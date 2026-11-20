@@ -100,8 +100,8 @@ describe('StudentArea', () => {
     expect(screen.queryByText('90')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Get started' })).toBeTruthy();
     expect(screen.getByText('Write a few words about you')).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Next achievement' })).toBeTruthy();
-    expect(screen.getByText('Tutor your first StudyRoom.')).toBeTruthy();
+    // not a tutor, so no achievement can be earned yet
+    expect(screen.queryByRole('heading', { name: 'Next achievement' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Tutoring' })).toBeNull();
   });
 
@@ -116,6 +116,9 @@ describe('StudentArea', () => {
     expect(screen.getByText('Programming I')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'New StudyRoom' }).getAttribute('href')).toBe('/study-rooms');
     expect(screen.queryByRole('heading', { name: 'Get started' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Next achievement' })).toBeTruthy();
+    expect(screen.getByText('Tutor your first StudyRoom.')).toBeTruthy();
+    expect(screen.getByText('Only StudyRooms with at least 2 confirmed attendees count.')).toBeTruthy();
   });
 
   it('shows the student pass once the student has a personality profile', async () => {
