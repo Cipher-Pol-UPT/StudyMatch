@@ -1,8 +1,10 @@
 package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -19,11 +21,14 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.CreateStudyRoomRequestDTO;
 import com.studymatch.dtos.ParticipantDTO;
 import com.studymatch.dtos.StudyRoomDTO;
+import com.studymatch.dtos.StudyRoomDetailDTO;
 import com.studymatch.enums.StudyRoomStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -42,6 +47,7 @@ class StudyRoomServiceTest {
 
   private StudyRoomRepository studyRoomRepository;
   private TutorRoleService tutorRoleService;
+  private RatingService ratingService;
   private StudyRoomService studyRoomService;
 
   private TutorRole tutorRole;
@@ -50,7 +56,8 @@ class StudyRoomServiceTest {
   void setUp() {
     studyRoomRepository = mock(StudyRoomRepository.class);
     tutorRoleService = mock(TutorRoleService.class);
-    studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService);
+    ratingService = mock(RatingService.class);
+    studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService, ratingService);
 
     Student tutor = ModelTestData.student("Test Tutor");
     ReflectionTestUtils.setField(tutor, "number", TUTOR_NUMBER);
@@ -131,6 +138,155 @@ class StudyRoomServiceTest {
 
     // Assert
     verify(studyRoomRepository).save(any(StudyRoom.class));
+  }
+
+  // view StudyRooms (#43)
+
+  @Test
+  @DisplayName("The list returns the open rooms the repository found, mapped to DTOs")
+  void listsRooms() {
+    // Arrange
+    StudyRoom room = openRoom();
+    when(studyRoomRepository.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of(room));
+
+    // Act
+    List<StudyRoomDTO> rooms = studyRoomService.listRooms(null, null, null, null);
+
+    // Assert
+    assertEquals(1, rooms.size());
+    assertEquals("Test Subject", rooms.get(0).subjectName());
+    assertEquals(5, rooms.get(0).availablePlaces());
+    verify(studyRoomRepository).findAll(any(Specification.class), any(Sort.class));
+  }
+
+  @Test
+  @DisplayName("The host opens their room: hosted, not joined, and no join option")
+  void hostCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoom();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, TUTOR_NUMBER);
+
+    // Assert
+    assertTrue(detail.hosted());
+    assertFalse(detail.joined());
+    assertFalse(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("A student who already joined can't join again")
+  void joinedStudentCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoom(student("Ana Test", 2L));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 2L);
+
+    // Assert
+    assertFalse(detail.hosted());
+    assertTrue(detail.joined());
+    assertFalse(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("An open room that hasn't started can be joined")
+  void openRoomCanBeJoined() {
+    // Arrange
+    StudyRoom room = openRoom(student("Ana Test", 2L));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 3L);
+
+    // Assert
+    assertFalse(detail.hosted());
+    assertFalse(detail.joined());
+    assertTrue(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("A full room can't be joined")
+  void fullRoomCannotBeJoined() {
+    // Arrange
+    StudyRoom room = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 2, "test room", LINK);
+    room.join(student("Ana Test", 2L));
+    room.join(student("Bruno Test", 3L));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 4L);
+
+    // Assert
+    assertFalse(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("A room that already started can't be joined")
+  void startedRoomCannotBeJoined() {
+    // Arrange
+    StudyRoom room = openRoom();
+    ReflectionTestUtils.setField(room, "startsAt", LocalDateTime.now().minusMinutes(1));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 2L);
+
+    // Assert
+    assertFalse(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("A cancelled room can't be joined")
+  void cancelledRoomCannotBeJoined() {
+    // Arrange
+    StudyRoom room = openRoom();
+    room.cancel("test reason");
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 2L);
+
+    // Assert
+    assertFalse(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("The detail carries the tutor's rating in that subject")
+  void detailHasTutorRating() {
+    // Arrange
+    StudyRoom room = openRoom();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(ratingService.getAverageStars(tutorRole)).thenReturn(4.5);
+    when(ratingService.countRatings(tutorRole)).thenReturn(9L);
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, TUTOR_NUMBER);
+
+    // Assert
+    assertEquals(4.5, detail.tutorAverageRating());
+    assertEquals(9L, detail.tutorRatingCount());
+  }
+
+  @Test
+  @DisplayName("A room that doesn't exist gives NOT_FOUND")
+  void missingRoomDetail() {
+    // Act - findById is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> studyRoomService.getRoom(ROOM_ID, 2L));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // a room tomorrow, open for the given students to join
+  private StudyRoom openRoom(Student... participants) {
+    StudyRoom room = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
+    for (Student participant : participants) {
+      room.join(participant);
+    }
+    return room;
   }
 
   // blocked tutor

@@ -4,11 +4,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
 import com.studymatch.models.StudyRoom;
 
-public interface StudyRoomRepository extends JpaRepository<StudyRoom, Long> {
+// the specification part is for View StudyRooms, where any mix of filters can be on or off
+public interface StudyRoomRepository extends JpaRepository<StudyRoom, Long>, JpaSpecificationExecutor<StudyRoom> {
 
   // rooms the tutor hosts (in any subject) that share part of the [startsAt, endsAt) interval
   @Query("""
