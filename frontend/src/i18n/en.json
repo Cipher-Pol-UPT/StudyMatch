@@ -380,20 +380,32 @@
   "achievements": {
     "FIRST_STUDYROOM": {
       "name": "First StudyRoom",
-      "description": "Participation in a first StudyRoom."
+      "description": "Participation in a first StudyRoom.",
+      "criteria": "Tutor your first StudyRoom."
     },
     "DEDICATED_TUTOR": {
       "name": "Dedicated tutor",
-      "description": "Recognition for tutoring."
+      "description": "Recognition for tutoring.",
+      "criteria": "Tutor 10 StudyRooms."
     },
     "TOP_RATED": {
       "name": "Top rated",
-      "description": "Recognition for tutor ratings."
+      "description": "Recognition for tutor ratings.",
+      "criteria": "Get an average of 4.5 stars or more in a subject, from at least 5 different students."
     },
     "MENTOR": {
       "name": "Mentor",
-      "description": "Recognition for supporting students."
+      "description": "Recognition for supporting students.",
+      "criteria": "Tutor 15 different students."
     },
+    "title": "Achievements",
+    "earned": "Earned",
+    "toEarn": "Still to earn",
+    "count": "{{earned}} of {{total}} earned",
+    "noneYet": "You have no achievements yet. Below is how to earn them.",
+    "howToEarn": "How to earn it",
+    "countedRooms": "Only StudyRooms with at least 2 confirmed attendees count.",
+    "seeAll": "See all",
     "export": "Export certificate",
     "certificate": "Achievement certificate",
     "earnedOn": "Earned on {{date}}",
@@ -414,10 +426,23 @@
       "groups": "Check your matches and meet your study group.",
       "assignments": "See what is due and keep track of your deliveries."
     },
-    "achievements": "Achievements",
-    "average": "Average",
-    "upcomingTasks": "Upcoming tasks",
-    "noTasks": "No upcoming tasks",
+    "nextAchievement": "Next achievement",
+    "seeAchievements": "See achievements",
+    "gettingStarted": {
+      "title": "Get started",
+      "body": "A complete profile helps your group get to know you.",
+      "photo": "Add a profile photo",
+      "aboutMe": "Write a few words about you",
+      "skills": "List your skills",
+      "interests": "Add your interests",
+      "done": "{{done}} of {{total}} done",
+      "action": "Complete profile"
+    },
+    "tutoring": {
+      "title": "Tutoring",
+      "newRoom": "New StudyRoom"
+    },
+    "thisWeek": "This week",
     "noTasksBody": "Deadlines and StudyRooms will show up here.",
     "calendar": {
       "label": "Task calendar",
@@ -739,6 +764,7 @@
     "profile": "My profile",
     "studentInformation": "Student information",
     "notifications": "Notifications",
+    "changePassword": "Change password",
     "logout": "Log out",
     "accountMenu": "Account menu",
     "comingSoon": "Coming soon"
