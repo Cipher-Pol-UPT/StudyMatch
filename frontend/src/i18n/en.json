@@ -549,7 +549,8 @@
     "ACCOUNT_ALREADY_BLOCKED": "This account is already blocked.",
     "STUDENT_HAS_NO_STATUTE": "This student doesn't have a special statute.",
     "ACADEMIC_YEAR_NOT_NEXT": "That isn't the next academic year anymore. Reload the page and check again.",
-    "ATTENDEE_NOT_A_PARTICIPANT": "Student {{number}} didn't join this StudyRoom."
+    "ATTENDEE_NOT_A_PARTICIPANT": "Student {{number}} didn't join this StudyRoom.",
+    "ROOM_ALREADY_RATED": "You have already rated this StudyRoom."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

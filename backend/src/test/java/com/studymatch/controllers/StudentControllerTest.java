@@ -27,6 +27,7 @@ import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
+import com.studymatch.services.RatingService;
 import com.studymatch.services.StudentService;
 import com.studymatch.services.UserService;
 import com.studymatch.utils.StudentCsvReader;
@@ -48,7 +49,8 @@ class StudentControllerTest {
   void setUp() {
     studentService = mock(StudentService.class);
     userService = mock(UserService.class);
-    controller = new StudentController(studentService, userService, new StudentCsvReader());
+    controller = new StudentController(studentService, mock(RatingService.class), userService,
+        new StudentCsvReader());
 
     student = ModelTestData.student("Test Student");
     ReflectionTestUtils.setField(student, "number", NUMBER);
