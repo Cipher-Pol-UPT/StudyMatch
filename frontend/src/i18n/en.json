@@ -826,5 +826,32 @@
     "firstTitle": "Choose your password",
     "firstSubtitle": "You signed in with a one-time password. Choose a password only you know to continue.",
     "changed": "Password changed."
+  },
+  "enrolments": {
+    "intro": "Choose the subject edition and class, then tick the students or import a CSV.",
+    "edition": "Subject edition",
+    "how": "How to choose the students",
+    "choose": "Choose students",
+    "select": "Select",
+    "enrolSelected_one": "Enrol {{count}} student",
+    "enrolSelected_other": "Enrol {{count}} students",
+    "noStudentsBody": "Try another name or number.",
+    "noEditions": "No subject editions this year",
+    "noEditionsBody": "Students can only be enrolled in editions of the current academic year.",
+    "csvTitle": "Import enrolments",
+    "csvRules": "UTF-8, one student per row, with a studentNumber column. Up to 200 students per file. The valid rows are enrolled straight away.",
+    "done": "Enrolment finished",
+    "summary": "Enrolled: {{enrolled}}. Skipped: {{skipped}}.",
+    "skipped": "Skipped students",
+    "reason": "Reason",
+    "enrolMore": "Enrol more students",
+    "results": {
+      "ENROLLED": "Enrolled",
+      "ALREADY_ENROLLED": "Already enrolled in this edition",
+      "ALREADY_PASSED": "Already passed this subject",
+      "NOT_FOUND": "No student with this number",
+      "INVALID_NUMBER": "Not a valid student number",
+      "DUPLICATE": "Appears more than once"
+    }
   }
 }
