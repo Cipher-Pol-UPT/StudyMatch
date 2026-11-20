@@ -902,11 +902,28 @@
     "label": "Páginas da unidade curricular",
     "choose": {
       "students": "Escolha uma edição de uma unidade curricular para consultar os estudantes inscritos.",
-      "assignments": "Escolha uma edição de uma unidade curricular para ver e criar as suas avaliações."
+      "assignments": "Escolha uma edição de uma unidade curricular para ver e criar as suas avaliações.",
+      "grades": "Escolha uma edição de uma unidade curricular para classificar os seus estudantes."
     },
     "open": {
       "students": "Consultar estudantes",
-      "assignments": "Abrir avaliações"
+      "assignments": "Abrir avaliações",
+      "grades": "Abrir classificações"
     }
+  },
+  "grades": {
+    "grade": "Classificação",
+    "range": "0 a 20",
+    "final": "Final",
+    "cellLabel": "Classificação de {{name}} em {{assignment}}",
+    "incompleteTitle": "Os pesos somam {{total}}%",
+    "incompleteBody": "As classificações ficam guardadas, mas as classificações finais só são calculadas quando as avaliações somarem 100%.",
+    "noAssignments": "Ainda sem avaliações para classificar",
+    "noAssignmentsBody": "Crie-as primeiro no separador Avaliações.",
+    "noStudents": "Sem estudantes inscritos",
+    "noStudentsBody": "Os estudantes inscritos nesta edição aparecem aqui.",
+    "changeTitle": "Alterar a classificação de {{name}}?",
+    "changeBody": "{{assignment}} · de {{from}} para {{to}}. A classificação final é recalculada.",
+    "change": "Alterar classificação"
   }
 }

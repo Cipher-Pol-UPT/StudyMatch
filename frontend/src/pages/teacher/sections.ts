@@ -6,6 +6,6 @@ export const TEACHER_SECTIONS: NavigationSection[] = [
   { key: 'mySubjects', path: '/subjects', icon: BookOpen },
   { key: 'assignments', path: '/assignments', icon: ClipboardList, ready: true },
   { key: 'groups', path: '/groups', icon: Users },
-  { key: 'grades', path: '/grades', icon: FilePenLine },
+  { key: 'grades', path: '/grades', icon: FilePenLine, ready: true },
   { key: 'tutorApplications', path: '/tutor-applications', icon: Star },
 ];

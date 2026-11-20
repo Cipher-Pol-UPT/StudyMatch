@@ -902,11 +902,28 @@
     "label": "Subject pages",
     "choose": {
       "students": "Choose a subject edition to view its enrolled students.",
-      "assignments": "Choose a subject edition to see and create its assignments."
+      "assignments": "Choose a subject edition to see and create its assignments.",
+      "grades": "Choose a subject edition to grade its students."
     },
     "open": {
       "students": "View students",
-      "assignments": "Open assignments"
+      "assignments": "Open assignments",
+      "grades": "Open grades"
     }
+  },
+  "grades": {
+    "grade": "Grade",
+    "range": "0 to 20",
+    "final": "Final",
+    "cellLabel": "{{name}}'s grade in {{assignment}}",
+    "incompleteTitle": "Weights total {{total}}%",
+    "incompleteBody": "Grades are saved, but final grades are calculated only when the assignments add up to 100%.",
+    "noAssignments": "No assignments to grade yet",
+    "noAssignmentsBody": "Create them in the Assignments tab first.",
+    "noStudents": "No students enrolled",
+    "noStudentsBody": "Students enrolled in this edition show up here.",
+    "changeTitle": "Change {{name}}'s grade?",
+    "changeBody": "{{assignment}} · from {{from}} to {{to}}. The final grade is recalculated.",
+    "change": "Change grade"
   }
 }

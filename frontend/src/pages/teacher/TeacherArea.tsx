@@ -7,6 +7,7 @@ import { TeacherSubjectLayout } from './TeacherSubjectLayout';
 import { TeacherStudentsPage } from './TeacherStudentsPage';
 import { TeacherStudentProfilePage } from './TeacherStudentProfilePage';
 import { TeacherAssignmentsPage } from './TeacherAssignmentsPage';
+import { TeacherGradesPage } from './TeacherGradesPage';
 import { SUBJECT_TABS } from './subjectTabs';
 
 interface TeacherAreaProps {
@@ -25,6 +26,7 @@ export function TeacherArea({ currentUser, onLoggedOut }: TeacherAreaProps) {
         <Route path="students" element={<TeacherStudentsPage />} />
         <Route path="students/:number" element={<TeacherStudentProfilePage />} />
         <Route path="assignments" element={<TeacherAssignmentsPage />} />
+        <Route path="grades" element={<TeacherGradesPage />} />
       </Route>
     </RoleLayout>
   );
