@@ -891,6 +891,22 @@
     "secondStudent": "Keep apart from",
     "chooseStudent": "Choose a student",
     "create": "Create assignment",
-    "new": "New assignment"
+    "new": "New assignment",
+    "weightColumn": "Weight",
+    "weightsTotal": "Weights total {{total}}%",
+    "none": "No assignments yet",
+    "noneBody": "Create the first one. The weights should add up to 100%.",
+    "created": "{{name}} was created."
+  },
+  "subjectTabs": {
+    "label": "Subject pages",
+    "choose": {
+      "students": "Choose a subject edition to view its enrolled students.",
+      "assignments": "Choose a subject edition to see and create its assignments."
+    },
+    "open": {
+      "students": "View students",
+      "assignments": "Open assignments"
+    }
   }
 }

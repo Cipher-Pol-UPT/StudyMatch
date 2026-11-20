@@ -14,3 +14,6 @@
 .assignment-form__actions { display: flex; justify-content: flex-end; gap: 8px; width: 100%; }
 
 @media (max-width: 560px) { .assignment-form__row { grid-template-columns: minmax(0, 1fr); } }
+
+.assignments__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.assignments__head .sm-title { margin: 0; }

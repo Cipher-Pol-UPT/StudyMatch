@@ -6,6 +6,8 @@ import { TeacherSubjectsPage } from './TeacherSubjectsPage';
 import { TeacherSubjectLayout } from './TeacherSubjectLayout';
 import { TeacherStudentsPage } from './TeacherStudentsPage';
 import { TeacherStudentProfilePage } from './TeacherStudentProfilePage';
+import { TeacherAssignmentsPage } from './TeacherAssignmentsPage';
+import { SUBJECT_TABS } from './subjectTabs';
 
 interface TeacherAreaProps {
   currentUser: CurrentUser;
@@ -14,12 +16,15 @@ interface TeacherAreaProps {
 
 export function TeacherArea({ currentUser, onLoggedOut }: TeacherAreaProps) {
   const { pathname } = useLocation();
+  // inside a subject, the menu keeps the item of the tab that's open
+  const tab = SUBJECT_TABS.find(item => new RegExp(`^/subject-editions/[^/]+/${item}`).test(pathname));
   return (
-    <RoleLayout currentUser={currentUser} sections={TEACHER_SECTIONS} onLoggedOut={onLoggedOut} activePath={pathname.startsWith('/subject-editions/') ? '/students' : pathname}>
-      <Route path="/students" element={<TeacherSubjectsPage />} />
+    <RoleLayout currentUser={currentUser} sections={TEACHER_SECTIONS} onLoggedOut={onLoggedOut} activePath={tab ? `/${tab}` : pathname}>
+      {SUBJECT_TABS.map(item => <Route key={item} path={`/${item}`} element={<TeacherSubjectsPage tab={item} />} />)}
       <Route path="/subject-editions/:editionId" element={<TeacherSubjectLayout />}>
         <Route path="students" element={<TeacherStudentsPage />} />
         <Route path="students/:number" element={<TeacherStudentProfilePage />} />
+        <Route path="assignments" element={<TeacherAssignmentsPage />} />
       </Route>
     </RoleLayout>
   );

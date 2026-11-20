@@ -891,6 +891,22 @@
     "secondStudent": "Manter separado de",
     "chooseStudent": "Escolha um estudante",
     "create": "Criar avaliação",
-    "new": "Nova avaliação"
+    "new": "Nova avaliação",
+    "weightColumn": "Peso",
+    "weightsTotal": "Os pesos somam {{total}}%",
+    "none": "Ainda sem avaliações",
+    "noneBody": "Crie a primeira. Os pesos devem somar 100%.",
+    "created": "{{name}} foi criada."
+  },
+  "subjectTabs": {
+    "label": "Páginas da unidade curricular",
+    "choose": {
+      "students": "Escolha uma edição de uma unidade curricular para consultar os estudantes inscritos.",
+      "assignments": "Escolha uma edição de uma unidade curricular para ver e criar as suas avaliações."
+    },
+    "open": {
+      "students": "Consultar estudantes",
+      "assignments": "Abrir avaliações"
+    }
   }
 }
