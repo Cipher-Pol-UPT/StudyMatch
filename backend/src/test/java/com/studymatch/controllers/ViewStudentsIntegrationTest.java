@@ -153,6 +153,20 @@ class ViewStudentsIntegrationTest {
   }
 
   @Test
+  @DisplayName("A student with an active statute has no attendance in the list (GR7), the average is still there")
+  void staffListHidesAttendanceWithStatute() throws Exception {
+    // Arrange - without the statute ana would show 50%
+    ana.assignStatute(StatuteType.WORKING_STUDENT, LocalDate.now().plusMonths(1));
+    studentRepository.saveAndFlush(ana);
+
+    // Act + Assert
+    staffList("&search=ana")
+        .andExpect(jsonPath("$.content[0].name").value("Ana View"))
+        .andExpect(jsonPath("$.content[0].attendance").doesNotExist())
+        .andExpect(jsonPath("$.content[0].averageGrade").value(14.0));
+  }
+
+  @Test
   @DisplayName("Filters can be combined, and search finds part of a name or the exact number")
   void staffFilters() throws Exception {
     staffList("&curricularYear=1").andExpect(jsonPath("$.content[*].name").value("Rui View"));
