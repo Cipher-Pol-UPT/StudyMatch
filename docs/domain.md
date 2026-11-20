@@ -4,7 +4,7 @@
 
 ![StudyMatch class diagram](SM_ClassDiagram.svg)
 
-The diagram shows the entities and how they relate. This page covers what it can't: how the numbers on a student's profile are worked out, what happens when there's no data yet, and the rules the use cases depend on. The use cases themselves are the GitHub issues, and the business rules they share are numbered GR1 to GR7. Where a rule belongs to a use case that isn't built yet, the issue number is next to it.
+The diagram shows the entities and how they relate. This page covers what it can't: how the numbers on a student's profile are worked out, what happens when there's no data yet, and the rules the use cases depend on. The use cases themselves are the GitHub issues, and the business rules they share are numbered GR1 to GR11. Where a rule belongs to a use case that isn't built yet, the issue number is next to it.
 
 ## The concepts
 
@@ -26,6 +26,7 @@ The diagram shows the entities and how they relate. This page covers what it can
 | StudyRoom, Participation, Rating | An online session a tutor hosts for one subject, the students who join it (and whether they attended), and their 1 to 5 star ratings. |
 | Earned achievement | An achievement a tutor earned, with the date and a verification code for the certificate. |
 | Group | A group of students for one group assignment. |
+| Chat, Message, Chat settings | A DM between two users (more kinds of chat come with their issues), the messages in it, and each member's own settings for it: when they last read it and their notification level. |
 
 ## The student profile
 
@@ -134,3 +135,15 @@ Before confirming, the Admin sees what blocking would cancel (`GET /users/{numbe
 ## Groups
 
 Groups are generated per group assignment (#57). Blocked accounts aren't placed in new groups but keep their old ones (GR5), every group shares at least one language (GR4), and students with a special statute are placed last, filling the groups that need members (GR7). The teacher reviews the draft groups and can edit them before publishing.
+
+## Chats
+
+There are three kinds of chat: DMs, group chats a user creates (#226), and one chat per assignment group (#236). How messages reach the browser live is in [architecture.md](architecture.md#live-updates).
+
+Only Students and Teachers take part in chats; Staff and Admin don't. A DM is between exactly two users, one per pair, so whoever starts it, it's the same chat. A group chat has 2 to 20 members. An assignment group chat's members are always the group's current members, and only Students. Members see the whole history, including what was sent before they joined, and someone who stops being a member loses access to the chat and its history straight away. Asking for a chat you're not in gives `NOT_FOUND`, the same as a chat that doesn't exist, so nobody can find out which chats exist (GR8).
+
+Any user can block any other user. A blocked user can't send DMs to the user who blocked them, and can't add them to a group chat. The DM is hidden for the user who blocked while the block lasts. Group chats they already share aren't affected (GR9).
+
+A message is text (up to 2000 characters) with up to 5 attachments, or one GIF, or one sticker, and never empty. Attachments are PNG, JPEG, GIF, WebP, PDF, Office documents (docx, xlsx, pptx) or plain text, up to 10 MB each, checked by their file signature. Only the author edits a message, only its text, and an edited message shows "(edited)". Only the author deletes a message, and deleting removes it, its attachments and its reactions for good, with no notice to anyone (GR10).
+
+Each member picks a notification level per chat: All (the default), Only @mentions or None. A chat has at most one unread notification per member, updated with the number of new messages and marked as read when the chat is opened (GR11).
