@@ -400,20 +400,32 @@
   "achievements": {
     "FIRST_STUDYROOM": {
       "name": "Primeira sala de estudo",
-      "description": "Participação numa primeira sala de estudo."
+      "description": "Participação numa primeira sala de estudo.",
+      "criteria": "Dar tutoria na sua primeira sala de estudo."
     },
     "DEDICATED_TUTOR": {
       "name": "Tutor dedicado",
-      "description": "Reconhecimento pela tutoria."
+      "description": "Reconhecimento pela tutoria.",
+      "criteria": "Dar tutoria em 10 salas de estudo."
     },
     "TOP_RATED": {
       "name": "Bem avaliado",
-      "description": "Reconhecimento pelas avaliações de tutoria."
+      "description": "Reconhecimento pelas avaliações de tutoria.",
+      "criteria": "Ter uma média de 4,5 estrelas ou mais numa unidade curricular, de pelo menos 5 estudantes diferentes."
     },
     "MENTOR": {
       "name": "Mentor",
-      "description": "Reconhecimento pelo apoio aos estudantes."
+      "description": "Reconhecimento pelo apoio aos estudantes.",
+      "criteria": "Dar tutoria a 15 estudantes diferentes."
     },
+    "title": "Conquistas",
+    "earned": "Obtidas",
+    "toEarn": "Por obter",
+    "count": "{{earned}} de {{total}} obtidas",
+    "noneYet": "Ainda não tem conquistas. Veja abaixo como as obter.",
+    "howToEarn": "Como obter",
+    "countedRooms": "Só contam as salas de estudo com pelo menos 2 presenças confirmadas.",
+    "seeAll": "Ver todas",
     "export": "Exportar certificado",
     "certificate": "Certificado de conquista",
     "earnedOn": "Obtida a {{date}}",
@@ -747,6 +759,7 @@
     "profile": "O meu perfil",
     "studentInformation": "Informação do estudante",
     "notifications": "Notificações",
+    "changePassword": "Alterar palavra-passe",
     "logout": "Terminar sessão",
     "accountMenu": "Menu da conta",
     "comingSoon": "Brevemente"

@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
 import { ProfilePage } from '../src/pages/profile/ProfilePage';
@@ -46,7 +47,7 @@ function mockBackend(replies: { load?: BackendReply[]; save?: BackendReply }) {
 }
 
 function renderProfilePage() {
-  render(<StudyMatchProvider><ProfilePage /></StudyMatchProvider>);
+  render(<StudyMatchProvider><MemoryRouter><ProfilePage /></MemoryRouter></StudyMatchProvider>);
 }
 
 async function openEditProfile() {
