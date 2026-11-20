@@ -33,7 +33,7 @@ export interface StudentPassProps {
   // left out until the student has a group
   group?: string;
   profile: ProfileKey;
-  // the personality profile in %, shown on the back instead of the teammates
+  // the personality profile in %, shown on the back until there's a group
   traits?: Record<ProfileKey, number>;
   teammates?: string[];
   color?: string;
@@ -43,6 +43,8 @@ export interface StudentPassProps {
 export function StudentPass({ name, number, year, group, profile, traits, teammates = [], color = 'var(--sm-violet)', programme = 'StudyMatch' }: StudentPassProps) {
   useTranslation();
   const [flipped, setFlipped] = useState(false);
+  // once there's a group, the back shows the teammates again
+  const showTraits = traits && !group;
   const [tilt, setTilt] = useState({ x: 0, y: 0, gx: 50, gy: 50 });
   const P = PROFILES[profile];
   const Icon = P.icon;
@@ -63,7 +65,7 @@ export function StudentPass({ name, number, year, group, profile, traits, teamma
         animate={{ rotateY: (flipped ? 180 : 0) + tilt.y, rotateX: tilt.x }}
         transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         aria-pressed={flipped}
-        aria-label={i18n.t('ui.student_pass', {name,side: !flipped ? i18n.t('ui.showing_front') : traits ? i18n.t('ui.showing_personality') : i18n.t('ui.showing_teammates')})}
+        aria-label={i18n.t('ui.student_pass', {name,side: !flipped ? i18n.t('ui.showing_front') : showTraits ? i18n.t('ui.showing_personality') : i18n.t('ui.showing_teammates')})}
       >
         <div className="sm-pass">
           <Pattern seed={name} color={color} />
@@ -88,13 +90,13 @@ export function StudentPass({ name, number, year, group, profile, traits, teamma
         <div className="sm-pass sm-pass--back">
           <div className="sm-pass__row">
             <span className="sm-eyebrow" style={{ color: 'rgba(255,255,255,.6)' }}>
-              {traits ? i18n.t('ui.personality_profile') : group && `${group} ${i18n.t('ui.teammates')}`}
+              {showTraits ? i18n.t('ui.personality_profile') : group && `${group} ${i18n.t('ui.teammates')}`}
             </span>
             <span className="sm-eyebrow" style={{ color: 'var(--sm-spark)' }}>
               {P.short}
             </span>
           </div>
-          {traits ? (
+          {showTraits ? (
             <ul className="sm-pass-traits">
               {[...PROFILE_KEYS].sort((a, b) => traits[b] - traits[a]).map((key) => (
                 <li key={key}>
