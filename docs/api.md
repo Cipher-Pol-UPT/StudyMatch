@@ -82,6 +82,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | --- | --- | --- | --- |
 | GET | `/tutors/me/subjects` | Student | the subjects you tutor |
 | POST | `/study-rooms/` | Student who tutors the subject | create a StudyRoom |
+| GET | `/study-rooms/{id}/participants` | the room's tutor | who joined, and whether they attended |
+| POST | `/study-rooms/{id}/attendance` | the room's tutor | confirm who attended once the room ended, within 48 hours |
 
 ## Coming next
 
