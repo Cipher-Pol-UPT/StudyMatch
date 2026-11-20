@@ -121,6 +121,14 @@ public class UserController {
     return ResponseEntity.ok(userService.blockAccount(number, blockRequest.reason()));
   }
 
+  @PutMapping("{number}/unblock")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Unblock an account: it can log in again, StudyRooms cancelled by the block stay cancelled")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ACCOUNT_NOT_BLOCKED })
+  public ResponseEntity<AccountSummaryDTO> unblockAccount(@PathVariable Long number) {
+    return ResponseEntity.ok(userService.unblockAccount(number));
+  }
+
   @GetMapping("me")
   @Operation(summary = "The logged-in user, with the steps they still owe (password change, personality test)")
   public ResponseEntity<CurrentUserDTO> me(Authentication authentication) {

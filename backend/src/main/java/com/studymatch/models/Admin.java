@@ -20,4 +20,10 @@ public class Admin extends User {
     return Role.ADMIN;
   }
 
+  // admins can't be blocked, so there's always one left who can unblock
+  @Override
+  protected boolean canBeBlocked() {
+    return false;
+  }
+
 }

@@ -80,6 +80,19 @@ class EnrolmentTest {
     assertEquals(EnrolmentStatus.PASSED, enrolment.getStatus());
   }
 
+  @ParameterizedTest(name = "grade {0} is refused")
+  @ValueSource(ints = { -1, 21 })
+  @DisplayName("Final grades outside 0 to 20 give GRADE_OUT_OF_RANGE and nothing changes")
+  void finalGradeOutOfRange(int grade) {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> enrolment.setFinalGrade(grade));
+
+    // Assert
+    assertEquals(ErrorCode.GRADE_OUT_OF_RANGE, e.getCode());
+    assertNull(enrolment.getFinalGrade());
+    assertEquals(EnrolmentStatus.IN_PROGRESS, enrolment.getStatus());
+  }
+
   // changing class
 
   @Test
