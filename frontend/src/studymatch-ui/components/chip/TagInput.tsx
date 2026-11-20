@@ -47,7 +47,7 @@ export function TagInput({ label, value, defaultValue = [], onValueChange, place
   const left = suggestions.filter((s) => !tags.some((t) => t.toLowerCase() === s.toLowerCase()));
   return (
     <div className={cx('sm-field', className)}>
-      <div className="sm-tags" onClick={() => input.current?.focus()}>
+      <div className="sm-tags" role="presentation" onClick={() => input.current?.focus()}>
         <label className="sm-tags__label" htmlFor={id}>
           {label}
           {max !== undefined && ` · ${tags.length}/${max}`}
