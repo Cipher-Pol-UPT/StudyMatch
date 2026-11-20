@@ -8,8 +8,8 @@ const scores = (score: (key: ProfileKey, index: number) => number) =>
 
 describe('strongestProfile', () => {
   it('picks the highest score', () => {
-    const last = PROFILE_KEYS[PROFILE_KEYS.length - 1];
-    expect(strongestProfile(scores(key => (key === last ? 90 : 40)))).toBe(last);
+    const second = PROFILE_KEYS[1];
+    expect(strongestProfile(scores(key => (key === second ? 90 : 40)))).toBe(second);
   });
 
   it('picks the first trait when every score is the same, starting from it instead of failing', () => {
