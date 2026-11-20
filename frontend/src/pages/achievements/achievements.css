@@ -1,0 +1,6 @@
+.achievements-page { display: grid; gap: var(--sm-s8); max-width: 1100px; margin-inline: auto; font-family: var(--sm-font); }
+.achievements-page--centered { place-items: center; min-height: 50svh; }
+.achievements-page h1 { margin: 0; font-size: 1.25rem; font-weight: 500; letter-spacing: -0.02em; }
+.achievements-page h2 { margin: 0 0 var(--sm-s4); font-size: 1.25rem; font-weight: 500; letter-spacing: -0.02em; }
+.achievements-page__none { margin: 0; color: var(--sm-text-2); }
+.achievements-page__note { margin: calc(-1 * var(--sm-s2)) 0 var(--sm-s4); font-size: 14px; color: var(--sm-text-2); }
