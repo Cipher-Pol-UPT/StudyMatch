@@ -453,6 +453,19 @@
       "legendary": "Legendary"
     }
   },
+  "verify": {
+    "title": "Certificate verification",
+    "valid": "Valid certificate",
+    "validRecord": "Valid record of achievements",
+    "issuedOn": "Issued by StudyMatch on {{date}}",
+    "studentLine": "Student no. {{number}}",
+    "roomsHeld": "{{count}} StudyRooms held",
+    "studentsTutored": "{{count}} students tutored",
+    "averageRating": "{{rating}} average in {{subject}}",
+    "notFound": "We couldn't find this certificate",
+    "notFoundHint": "Check the link, or the code written under the QR code on the certificate.",
+    "goToStudyMatch": "Go to StudyMatch"
+  },
   "home": {
     "greeting": "Hello, {{name}}.",
     "studentInfo": "{{programme}} · Year {{year}} · Student no. {{number}}",
