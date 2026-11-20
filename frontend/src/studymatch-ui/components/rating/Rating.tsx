@@ -67,7 +67,7 @@ export function Rating({ value, defaultValue = 0, onValueChange, max = 5, size =
 
   return (
     <span className={cx('sm-rating', 'sm-rating--input', className)}>
-      <span role="radiogroup" aria-label={label} style={{ display: 'inline-flex' }} onMouseLeave={() => setHover(null)}>
+      <span role="radiogroup" aria-label={label} tabIndex={-1} style={{ display: 'inline-flex' }} onMouseLeave={() => setHover(null)}>
         {Array.from({ length: max }).map((_, i) => {
           const n = i + 1;
           const on = shown >= n;

@@ -58,7 +58,7 @@ export function Menu({ trigger, items, align = 'end', side = 'bottom', label = i
   return (
     <Popover trigger={trigger} open={isOpen} onOpenChange={setOpen} role="menu" label={label} align={align} side={side} width={width}>
       {(close) => (
-        <div ref={list} className="sm-menu" onKeyDown={onKeyDown}>
+        <div ref={list} className="sm-menu" role="presentation" onKeyDown={onKeyDown}>
           {items.map((it, i) => {
             if (it.type === 'separator') return <div key={i} className="sm-menu__sep" role="separator" />;
             if (it.type === 'label') return <div key={i} className="sm-menu__label">{it.label}</div>;

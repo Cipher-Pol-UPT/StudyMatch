@@ -104,12 +104,33 @@
     "noEnrolledBody": "Os estudantes aparecerão aqui quando forem inscritos nesta edição da unidade curricular.",
     "categoryLevel": "Nível na categoria",
     "subjectAttendance": "Assiduidade nesta unidade curricular",
-    "subjectEvidence": "Esta edição da unidade curricular",
-    "traits": {
-      "leadership": "Liderança",
-      "problemSolving": "Resolução de problemas",
-      "creativity": "Criatividade",
-      "execution": "Execução"
+    "subjectEvidence": "Esta edição da unidade curricular"
+  },
+  "traits": {
+    "openness": {
+      "label": "Abertura",
+      "short": "Aberto",
+      "description": "Curioso e aberto a novas ideias, experiências e formas de fazer as coisas."
+    },
+    "conscientiousness": {
+      "label": "Conscienciosidade",
+      "short": "Consciencioso",
+      "description": "Organizado, fiável e cuidadoso com os planos e os prazos."
+    },
+    "extraversion": {
+      "label": "Extroversão",
+      "short": "Extrovertido",
+      "description": "Ganha energia com outras pessoas, toma a palavra e gosta de trabalhar em grupo."
+    },
+    "agreeableness": {
+      "label": "Amabilidade",
+      "short": "Amável",
+      "description": "Cooperante, atencioso e procura o consenso no grupo."
+    },
+    "neuroticism": {
+      "label": "Neuroticismo",
+      "short": "Neurótico",
+      "description": "Mede a intensidade com que sente stress e preocupação. Um valor mais alto significa mais."
     }
   },
   "common": {
@@ -281,7 +302,6 @@
     "answered": "Respondidas",
     "progress": "{{answered}} de {{total}}",
     "submit": "Submeter respostas",
-    "strongestProfile": "O seu perfil mais forte",
     "yourProfile": "O seu perfil",
     "privacy": "O seu perfil é usado para equilibrar os grupos neste ano letivo. Só o próprio, os seus docentes e os funcionários o podem ver.",
     "continue": "Continuar para o StudyMatch",
@@ -380,20 +400,32 @@
   "achievements": {
     "FIRST_STUDYROOM": {
       "name": "Primeira sala de estudo",
-      "description": "Participação numa primeira sala de estudo."
+      "description": "Participação numa primeira sala de estudo.",
+      "criteria": "Dar tutoria na sua primeira sala de estudo."
     },
     "DEDICATED_TUTOR": {
       "name": "Tutor dedicado",
-      "description": "Reconhecimento pela tutoria."
+      "description": "Reconhecimento pela tutoria.",
+      "criteria": "Dar tutoria em 10 salas de estudo."
     },
     "TOP_RATED": {
       "name": "Bem avaliado",
-      "description": "Reconhecimento pelas avaliações de tutoria."
+      "description": "Reconhecimento pelas avaliações de tutoria.",
+      "criteria": "Ter uma média de 4,5 estrelas ou mais numa unidade curricular, de pelo menos 5 estudantes diferentes."
     },
     "MENTOR": {
       "name": "Mentor",
-      "description": "Reconhecimento pelo apoio aos estudantes."
+      "description": "Reconhecimento pelo apoio aos estudantes.",
+      "criteria": "Dar tutoria a 15 estudantes diferentes."
     },
+    "title": "Conquistas",
+    "earned": "Obtidas",
+    "toEarn": "Por obter",
+    "count": "{{earned}} de {{total}} obtidas",
+    "noneYet": "Ainda não tem conquistas. Veja abaixo como as obter.",
+    "howToEarn": "Como obter",
+    "countedRooms": "Só contam as salas de estudo com pelo menos 2 presenças confirmadas.",
+    "seeAll": "Ver todas",
     "export": "Exportar certificado",
     "certificate": "Certificado de conquista",
     "earnedOn": "Obtida a {{date}}",
@@ -414,10 +446,23 @@
       "groups": "Consulte os seus grupos e conheça a sua equipa.",
       "assignments": "Veja o que está para entregar e acompanhe as suas entregas."
     },
-    "achievements": "Conquistas",
-    "average": "Média",
-    "upcomingTasks": "Próximas tarefas",
-    "noTasks": "Sem tarefas por agora",
+    "nextAchievement": "Próxima conquista",
+    "seeAchievements": "Ver conquistas",
+    "gettingStarted": {
+      "title": "Comece por aqui",
+      "body": "Um perfil completo ajuda o seu grupo a conhecê-lo.",
+      "photo": "Adicionar uma fotografia de perfil",
+      "aboutMe": "Escrever algumas palavras sobre si",
+      "skills": "Indicar as suas competências",
+      "interests": "Adicionar os seus interesses",
+      "done": "{{done}} de {{total}} concluídos",
+      "action": "Completar perfil"
+    },
+    "tutoring": {
+      "title": "Tutoria",
+      "newRoom": "Nova sala de estudo"
+    },
+    "thisWeek": "Esta semana",
     "noTasksBody": "Os prazos e as salas de estudo vão aparecer aqui.",
     "calendar": {
       "label": "Calendário de tarefas",
@@ -614,18 +659,6 @@
     "blocked": "Bloqueada",
     "approved": "Aprovada",
     "rejected": "Rejeitada",
-    "leadership": "Liderança",
-    "lead": "Líder",
-    "sets_direction_organises_the_team_and_keeps_everyone_aligned": "Define a direção, organiza a equipa e mantém todos alinhados.",
-    "problem_solving": "Resolução de problemas",
-    "tech": "Técnico",
-    "breaks_problems_down_and_finds_the_technical_path_forward": "Decompõe os problemas e encontra a solução técnica.",
-    "creativity": "Criatividade",
-    "creative": "Criativo",
-    "brings_new_ideas_alternatives_and_a_fresh_point_of_view": "Traz novas ideias, alternativas e perspetivas.",
-    "execution": "Execução",
-    "exec": "Executor",
-    "turns_plans_into_finished_work_on_time_and_in_detail": "Transforma planos em trabalho concluído, com atenção aos prazos e aos detalhes.",
     "studymatch": "StudyMatch",
     "previous_month": "Mês anterior",
     "next_month": "Mês seguinte",
@@ -638,6 +671,7 @@
     "balance": "Equilíbrio",
     "profiles_in_this_group": "Perfis neste grupo",
     "showing_teammates": "A mostrar colegas de equipa",
+    "showing_personality": "A mostrar o perfil de personalidade",
     "showing_front": "A mostrar a frente",
     "year": "Ano",
     "no_group_yet": "Ainda não há grupo",
@@ -738,6 +772,7 @@
     "profile": "O meu perfil",
     "studentInformation": "Informação do estudante",
     "notifications": "Notificações",
+    "changePassword": "Alterar palavra-passe",
     "logout": "Terminar sessão",
     "accountMenu": "Menu da conta",
     "comingSoon": "Brevemente"

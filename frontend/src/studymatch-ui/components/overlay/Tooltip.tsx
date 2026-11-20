@@ -27,6 +27,7 @@ export function Tooltip({ content, children, side = 'top', delay = 250 }: Toolti
   return (
     <span
       className="sm-tip-anchor"
+      role="presentation"
       onMouseEnter={() => show()}
       onMouseLeave={hide}
       onFocus={() => show(true)}
