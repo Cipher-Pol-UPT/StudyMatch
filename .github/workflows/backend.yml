@@ -1,0 +1,74 @@
+name: Backend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# a new push to the same PR cancels the run that's still going, main always finishes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Backend build and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # same database and user as docker-compose.yml, the integration tests need a real PostgreSQL.
+    # trust means no password check, so there's no password written here. it only lives inside this job
+    services:
+      db:
+        image: postgres:17
+        env:
+          POSTGRES_DB: studymatch
+          POSTGRES_USER: studymatch
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U studymatch -d studymatch"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      # the DB_* defaults in application.properties already match the service above
+      - name: Build and test
+        run: ./mvnw -B verify
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: jacoco-report
+          path: backend/target/site/jacoco/
+          if-no-files-found: error
+
+      # only when something broke, so we can see which test failed without rerunning it locally
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: surefire-reports
+          path: backend/target/surefire-reports/
