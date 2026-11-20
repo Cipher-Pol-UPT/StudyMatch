@@ -51,6 +51,7 @@ describe('grade students (teacher)', () => {
     const sent = backend({ assignments: [project, exam], students: [ana], weightsComplete: true },
       () => reply({ student: { ...ana, grades: { 1: 16, 2: 14.5 }, finalGrade: 15, status: 'PASSED' }, weightsComplete: true }));
     open();
+    expect((await screen.findAllByRole('columnheader')).map(header => header.textContent)).toEqual(['Student', 'Project 1 · 60%', 'Exam · 40%', 'Final', 'Status']);
     await type('Exam', '14,5');
 
     const row = within((await screen.findByText(i18n.t('enrolmentStatuses.PASSED'))).closest('tr') as HTMLElement);

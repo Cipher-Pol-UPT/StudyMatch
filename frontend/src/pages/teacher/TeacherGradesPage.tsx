@@ -63,7 +63,7 @@ export function TeacherGradesPage() {
   const rows = sheet.data.students.map(row => saved[row.number] ?? row);
   const columns: TableColumn<GradeRow>[] = [
     {
-      key: 'name', header: t('attendance.student'),
+      key: 'name', header: t('grades.student'),
       render: row => <span className="grades__student">{row.name} <span className="sm-caption">· {row.number}</span></span>,
     },
     ...assignments.map((column): TableColumn<GradeRow> => ({
@@ -72,7 +72,7 @@ export function TeacherGradesPage() {
         onCommit={value => commit(row, column, value)} />,
     })),
     { key: 'finalGrade', header: t('grades.final'), align: 'right', render: row => <span className="sm-num">{row.finalGrade ?? '—'}</span> },
-    { key: 'status', header: t('directory.status'), render: row => <StatusPill tone={STATUS_TONE[row.status]}>{t(`enrolmentStatuses.${row.status}`)}</StatusPill> },
+    { key: 'status', header: t('grades.status'), render: row => <StatusPill tone={STATUS_TONE[row.status]}>{t(`enrolmentStatuses.${row.status}`)}</StatusPill> },
   ];
 
   return (

@@ -912,6 +912,8 @@
     }
   },
   "grades": {
+    "student": "Estudante",
+    "status": "Estado",
     "grade": "Classificação",
     "range": "0 a 20",
     "final": "Final",
