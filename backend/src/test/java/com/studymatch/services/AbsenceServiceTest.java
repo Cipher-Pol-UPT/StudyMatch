@@ -121,6 +121,19 @@ class AbsenceServiceTest {
     assertFalse(movedAbsence.isJustified());
   }
 
+  @Test
+  @DisplayName("Deleting a lesson's absences removes all of them in one call")
+  void deleteAbsencesRemovesAllOfTheLesson() {
+    // Arrange
+    Lesson lesson = lessonOf(ModelTestData.enrolment(ModelTestData.student("Test Student")));
+
+    // Act
+    absenceService.deleteAbsences(lesson);
+
+    // Assert
+    verify(absenceRepository).deleteByLesson(lesson);
+  }
+
   private static Lesson lessonOf(Enrolment enrolment) {
     return new Lesson(enrolment.getClassSection(), LocalDateTime.of(2026, 11, 10, 9, 0));
   }

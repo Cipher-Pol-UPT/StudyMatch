@@ -7,6 +7,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.studymatch.dtos.DegreeRequestDTO;
+import com.studymatch.dtos.RenameDegreeRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Degree;
@@ -31,6 +32,24 @@ public class DegreeService {
     // two Staff registering the same name at once both pass the check above, the unique column stops the second
     try {
       return degreeRepository.save(new Degree(name, request.curricularYears()));
+    } catch (DataIntegrityViolationException e) {
+      throw new StudyMatchException(ErrorCode.DEGREE_ALREADY_EXISTS);
+    }
+  }
+
+  // same name rules as registering, but the degree's own name isn't taken (so fixing its case works)
+  // students and subjects point at the id, so they stay linked
+  public Degree renameDegree(Long id, RenameDegreeRequestDTO request) {
+    Degree degree = getDegree(id);
+    String name = request.name().trim();
+    if (degreeRepository.existsByNameIgnoreCaseAndIdNot(name, id)) {
+      throw new StudyMatchException(ErrorCode.DEGREE_ALREADY_EXISTS);
+    }
+
+    degree.setName(name);
+    // flush so a simultaneous rename to the same name hits the unique column here, not after the response
+    try {
+      return degreeRepository.saveAndFlush(degree);
     } catch (DataIntegrityViolationException e) {
       throw new StudyMatchException(ErrorCode.DEGREE_ALREADY_EXISTS);
     }

@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -32,12 +33,14 @@ import com.studymatch.dtos.PrivateProfileDTO;
 import com.studymatch.dtos.RegisterStudentRequestDTO;
 import com.studymatch.dtos.RegisteredStudentDTO;
 import com.studymatch.dtos.ResendCredentialsRequestDTO;
+import com.studymatch.dtos.StatuteRequestDTO;
 import com.studymatch.dtos.StudentProfileDTO;
 import com.studymatch.dtos.StudentRecordDTO;
 import com.studymatch.dtos.StudentSummaryDTO;
 import com.studymatch.dtos.UpdateProfileRequestDTO;
 import com.studymatch.enums.AccountStatus;
 import com.studymatch.enums.Role;
+import com.studymatch.events.AcademicYearStartedEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Degree;
@@ -168,6 +171,32 @@ public class StudentService {
       throw new StudyMatchException(ErrorCode.PERSONAL_EMAIL_ALREADY_EXISTS);
     }
     return getRecord(studentNumber, staff);
+  }
+
+  // edit student statute: adding replaces the current one, even of the same type, no history kept (GR7)
+  @Transactional
+  public StudentRecordDTO setStatute(Long studentNumber, StatuteRequestDTO statute, User staff) {
+    Student student = getByNumber(studentNumber);
+    student.assignStatute(statute.type(), statute.endDate());
+    studentRepository.save(student);
+    return getRecord(studentNumber, staff);
+  }
+
+  // edit student statute, End option: removes it, no history kept (GR7)
+  @Transactional
+  public void removeStatute(Long studentNumber) {
+    Student student = getByNumber(studentNumber);
+    student.removeStatute();
+    studentRepository.save(student);
+  }
+
+  // start academic year: everyone takes the personality test again (GR1), the old profiles are deleted.
+  // one by one on purpose, a bulk update skips orphanRemoval and the profile rows would stay in the table
+  @EventListener
+  public void clearPersonalityProfiles(AcademicYearStartedEvent event) {
+    List<Student> students = studentRepository.findByPersonalityProfileIsNotNull();
+    students.forEach(student -> student.setPersonalityProfile(null));
+    studentRepository.saveAll(students);
   }
 
   @Transactional(readOnly = true)

@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import com.studymatch.dtos.DegreeRequestDTO;
+import com.studymatch.dtos.RenameDegreeRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Degree;
@@ -90,6 +91,75 @@ class DegreeServiceTest {
 
     // Assert
     assertEquals(ErrorCode.DEGREE_ALREADY_EXISTS, e.getCode());
+  }
+
+  // rename degree
+
+  @Test
+  @DisplayName("Renaming a degree saves it with the new name, without spaces around it")
+  void degreeIsRenamed() {
+    // Arrange
+    Degree mathematics = new Degree("Mathematics", 3);
+    when(degreeRepository.findById(1L)).thenReturn(Optional.of(mathematics));
+    when(degreeRepository.saveAndFlush(mathematics)).thenReturn(mathematics);
+
+    // Act
+    Degree result = degreeService.renameDegree(1L, new RenameDegreeRequestDTO("  Applied Mathematics "));
+
+    // Assert
+    assertEquals("Applied Mathematics", result.getName());
+    assertEquals(3, result.getCurricularYears());
+    verify(degreeRepository).existsByNameIgnoreCaseAndIdNot("Applied Mathematics", 1L);
+    verify(degreeRepository).saveAndFlush(mathematics);
+  }
+
+  @Test
+  @DisplayName("Renaming to another degree's name gets DEGREE_ALREADY_EXISTS and keeps the original name")
+  void renameToTakenNameIsRefused() {
+    // Arrange
+    Degree mathematics = new Degree("Mathematics", 3);
+    when(degreeRepository.findById(1L)).thenReturn(Optional.of(mathematics));
+    when(degreeRepository.existsByNameIgnoreCaseAndIdNot("Biology", 1L)).thenReturn(true);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> degreeService.renameDegree(1L, new RenameDegreeRequestDTO("Biology")));
+
+    // Assert
+    assertEquals(ErrorCode.DEGREE_ALREADY_EXISTS, e.getCode());
+    assertEquals("Mathematics", mathematics.getName());
+    verify(degreeRepository, never()).saveAndFlush(any());
+  }
+
+  @Test
+  @DisplayName("If someone else takes the name first, the unique column's error becomes DEGREE_ALREADY_EXISTS")
+  void simultaneousRenameIsRefused() {
+    // Arrange - the check passed, but by the time we save another Staff already used the name
+    Degree mathematics = new Degree("Mathematics", 3);
+    when(degreeRepository.findById(1L)).thenReturn(Optional.of(mathematics));
+    when(degreeRepository.saveAndFlush(mathematics)).thenThrow(new DataIntegrityViolationException("unique name"));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> degreeService.renameDegree(1L, new RenameDegreeRequestDTO("Biology")));
+
+    // Assert
+    assertEquals(ErrorCode.DEGREE_ALREADY_EXISTS, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Renaming an id with no degree gets NOT_FOUND")
+  void renameUnknownDegreeIsNotFound() {
+    // Arrange
+    when(degreeRepository.findById(99L)).thenReturn(Optional.empty());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> degreeService.renameDegree(99L, new RenameDegreeRequestDTO("Biology")));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+    verify(degreeRepository, never()).saveAndFlush(any());
   }
 
   // list degrees

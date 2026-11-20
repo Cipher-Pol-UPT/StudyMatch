@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -205,6 +206,18 @@ public class SubjectEditionController {
   public ResponseEntity<AttendanceSheetDTO> registerAttendance(@PathVariable Long id,
       @Valid @RequestBody AttendanceRequestDTO request) {
     return ResponseEntity.ok(enrolmentService.registerAttendance(id, request));
+  }
+
+  // delete a lesson: same way of picking it as the sheet
+  @DeleteMapping("{id}/attendance")
+  @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Delete a lesson registered by mistake, with its absences, so it stops counting as held")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.SUBJECT_EDITION_NOT_CURRENT,
+      ErrorCode.CLASS_SECTION_NOT_IN_SUBJECT_EDITION, ErrorCode.LESSON_IN_FUTURE })
+  public ResponseEntity<Void> deleteLesson(@PathVariable Long id, @RequestParam String classSection,
+      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startsAt) {
+    enrolmentService.deleteLesson(id, classSection, startsAt);
+    return ResponseEntity.noContent().build();
   }
 
 }

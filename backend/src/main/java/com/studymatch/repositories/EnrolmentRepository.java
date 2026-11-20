@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.studymatch.enums.EnrolmentStatus;
+import com.studymatch.models.AcademicYear;
 import com.studymatch.models.ClassSection;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.Student;
@@ -21,6 +22,8 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
   List<Enrolment> findByClassSection(ClassSection classSection);
 
   Optional<Enrolment> findBySubjectEditionIdAndStudent_Number(Long subjectEditionId, Long studentNumber);
+
+  List<Enrolment> findBySubjectEdition_AcademicYearAndFinalGradeIsNull(AcademicYear academicYear);
 
   boolean existsByStudent(Student student);
 
