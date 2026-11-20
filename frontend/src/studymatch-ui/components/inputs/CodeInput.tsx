@@ -33,7 +33,7 @@ export function CodeInput({ length = 6, value, defaultValue = '', onValueChange,
   const setAt = (i: number, ch: string) => {
     const chars = code.padEnd(length, ' ').split('');
     chars[i] = ch;
-    commit(chars.join('').replace(/\s+$/, '').replace(/ /g, ''));
+    commit(chars.join('').replaceAll(' ', ''));
   };
 
   const onKey = (e: KeyboardEvent<HTMLInputElement>, i: number) => {
