@@ -23,7 +23,10 @@ describe('backend contracts', () => {
       if (!file.endsWith('.java')) continue;
       const name = file.slice(0,-5) as keyof typeof enums;
       const source = readFileSync(new URL('enums/' + file, backend), 'utf8');
-      const values = source.split('{')[1].match(/\b[A-Z][A-Z_]+\b/g);
+      // constants can have their own body (Achievement does), so drop those and stop at the ; or the end
+      let body = source.slice(source.indexOf('{') + 1);
+      while (/\{[^{}]*\}/.test(body)) body = body.replace(/\{[^{}]*\}/g, '');
+      const values = body.split(/[;}]/)[0].match(/\b[A-Z][A-Z_]+\b/g);
       expect([...enums[name]]).toEqual(values);
     }
     expect(enums.Role).toEqual(['ADMIN','STAFF','TEACHER','STUDENT']);
