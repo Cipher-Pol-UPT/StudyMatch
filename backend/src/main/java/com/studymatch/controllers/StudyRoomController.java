@@ -16,10 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.studymatch.dtos.ConfirmAttendanceRequestDTO;
 import com.studymatch.dtos.CreateStudyRoomRequestDTO;
 import com.studymatch.dtos.ParticipantDTO;
+import com.studymatch.dtos.RateTutorRequestDTO;
+import com.studymatch.dtos.RatingDTO;
 import com.studymatch.dtos.StudyRoomDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.User;
+import com.studymatch.services.RatingService;
 import com.studymatch.services.StudyRoomService;
 import com.studymatch.services.UserService;
 
@@ -33,10 +36,13 @@ import jakarta.validation.Valid;
 public class StudyRoomController {
 
   private final StudyRoomService studyRoomService;
+  private final RatingService ratingService;
   private final UserService userService;
 
-  public StudyRoomController(StudyRoomService studyRoomService, UserService userService) {
+  public StudyRoomController(StudyRoomService studyRoomService, RatingService ratingService,
+      UserService userService) {
     this.studyRoomService = studyRoomService;
+    this.ratingService = ratingService;
     this.userService = userService;
   }
 
@@ -69,6 +75,18 @@ public class StudyRoomController {
       @Valid @RequestBody ConfirmAttendanceRequestDTO request, Authentication authentication) {
     User tutor = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(studyRoomService.confirmAttendance(tutor.getNumber(), id, request.attendeeNumbers()));
+  }
+
+  @PostMapping("{id}/rating")
+  @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "Rate the tutor of a StudyRoom you attended, 1 to 5 stars and an optional public comment. "
+      + "Once per room, up to 7 days after it ended")
+  @ErrorCodes({ ErrorCode.NOT_A_PARTICIPANT, ErrorCode.ATTENDANCE_NOT_CONFIRMED, ErrorCode.RATING_WINDOW_CLOSED,
+      ErrorCode.ROOM_ALREADY_RATED })
+  public ResponseEntity<RatingDTO> rate(@PathVariable Long id, @Valid @RequestBody RateTutorRequestDTO request,
+      Authentication authentication) {
+    User student = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.status(HttpStatus.CREATED).body(ratingService.rate(id, student.getNumber(), request));
   }
 
 }
