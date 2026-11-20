@@ -36,6 +36,7 @@ import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.ModelTestData;
+import com.studymatch.models.Participation;
 import com.studymatch.models.Student;
 import com.studymatch.models.StudyRoom;
 import com.studymatch.models.TutorRole;
@@ -52,6 +53,7 @@ class StudyRoomServiceTest {
   private TutorRoleService tutorRoleService;
   private RatingService ratingService;
   private EnrolmentService enrolmentService;
+  private ParticipationService participationService;
   private ApplicationEventPublisher eventPublisher;
   private StudyRoomService studyRoomService;
 
@@ -63,9 +65,10 @@ class StudyRoomServiceTest {
     tutorRoleService = mock(TutorRoleService.class);
     ratingService = mock(RatingService.class);
     enrolmentService = mock(EnrolmentService.class);
+    participationService = mock(ParticipationService.class);
     eventPublisher = mock(ApplicationEventPublisher.class);
     studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService, ratingService, enrolmentService,
-        eventPublisher);
+        participationService, eventPublisher);
 
     Student tutor = ModelTestData.student("Test Tutor");
     ReflectionTestUtils.setField(tutor, "number", TUTOR_NUMBER);
@@ -467,6 +470,67 @@ class StudyRoomServiceTest {
     // Assert
     assertEquals(List.of(new ParticipantDTO(2L, "Ana Test", false), new ParticipantDTO(3L, "Bruno Test", false)),
         participants);
+  }
+
+  // leave (#47)
+
+  @Test
+  @DisplayName("A participant leaves and the room is saved with one fewer participant")
+  void participantLeaves() {
+    // Arrange
+    Student participant = student("Ana Test", 2L);
+    StudyRoom room = openRoomWith(participant);
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    Participation participation = mock(Participation.class);
+    when(participation.getStudent()).thenReturn(participant);
+    when(participationService.getParticipation(ROOM_ID, 2L)).thenReturn(participation);
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.leave(2L, ROOM_ID);
+
+    // Assert
+    assertEquals(0, result.participantCount());
+    assertEquals(StudyRoomStatus.SCHEDULED, result.status());
+    verify(studyRoomRepository).save(room);
+  }
+
+  @Test
+  @DisplayName("A student who never joined can't leave")
+  void notAParticipantCannotLeave() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(participationService.getParticipation(ROOM_ID, 2L))
+        .thenThrow(new StudyMatchException(ErrorCode.NOT_A_PARTICIPANT));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.leave(2L, ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_A_PARTICIPANT, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A room that doesn't exist gives NOT_FOUND")
+  void missingRoomForLeave() {
+    // Act - findById is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.leave(2L, ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // a room tomorrow, open for the given students to join
+  private StudyRoom openRoomWith(Student... participants) {
+    StudyRoom room = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
+    for (Student participant : participants) {
+      room.join(participant);
+    }
+    return room;
   }
 
   // a room the students joined while it was upcoming, which then ended an hour ago
