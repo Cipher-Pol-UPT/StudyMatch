@@ -547,6 +547,7 @@
     "LESSON_IN_FUTURE": "This lesson hasn't happened yet, attendance can only be registered after it starts.",
     "ADMIN_CANNOT_BE_BLOCKED": "Admin accounts cannot be blocked.",
     "ACCOUNT_ALREADY_BLOCKED": "This account is already blocked.",
+    "GRADE_OUT_OF_RANGE": "Grades go from 0 to 20.",
     "STUDENT_HAS_NO_STATUTE": "This student doesn't have a special statute.",
     "ACADEMIC_YEAR_NOT_NEXT": "That isn't the next academic year anymore. Reload the page and check again.",
     "ATTENDEE_NOT_A_PARTICIPANT": "Student {{number}} didn't join this StudyRoom.",

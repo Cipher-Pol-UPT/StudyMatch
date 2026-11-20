@@ -133,17 +133,17 @@ public abstract class User {
     return accountStatus;
   }
 
-  public void setAccountStatus(AccountStatus accountStatus) {
-    this.accountStatus = accountStatus;
-  }
-
   public boolean isBlocked() {
     return accountStatus == AccountStatus.BLOCKED;
   }
 
-  // admins can't be blocked, so there's always one left who can unblock
+  // every account can be blocked unless its type says otherwise
+  protected boolean canBeBlocked() {
+    return true;
+  }
+
   public void checkCanBeBlocked() {
-    if (getRole() == Role.ADMIN) {
+    if (!canBeBlocked()) {
       throw new StudyMatchException(ErrorCode.ADMIN_CANNOT_BE_BLOCKED);
     }
     if (isBlocked()) {
