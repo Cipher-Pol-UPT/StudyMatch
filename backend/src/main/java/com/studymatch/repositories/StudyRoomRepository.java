@@ -3,12 +3,22 @@ package com.studymatch.repositories;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
 import com.studymatch.models.StudyRoom;
 
-public interface StudyRoomRepository extends JpaRepository<StudyRoom, Long> {
+// the specification part is for View StudyRooms, where any mix of filters can be on or off
+public interface StudyRoomRepository extends JpaRepository<StudyRoom, Long>, JpaSpecificationExecutor<StudyRoom> {
+
+  // one query for the calendar rows instead of one per room for the tutor role, subject, student and participations
+  @Override
+  @EntityGraph(attributePaths = { "tutorRole.subject", "tutorRole.student", "participations" })
+  List<StudyRoom> findAll(Specification<StudyRoom> spec, Sort sort);
 
   // rooms the tutor hosts (in any subject) that share part of the [startsAt, endsAt) interval
   @Query("""

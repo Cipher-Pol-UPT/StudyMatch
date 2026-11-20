@@ -70,6 +70,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/subject-editions/` | Teacher | the editions you teach |
 | GET | `/subject-editions/current` | Staff | this year's editions, the ones open for enrolment |
 | POST | `/subject-editions/{id}/enrolments` | Staff | enrol students by number in one class, with a result per student |
+| PUT | `/subject-editions/{id}/enrolments/{studentNumber}/class-section` | Staff | move an enrolled student to another class of the edition, keeping their grades and absences |
 | GET | `/subject-editions/enrolments/import/template` | Staff | the empty CSV for enrolments |
 | POST | `/subject-editions/{id}/enrolments/import` | Staff | enrol the students in a CSV, with a result per row |
 | GET | `/subject-editions/{id}/students` | Teacher of the edition | its students, with personality, category level and attendance |
@@ -86,11 +87,14 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | --- | --- | --- | --- |
 | GET | `/tutors/me/subjects` | Student | the subjects you tutor |
 | POST | `/study-rooms/` | Student who tutors the subject | create a StudyRoom |
+| GET | `/study-rooms/` | Student | the open StudyRooms (not cancelled, not completed), filtered by subject, tutor, topic or date |
+| GET | `/study-rooms/{id}` | Student | one StudyRoom's description, the tutor's rating in that subject, and whether you can join |
 | GET | `/study-rooms/{id}/participants` | the room's tutor | who joined, and whether they attended |
 | POST | `/study-rooms/{id}/attendance` | the room's tutor | confirm who attended once the room ended, within 48 hours |
 | POST | `/study-rooms/{id}/rating` | Student who attended | rate the tutor, 1 to 5 stars and an optional comment, once per room within 7 days |
+| POST | `/study-rooms/{id}/leave` | Student who joined | leave a StudyRoom before it starts, freeing the place |
 | GET | `/students/{number}/ratings` | Anyone logged in | a tutor's ratings and comments, newest first, without who wrote them |
 
 ## Coming next
 
-The other use cases (groups, StudyRoom join and leave, tutor applications, achievements, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (groups, StudyRoom join, tutor applications, achievements, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

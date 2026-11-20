@@ -33,4 +33,11 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
 
   boolean existsByStudentAndSubjectEdition_Teachers_Number(Student student, Long teacherNumber);
 
+  // join StudyRoom (#45): the student is enrolled in the subject's edition for that academic year
+  boolean existsByStudent_NumberAndSubjectEdition_SubjectAndSubjectEdition_AcademicYear(
+      Long studentNumber, Subject subject, AcademicYear academicYear);
+
+  boolean existsByStudent_NumberAndSubjectEdition_SubjectAndStatus(
+      Long studentNumber, Subject subject, EnrolmentStatus status);
+
 }
