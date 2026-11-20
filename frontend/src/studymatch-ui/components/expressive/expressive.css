@@ -78,6 +78,12 @@
 .sm-pass__row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .sm-pass__name { font-size: 22px; letter-spacing: -0.02em; line-height: 1; }
 .sm-pass__meta { margin-top: 6px; font-family: var(--sm-mono); font-size: 12px; opacity: 0.75; }
+.sm-pass-traits { display: flex; flex-direction: column; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.sm-pass-traits li { display: grid; grid-template-columns: 124px 1fr 36px; align-items: center; gap: 10px; font-size: 13px; }
+.sm-pass-traits li > span:first-child { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: rgba(255, 255, 255, 0.8); }
+.sm-pass-traits i { height: 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
+.sm-pass-traits b { display: block; height: 100%; border-radius: inherit; }
+.sm-pass-traits .sm-num { text-align: right; font-size: 12px; }
 .sm-pass__year { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: var(--sm-r-pill); background: var(--sm-spark); color: #000; font-size: 12px; font-weight: 500; }
 
 /* ─── Group tile ─────────────────────────────────────────── */

@@ -104,12 +104,33 @@
     "noEnrolledBody": "Students will appear here when they are enrolled in this subject edition.",
     "categoryLevel": "Category level",
     "subjectAttendance": "Attendance in this subject",
-    "subjectEvidence": "This subject edition",
-    "traits": {
-      "leadership": "Leadership",
-      "problemSolving": "Problem solving",
-      "creativity": "Creativity",
-      "execution": "Execution"
+    "subjectEvidence": "This subject edition"
+  },
+  "traits": {
+    "openness": {
+      "label": "Openness",
+      "short": "Open",
+      "description": "Curious and open to new ideas, experiences and ways of doing things."
+    },
+    "conscientiousness": {
+      "label": "Conscientiousness",
+      "short": "Conscientious",
+      "description": "Organised, reliable and careful with plans and deadlines."
+    },
+    "extraversion": {
+      "label": "Extraversion",
+      "short": "Extravert",
+      "description": "Gets energy from other people, speaks up and enjoys working in a group."
+    },
+    "agreeableness": {
+      "label": "Agreeableness",
+      "short": "Agreeable",
+      "description": "Cooperative, considerate and looks for agreement in the group."
+    },
+    "neuroticism": {
+      "label": "Neuroticism",
+      "short": "Neurotic",
+      "description": "How strongly stress and worry are felt. A higher score means more."
     }
   },
   "common": {
@@ -281,7 +302,6 @@
     "answered": "Answered",
     "progress": "{{answered}} of {{total}}",
     "submit": "Submit answers",
-    "strongestProfile": "Your strongest profile",
     "yourProfile": "Your profile",
     "privacy": "Your profile is used to balance groups this academic year. Only you, your teachers and staff can see it.",
     "continue": "Continue to StudyMatch",
@@ -640,18 +660,6 @@
     "blocked": "Blocked",
     "approved": "Approved",
     "rejected": "Rejected",
-    "leadership": "Leadership",
-    "lead": "Lead",
-    "sets_direction_organises_the_team_and_keeps_everyone_aligned": "Sets direction, organises the team and keeps everyone aligned.",
-    "problem_solving": "Problem Solving",
-    "tech": "Tech",
-    "breaks_problems_down_and_finds_the_technical_path_forward": "Breaks problems down and finds the technical path forward.",
-    "creativity": "Creativity",
-    "creative": "Creative",
-    "brings_new_ideas_alternatives_and_a_fresh_point_of_view": "Brings new ideas, alternatives and a fresh point of view.",
-    "execution": "Execution",
-    "exec": "Exec",
-    "turns_plans_into_finished_work_on_time_and_in_detail": "Turns plans into finished work, on time and in detail.",
     "studymatch": "StudyMatch",
     "previous_month": "Previous month",
     "next_month": "Next month",
@@ -664,6 +672,7 @@
     "balance": "Balance",
     "profiles_in_this_group": "Profiles in this group",
     "showing_teammates": "Showing teammates",
+    "showing_personality": "Showing the personality profile",
     "showing_front": "Showing front",
     "year": "Year",
     "no_group_yet": "No group yet",

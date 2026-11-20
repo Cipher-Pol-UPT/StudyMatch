@@ -8,7 +8,7 @@ import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { EditionStudentData, StudentRecordData, StudentSummaryData, SubjectEditionData } from '../src/types/studentDirectory';
 import type { StudentProfileData } from '../src/types/studentProfile';
 
-const ana: StudentSummaryData = { number: 50001, name: 'Ana Silva', degree: 'Informatics', curricularYear: 2, attendance: 50, averageGrade: 0, personalityProfile: { leadership: 0.8, problemSolving: 0.6, creativity: 0.4, execution: 0.7 }, accountStatus: 'ACTIVE' };
+const ana: StudentSummaryData = { number: 50001, name: 'Ana Silva', degree: 'Informatics', curricularYear: 2, attendance: 50, averageGrade: 0, personalityProfile: { openness: 0.4, conscientiousness: 0.7, extraversion: 0.8, agreeableness: 0.6, neuroticism: 0.3 }, accountStatus: 'ACTIVE' };
 const rui: StudentSummaryData = { ...ana, number: 50002, name: 'Rui Costa', curricularYear: 1, attendance: null, averageGrade: null, personalityProfile: null, accountStatus: 'BLOCKED' };
 const profile: StudentProfileData = { number: ana.number, name: ana.name, banner: null, pfp: null, aboutMe: 'Learning together.', skills: [], interests: [], languages: ['PORTUGUESE'], tutorBadges: [], achievements: [], privateProfile: { institutionalEmail: 'ana@school.pt', degree: 'Informatics', curricularYear: 2, personalityProfile: ana.personalityProfile, attendance: 99, hasAcademicHistory: true } };
 const record: StudentRecordData = { profile: { ...profile, privateProfile: { ...profile.privateProfile!, attendance: null } }, personalEmail: 'ana.personal@example.com', accountStatus: 'ACTIVE', statuteType: 'WORKING_STUDENT', statuteEndDate: '2030-09-01', averageGrade: 14, categoryLevels: [{ categoryId: 1, category: 'Programming', level: 14 }], enrolments: [{ subjectCode: 'CS101', subjectName: 'Programming', ects: 6, academicYear: 2026, classSection: 'T1', status: 'PASSED', finalGrade: 14 }] };
@@ -60,7 +60,7 @@ describe('staff student directory', () => {
     open();
     const name = await screen.findByRole('link', { name: 'Ana Silva' });
     const row = within(name.closest('tr')!);
-    for (const value of ['50001', 'Informatics', '2', '50%', '0 / 20', 'Leadership', '80%']) expect(row.getByText(value)).toBeTruthy();
+    for (const value of ['50001', 'Informatics', '2', '50%', '0 / 20', 'Extraversion', '80%', 'Neuroticism', '30%']) expect(row.getByText(value)).toBeTruthy();
     expect(row.getByText(i18n.t('accountStatuses.ACTIVE'))).toBeTruthy();
     expect(screen.getByText('No grades yet')).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledWith('/api/students/?page=0', expect.objectContaining({ credentials: 'include', method: 'GET' }));
