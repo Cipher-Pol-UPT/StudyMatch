@@ -51,6 +51,7 @@ class StudyRoomServiceTest {
   private StudyRoomRepository studyRoomRepository;
   private TutorRoleService tutorRoleService;
   private RatingService ratingService;
+  private EnrolmentService enrolmentService;
   private ApplicationEventPublisher eventPublisher;
   private StudyRoomService studyRoomService;
 
@@ -61,8 +62,10 @@ class StudyRoomServiceTest {
     studyRoomRepository = mock(StudyRoomRepository.class);
     tutorRoleService = mock(TutorRoleService.class);
     ratingService = mock(RatingService.class);
+    enrolmentService = mock(EnrolmentService.class);
     eventPublisher = mock(ApplicationEventPublisher.class);
-    studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService, ratingService, eventPublisher);
+    studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService, ratingService, enrolmentService,
+        eventPublisher);
 
     Student tutor = ModelTestData.student("Test Tutor");
     ReflectionTestUtils.setField(tutor, "number", TUTOR_NUMBER);
@@ -148,20 +151,35 @@ class StudyRoomServiceTest {
   // view StudyRooms (#43)
 
   @Test
-  @DisplayName("The list returns the open rooms the repository found, mapped to DTOs")
+  @DisplayName("The list maps the open rooms and shows the link to the host")
   void listsRooms() {
     // Arrange
     StudyRoom room = openRoom();
     when(studyRoomRepository.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of(room));
 
-    // Act
-    List<StudyRoomDTO> rooms = studyRoomService.listRooms(null, null, null, null);
+    // Act - the host browses the calendar
+    List<StudyRoomDTO> rooms = studyRoomService.listRooms(TUTOR_NUMBER, null, null, null, null);
 
     // Assert
     assertEquals(1, rooms.size());
     assertEquals("Test Subject", rooms.get(0).subjectName());
     assertEquals(5, rooms.get(0).availablePlaces());
+    assertEquals(LINK, rooms.get(0).link());
     verify(studyRoomRepository).findAll(any(Specification.class), any(Sort.class));
+  }
+
+  @Test
+  @DisplayName("The list hides the link from a student who isn't the tutor and hasn't joined")
+  void listHidesLink() {
+    // Arrange
+    StudyRoom room = openRoom(student("Ana Test", 2L));
+    when(studyRoomRepository.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of(room));
+
+    // Act - a student who isn't the host and hasn't joined
+    List<StudyRoomDTO> rooms = studyRoomService.listRooms(3L, null, null, null, null);
+
+    // Assert
+    assertNull(rooms.get(0).link());
   }
 
   @Test
@@ -178,6 +196,7 @@ class StudyRoomServiceTest {
     assertTrue(detail.hosted());
     assertFalse(detail.joined());
     assertFalse(detail.canJoin());
+    assertEquals(LINK, detail.link());
   }
 
   @Test
@@ -194,14 +213,17 @@ class StudyRoomServiceTest {
     assertFalse(detail.hosted());
     assertTrue(detail.joined());
     assertFalse(detail.canJoin());
+    assertEquals(LINK, detail.link());
   }
 
   @Test
-  @DisplayName("An open room that hasn't started can be joined")
+  @DisplayName("A student enrolled in the subject's current edition who hasn't passed can join")
   void openRoomCanBeJoined() {
     // Arrange
     StudyRoom room = openRoom(student("Ana Test", 2L));
     when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(3L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(3L, tutorRole.getSubject())).thenReturn(false);
 
     // Act
     StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 3L);
@@ -210,6 +232,37 @@ class StudyRoomServiceTest {
     assertFalse(detail.hosted());
     assertFalse(detail.joined());
     assertTrue(detail.canJoin());
+    assertNull(detail.link());
+  }
+
+  @Test
+  @DisplayName("A student not enrolled in the subject's current edition can't join")
+  void notEnrolledCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoom();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act - isEnrolledInCurrentEdition is false by default
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 3L);
+
+    // Assert
+    assertFalse(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("A student who already passed the subject can't join")
+  void passedStudentCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoom();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(3L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(3L, tutorRole.getSubject())).thenReturn(true);
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 3L);
+
+    // Assert
+    assertFalse(detail.canJoin());
   }
 
   @Test

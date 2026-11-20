@@ -34,13 +34,15 @@ public class StudyRoomService {
   private final StudyRoomRepository studyRoomRepository;
   private final TutorRoleService tutorRoleService;
   private final RatingService ratingService;
+  private final EnrolmentService enrolmentService;
   private final ApplicationEventPublisher eventPublisher;
 
   public StudyRoomService(StudyRoomRepository studyRoomRepository, TutorRoleService tutorRoleService,
-      RatingService ratingService, ApplicationEventPublisher eventPublisher) {
+      RatingService ratingService, EnrolmentService enrolmentService, ApplicationEventPublisher eventPublisher) {
     this.studyRoomRepository = studyRoomRepository;
     this.tutorRoleService = tutorRoleService;
     this.ratingService = ratingService;
+    this.enrolmentService = enrolmentService;
     this.eventPublisher = eventPublisher;
   }
 
@@ -69,7 +71,7 @@ public class StudyRoomService {
   // view StudyRooms (#43): the calendar only shows rooms that aren't cancelled and aren't completed,
   // every filter is optional
   @Transactional(readOnly = true)
-  public List<StudyRoomDTO> listRooms(Long subjectId, String tutor, String topic, LocalDate date) {
+  public List<StudyRoomDTO> listRooms(Long viewerNumber, Long subjectId, String tutor, String topic, LocalDate date) {
     List<Specification<StudyRoom>> filters = new ArrayList<>();
     filters.add(open());
     if (subjectId != null) {
@@ -93,7 +95,7 @@ public class StudyRoomService {
           where.lessThan(room.get("startsAt"), start.plusDays(1))));
     }
     return studyRoomRepository.findAll(Specification.allOf(filters), Sort.by("startsAt")).stream()
-        .map(StudyRoomDTO::from)
+        .map(room -> StudyRoomDTO.from(room, canSeeLink(room, viewerNumber)))
         .toList();
   }
 
@@ -106,10 +108,19 @@ public class StudyRoomService {
     boolean joined = room.getParticipations().stream()
         .anyMatch(participation -> participation.getStudent().getNumber().equals(viewerNumber));
     // the same checks the Join use case (#45) enforces, so the option is only shown when it can work
+    boolean eligible = enrolmentService.isEnrolledInCurrentEdition(viewerNumber, tutorRole.getSubject())
+        && !enrolmentService.hasPassed(viewerNumber, tutorRole.getSubject());
     boolean canJoin = !hosted && !joined && room.getStatus() == StudyRoomStatus.SCHEDULED
-        && LocalDateTime.now().isBefore(room.getStartsAt());
+        && LocalDateTime.now().isBefore(room.getStartsAt()) && eligible;
     return StudyRoomDetailDTO.from(room, ratingService.getAverageStars(tutorRole),
         ratingService.countRatings(tutorRole), hosted, joined, canJoin);
+  }
+
+  // the link is private: only the tutor and the students who joined see it
+  private boolean canSeeLink(StudyRoom room, Long viewerNumber) {
+    return room.getTutorRole().getStudent().getNumber().equals(viewerNumber)
+        || room.getParticipations().stream()
+            .anyMatch(participation -> participation.getStudent().getNumber().equals(viewerNumber));
   }
 
   // stored SCHEDULED and still inside the 48h confirmation window, so getStatus() isn't COMPLETED

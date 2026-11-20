@@ -47,7 +47,7 @@ class EnrolmentGradesTest {
     lessonService = mock(LessonService.class);
     absenceService = mock(AbsenceService.class);
     enrolmentService = new EnrolmentService(enrolmentRepository, lessonService, absenceService,
-        mock(SubjectEditionService.class));
+        mock(SubjectEditionService.class), mock(AcademicYearService.class));
 
     ana = ModelTestData.student("Ana Test");
     ReflectionTestUtils.setField(ana, "number", 50001L);

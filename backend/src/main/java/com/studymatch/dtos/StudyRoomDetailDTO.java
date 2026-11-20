@@ -14,10 +14,12 @@ public record StudyRoomDetailDTO(Long id, Long subjectId, String subjectName, Lo
   public static StudyRoomDetailDTO from(StudyRoom room, Double tutorAverageRating, long tutorRatingCount,
       boolean hosted, boolean joined, boolean canJoin) {
     int participants = room.getParticipations().size();
+    // the link is private: only the tutor and the students who joined get it
+    String link = hosted || joined ? room.getLink() : null;
     return new StudyRoomDetailDTO(room.getId(), room.getTutorRole().getSubject().getId(),
         room.getTutorRole().getSubject().getName(), room.getTutorRole().getStudent().getNumber(),
         room.getTutorRole().getStudent().getName(), room.getStartsAt(), room.getEndsAt(), room.getDescription(),
-        room.getCapacity(), room.getLink(), room.getStatus(), participants, room.getCapacity() - participants,
+        room.getCapacity(), link, room.getStatus(), participants, room.getCapacity() - participants,
         tutorAverageRating, tutorRatingCount, hosted, joined, canJoin);
   }
 

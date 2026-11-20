@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,22 +29,28 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
+import com.studymatch.models.Enrolment;
 import com.studymatch.models.Participation;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Rating;
 import com.studymatch.models.Student;
 import com.studymatch.models.StudyRoom;
 import com.studymatch.models.Subject;
+import com.studymatch.models.SubjectEdition;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.TutorApplication;
 import com.studymatch.models.TutorRole;
+import com.studymatch.repositories.AcademicYearRepository;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
+import com.studymatch.repositories.EnrolmentRepository;
 import com.studymatch.repositories.RatingRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.StudyRoomRepository;
+import com.studymatch.repositories.SubjectEditionRepository;
 import com.studymatch.repositories.SubjectRepository;
 import com.studymatch.repositories.TeacherRepository;
 import com.studymatch.repositories.TutorApplicationRepository;
@@ -80,6 +87,12 @@ class ViewStudyRoomsIntegrationTest {
   private StudyRoomRepository studyRoomRepository;
   @Autowired
   private RatingRepository ratingRepository;
+  @Autowired
+  private AcademicYearRepository academicYearRepository;
+  @Autowired
+  private SubjectEditionRepository subjectEditionRepository;
+  @Autowired
+  private EnrolmentRepository enrolmentRepository;
 
   private Teacher teacher;
   private Category category;
@@ -121,6 +134,13 @@ class ViewStudyRoomsIntegrationTest {
     mathsRole = saveTutorRole(tutor, maths);
     physicsRole = saveTutorRole(tutor, physics);
     otherMathsRole = saveTutorRole(otherTutor, maths);
+
+    // the viewer studies maths this year (and hasn't passed it), so they're eligible for its StudyRooms
+    AcademicYear year = academicYearRepository.save(new AcademicYear(2091));
+    SubjectEdition mathsEdition = new SubjectEdition(maths, year, Set.of(teacher));
+    mathsEdition.addClassSection("T1");
+    mathsEdition = subjectEditionRepository.save(mathsEdition);
+    enrolmentRepository.save(new Enrolment(viewer, mathsEdition.getClassSection("T1")));
 
     openRoom = saveRoom(mathsRole, tomorrowAt(14), tomorrowAt(16), 5, "Integration practice");
     physicsRoom = saveRoom(physicsRole, tomorrowAt(16), tomorrowAt(18), 6, "Physics revision");
@@ -218,6 +238,7 @@ class ViewStudyRoomsIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value(openRoom.getId()))
         .andExpect(jsonPath("$[0].availablePlaces").value(5))
+        .andExpect(jsonPath("$[0].link").value(Matchers.nullValue()))
         .andExpect(jsonPath("$[1].id").value(fullRoom.getId()))
         .andExpect(jsonPath("$[?(@.id == " + cancelledRoom.getId() + ")]").isEmpty())
         .andExpect(jsonPath("$[?(@.id == " + completedRoom.getId() + ")]").isEmpty())
@@ -275,26 +296,40 @@ class ViewStudyRoomsIntegrationTest {
         .andExpect(jsonPath("$.tutorRatingCount").value(1))
         .andExpect(jsonPath("$.hosted").value(false))
         .andExpect(jsonPath("$.joined").value(false))
-        .andExpect(jsonPath("$.canJoin").value(true));
+        .andExpect(jsonPath("$.canJoin").value(true))
+        .andExpect(jsonPath("$.link").value(Matchers.nullValue()));
   }
 
   @Test
-  @DisplayName("The host opens their own room: hosted and no join option")
+  @DisplayName("A student not enrolled in the subject's current edition can't join")
+  void detailForNotEnrolledStudent() throws Exception {
+    detailAs(ana.getInstitutionalEmail(), openRoom.getId())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.hosted").value(false))
+        .andExpect(jsonPath("$.joined").value(false))
+        .andExpect(jsonPath("$.canJoin").value(false))
+        .andExpect(jsonPath("$.link").value(Matchers.nullValue()));
+  }
+
+  @Test
+  @DisplayName("The host opens their own room: hosted, no join option, and the link shown")
   void detailForHost() throws Exception {
     detailAs(tutor.getInstitutionalEmail(), openRoom.getId())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.hosted").value(true))
-        .andExpect(jsonPath("$.canJoin").value(false));
+        .andExpect(jsonPath("$.canJoin").value(false))
+        .andExpect(jsonPath("$.link").value(LINK));
   }
 
   @Test
-  @DisplayName("A student who already joined can't join again")
+  @DisplayName("A student who already joined can't join again, and sees the link")
   void detailForJoinedStudent() throws Exception {
     detailAs(ana.getInstitutionalEmail(), fullRoom.getId())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.hosted").value(false))
         .andExpect(jsonPath("$.joined").value(true))
-        .andExpect(jsonPath("$.canJoin").value(false));
+        .andExpect(jsonPath("$.canJoin").value(false))
+        .andExpect(jsonPath("$.link").value(LINK));
   }
 
   @Test

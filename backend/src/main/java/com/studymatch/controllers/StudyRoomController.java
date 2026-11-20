@@ -61,16 +61,19 @@ public class StudyRoomController {
 
   @GetMapping
   @PreAuthorize("hasRole('STUDENT')")
-  @Operation(summary = "The StudyRooms still open, sorted by start, filtered by subject, tutor, topic or date")
+  @Operation(summary = "The StudyRooms still open, sorted by start, filtered by subject, tutor, topic or date. "
+      + "The link is null unless you're the tutor or already joined")
   public ResponseEntity<List<StudyRoomDTO>> list(@RequestParam(required = false) Long subjectId,
       @RequestParam(required = false) String tutor, @RequestParam(required = false) String topic,
-      @RequestParam(required = false) LocalDate date) {
-    return ResponseEntity.ok(studyRoomService.listRooms(subjectId, tutor, topic, date));
+      @RequestParam(required = false) LocalDate date, Authentication authentication) {
+    User viewer = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(studyRoomService.listRooms(viewer.getNumber(), subjectId, tutor, topic, date));
   }
 
   @GetMapping("{id}")
   @PreAuthorize("hasRole('STUDENT')")
-  @Operation(summary = "One StudyRoom's full description, the tutor's rating in that subject, and whether you can join")
+  @Operation(summary = "One StudyRoom's full description, the tutor's rating in that subject, and whether you can join. "
+      + "The link is null unless you're the tutor or already joined")
   @ErrorCodes(ErrorCode.NOT_FOUND)
   public ResponseEntity<StudyRoomDetailDTO> get(@PathVariable Long id, Authentication authentication) {
     User viewer = userService.getByInstitutionalEmail(authentication.getName());
