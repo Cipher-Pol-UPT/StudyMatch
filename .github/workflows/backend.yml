@@ -21,14 +21,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    # same database as docker-compose.yml, the integration tests need a real PostgreSQL
+    # same database and user as docker-compose.yml, the integration tests need a real PostgreSQL.
+    # trust means no password check, so there's no password written here. it only lives inside this job
     services:
       db:
         image: postgres:17
         env:
           POSTGRES_DB: studymatch
           POSTGRES_USER: studymatch
-          POSTGRES_PASSWORD: studymatch
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
@@ -53,12 +54,9 @@ jobs:
           cache: maven
           cache-dependency-path: backend/pom.xml
 
+      # the DB_* defaults in application.properties already match the service above
       - name: Build and test
         run: ./mvnw -B verify
-        env:
-          DB_NAME: studymatch
-          DB_USER: studymatch
-          DB_PASSWORD: studymatch
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v7

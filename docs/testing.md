@@ -36,8 +36,8 @@ GitHub Actions runs the same commands on every pull request and every push to `m
 
 | Workflow | What it runs |
 | --- | --- |
-| `.github/workflows/backend.yml` | `./mvnw -B verify`, with a PostgreSQL 17 container next to it (same database, user and password as `docker-compose.yml`) |
-| `.github/workflows/frontend.yml` | `npm ci`, `npm run lint`, `npm test` and `npm run build` |
+| `.github/workflows/backend.yml` | `./mvnw -B verify`, with a PostgreSQL 17 container next to it (same database and user as `docker-compose.yml`, with no password check since it only exists inside the job) |
+| `.github/workflows/frontend.yml` | `npm ci --ignore-scripts`, `npm run lint`, `npm test` and `npm run build` |
 
 Both have to pass before a PR can be merged. Each backend run keeps the JaCoCo report as an artifact called `jacoco-report`; download it from the bottom of the run's page on the Actions tab. When a backend run fails, it also keeps the Surefire test reports (`surefire-reports`), which show which test broke and why.
 

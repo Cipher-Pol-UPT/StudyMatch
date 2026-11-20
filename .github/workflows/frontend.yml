@@ -36,9 +36,10 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      # ci installs exactly what package-lock.json says, and fails if it doesn't match package.json
+      # ci installs exactly what package-lock.json says, and fails if it doesn't match package.json.
+      # --ignore-scripts stops packages from running their own install scripts on the runner, we don't need any
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       # fastest first, so a lint mistake fails in seconds
       - name: Lint
