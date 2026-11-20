@@ -1,12 +1,10 @@
 import { Bell, KeyRound, LogOut } from 'lucide-react';
-import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { logout } from '../../api/auth';
-import { isBackendError } from '../../api/errors';
 import { Avatar, Menu, ThemeSwitcher, useToast } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import './accountActions.css';
+import { useSignOut } from './useSignOut';
 
 interface AccountActionsProps {
   user: CurrentUser;
@@ -18,27 +16,11 @@ export function AccountActions({ user, onLoggedOut }: AccountActionsProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const toast = useToast();
-  const [busy, setBusy] = useState(false);
-  const pending = useRef(false);
-
-  async function signOut() {
-    if (pending.current) return;
-    pending.current = true;
-    setBusy(true);
-    try {
-      await logout();
-    } catch (error) {
-      if (!isBackendError(error) || error.code !== 'UNAUTHENTICATED') {
-        toast.danger(t('workspace.logoutFailed'));
-        pending.current = false;
-        setBusy(false);
-        return;
-      }
-    }
+  const { signOut, busy } = useSignOut(() => {
     navigate('/', { replace: true });
     onLoggedOut();
     toast.success(t('workspace.loggedOut'));
-  }
+  });
 
   return (
     <div className="account-actions">

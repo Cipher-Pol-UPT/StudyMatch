@@ -1,9 +1,8 @@
 import { House, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { logout } from '../../api/auth';
-import { isBackendError } from '../../api/errors';
-import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, useToast, type MenuEntry, type NavItem, type NavSection } from '../../studymatch-ui';
+import { useSignOut } from '../../components/navigation/useSignOut';
+import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry, type NavItem, type NavSection } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { AchievementsPage } from '../achievements/AchievementsPage';
 import { HomePage } from '../home/HomePage';
@@ -70,26 +69,13 @@ interface ProfileMenuProps {
 function ProfileMenu({ user, avatarUrl, onLoggedOut }: ProfileMenuProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const toast = useToast();
-
-  // same as staff: stays logged in if the server didn't end the session, unless it had already expired
-  const signOut = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      if (!isBackendError(error) || error.code !== 'UNAUTHENTICATED') {
-        toast.danger(t('workspace.logoutFailed'));
-        return;
-      }
-    }
-    onLoggedOut();
-  };
+  const { signOut, busy } = useSignOut(onLoggedOut);
 
   const items: MenuEntry[] = [
     { type: 'label', label: user.name },
     ...ACCOUNT.map((a): MenuEntry => ({ label: t(`nav.${a.key}`), icon: a.icon, onSelect: () => navigate(a.path) })),
     { type: 'separator' },
-    { label: t('nav.logout'), icon: LogOut, danger: true, onSelect: signOut },
+    { label: t('nav.logout'), icon: LogOut, danger: true, disabled: busy, onSelect: () => { void signOut(); } },
   ];
 
   return (
