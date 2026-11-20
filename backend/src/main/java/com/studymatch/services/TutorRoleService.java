@@ -43,6 +43,11 @@ public class TutorRoleService {
         .orElseThrow(() -> new StudyMatchException(ErrorCode.ACCESS_DENIED));
   }
 
+  // apply for tutoring (#41): whether the student already tutors the subject
+  public boolean hasTutorRole(Long studentNumber, Long subjectId) {
+    return tutorRoleRepository.findByStudentNumberAndSubjectId(studentNumber, subjectId).isPresent();
+  }
+
   // achievements: the rating of each subject the student tutors
   public List<SubjectRating> getSubjectRatings(Student student) {
     return tutorRoleRepository.findByStudent(student).stream()

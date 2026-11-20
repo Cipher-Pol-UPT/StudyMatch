@@ -563,7 +563,11 @@
     "ATTENDEE_NOT_A_PARTICIPANT": "O estudante {{number}} não se inscreveu nesta StudyRoom.",
     "ROOM_ALREADY_RATED": "Já avaliou esta StudyRoom.",
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Só os estudantes inscritos nesta unidade curricular que ainda não a concluíram podem inscrever-se.",
-    "JOINED_STUDYROOM_OVERLAP": "Sobrepõe-se a uma sala de estudo em que já está inscrito ou que orienta ({{subject}}, {{startsAt}} – {{endsAt}})."
+    "JOINED_STUDYROOM_OVERLAP": "Sobrepõe-se a uma sala de estudo em que já está inscrito ou que orienta ({{subject}}, {{startsAt}} – {{endsAt}}).",
+    "NOT_ELIGIBLE_FOR_TUTORING": "Só os estudantes cuja nota final está entre os 5% melhores da sua edição podem ser tutores desta unidade curricular.",
+    "TUTOR_APPLICATION_ALREADY_PENDING": "Já tem uma candidatura pendente para esta unidade curricular.",
+    "TUTOR_ROLE_ALREADY_EXISTS": "Já é tutor desta unidade curricular.",
+    "SUBJECT_NOT_TAUGHT_THIS_YEAR": "Esta unidade curricular não é lecionada este ano letivo."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",

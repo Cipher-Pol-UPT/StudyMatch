@@ -2,6 +2,7 @@ package com.studymatch.services;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -55,9 +56,14 @@ public class SubjectEditionService {
 
   // update subject (staff): the subject's edition this year, the only one whose teachers can still change
   public SubjectEdition getCurrentEdition(Subject subject) {
-    return academicYearService.findCurrent()
-        .flatMap(year -> subjectEditionRepository.findBySubjectAndAcademicYear(subject, year))
+    return findCurrentEdition(subject)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  // apply for tutoring (#41): empty when the subject isn't taught in the current academic year
+  public Optional<SubjectEdition> findCurrentEdition(Subject subject) {
+    return academicYearService.findCurrent()
+        .flatMap(year -> subjectEditionRepository.findBySubjectAndAcademicYear(subject, year));
   }
 
   // past editions keep their teachers. With no teachers the model refuses it (AT_LEAST_ONE_TEACHER_REQUIRED)
