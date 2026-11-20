@@ -5,6 +5,9 @@ import i18n from '../src/i18n';
 import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { CurrentUser } from '../src/types/currentUser';
 import type { Role } from '../src/types/enums';
+import { connectChatSocket, disconnectChatSocket } from '../src/api/chatSocket';
+
+vi.mock('../src/api/chatSocket', () => ({ connectChatSocket: vi.fn(), disconnectChatSocket: vi.fn(async () => {}) }));
 
 const base: CurrentUser = { number: 50001, name: 'Alex Silva', institutionalEmail: 'alex@school.pt', role: 'STUDENT', mustChangePassword: false, personalityTestRequired: false };
 const profile = { number: 50001, name: 'Alex Silva', banner: null, pfp: null, aboutMe: null, skills: [], interests: [], languages: [], tutorBadges: [], achievements: [], privateProfile: null };
@@ -37,7 +40,7 @@ beforeEach(async () => {
   window.history.replaceState({}, '', '/');
   document.cookie = 'XSRF-TOKEN=test-token';
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); window.history.replaceState({}, '', '/'); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.clearAllMocks(); window.history.replaceState({}, '', '/'); });
 
 describe('role areas', () => {
   it.each(workspaces)('restores $role into its own home and menu', async ({ role, title, links }) => {
@@ -106,6 +109,21 @@ describe('logout', () => {
     if (role !== 'STUDENT') expect(await screen.findByText('You have been logged out.')).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledWith('/api/users/logout', expect.objectContaining({ method: 'POST', credentials: 'include', headers: { 'X-XSRF-TOKEN': 'test-token' } }));
     expect(window.location.pathname).toBe('/');
+    expect(disconnectChatSocket).toHaveBeenCalledTimes(role === 'STUDENT' || role === 'TEACHER' ? 1 : 0);
+  });
+
+  it.each(['ADMIN', 'STAFF', 'TEACHER', 'STUDENT'] as Role[])('opens the chat socket for %s only if they can chat', async role => {
+    backend({ ...base, role });
+    start();
+    expect(await screen.findByRole('button', { name: 'Account menu' })).toBeTruthy();
+    expect(connectChatSocket).toHaveBeenCalledTimes(role === 'STUDENT' || role === 'TEACHER' ? 1 : 0);
+  });
+
+  it('opens the chat socket only after the first password change', async () => {
+    backend({ ...base, mustChangePassword: true });
+    start();
+    expect(await screen.findByRole('heading', { name: 'Choose your password' })).toBeTruthy();
+    expect(connectChatSocket).not.toHaveBeenCalled();
   });
 
   it.each(['ADMIN', 'STAFF', 'TEACHER', 'STUDENT'] as Role[])('keeps the %s first-password gate ahead of the role home', async role => {
