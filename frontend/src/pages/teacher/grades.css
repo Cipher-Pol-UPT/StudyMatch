@@ -1,0 +1,7 @@
+.grades__student { white-space: nowrap; }
+
+/* looks like the number it shows, the field only appears while typing */
+.grade-cell { padding: 4px 8px; border: 0; border-radius: 8px; background: none; color: inherit; font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
+.grade-cell:hover { background: var(--sm-fill); }
+.grade-cell:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.grade-cell__field { width: 112px; margin-left: auto; text-align: left; }
