@@ -219,6 +219,7 @@ The student numbers are the ones a fresh database gets. If you registered studen
 | [docs/conventions.md](docs/conventions.md) | packages and naming, error codes, DTOs vs models, how the frontend is organised |
 | [docs/contributing.md](docs/contributing.md) | issues, branches, commits, reviews and the Definition of Done |
 | [docs/testing.md](docs/testing.md) | running the tests, the coverage report, and how we write tests |
+| [docs/performance.md](docs/performance.md) | the JMeter load test of the student directory, its settings and results |
 | [docs/api.md](docs/api.md) | the endpoints per area and role (the details are in Swagger UI) |
 
 ## How we work
