@@ -214,7 +214,9 @@ public class CertificatePdfWriter {
 
   private static String card(Texts t, Entry entry) {
     Art art = ART.get(entry.achievement());
-    return "<div class=\"card\" style=\"padding:8px\"><table style=\"border-collapse:collapse;width:100%\"><tr>"
+    // fixed height, so two cards side by side line up even when a name wraps
+    return "<div class=\"card\" style=\"padding:8px;height:36mm;box-sizing:border-box\">"
+        + "<table style=\"border-collapse:collapse;width:100%;height:100%\"><tr>"
         + "<td style=\"width:23mm;vertical-align:middle\">" + tile(entry.achievement(), art, 23, 0) + "</td>"
         + "<td style=\"padding-left:12px;vertical-align:middle\">"
         + "<p><span style=\"font-size:15px;font-weight:500;letter-spacing:-.015em\">" + esc(t.name(entry.achievement()))
