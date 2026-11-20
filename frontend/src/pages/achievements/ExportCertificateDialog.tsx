@@ -54,14 +54,17 @@ function ExportCertificateForm({ earned, chosen, onClose }: Omit<ExportCertifica
         {earned.map(achievement => (
           <Checkbox key={achievement.id} checked={selected.includes(achievement.id)}
             onCheckedChange={checked => toggle(achievement.id, checked)}
-            description={achievement.earnedAt && t('achievements.earnedOn', { date: new Date(achievement.earnedAt).toLocaleDateString(i18n.language) })}>
+            description={achievement.earnedAt && t('achievements.earnedOn', { date: new Date(achievement.earnedAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' }) })}>
             {t(`achievements.${achievement.id}.name`)}
           </Checkbox>
         ))}
       </fieldset>
       {selected.length === 0 && <p className="export-certificate__hint">{t('achievements.chooseOne')}</p>}
-      <Segmented<Language> label={t('achievements.pdfLanguage')} value={language} onValueChange={setLanguage}
-        options={[{ value: 'en', label: t('achievements.english') }, { value: 'pt', label: t('achievements.portuguese') }]} />
+      <fieldset className="export-certificate__options" disabled={feedback.busy}>
+        <legend>{t('achievements.pdfLanguage')}</legend>
+        <Segmented<Language> label={t('achievements.pdfLanguage')} value={language} onValueChange={setLanguage}
+          options={[{ value: 'en', label: t('achievements.english') }, { value: 'pt', label: t('achievements.portuguese') }]} />
+      </fieldset>
       <div className="export-certificate__actions">
         <Button variant="secondary" onClick={onClose}>{t('ui.close')}</Button>
         <Button type="submit" icon={Download} loading={feedback.busy} disabled={selected.length === 0}>{t('achievements.download')}</Button>
