@@ -49,6 +49,25 @@ describe('StudentArea', () => {
     expect(await screen.findByRole('button', { name: 'Edit profile' })).toBeTruthy();
   });
 
+  it('opens change password from the avatar menu and from the profile', async () => {
+    renderArea();
+    fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Change password' }));
+    expect(await screen.findByLabelText('Current password')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'My profile' }));
+    expect((await screen.findByRole('link', { name: 'Change password' })).getAttribute('href')).toBe('/change-password');
+  });
+
+  it('opens all the achievements from the badges on the profile', async () => {
+    renderArea();
+    fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'My profile' }));
+    fireEvent.click(await screen.findByRole('link', { name: 'See all' }));
+    expect(await screen.findByRole('heading', { name: 'Still to earn' })).toBeTruthy();
+  });
+
   it('opens the study rooms demo from the student navigation', async () => {
     renderArea();
     fireEvent.click(screen.getByRole('link', { name: 'StudyRooms' }));
@@ -63,6 +82,15 @@ describe('StudentArea', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Log out' }));
     await waitFor(() => expect(onLoggedOut).toHaveBeenCalledTimes(1));
     expect(logout).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays logged in and warns when the session could not be ended', async () => {
+    vi.mocked(logout).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    const onLoggedOut = renderArea();
+    fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Log out' }));
+    expect(await screen.findByText('Could not end your session. Check your connection and try again.')).toBeTruthy();
+    expect(onLoggedOut).not.toHaveBeenCalled();
   });
 
   it('greets the student and shows attendance from the profile', async () => {

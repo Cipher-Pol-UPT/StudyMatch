@@ -98,7 +98,7 @@
 .sm-profile-head__meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 14px; color: var(--sm-text-2); }
 .sm-profile-head__meta span { display: inline-flex; align-items: center; gap: 6px; }
 .sm-profile-head__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.sm-profile-head__actions { padding-bottom: 4px; }
+.sm-profile-head__actions { display: flex; flex-wrap: wrap; gap: var(--sm-s2); padding-bottom: 4px; }
 
 /* ─── Profile sections ───────────────────────────────────── */
 .sm-profile__grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }

@@ -1,8 +1,7 @@
-import { CheckCircle2,Download } from 'lucide-react';
+import { CheckCircle2,Download,Lock } from 'lucide-react';
 import { useRef,type CSSProperties,type PointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../components/button/Button';
-import { Card } from '../components/card/Card';
 import { Dialog } from '../components/overlay/Dialog';
 import { cx } from '../utils/cx';
 import { AchievementArt } from './AchievementArt';
@@ -26,9 +25,9 @@ export function RarityPill({ id, inline }: { id: AchievementId; inline?: boolean
     <i aria-hidden />{t(`achievements.rarity.${rarity}`)}
   </span>;
 }
-export interface AchievementTileProps { id: AchievementId; artSize?: number; showRarity?: boolean; style?: CSSProperties }
+export interface AchievementTileProps { id: AchievementId; artSize?: number; showRarity?: boolean; locked?: boolean; style?: CSSProperties }
 // the library's tinted stage with the 3D art, it tilts a little towards the mouse
-export function AchievementTile({ id, artSize = 132, showRarity = true, style }: AchievementTileProps) {
+export function AchievementTile({ id, artSize = 132, showRarity = true, locked, style }: AchievementTileProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { rarity, tint } = ACHIEVEMENT_ART[id];
   const onMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -45,19 +44,40 @@ export function AchievementTile({ id, artSize = 132, showRarity = true, style }:
     if (!el) return;
     el.dataset.tilting = 'false'; el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg');
   };
-  return <div ref={ref} className={cx('sm-ach-tile', `sm-ach-tile--${rarity}`)} style={{ '--t1': tint[0], '--t2': tint[1], ...style } as CSSProperties}
+  return <div ref={ref} className={cx('sm-ach-tile', `sm-ach-tile--${rarity}`, locked && 'sm-ach-tile--locked')} style={{ '--t1': tint[0], '--t2': tint[1], ...style } as CSSProperties}
     onPointerMove={onMove} onPointerLeave={onLeave}>
     {showRarity && <RarityPill id={id} />}
-    <AchievementArt id={id} size={artSize} title="" />
+    <AchievementArt id={id} size={artSize} locked={locked} title="" />
+    {locked && <span className="sm-ach-lock" aria-hidden><Lock size={14} strokeWidth={2.5} /></span>}
     <span className="sm-ach-tile__glare" aria-hidden />
   </div>;
 }
+function formatEarned(earnedAt: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(earnedAt));
+}
+
+// without earnedAt it's still locked, and shows how to earn it instead of the date
 export interface AchievementCardProps extends AchievementState { onSelect?: () => void }
 export function AchievementCard({ id, earnedAt, onSelect }: AchievementCardProps) {
   const { t, i18n } = useTranslation();
-  return <Card title={t(`achievements.${id}.name`)} description={t(`achievements.${id}.description`)} onClick={onSelect}>
-    <AchievementArt id={id} />{earnedAt && <time dateTime={earnedAt}>{new Date(earnedAt).toLocaleDateString(i18n.language)}</time>}
-  </Card>;
+  const Root = onSelect ? 'button' : 'div';
+  return <Root type={onSelect ? 'button' : undefined} onClick={onSelect} className="sm-ach-card" data-state={earnedAt ? 'earned' : 'locked'}>
+    <AchievementTile id={id} locked={!earnedAt} />
+    <span className="sm-ach-card__body">
+      <span className="sm-ach-card__name">{t(`achievements.${id}.name`)}</span>
+      <span className="sm-ach-card__desc">{t(`achievements.${id}.description`)}</span>
+      <span className="sm-ach-card__foot">
+        {earnedAt ? (
+          <span className="sm-ach-card__earned">
+            <CheckCircle2 size={16} strokeWidth={2.5} aria-hidden />
+            <time dateTime={earnedAt}>{t('achievements.earnedOn', { date: formatEarned(earnedAt, i18n.language) })}</time>
+          </span>
+        ) : (
+          <span className="sm-ach-card__criteria"><Lock size={14} strokeWidth={2.5} aria-hidden />{t(`achievements.${id}.criteria`)}</span>
+        )}
+      </span>
+    </span>
+  </Root>;
 }
 export interface AchievementGridProps { achievements: AchievementState[]; onSelect?: (id: AchievementId) => void }
 export function AchievementGrid({ achievements, onSelect }: AchievementGridProps) {
@@ -66,18 +86,19 @@ export function AchievementGrid({ achievements, onSelect }: AchievementGridProps
 export interface AchievementDialogProps { id: AchievementId | null; onClose: () => void; earnedAt?: string; progress?: number; onExportCertificate?: (id: AchievementId) => void; locale?: string }
 export function AchievementDialog({ id, onClose, earnedAt, onExportCertificate, locale }: AchievementDialogProps) {
   const { t, i18n } = useTranslation();
-  const earned = earnedAt && new Intl.DateTimeFormat(locale ?? i18n.language, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(earnedAt));
+  const earned = earnedAt && formatEarned(earnedAt, locale ?? i18n.language);
   return <Dialog open={!!id} onClose={onClose} size="sm" title={<span className="sm-visually-hidden">{id ? t(`achievements.${id}.name`) : ''}</span>}
     footer={id && <>
       <Button variant="secondary" onClick={onClose}>{t('ui.close')}</Button>
       {earnedAt && onExportCertificate && <Button icon={Download} onClick={() => onExportCertificate(id)}>{t('achievements.export')}</Button>}
     </>}>
     {id && <div className="sm-ach-detail">
-      <AchievementTile id={id} artSize={190} showRarity={false} />
+      <AchievementTile id={id} artSize={190} showRarity={false} locked={!earnedAt} />
       <RarityPill id={id} inline />
       <h3 className="sm-ach-detail__name">{t(`achievements.${id}.name`)}</h3>
       <p className="sm-ach-detail__desc">{t(`achievements.${id}.description`)}</p>
-      {earned && <span className="sm-ach-card__earned"><CheckCircle2 size={16} strokeWidth={2.5} aria-hidden />{t('achievements.earnedOn', { date: earned })}</span>}
+      <p className="sm-ach-detail__how"><b>{t('achievements.howToEarn')}</b>{t(`achievements.${id}.criteria`)}</p>
+      {earned &&<span className="sm-ach-card__earned"><CheckCircle2 size={16} strokeWidth={2.5} aria-hidden />{t('achievements.earnedOn', { date: earned })}</span>}
     </div>}
   </Dialog>;
 }
