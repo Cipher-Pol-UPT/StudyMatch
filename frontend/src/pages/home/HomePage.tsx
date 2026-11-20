@@ -1,9 +1,9 @@
-import { CalendarDays } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { ACHIEVEMENT_ART, Card, EmptyState, IconTile, StatCard, StudentPass, type StudentProfile } from '../../studymatch-ui';
+import { Card, IconTile, StudentPass, type StudentProfile } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { SECTIONS } from '../student/sections';
+import { GettingStartedCard, NextAchievementCard, TutoringCard } from './HomeCards';
 import './home.css';
 import { TaskCalendar } from './TaskCalendar';
 import type { CalendarTask } from './types';
@@ -13,14 +13,11 @@ export interface HomePageProps {
   profile: StudentProfile | null;
   failed?: boolean;
   tasks?: CalendarTask[];
-  average?: number;
   onTaskClick?: (task: CalendarTask) => void;
 }
 
-export function HomePage({ currentUser, profile, failed, tasks = [], average, onTaskClick }: HomePageProps) {
+export function HomePage({ currentUser, profile, failed, tasks = [], onTaskClick }: HomePageProps) {
   const { t } = useTranslation();
-  const earned = profile?.achievements?.filter((a) => a.earnedAt).length ?? 0;
-  const attendance = profile?.attendance;
 
   return (
     <div className="home">
@@ -44,17 +41,10 @@ export function HomePage({ currentUser, profile, failed, tasks = [], average, on
       </header>
 
       {profile && (
-        <div className="home__stats">
-          {attendance !== undefined && (
-            <StatCard
-              label={t('ui.attendance')}
-              value={attendance ?? '—'}
-              unit={attendance === null ? undefined : '%'}
-              caption={attendance === null ? t('ui.attendance_not_applicable') : undefined}
-            />
-          )}
-          <StatCard label={t('home.achievements')} value={earned} unit={`/${Object.keys(ACHIEVEMENT_ART).length}`} />
-          {average !== undefined && <StatCard label={t('home.average')} value={average} />}
+        <div className="home__cards">
+          <GettingStartedCard profile={profile} />
+          <NextAchievementCard profile={profile} />
+          <TutoringCard profile={profile} />
         </div>
       )}
 
@@ -75,12 +65,9 @@ export function HomePage({ currentUser, profile, failed, tasks = [], average, on
 
       <section aria-labelledby="home-agenda">
         <Card>
-          <h2 id="home-agenda">{t('home.upcomingTasks')}</h2>
-          {tasks.length ? (
-            <TaskCalendar tasks={tasks} onTaskClick={onTaskClick} />
-          ) : (
-            <EmptyState compact icon={CalendarDays} title={t('home.noTasks')} body={t('home.noTasksBody')} />
-          )}
+          <h2 id="home-agenda">{t('home.thisWeek')}</h2>
+          <TaskCalendar tasks={tasks} weeks={1} showWeekends onTaskClick={onTaskClick} />
+          {tasks.length === 0 && <p className="home__hint">{t('home.noTasksBody')}</p>}
         </Card>
       </section>
     </div>

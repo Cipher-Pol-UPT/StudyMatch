@@ -4,7 +4,27 @@
 .home__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sm-s6); }
 .home__head p { margin: var(--sm-s2) 0 0; color: var(--sm-text-2); }
 .home__head .sm-pass-scene { flex: 0 1 340px; }
-.home__stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--sm-s4); }
+.home__cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sm-s4); align-items: start; }
+.home__cards:empty { display: none; }
+.home__hint { margin: var(--sm-s3) 0 0; font-size: 14px; color: var(--sm-text-2); }
+
+/* Home cards: the link always sits at the bottom left */
+.home-card { display: grid; gap: var(--sm-s4); justify-items: start; }
+.home-card .sm-card__head { margin-bottom: 0; justify-self: stretch; }
+.home-next { display: flex; align-items: center; gap: var(--sm-s4); }
+.home-next .sm-ach-tile { flex: none; width: 88px; border-radius: var(--sm-r-md); }
+.home-next b { font-weight: 500; }
+.home-next p { margin: var(--sm-s1) 0 0; font-size: 14px; line-height: 1.4; color: var(--sm-text-2); }
+.home-start { display: flex; align-items: center; gap: var(--sm-s5); }
+.home-start__count { font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.home-start ul, .home-tutoring { display: grid; gap: var(--sm-s2); margin: 0; padding: 0; list-style: none; }
+.home-start li { display: flex; align-items: center; gap: var(--sm-s2); font-size: 14px; }
+.home-start li svg { flex: none; color: var(--sm-text-3); }
+.home-start li[data-done='true'] { color: var(--sm-text-2); text-decoration: line-through; }
+.home-start li[data-done='true'] svg { color: var(--sm-success-ink); }
+.home-tutoring li { display: flex; align-items: center; gap: var(--sm-s3); }
+.home-tutoring b { display: block; font-weight: 500; }
+.home-tutoring__icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--sm-r-sm); background: var(--sm-tint-lemon); color: var(--sm-warning-ink); }
 .home__actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: var(--sm-s4); }
 
 .home-action { display: block; border-radius: var(--sm-r-lg); color: inherit; text-decoration: none; }
