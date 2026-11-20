@@ -865,6 +865,71 @@
       "DUPLICATE": "Appears more than once"
     }
   },
+  "assignments": {
+    "name": "Name",
+    "type": "Type",
+    "date": "Date",
+    "weight": "Weight (%)",
+    "types": {
+      "PROJECT": "Project",
+      "EXAM": "Exam",
+      "PRACTICAL_EXAM": "Practical exam"
+    },
+    "weightLeft": "{{remaining}}% left",
+    "weightOver": "Only {{remaining}}% is left in this subject.",
+    "groupWork": "Group work",
+    "groupWorkHint": "Students are put in groups by personality.",
+    "alwaysIndividual": "Exams and practical exams are always individual.",
+    "groups": "Groups",
+    "groupsRule": "2 ≤ minimum ≤ optimal ≤ maximum. Every group shares a language.",
+    "minSize": "Minimum",
+    "optimalSize": "Optimal",
+    "maxSize": "Maximum",
+    "sameClass": "Keep groups within the same class",
+    "keepApart": "Keep apart",
+    "addPair": "Add a pair",
+    "removePair": "Remove this pair",
+    "firstStudent": "Student",
+    "secondStudent": "Keep apart from",
+    "chooseStudent": "Choose a student",
+    "create": "Create assignment",
+    "new": "New assignment",
+    "weightColumn": "Weight",
+    "weightsTotal": "Weights total {{total}}%",
+    "none": "No assignments yet",
+    "noneBody": "Create the first one. The weights should add up to 100%.",
+    "created": "{{name}} was created."
+  },
+  "subjectTabs": {
+    "label": "Subject pages",
+    "choose": {
+      "students": "Choose a subject edition to view its enrolled students.",
+      "assignments": "Choose a subject edition to see and create its assignments.",
+      "grades": "Choose a subject edition to grade its students."
+    },
+    "open": {
+      "students": "View students",
+      "assignments": "Open assignments",
+      "grades": "Open grades"
+    }
+  },
+  "grades": {
+    "student": "Student",
+    "status": "Status",
+    "grade": "Grade",
+    "range": "0 to 20",
+    "final": "Final",
+    "cellLabel": "{{name}}'s grade in {{assignment}}",
+    "incompleteTitle": "Weights total {{total}}%",
+    "incompleteBody": "Grades are saved, but final grades are calculated only when the assignments add up to 100%.",
+    "noAssignments": "No assignments to grade yet",
+    "noAssignmentsBody": "Create them in the Assignments tab first.",
+    "noStudents": "No students enrolled",
+    "noStudentsBody": "Students enrolled in this edition show up here.",
+    "changeTitle": "Change {{name}}'s grade?",
+    "changeBody": "{{assignment}} · from {{from}} to {{to}}. The final grade is recalculated.",
+    "change": "Change grade"
+  },
   "attendance": {
     "intro": "Choose the lesson, then mark who missed it.",
     "chooseLesson": "Choose the lesson",

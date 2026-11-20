@@ -27,6 +27,7 @@
 .sm-stepper__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .sm-stepper__label { font-size: 16px; font-weight: 500; letter-spacing: -0.01em; }
 .sm-stepper__hint { font-size: 14px; color: var(--sm-text-2); }
+.sm-stepper--error .sm-stepper__hint { color: var(--sm-danger-ink); }
 .sm-stepper__control { display: inline-flex; align-items: center; gap: 4px; padding: 4px; border-radius: var(--sm-r-pill); background: var(--sm-fill); outline: none; }
 .sm-stepper__control:focus-visible { box-shadow: var(--sm-focus-ring); }
 .sm-stepper__control button {

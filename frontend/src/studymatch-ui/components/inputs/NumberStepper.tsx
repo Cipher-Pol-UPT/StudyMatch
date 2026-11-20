@@ -16,28 +16,32 @@ export interface NumberStepperProps {
   step?: number;
   unit?: ReactNode;
   hint?: ReactNode;
+  // shown instead of the hint, like a field's error
+  error?: ReactNode;
   disabled?: boolean;
   className?: string;
 }
 
-export function NumberStepper({ label, value, defaultValue = 0, onValueChange, min = -Infinity, max = Infinity, step = 1, unit, hint, disabled, className }: NumberStepperProps) {
+export function NumberStepper({ label, value, defaultValue = 0, onValueChange, min = -Infinity, max = Infinity, step = 1, unit, hint, error, disabled, className }: NumberStepperProps) {
   useTranslation();
   const id = useId();
   const [n, setN] = useControllableState(value, defaultValue, onValueChange);
   const clamp = (x: number) => Math.min(max, Math.max(min, x));
   return (
-    <div className={cx('sm-stepper', disabled && 'sm-stepper--disabled', className)}>
+    <div className={cx('sm-stepper', disabled && 'sm-stepper--disabled', !!error && 'sm-stepper--error', className)}>
       <div className="sm-stepper__text">
         <span className="sm-stepper__label" id={`${id}-label`}>
           {label}
         </span>
-        {hint && <span className="sm-stepper__hint">{hint}</span>}
+        {(error || hint) && <span className="sm-stepper__hint" id={`${id}-hint`} role={error ? 'alert' : undefined}>{error || hint}</span>}
       </div>
       <div
         className="sm-stepper__control"
         role="spinbutton"
         tabIndex={disabled ? -1 : 0}
         aria-labelledby={`${id}-label`}
+        aria-describedby={error || hint ? `${id}-hint` : undefined}
+        aria-invalid={error ? true : undefined}
         aria-valuenow={n}
         aria-valuemin={Number.isFinite(min) ? min : undefined}
         aria-valuemax={Number.isFinite(max) ? max : undefined}
