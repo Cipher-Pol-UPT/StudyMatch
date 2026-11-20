@@ -23,6 +23,7 @@ import com.studymatch.enums.StudyRoomStatus;
 import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.models.Student;
 import com.studymatch.models.StudyRoom;
 import com.studymatch.models.TutorRole;
 import com.studymatch.repositories.StudyRoomRepository;
@@ -35,14 +36,17 @@ public class StudyRoomService {
   private final TutorRoleService tutorRoleService;
   private final RatingService ratingService;
   private final EnrolmentService enrolmentService;
+  private final ParticipationService participationService;
   private final ApplicationEventPublisher eventPublisher;
 
   public StudyRoomService(StudyRoomRepository studyRoomRepository, TutorRoleService tutorRoleService,
-      RatingService ratingService, EnrolmentService enrolmentService, ApplicationEventPublisher eventPublisher) {
+      RatingService ratingService, EnrolmentService enrolmentService, ParticipationService participationService,
+      ApplicationEventPublisher eventPublisher) {
     this.studyRoomRepository = studyRoomRepository;
     this.tutorRoleService = tutorRoleService;
     this.ratingService = ratingService;
     this.enrolmentService = enrolmentService;
+    this.participationService = participationService;
     this.eventPublisher = eventPublisher;
   }
 
@@ -165,6 +169,17 @@ public class StudyRoomService {
     StudyRoom saved = studyRoomRepository.save(room);
     eventPublisher.publishEvent(new TutorActivityEvent(saved.getTutorRole().getStudent()));
     return StudyRoomDTO.from(saved);
+  }
+
+  @Transactional
+  public StudyRoomDTO leave(Long studentNumber, Long roomId) {
+    StudyRoom room = studyRoomRepository.findById(roomId)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    // the model checks it's still open, not started, and the student is a participant
+    Student student = participationService.getParticipation(roomId, studentNumber).getStudent();
+    room.leave(student);
+    // notifying the tutor comes with notifications (#144)
+    return StudyRoomDTO.from(studyRoomRepository.save(room));
   }
 
   // only the tutor who hosts the room can see who joined and confirm it
