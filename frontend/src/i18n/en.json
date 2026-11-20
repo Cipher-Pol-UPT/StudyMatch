@@ -561,7 +561,8 @@
     "STUDENT_HAS_NO_STATUTE": "This student doesn't have a special statute.",
     "ACADEMIC_YEAR_NOT_NEXT": "That isn't the next academic year anymore. Reload the page and check again.",
     "ATTENDEE_NOT_A_PARTICIPANT": "Student {{number}} didn't join this StudyRoom.",
-    "ROOM_ALREADY_RATED": "You have already rated this StudyRoom."
+    "ROOM_ALREADY_RATED": "You have already rated this StudyRoom.",
+    "MEET_LINK_UNAVAILABLE": "The Google Meet link couldn't be created right now. Paste your own link to create the StudyRoom."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

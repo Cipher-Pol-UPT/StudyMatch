@@ -163,6 +163,11 @@ Everything has a default that matches `docker-compose.yml`, so nothing needs to 
 | `MAIL_AUTH` | `false` | `true` if the SMTP server needs a login |
 | `MAIL_STARTTLS` | `false` | `true` to use STARTTLS |
 | `MAIL_FROM` | `no-reply@studymatch.com` | sender of every email |
+| `GOOGLE_CLIENT_ID` | empty | Google OAuth client that creates the StudyRooms' Meet links |
+| `GOOGLE_CLIENT_SECRET` | empty | its secret |
+| `GOOGLE_REFRESH_TOKEN` | empty | refresh token of the StudyMatch Google account the events go on |
+
+Without the three Google variables everything works, but tutors have to paste their own Meet link. To set them up: in a Google Cloud project, enable the Google Calendar API and create an OAuth client of type "Web application" with `https://developers.google.com/oauthplayground` as a redirect URI. In the [OAuth Playground](https://developers.google.com/oauthplayground), under the settings use your own client id and secret, authorise the `https://www.googleapis.com/auth/calendar.events` scope with the StudyMatch Google account and exchange the code for a refresh token. Never commit any of them.
 
 On a real server, also set `springdoc.api-docs.enabled=false` and `springdoc.swagger-ui.enabled=false` to hide the API docs.
 
