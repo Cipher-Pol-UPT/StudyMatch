@@ -125,6 +125,8 @@ The checks happen in three places:
 
 Spring's default CSRF check for WebSockets wants the masked token it puts in server-rendered forms, and our frontend only has the cookie's value. We swapped in the plain check (`CsrfChannelInterceptor`), which compares that value, the same thing `csrf.spa()` accepts on REST.
 
+On the frontend, `api/chatSocket.ts` holds the one connection, at `/api/ws` like every other call (Vite's proxy has `ws: true` so it forwards the WebSocket too). `App.tsx` opens it once a Student or Teacher is logged in with their password changed and the personality test done, and closes it on logout. If the connection drops, stompjs reconnects every 5 seconds, reads the CSRF cookie again and makes every subscription again, because the server forgets them with the old connection. Screens don't touch the connection: they use `useChatEvents(chatId, onEvent)` or `useChatListEvents(onEvent)` from `hooks/useChatEvents.ts`, which listen while the component is on screen.
+
 ## Persistence
 
 We use JPA with Hibernate, and `ddl-auto=update` creates and extends the tables from the models when the backend starts. It never drops or renames columns, so after renaming a field the old column stays behind. It doesn't update the check constraint Hibernate puts on an enum column either, so after adding a value to an enum (like `CANCELLED` for tutor applications) an older database still refuses it. `docker compose down -v` gives you a clean database.
