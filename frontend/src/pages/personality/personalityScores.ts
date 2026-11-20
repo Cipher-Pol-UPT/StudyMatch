@@ -11,5 +11,5 @@ export function toPercentages(profile: PersonalityProfileData): Record<ProfileKe
 }
 
 export function strongestProfile(percentages: Record<ProfileKey, number>): ProfileKey {
-  return PROFILE_KEYS.reduce((best, key) => (percentages[key] > percentages[best] ? key : best));
+  return PROFILE_KEYS.reduce((best, key) => (percentages[key] > percentages[best] ? key : best), PROFILE_KEYS[0]);
 }
