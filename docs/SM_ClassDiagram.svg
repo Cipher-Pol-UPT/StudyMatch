@@ -150,15 +150,16 @@
 <text x="1774" y="85" text-anchor="middle" font-weight="bold">Admin</text>
 <line x1="1729" y1="92" x2="1819" y2="92" stroke="#1F4E79"/>
 <line x1="1729" y1="114" x2="1819" y2="114" stroke="#1F4E79"/>
-<rect x="1683" y="518" width="182" height="120" fill="#7ACFF5" stroke="#1F4E79" stroke-width="1"/>
+<rect x="1683" y="518" width="182" height="136" fill="#7ACFF5" stroke="#1F4E79" stroke-width="1"/>
 <text x="1774" y="533" text-anchor="middle" font-weight="bold">PersonalityProfile</text>
 <line x1="1683" y1="540" x2="1865" y2="540" stroke="#1F4E79"/>
 <text x="1691" y="553">-id : Long</text>
-<text x="1691" y="569">-leadership : double</text>
-<text x="1691" y="585">-problemSolving : double</text>
-<text x="1691" y="601">-creativity : double</text>
-<text x="1691" y="617">-execution : double</text>
-<line x1="1683" y1="626" x2="1865" y2="626" stroke="#1F4E79"/>
+<text x="1691" y="569">-openness : double</text>
+<text x="1691" y="585">-conscientiousness : double</text>
+<text x="1691" y="601">-extraversion : double</text>
+<text x="1691" y="617">-agreeableness : double</text>
+<text x="1691" y="633">-neuroticism : double</text>
+<line x1="1683" y1="642" x2="1865" y2="642" stroke="#1F4E79"/>
 <rect x="1690" y="774" width="168" height="88" fill="#7ACFF5" stroke="#1F4E79" stroke-width="1"/>
 <text x="1774" y="789" text-anchor="middle" font-weight="bold">Degree</text>
 <line x1="1690" y1="796" x2="1858" y2="796" stroke="#1F4E79"/>

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.studymatch.dtos.TutorBadgeDTO;
 import com.studymatch.dtos.TutorSubjectDTO;
+import com.studymatch.enums.Achievement.SubjectRating;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Student;
@@ -40,6 +41,13 @@ public class TutorRoleService {
   public TutorRole getByStudentAndSubject(Long studentNumber, Long subjectId) {
     return tutorRoleRepository.findByStudentNumberAndSubjectId(studentNumber, subjectId)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.ACCESS_DENIED));
+  }
+
+  // achievements: the rating of each subject the student tutors
+  public List<SubjectRating> getSubjectRatings(Student student) {
+    return tutorRoleRepository.findByStudent(student).stream()
+        .map(ratingService::getSubjectRating)
+        .toList();
   }
 
   private TutorBadgeDTO toTutorBadge(TutorRole tutorRole) {

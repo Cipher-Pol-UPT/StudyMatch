@@ -835,5 +835,32 @@
     "firstTitle": "Escolha a sua palavra-passe",
     "firstSubtitle": "Entrou com uma palavra-passe temporária. Escolha uma palavra-passe que só o próprio conheça para continuar.",
     "changed": "Palavra-passe alterada."
+  },
+  "enrolments": {
+    "intro": "Escolha a edição da unidade curricular e a turma, depois selecione os estudantes ou importe um CSV.",
+    "edition": "Edição da unidade curricular",
+    "how": "Como escolher os estudantes",
+    "choose": "Escolher estudantes",
+    "select": "Selecionar",
+    "enrolSelected_one": "Inscrever {{count}} estudante",
+    "enrolSelected_other": "Inscrever {{count}} estudantes",
+    "noStudentsBody": "Experimente outro nome ou número.",
+    "noEditions": "Sem edições este ano",
+    "noEditionsBody": "Só é possível inscrever estudantes em edições do ano letivo atual.",
+    "csvTitle": "Importar inscrições",
+    "csvRules": "UTF-8, um estudante por linha, com uma coluna studentNumber. Até 200 estudantes por ficheiro. As linhas válidas são inscritas de imediato.",
+    "done": "Inscrição concluída",
+    "summary": "Inscritos: {{enrolled}}. Ignorados: {{skipped}}.",
+    "skipped": "Estudantes ignorados",
+    "reason": "Motivo",
+    "enrolMore": "Inscrever mais estudantes",
+    "results": {
+      "ENROLLED": "Inscrito",
+      "ALREADY_ENROLLED": "Já inscrito nesta edição",
+      "ALREADY_PASSED": "Já foi aprovado nesta unidade curricular",
+      "NOT_FOUND": "Não existe estudante com este número",
+      "INVALID_NUMBER": "Número de estudante inválido",
+      "DUPLICATE": "Aparece mais do que uma vez"
+    }
   }
 }
