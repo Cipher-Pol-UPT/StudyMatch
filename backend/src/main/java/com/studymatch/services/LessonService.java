@@ -2,7 +2,10 @@ package com.studymatch.services;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -24,6 +27,15 @@ public class LessonService {
   // every stored lesson counts for attendance, so only lessons that already happened should be stored
   public long countLessons(ClassSection classSection) {
     return lessonRepository.countByClassSection(classSection);
+  }
+
+  // the same count for many classes in one query, by class section id. a class with no lessons isn't in the map
+  public Map<Long, Long> countLessonsByClass(Collection<ClassSection> classSections) {
+    if (classSections.isEmpty()) {
+      return Map.of();
+    }
+    return lessonRepository.countByClassSectionIn(classSections).stream()
+        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
   }
 
   // seconds dropped so 9:00 and 9:00:30 are the same lesson, and a future one would count as held

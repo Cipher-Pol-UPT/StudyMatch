@@ -2,6 +2,7 @@ package com.studymatch.services;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -125,6 +126,37 @@ public class EnrolmentService {
       absences += absenceService.countUnjustifiedAbsences(enrolment);
     }
     return attendanceRate(lessons, absences);
+  }
+
+  // the two numbers on each row of the staff's student list
+  public record ListStats(Double attendance, Double averageGrade) {
+  }
+
+  // view students: the same attendance and average as above for a whole page, in three queries instead of a few
+  // per enrolment. this was the slow part of the list in the JMeter test (docs/performance.md)
+  public Map<Long, ListStats> getListStats(Collection<Student> students) {
+    if (students.isEmpty()) {
+      return Map.of();
+    }
+    List<Enrolment> enrolments = enrolmentRepository.findWithSubjectByStudentIn(students);
+    Map<Long, Long> lessons = lessonService.countLessonsByClass(
+        enrolments.stream().map(Enrolment::getClassSection).collect(Collectors.toSet()));
+    Map<Long, Long> absences = absenceService.countUnjustifiedByEnrolment(enrolments);
+    Map<Long, List<Enrolment>> byStudent = enrolments.stream()
+        .collect(Collectors.groupingBy(enrolment -> enrolment.getStudent().getNumber()));
+
+    Map<Long, ListStats> stats = new HashMap<>();
+    for (Student student : students) {
+      List<Enrolment> own = byStudent.getOrDefault(student.getNumber(), List.of());
+      long lessonCount = 0;
+      long absenceCount = 0;
+      for (Enrolment enrolment : own) {
+        lessonCount += lessons.getOrDefault(enrolment.getClassSection().getId(), 0L);
+        absenceCount += absences.getOrDefault(enrolment.getId(), 0L);
+      }
+      stats.put(student.getNumber(), new ListStats(attendanceRate(lessonCount, absenceCount), averageGrade(own)));
+    }
+    return stats;
   }
 
   // attendance in one subject only (what the teacher sees)
@@ -273,9 +305,16 @@ public class EnrolmentService {
 
   // finished subjects only, weighted by ECTS, so a 10 ECTS subject counts twice as much as a 5 ECTS one
   public Double getAverageGrade(Student student) {
+    return averageGrade(enrolmentRepository.findByStudent(student));
+  }
+
+  private static Double averageGrade(List<Enrolment> enrolments) {
     double weightedSum = 0;
     int totalEcts = 0;
-    for (Enrolment enrolment : finishedEnrolments(student)) {
+    for (Enrolment enrolment : enrolments) {
+      if (!enrolment.isFinished()) {
+        continue;
+      }
       int ects = enrolment.getSubjectEdition().getSubject().getEcts();
       weightedSum += ects * enrolment.getFinalGrade();
       totalEcts += ects;

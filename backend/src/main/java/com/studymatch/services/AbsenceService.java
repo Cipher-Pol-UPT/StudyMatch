@@ -1,5 +1,6 @@
 package com.studymatch.services;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,6 +25,15 @@ public class AbsenceService {
   public long countUnjustifiedAbsences(Enrolment enrolment) {
     return absenceRepository.countByEnrolmentAndJustifiedFalseAndLesson_ClassSection(enrolment,
         enrolment.getClassSection());
+  }
+
+  // the same count for many enrolments in one query, by enrolment id. none means not in the map
+  public Map<Long, Long> countUnjustifiedByEnrolment(Collection<Enrolment> enrolments) {
+    if (enrolments.isEmpty()) {
+      return Map.of();
+    }
+    return absenceRepository.countUnjustifiedByEnrolmentIn(enrolments).stream()
+        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
   }
 
   public List<Absence> listAbsences(Lesson lesson) {

@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -108,7 +109,10 @@ public class StudentService {
     }
 
     PageRequest pageRequest = PageRequest.of(Math.max(page, 0), STUDENTS_PER_PAGE, Sort.by("name", "number"));
-    return PageDTO.from(studentRepository.findAll(Specification.allOf(filters), pageRequest), this::toSummary);
+    Page<Student> students = studentRepository.findAll(Specification.allOf(filters), pageRequest);
+    // the numbers for the whole page at once, asking per student was a few queries each
+    Map<Long, EnrolmentService.ListStats> stats = enrolmentService.getListStats(students.getContent());
+    return PageDTO.from(students, student -> toSummary(student, stats.get(student.getNumber())));
   }
 
   // part of the name (any capitals), or the exact number when it's all digits
@@ -123,10 +127,10 @@ public class StudentService {
     };
   }
 
-  private StudentSummaryDTO toSummary(Student student) {
-    Double attendance = student.hasActiveStatute() ? null : enrolmentService.getAttendanceRate(student);
+  private static StudentSummaryDTO toSummary(Student student, EnrolmentService.ListStats stats) {
+    Double attendance = student.hasActiveStatute() ? null : stats.attendance();
     return new StudentSummaryDTO(student.getNumber(), student.getName(), student.getDegree().getName(),
-        student.getCurricularYear(), attendance, enrolmentService.getAverageGrade(student),
+        student.getCurricularYear(), attendance, stats.averageGrade(),
         PersonalityProfileDTO.from(student.getPersonalityProfile()), student.getAccountStatus());
   }
 

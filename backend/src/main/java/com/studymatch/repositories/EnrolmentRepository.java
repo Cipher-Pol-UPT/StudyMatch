@@ -1,9 +1,11 @@
 package com.studymatch.repositories;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import com.studymatch.enums.EnrolmentStatus;
 import com.studymatch.models.AcademicYear;
@@ -16,6 +18,15 @@ import com.studymatch.models.SubjectEdition;
 public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
 
   List<Enrolment> findByStudent(Student student);
+
+  // the student list: every enrolment of the page in one query, with what the attendance and average need
+  @Query("""
+      select e from Enrolment e
+      join fetch e.classSection
+      join fetch e.subjectEdition se
+      join fetch se.subject
+      where e.student in :students""")
+  List<Enrolment> findWithSubjectByStudentIn(Collection<Student> students);
 
   List<Enrolment> findBySubjectEditionId(Long subjectEditionId);
 
