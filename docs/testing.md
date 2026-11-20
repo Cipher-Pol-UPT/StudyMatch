@@ -30,6 +30,17 @@ npx vitest      # Vitest in watch mode, reruns on save
 
 The tests are in `frontend/tests` and run in jsdom, a fake browser. They never call the real backend: each test replaces `fetch` with `vi.stubGlobal` and decides what the "backend" answers. `tests/contracts.test.ts` is the exception; it reads the backend's `ErrorCode.java` and enums from disk to check the frontend's copies match.
 
+### In CI
+
+GitHub Actions runs the same commands on every pull request and every push to `main`, on a clean machine:
+
+| Workflow | What it runs |
+| --- | --- |
+| `.github/workflows/backend.yml` | `./mvnw -B verify`, with a PostgreSQL 17 container next to it (same database, user and password as `docker-compose.yml`) |
+| `.github/workflows/frontend.yml` | `npm ci`, `npm run lint`, `npm test` and `npm run build` |
+
+Both have to pass before a PR can be merged. Each backend run keeps the JaCoCo report as an artifact called `jacoco-report`; download it from the bottom of the run's page on the Actions tab. When a backend run fails, it also keeps the Surefire test reports (`surefire-reports`), which show which test broke and why.
+
 ## How we write backend tests
 
 ### Structure
