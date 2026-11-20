@@ -157,6 +157,15 @@ public abstract class User {
     this.blockReason = reason;
   }
 
+  // the reason only made sense while blocked, so it goes too
+  public void unblock() {
+    if (!isBlocked()) {
+      throw new StudyMatchException(ErrorCode.ACCOUNT_NOT_BLOCKED);
+    }
+    this.accountStatus = AccountStatus.ACTIVE;
+    this.blockReason = null;
+  }
+
   public String getBlockReason() {
     return blockReason;
   }
