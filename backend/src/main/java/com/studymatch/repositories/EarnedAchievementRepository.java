@@ -2,6 +2,7 @@ package com.studymatch.repositories;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -13,6 +14,8 @@ import com.studymatch.models.Student;
 public interface EarnedAchievementRepository extends JpaRepository<EarnedAchievement, Long> {
 
   List<EarnedAchievement> findByStudentOrderByEarnedAtDesc(Student student);
+
+  Optional<EarnedAchievement> findByVerificationCode(String verificationCode);
 
   // two ratings at the same time can both award the same badge: the second waits for the first and adds nothing,
   // instead of failing on the unique key and taking its rating down with it. 1 if it was added, 0 if it was there
