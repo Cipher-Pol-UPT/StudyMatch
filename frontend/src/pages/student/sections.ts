@@ -1,4 +1,4 @@
-import { Bell, BookOpen, ClipboardList, FolderOpen, GraduationCap, User, Users } from 'lucide-react';
+import { Bell, BookOpen, ClipboardList, FolderOpen, GraduationCap, KeyRound, User, Users } from 'lucide-react';
 import type { IconComponent } from '../../studymatch-ui';
 
 export interface Section {
@@ -22,4 +22,5 @@ export const ACCOUNT: Section[] = [
   { key: 'profile', path: '/profile', icon: User },
   { key: 'studentInformation', path: '/student-information', icon: GraduationCap },
   { key: 'notifications', path: '/notifications', icon: Bell },
+  { key: 'changePassword', path: '/change-password', icon: KeyRound },
 ];

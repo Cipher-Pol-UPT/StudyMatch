@@ -1,6 +1,6 @@
 import type { StudentProfile } from '../../studymatch-ui';
 import type { PrivateProfileData, StudentProfileData } from '../../types/studentProfile';
-import { strongestProfile, toPercentages } from '../personality/personalityScores';
+import { toPercentages } from '../personality/personalityScores';
 
 export function toProfileView(data: StudentProfileData): StudentProfile {
   const privateProfile = data.privateProfile;
@@ -21,7 +21,6 @@ export function toProfileView(data: StudentProfileData): StudentProfile {
     interests: data.interests,
     languages: data.languages,
     personality,
-    dominantProfile: personality ? strongestProfile(personality) : undefined,
     attendance: toAttendance(privateProfile),
     tutorBadges: data.tutorBadges.map(badge => ({
       subject: badge.subject,

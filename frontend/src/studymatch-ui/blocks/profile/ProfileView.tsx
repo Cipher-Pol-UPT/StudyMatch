@@ -6,7 +6,6 @@ import { AchievementBadge,AchievementDialog } from '../../achievements/Achieveme
 import type { AchievementId,AchievementState } from '../../achievements/catalog';
 import { Avatar } from '../../components/avatar/Avatar';
 import { StatusPill,type ProfileKey } from '../../components/badge/Badge';
-import { PROFILES } from '../../components/badge/Badge.shared';
 import { Button } from '../../components/button/Button';
 import { Card } from '../../components/card/Card';
 import { ProfileBars } from '../../components/charts/Charts';
@@ -24,7 +23,6 @@ import { LEVEL } from './ProfileView.shared';
 export type CategoryLevel = 'high' | 'average' | 'developing';
 
 export interface StudentProfile {
-  dominantProfile?: ProfileKey;
   name: string;
   studentNumber: string;
   institutionalEmail: string;
@@ -58,7 +56,6 @@ export interface ProfileHeaderProps {
 
 export function ProfileHeader({ profile: p, viewer = { showPrivate: false, canEdit: false }, editable, onAvatarChange, onBannerChange, onBannerPresetChange, actions, className }: ProfileHeaderProps) {
   useTranslation();
-  const dominant = viewer.showPrivate ? p.dominantProfile : undefined;
   return (
     <header className={cx('sm-profile-head', className)}>
       {editable && onBannerChange ? (
@@ -72,7 +69,7 @@ export function ProfileHeader({ profile: p, viewer = { showPrivate: false, canEd
             <AvatarUploader name={p.name} src={p.avatarUrl} onChange={onAvatarChange} size={128} />
           ) : (
             <span className="sm-profile-head__ring">
-              <Avatar name={p.name} src={p.avatarUrl ?? undefined} size={128} profile={dominant} />
+              <Avatar name={p.name} src={p.avatarUrl ?? undefined} size={128} />
             </span>
           )}
         </div>
@@ -89,13 +86,8 @@ export function ProfileHeader({ profile: p, viewer = { showPrivate: false, canEd
               </span>
             )}
           </div>
-          {((p.tutorBadges?.length ?? 0) > 0 || dominant) && (
+          {(p.tutorBadges?.length ?? 0) > 0 && (
             <div className="sm-profile-head__tags">
-              {dominant && (
-                <StatusPill tone="violet" size="sm">
-                  {PROFILES[dominant].label}
-                </StatusPill>
-              )}
               {p.tutorBadges?.map((t) => (
                 <StatusPill key={t.subject} tone="warning" size="sm">
                   {i18n.t('ui.tutor_subject', {subject:t.subject})}
@@ -142,6 +134,10 @@ export interface ProfileViewProps {
   profile: StudentProfile;
   viewer?: ProfileViewer;
   onEdit?: () => void;
+  // more of the owner's own actions, after Edit profile
+  actions?: ReactNode;
+  // shown in the corner of the Badges card, like a link to all the achievements
+  badgesAction?: ReactNode;
   onAvatarChange?: (image: CroppedImage | null) => void;
   onBannerChange?: (image: CroppedImage | null) => void;
   onBannerPresetChange?: (preset: BannerPreset) => void;
@@ -150,7 +146,7 @@ export interface ProfileViewProps {
   className?: string;
 }
 
-export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit: false }, onEdit, onAvatarChange, onBannerChange, onBannerPresetChange, onExportCertificate, locale = i18n.language, className }: ProfileViewProps) {
+export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit: false }, onEdit, actions, badgesAction, onAvatarChange, onBannerChange, onBannerPresetChange, onExportCertificate, locale = i18n.language, className }: ProfileViewProps) {
   useTranslation();
   const [achievement, setAchievement] = useState<AchievementId | null>(null);
   const [tutor, setTutor] = useState<NonNullable<StudentProfile['tutorBadges']>[number] | null>(null);
@@ -170,9 +166,14 @@ export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit
         onBannerChange={onBannerChange}
         onBannerPresetChange={onBannerPresetChange}
         actions={
-          isSelf && onEdit ? (
-            <Button variant="secondary" icon={Pencil} onClick={onEdit}>
-               {i18n.t('ui.edit_profile')} </Button>
+          isSelf && (onEdit || actions) ? (
+            <>
+              {onEdit && (
+                <Button variant="secondary" icon={Pencil} onClick={onEdit}>
+                   {i18n.t('ui.edit_profile')} </Button>
+              )}
+              {actions}
+            </>
           ) : undefined
         }
       />
@@ -194,7 +195,7 @@ export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit
             </div>
           </Card>
 
-          <Card title={i18n.t('ui.badges')} description={earned.length || p.tutorBadges?.length ? i18n.t('ui.select_a_badge_for_details') : undefined}>
+          <Card title={i18n.t('ui.badges')} description={earned.length || p.tutorBadges?.length ? i18n.t('ui.select_a_badge_for_details') : undefined} action={badgesAction}>
             {p.tutorBadges && p.tutorBadges.length > 0 && (
               <div className="sm-profile-tutor">
                 {p.tutorBadges.map((t) => (

@@ -39,12 +39,10 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
   );
   if (!children) return control;
   return (
-    <span className="sm-switch-label">
+    <label className="sm-switch-label">
       {control}
-      <span id={labelId} onClick={() => !disabled && setOn(!on)}>
-        {children}
-      </span>
-    </span>
+      <span id={labelId}>{children}</span>
+    </label>
   );
 });
 

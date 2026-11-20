@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
 import { ProfilePage } from '../src/pages/profile/ProfilePage';
@@ -24,7 +25,7 @@ const profile: StudentProfileData = {
     institutionalEmail: '50001@students.test.com',
     degree: 'Test Degree',
     curricularYear: 2,
-    personalityProfile: { leadership: 0.8, problemSolving: 0.6, creativity: 0.4, execution: 0.7 },
+    personalityProfile: { openness: 0.4, conscientiousness: 0.7, extraversion: 0.8, agreeableness: 0.6, neuroticism: 0.3 },
     attendance: 75,
     hasAcademicHistory: true,
   },
@@ -46,7 +47,7 @@ function mockBackend(replies: { load?: BackendReply[]; save?: BackendReply }) {
 }
 
 function renderProfilePage() {
-  render(<StudyMatchProvider><ProfilePage /></StudyMatchProvider>);
+  render(<StudyMatchProvider><MemoryRouter><ProfilePage /></MemoryRouter></StudyMatchProvider>);
 }
 
 async function openEditProfile() {

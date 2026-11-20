@@ -7,10 +7,6 @@
   background: var(--sm-canvas);
 }
 
-.personality-page__hero {
-  background: color-mix(in srgb, var(--profile-color) 14%, var(--sm-surface));
-}
-
 .personality-page__profile {
   display: grid;
   gap: 16px;

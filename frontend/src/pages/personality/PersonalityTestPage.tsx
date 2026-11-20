@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isBackendError, type BackendError } from '../../api/errors';
 import { submitPersonalityTest } from '../../api/personalityTest';
@@ -7,12 +7,11 @@ import {
   Button,
   Card,
   PersonalityTest,
-  PROFILES,
   ProfileBars,
   type PersonalityQuestion,
 } from '../../studymatch-ui';
 import type { PersonalityProfileData } from '../../types/personalityProfile';
-import { strongestProfile, toPercentages } from './personalityScores';
+import { toPercentages } from './personalityScores';
 import './PersonalityTestPage.css';
 
 const QUESTION_COUNT = 15;
@@ -50,27 +49,13 @@ export function PersonalityTestPage({ onCompleted }: PersonalityTestPageProps) {
 
 function PersonalityResult({ profile, onContinue }: { profile: PersonalityProfileData; onContinue: () => void }) {
   const { t } = useTranslation();
-  const percentages = toPercentages(profile);
-  const strongest = strongestProfile(percentages);
-  const { label, description, color, icon: Icon } = PROFILES[strongest];
-
   return (
     <Card padding="lg" className="sm-pt">
-      <div className="sm-pt__result">
-        <div className="sm-pt__hero personality-page__hero" style={{ '--profile-color': color } as CSSProperties}>
-          <span className="sm-pt__hero-icon" style={{ background: color }}>
-            <Icon size={30} strokeWidth={2.25} aria-hidden />
-          </span>
-          <span className="sm-eyebrow">{t('personality.strongestProfile')}</span>
-          <h2 className="sm-h2">{label}</h2>
-          <p>{description}</p>
-        </div>
-        <div className="personality-page__profile">
-          <h3 className="sm-title">{t('personality.yourProfile')}</h3>
-          <ProfileBars values={percentages} />
-          <p className="sm-caption">{t('personality.privacy')}</p>
-          <Button size="lg" iconRight={ArrowRight} onClick={onContinue}>{t('personality.continue')}</Button>
-        </div>
+      <div className="personality-page__profile">
+        <h2 className="sm-title">{t('personality.yourProfile')}</h2>
+        <ProfileBars values={toPercentages(profile)} />
+        <p className="sm-caption">{t('personality.privacy')}</p>
+        <Button size="lg" iconRight={ArrowRight} onClick={onContinue}>{t('personality.continue')}</Button>
       </div>
     </Card>
   );

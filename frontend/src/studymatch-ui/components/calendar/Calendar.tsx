@@ -106,7 +106,7 @@ export function Calendar({ value, onValueChange, events = [], min, max, weekStar
           </button>
         </div>
       </div>
-      <div className="sm-cal__grid" role="grid" aria-label={title} ref={grid} onKeyDown={onKeyDown}>
+      <div className="sm-cal__grid" role="grid" aria-label={title} tabIndex={-1} ref={grid} onKeyDown={onKeyDown}>
         <div role="row" className="sm-cal__row">
           {weekdays.map((w) => (
             <span key={w.long} role="columnheader" className="sm-cal__wd" aria-label={w.long}>

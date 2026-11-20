@@ -104,12 +104,33 @@
     "noEnrolledBody": "Students will appear here when they are enrolled in this subject edition.",
     "categoryLevel": "Category level",
     "subjectAttendance": "Attendance in this subject",
-    "subjectEvidence": "This subject edition",
-    "traits": {
-      "leadership": "Leadership",
-      "problemSolving": "Problem solving",
-      "creativity": "Creativity",
-      "execution": "Execution"
+    "subjectEvidence": "This subject edition"
+  },
+  "traits": {
+    "openness": {
+      "label": "Openness",
+      "short": "Open",
+      "description": "Curious and open to new ideas, experiences and ways of doing things."
+    },
+    "conscientiousness": {
+      "label": "Conscientiousness",
+      "short": "Conscientious",
+      "description": "Organised, reliable and careful with plans and deadlines."
+    },
+    "extraversion": {
+      "label": "Extraversion",
+      "short": "Extravert",
+      "description": "Gets energy from other people, speaks up and enjoys working in a group."
+    },
+    "agreeableness": {
+      "label": "Agreeableness",
+      "short": "Agreeable",
+      "description": "Cooperative, considerate and looks for agreement in the group."
+    },
+    "neuroticism": {
+      "label": "Neuroticism",
+      "short": "Neurotic",
+      "description": "How strongly stress and worry are felt. A higher score means more."
     }
   },
   "common": {
@@ -281,7 +302,6 @@
     "answered": "Answered",
     "progress": "{{answered}} of {{total}}",
     "submit": "Submit answers",
-    "strongestProfile": "Your strongest profile",
     "yourProfile": "Your profile",
     "privacy": "Your profile is used to balance groups this academic year. Only you, your teachers and staff can see it.",
     "continue": "Continue to StudyMatch",
@@ -380,20 +400,32 @@
   "achievements": {
     "FIRST_STUDYROOM": {
       "name": "First StudyRoom",
-      "description": "Participation in a first StudyRoom."
+      "description": "Participation in a first StudyRoom.",
+      "criteria": "Tutor your first StudyRoom."
     },
     "DEDICATED_TUTOR": {
       "name": "Dedicated tutor",
-      "description": "Recognition for tutoring."
+      "description": "Recognition for tutoring.",
+      "criteria": "Tutor 10 StudyRooms."
     },
     "TOP_RATED": {
       "name": "Top rated",
-      "description": "Recognition for tutor ratings."
+      "description": "Recognition for tutor ratings.",
+      "criteria": "Get an average of 4.5 stars or more in a subject, from at least 5 different students."
     },
     "MENTOR": {
       "name": "Mentor",
-      "description": "Recognition for supporting students."
+      "description": "Recognition for supporting students.",
+      "criteria": "Tutor 15 different students."
     },
+    "title": "Achievements",
+    "earned": "Earned",
+    "toEarn": "Still to earn",
+    "count": "{{earned}} of {{total}} earned",
+    "noneYet": "You have no achievements yet. Below is how to earn them.",
+    "howToEarn": "How to earn it",
+    "countedRooms": "Only StudyRooms with at least 2 confirmed attendees count.",
+    "seeAll": "See all",
     "export": "Export certificate",
     "certificate": "Achievement certificate",
     "earnedOn": "Earned on {{date}}",
@@ -414,10 +446,23 @@
       "groups": "Check your matches and meet your study group.",
       "assignments": "See what is due and keep track of your deliveries."
     },
-    "achievements": "Achievements",
-    "average": "Average",
-    "upcomingTasks": "Upcoming tasks",
-    "noTasks": "No upcoming tasks",
+    "nextAchievement": "Next achievement",
+    "seeAchievements": "See achievements",
+    "gettingStarted": {
+      "title": "Get started",
+      "body": "A complete profile helps your group get to know you.",
+      "photo": "Add a profile photo",
+      "aboutMe": "Write a few words about you",
+      "skills": "List your skills",
+      "interests": "Add your interests",
+      "done": "{{done}} of {{total}} done",
+      "action": "Complete profile"
+    },
+    "tutoring": {
+      "title": "Tutoring",
+      "newRoom": "New StudyRoom"
+    },
+    "thisWeek": "This week",
     "noTasksBody": "Deadlines and StudyRooms will show up here.",
     "calendar": {
       "label": "Task calendar",
@@ -616,18 +661,6 @@
     "blocked": "Blocked",
     "approved": "Approved",
     "rejected": "Rejected",
-    "leadership": "Leadership",
-    "lead": "Lead",
-    "sets_direction_organises_the_team_and_keeps_everyone_aligned": "Sets direction, organises the team and keeps everyone aligned.",
-    "problem_solving": "Problem Solving",
-    "tech": "Tech",
-    "breaks_problems_down_and_finds_the_technical_path_forward": "Breaks problems down and finds the technical path forward.",
-    "creativity": "Creativity",
-    "creative": "Creative",
-    "brings_new_ideas_alternatives_and_a_fresh_point_of_view": "Brings new ideas, alternatives and a fresh point of view.",
-    "execution": "Execution",
-    "exec": "Exec",
-    "turns_plans_into_finished_work_on_time_and_in_detail": "Turns plans into finished work, on time and in detail.",
     "studymatch": "StudyMatch",
     "previous_month": "Previous month",
     "next_month": "Next month",
@@ -640,6 +673,7 @@
     "balance": "Balance",
     "profiles_in_this_group": "Profiles in this group",
     "showing_teammates": "Showing teammates",
+    "showing_personality": "Showing the personality profile",
     "showing_front": "Showing front",
     "year": "Year",
     "no_group_yet": "No group yet",
@@ -740,6 +774,7 @@
     "profile": "My profile",
     "studentInformation": "Student information",
     "notifications": "Notifications",
+    "changePassword": "Change password",
     "logout": "Log out",
     "accountMenu": "Account menu",
     "comingSoon": "Coming soon"
