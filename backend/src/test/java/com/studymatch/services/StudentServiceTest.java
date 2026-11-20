@@ -424,7 +424,7 @@ class StudentServiceTest {
   void newYearWipesProfiles() {
     // Arrange
     Student other = withNumber(ModelTestData.student("Other Test Student"), OTHER_STUDENT_NUMBER);
-    other.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    other.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
     List<Student> withProfile = List.of(student, other);
     when(studentRepository.findByPersonalityProfileIsNotNull()).thenReturn(withProfile);
 
