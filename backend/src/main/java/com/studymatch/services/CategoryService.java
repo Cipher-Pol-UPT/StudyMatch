@@ -35,6 +35,24 @@ public class CategoryService {
     }
   }
 
+  // same name rules as registering, but the category's own name isn't taken (so fixing its case works)
+  // subjects point at the id, and the students' levels come from their subjects, so they stay linked
+  public Category renameCategory(Long id, CategoryRequestDTO request) {
+    Category category = getCategory(id);
+    String name = request.name().trim();
+    if (categoryRepository.existsByNameIgnoreCaseAndIdNot(name, id)) {
+      throw new StudyMatchException(ErrorCode.CATEGORY_ALREADY_EXISTS);
+    }
+
+    category.setName(name);
+    // flush so a simultaneous rename to the same name hits the unique column here, not after the response
+    try {
+      return categoryRepository.saveAndFlush(category);
+    } catch (DataIntegrityViolationException e) {
+      throw new StudyMatchException(ErrorCode.CATEGORY_ALREADY_EXISTS);
+    }
+  }
+
   public List<Category> listCategories() {
     return categoryRepository.findAllByOrderByNameAsc();
   }
