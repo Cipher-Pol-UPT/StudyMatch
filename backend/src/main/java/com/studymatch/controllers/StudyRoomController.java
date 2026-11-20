@@ -113,4 +113,14 @@ public class StudyRoomController {
     return ResponseEntity.status(HttpStatus.CREATED).body(ratingService.rate(id, student.getNumber(), request));
   }
 
+  @PostMapping("{id}/leave")
+  @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "Leave a StudyRoom you joined before it starts, freeing your place")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NOT_A_PARTICIPANT, ErrorCode.STUDYROOM_CLOSED,
+      ErrorCode.STUDYROOM_ALREADY_STARTED })
+  public ResponseEntity<StudyRoomDTO> leave(@PathVariable Long id, Authentication authentication) {
+    User student = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(studyRoomService.leave(student.getNumber(), id));
+  }
+
 }
