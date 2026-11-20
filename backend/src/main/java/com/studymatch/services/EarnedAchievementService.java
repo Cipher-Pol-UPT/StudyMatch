@@ -48,11 +48,9 @@ public class EarnedAchievementService {
     Set<Achievement> earned = earnedAchievementRepository.findByStudentOrderByEarnedAtDesc(tutor).stream()
         .map(EarnedAchievement::getAchievement)
         .collect(Collectors.toSet());
-    List<EarnedAchievement> newlyEarned = Arrays.stream(Achievement.values())
+    Arrays.stream(Achievement.values())
         .filter(achievement -> !earned.contains(achievement) && achievement.isMetBy(record))
-        .map(achievement -> new EarnedAchievement(tutor, achievement))
-        .toList();
-    earnedAchievementRepository.saveAll(newlyEarned);
+        .forEach(achievement -> earnedAchievementRepository.saveIfNew(new EarnedAchievement(tutor, achievement)));
     // telling the tutor about a new badge comes with notifications (#144)
   }
 

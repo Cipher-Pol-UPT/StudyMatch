@@ -112,7 +112,7 @@ A student whose attendance was confirmed rates the tutor once per room, from 1 t
 
 ## Achievements
 
-Tutors earn achievements automatically. Only StudyRooms with at least two confirmed attendees count, and an achievement is never taken away once earned. They're checked every time the tutor confirms a room's attendance or gets rated, in the same transaction, so a rating that fails doesn't leave a badge behind. "Different students tutored" are the students who attended those counted rooms, and the subject average is the same one the profile badge shows. Checking when a tutor application is approved waits for #81, and telling the tutor about a new achievement waits for the notifications (#144).
+Tutors earn achievements automatically. Only StudyRooms with at least two confirmed attendees count, and an achievement is never taken away once earned. They're checked every time the tutor confirms a room's attendance or gets rated, in the same transaction, so a rating that fails doesn't leave a badge behind. If two ratings at the same time both earn the tutor the same badge, the second one just skips it, so neither rating fails. "Different students tutored" are the students who attended those counted rooms, and the subject average is the same one the profile badge shows. Checking when a tutor application is approved waits for #81, and telling the tutor about a new achievement waits for the notifications (#144).
 
 | Achievement | Criteria |
 | --- | --- |

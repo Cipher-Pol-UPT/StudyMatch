@@ -233,6 +233,21 @@ class ConfirmAttendanceIntegrationTest {
   }
 
   @Test
+  @DisplayName("A badge another request already saved is skipped, without failing on the unique key")
+  void badgeSavedTwiceIsSkipped() {
+    // Arrange - two ratings at the same time both decided the tutor earned it
+    int first = earnedAchievementRepository.saveIfNew(new EarnedAchievement(tutor, Achievement.TOP_RATED));
+
+    // Act
+    int second = earnedAchievementRepository.saveIfNew(new EarnedAchievement(tutor, Achievement.TOP_RATED));
+
+    // Assert
+    assertEquals(1, first);
+    assertEquals(0, second);
+    assertEquals(List.of(Achievement.TOP_RATED), achievementsOf(tutor));
+  }
+
+  @Test
   @DisplayName("Confirming a second time gets 409 STUDYROOM_CLOSED and the first answer stays")
   void confirmTwice() throws Exception {
     // Arrange

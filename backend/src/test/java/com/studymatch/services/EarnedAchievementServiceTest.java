@@ -2,6 +2,7 @@ package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,11 +49,10 @@ class EarnedAchievementServiceTest {
   }
 
   // what gets saved when the tutor's achievements are checked
-  @SuppressWarnings("unchecked")
   private List<Achievement> awarded() {
-    ArgumentCaptor<List<EarnedAchievement>> saved = ArgumentCaptor.forClass(List.class);
-    verify(earnedAchievementRepository).saveAll(saved.capture());
-    return saved.getValue().stream().map(EarnedAchievement::getAchievement).toList();
+    ArgumentCaptor<EarnedAchievement> saved = ArgumentCaptor.forClass(EarnedAchievement.class);
+    verify(earnedAchievementRepository, atLeast(0)).saveIfNew(saved.capture());
+    return saved.getAllValues().stream().map(EarnedAchievement::getAchievement).toList();
   }
 
   @Test
