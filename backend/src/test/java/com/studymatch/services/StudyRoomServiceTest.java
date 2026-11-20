@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -19,12 +20,14 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.CreateStudyRoomRequestDTO;
 import com.studymatch.dtos.ParticipantDTO;
 import com.studymatch.dtos.StudyRoomDTO;
 import com.studymatch.enums.StudyRoomStatus;
+import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.ModelTestData;
@@ -42,6 +45,7 @@ class StudyRoomServiceTest {
 
   private StudyRoomRepository studyRoomRepository;
   private TutorRoleService tutorRoleService;
+  private ApplicationEventPublisher eventPublisher;
   private StudyRoomService studyRoomService;
 
   private TutorRole tutorRole;
@@ -50,7 +54,8 @@ class StudyRoomServiceTest {
   void setUp() {
     studyRoomRepository = mock(StudyRoomRepository.class);
     tutorRoleService = mock(TutorRoleService.class);
-    studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService);
+    eventPublisher = mock(ApplicationEventPublisher.class);
+    studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService, eventPublisher);
 
     Student tutor = ModelTestData.student("Test Tutor");
     ReflectionTestUtils.setField(tutor, "number", TUTOR_NUMBER);
@@ -179,6 +184,19 @@ class StudyRoomServiceTest {
     assertEquals(StudyRoomStatus.SCHEDULED, room.getStatus());
   }
 
+  @Test
+  @DisplayName("Only rooms with at least 2 confirmed attendees count for achievements")
+  void countsRoomsForAchievements() {
+    // Arrange
+    when(studyRoomRepository.countWithAttendees(TUTOR_NUMBER, 2)).thenReturn(3L);
+
+    // Act
+    long counted = studyRoomService.countCounted(TUTOR_NUMBER);
+
+    // Assert
+    assertEquals(3, counted);
+  }
+
   // confirm attendance (#55)
 
   @Test
@@ -195,6 +213,7 @@ class StudyRoomServiceTest {
     // Assert
     assertEquals(StudyRoomStatus.COMPLETED, result.status());
     verify(studyRoomRepository).save(room);
+    verify(eventPublisher).publishEvent(new TutorActivityEvent(tutorRole.getStudent()));
   }
 
   @Test
@@ -212,6 +231,7 @@ class StudyRoomServiceTest {
     assertEquals(ErrorCode.ACCESS_DENIED, e.getCode());
     assertEquals(StudyRoomStatus.SCHEDULED, room.getStatus());
     verify(studyRoomRepository, never()).save(any());
+    verifyNoInteractions(eventPublisher);
   }
 
   @Test

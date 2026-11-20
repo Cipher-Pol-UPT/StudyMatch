@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -16,11 +17,14 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.RateTutorRequestDTO;
 import com.studymatch.dtos.RatingDTO;
+import com.studymatch.enums.Achievement.SubjectRating;
+import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.ModelTestData;
@@ -39,6 +43,7 @@ class RatingServiceTest {
 
   private RatingRepository ratingRepository;
   private ParticipationService participationService;
+  private ApplicationEventPublisher eventPublisher;
   private RatingService ratingService;
 
   private TutorRole tutorRole;
@@ -49,7 +54,8 @@ class RatingServiceTest {
   void setUp() {
     ratingRepository = mock(RatingRepository.class);
     participationService = mock(ParticipationService.class);
-    ratingService = new RatingService(ratingRepository, participationService);
+    eventPublisher = mock(ApplicationEventPublisher.class);
+    ratingService = new RatingService(ratingRepository, participationService, eventPublisher);
 
     tutorRole = ModelTestData.tutorRole(ModelTestData.student("Test Tutor"));
 
@@ -120,6 +126,31 @@ class RatingServiceTest {
   }
 
   @Test
+  @DisplayName("A subject's rating for achievements is the same average, and how many students it's from")
+  void subjectRatingForAchievements() {
+    // Arrange - three students rated
+    when(ratingRepository.findAverageStarsPerStudent(tutorRole)).thenReturn(List.of(5.0, 4.0, 4.5));
+
+    // Act
+    SubjectRating rating = ratingService.getSubjectRating(tutorRole);
+
+    // Assert
+    assertEquals(4.5, rating.average());
+    assertEquals(3, rating.raters());
+  }
+
+  @Test
+  @DisplayName("A subject nobody rated has no average and no raters")
+  void subjectRatingWithoutRatings() {
+    // Act - the query is empty by default
+    SubjectRating rating = ratingService.getSubjectRating(tutorRole);
+
+    // Assert
+    assertNull(rating.average());
+    assertEquals(0, rating.raters());
+  }
+
+  @Test
   @DisplayName("Counts the tutor's ratings")
   void countsTheTutorsRatings() {
     // Arrange
@@ -149,6 +180,7 @@ class RatingServiceTest {
     assertEquals("very clear", rating.comment());
     assertEquals("Test Subject", rating.subject());
     verify(ratingRepository).saveAndFlush(any(Rating.class));
+    verify(eventPublisher).publishEvent(new TutorActivityEvent(tutorRole.getStudent()));
   }
 
   @Test
@@ -179,6 +211,7 @@ class RatingServiceTest {
     // Assert
     assertEquals(ErrorCode.ROOM_ALREADY_RATED, e.getCode());
     verify(ratingRepository, never()).saveAndFlush(any());
+    verifyNoInteractions(eventPublisher);
   }
 
   @Test
@@ -195,6 +228,7 @@ class RatingServiceTest {
 
     // Assert
     assertEquals(ErrorCode.ROOM_ALREADY_RATED, e.getCode());
+    verifyNoInteractions(eventPublisher);
   }
 
   @Test
