@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -239,6 +241,43 @@ class EnrolmentGradesTest {
     assertNull(anaRow.attendance());
     assertEquals("T2", anaRow.classSection());
     assertEquals(100.0, ruiRow.attendance());
+  }
+
+  // staff's student list, the whole page at once
+
+  @Test
+  @DisplayName("An empty page needs no queries")
+  void listStatsOfAnEmptyPage() {
+    // Act
+    Map<Long, EnrolmentService.ListStats> stats = enrolmentService.getListStats(List.of());
+
+    // Assert
+    assertTrue(stats.isEmpty());
+    verifyNoInteractions(enrolmentRepository, lessonService, absenceService);
+  }
+
+  @Test
+  @DisplayName("Each student on the page gets the same attendance and average as on their own")
+  void listStatsOfAPage() {
+    // Arrange - ana: 14 in a finished 6 ECTS subject (10 lessons, 2 absences) and one in progress (10 lessons, 3)
+    Student rui = ModelTestData.student("Rui Test");
+    ReflectionTestUtils.setField(rui, "number", 50002L);
+    Enrolment finished = enrolment(programming, 6, 14);
+    Enrolment inProgress = enrolment(maths, 6, null);
+    ReflectionTestUtils.setField(finished, "id", 1L);
+    ReflectionTestUtils.setField(inProgress, "id", 2L);
+    ReflectionTestUtils.setField(finished.getClassSection(), "id", 11L);
+    ReflectionTestUtils.setField(inProgress.getClassSection(), "id", 12L);
+    when(enrolmentRepository.findWithSubjectByStudentIn(List.of(ana, rui))).thenReturn(List.of(finished, inProgress));
+    when(lessonService.countLessonsByClass(any())).thenReturn(Map.of(11L, 10L, 12L, 10L));
+    when(absenceService.countUnjustifiedByEnrolment(any())).thenReturn(Map.of(1L, 2L, 2L, 3L));
+
+    // Act
+    Map<Long, EnrolmentService.ListStats> stats = enrolmentService.getListStats(List.of(ana, rui));
+
+    // Assert - (20 - 5) / 20 = 75%, and only the finished subject counts for the average
+    assertEquals(new EnrolmentService.ListStats(75.0, 14.0), stats.get(50001L));
+    assertEquals(new EnrolmentService.ListStats(null, null), stats.get(50002L));
   }
 
 }
