@@ -64,7 +64,7 @@ describe('presentational components', () => {
 
   it('shows the teammates on the back of the pass once there is a group, not the traits', () => {
     const traits = { openness: 40, conscientiousness: 90, extraversion: 50, agreeableness: 60, neuroticism: 20 };
-    render(<StudentPass name="Test Student" number={50001} year={2} profile="conscientiousness" traits={traits} group="Group 3" teammates={['Test Teammate']} />);
+    render(<StudentPass name="Test Student" number={50001} year={2} traits={traits} group="Group 3" teammates={['Test Teammate']} />);
     expect(screen.getByText('Test Teammate')).toBeTruthy();
     expect(screen.queryByText('90%')).toBeNull();
   });

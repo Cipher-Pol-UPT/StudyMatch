@@ -40,8 +40,6 @@ describe('profile view mapping', () => {
     const view = toProfileView(profile);
 
     expect(view.personality).toEqual({ openness: 60, conscientiousness: 40, extraversion: 80, agreeableness: 50, neuroticism: 90 });
-    // neuroticism is the highest but is never the strongest trait
-    expect(view.dominantProfile).toBe('extraversion');
   });
 
   it('rounds the attendance', () => {
@@ -70,7 +68,6 @@ describe('profile view mapping', () => {
     const view = toProfileView({ ...profile, privateProfile: null });
 
     expect(view.personality).toBeUndefined();
-    expect(view.dominantProfile).toBeUndefined();
     expect(view.attendance).toBeUndefined();
     expect(view.institutionalEmail).toBe('');
   });

@@ -74,7 +74,8 @@ describe('personality test', () => {
     answer(14, 'Strongly disagree');
     submit();
 
-    expect(await screen.findByRole('heading', { name: 'Openness' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Your profile' })).toBeTruthy();
+    expect(screen.queryByText('Your strongest profile')).toBeNull();
     expect(screen.getByText('100%')).toBeTruthy();
     expect(sentAnswers(fetchMock)).toEqual([5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1]);
     expect(fetchMock).toHaveBeenCalledWith('/api/students/personality-test', expect.objectContaining({

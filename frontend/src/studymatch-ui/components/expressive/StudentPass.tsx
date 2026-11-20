@@ -32,7 +32,6 @@ export interface StudentPassProps {
   year: number;
   // left out until the student has a group
   group?: string;
-  profile: ProfileKey;
   // the personality profile in %, shown on the back until there's a group
   traits?: Record<ProfileKey, number>;
   teammates?: string[];
@@ -40,14 +39,12 @@ export interface StudentPassProps {
   programme?: string;
 }
 
-export function StudentPass({ name, number, year, group, profile, traits, teammates = [], color = 'var(--sm-violet)', programme = 'StudyMatch' }: StudentPassProps) {
+export function StudentPass({ name, number, year, group, traits, teammates = [], color = 'var(--sm-violet)', programme = 'StudyMatch' }: StudentPassProps) {
   useTranslation();
   const [flipped, setFlipped] = useState(false);
   // once there's a group, the back shows the teammates again
   const showTraits = traits && !group;
   const [tilt, setTilt] = useState({ x: 0, y: 0, gx: 50, gy: 50 });
-  const P = PROFILES[profile];
-  const Icon = P.icon;
   return (
     <div className="sm-pass-scene">
       <motion.button
@@ -82,18 +79,12 @@ export function StudentPass({ name, number, year, group, profile, traits, teamma
                 {group ? `${number} · ${group}` : number}
               </div>
             </div>
-            <span style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', color: P.color, display: 'grid', placeItems: 'center', flexShrink: 0 }} title={P.label}>
-              <Icon size={18} strokeWidth={2.5} aria-hidden />
-            </span>
           </div>
         </div>
         <div className="sm-pass sm-pass--back">
           <div className="sm-pass__row">
             <span className="sm-eyebrow" style={{ color: 'rgba(255,255,255,.6)' }}>
               {showTraits ? i18n.t('ui.personality_profile') : group && `${group} ${i18n.t('ui.teammates')}`}
-            </span>
-            <span className="sm-eyebrow" style={{ color: 'var(--sm-spark)' }}>
-              {P.short}
             </span>
           </div>
           {showTraits ? (

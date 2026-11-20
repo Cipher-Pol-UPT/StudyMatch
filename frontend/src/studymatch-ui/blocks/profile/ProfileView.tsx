@@ -6,7 +6,6 @@ import { AchievementBadge,AchievementDialog } from '../../achievements/Achieveme
 import type { AchievementId,AchievementState } from '../../achievements/catalog';
 import { Avatar } from '../../components/avatar/Avatar';
 import { StatusPill,type ProfileKey } from '../../components/badge/Badge';
-import { PROFILES } from '../../components/badge/Badge.shared';
 import { Button } from '../../components/button/Button';
 import { Card } from '../../components/card/Card';
 import { ProfileBars } from '../../components/charts/Charts';
@@ -24,7 +23,6 @@ import { LEVEL } from './ProfileView.shared';
 export type CategoryLevel = 'high' | 'average' | 'developing';
 
 export interface StudentProfile {
-  dominantProfile?: ProfileKey;
   name: string;
   studentNumber: string;
   institutionalEmail: string;
@@ -58,7 +56,6 @@ export interface ProfileHeaderProps {
 
 export function ProfileHeader({ profile: p, viewer = { showPrivate: false, canEdit: false }, editable, onAvatarChange, onBannerChange, onBannerPresetChange, actions, className }: ProfileHeaderProps) {
   useTranslation();
-  const dominant = viewer.showPrivate ? p.dominantProfile : undefined;
   return (
     <header className={cx('sm-profile-head', className)}>
       {editable && onBannerChange ? (
@@ -72,7 +69,7 @@ export function ProfileHeader({ profile: p, viewer = { showPrivate: false, canEd
             <AvatarUploader name={p.name} src={p.avatarUrl} onChange={onAvatarChange} size={128} />
           ) : (
             <span className="sm-profile-head__ring">
-              <Avatar name={p.name} src={p.avatarUrl ?? undefined} size={128} profile={dominant} />
+              <Avatar name={p.name} src={p.avatarUrl ?? undefined} size={128} />
             </span>
           )}
         </div>
@@ -89,13 +86,8 @@ export function ProfileHeader({ profile: p, viewer = { showPrivate: false, canEd
               </span>
             )}
           </div>
-          {((p.tutorBadges?.length ?? 0) > 0 || dominant) && (
+          {(p.tutorBadges?.length ?? 0) > 0 && (
             <div className="sm-profile-head__tags">
-              {dominant && (
-                <StatusPill tone="violet" size="sm">
-                  {PROFILES[dominant].label}
-                </StatusPill>
-              )}
               {p.tutorBadges?.map((t) => (
                 <StatusPill key={t.subject} tone="warning" size="sm">
                   {i18n.t('ui.tutor_subject', {subject:t.subject})}
