@@ -21,6 +21,9 @@ import com.studymatch.exceptions.StudyMatchException;
 class StudyRoomTest {
 
   private static final String LINK = "https://meet.google.com/test-link";
+  private static final Long ANA = 1L;
+  private static final Long BRUNO = 2L;
+  private static final Long CARLA = 3L;
 
   private Student tutor;
   private TutorRole tutorRole;
@@ -38,6 +41,10 @@ class StudyRoomTest {
     ana = ModelTestData.student("Ana Test");
     bruno = ModelTestData.student("Bruno Test");
     carla = ModelTestData.student("Carla Test");
+    // attendance is confirmed by student number, the database would set these
+    ReflectionTestUtils.setField(ana, "number", ANA);
+    ReflectionTestUtils.setField(bruno, "number", BRUNO);
+    ReflectionTestUtils.setField(carla, "number", CARLA);
   }
 
   // the constructor won't accept past dates, so to simulate time passing we move the room afterwards
@@ -327,7 +334,7 @@ class StudyRoomTest {
     moveRoomToThePast();
 
     // Act - only ana showed up
-    room.confirmAttendance(Set.of(ana));
+    room.confirmAttendance(Set.of(ANA));
 
     // Assert
     assertEquals(StudyRoomStatus.COMPLETED, room.getStatus());
@@ -342,7 +349,7 @@ class StudyRoomTest {
     room.join(ana);
     moveRoomToThePast();
 
-    // Act - also what happens after 48h without confirmation
+    // Act
     room.confirmAttendance(Set.of());
 
     // Assert
@@ -362,6 +369,88 @@ class StudyRoomTest {
 
     // Assert
     assertEquals(ErrorCode.STUDYROOM_CLOSED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Attendance can't be confirmed twice")
+  void confirmTwiceIsRejected() {
+    // Arrange
+    room.join(ana);
+    moveRoomToThePast();
+    room.confirmAttendance(Set.of(ANA));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> room.confirmAttendance(Set.of()));
+
+    // Assert
+    assertEquals(ErrorCode.STUDYROOM_CLOSED, e.getCode());
+    assertTrue(participationOf(ana).isAttended());
+  }
+
+  @Test
+  @DisplayName("A student who didn't join can't be marked as attended, and nothing changes")
+  void confirmStudentWhoDidNotJoinIsRejected() {
+    // Arrange - carla never joined
+    room.join(ana);
+    moveRoomToThePast();
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> room.confirmAttendance(Set.of(ANA, CARLA)));
+
+    // Assert
+    assertEquals(ErrorCode.ATTENDEE_NOT_A_PARTICIPANT, e.getCode());
+    assertEquals(CARLA, e.getParams().get("number"));
+    assertEquals(StudyRoomStatus.SCHEDULED, room.getStatus());
+    assertFalse(participationOf(ana).isAttended());
+  }
+
+  @Test
+  @DisplayName("A minute before the 48 hours run out the tutor can still confirm (boundary)")
+  void confirmJustBeforeTheWindowCloses() {
+    // Arrange
+    room.join(ana);
+    LocalDateTime endsAt = LocalDateTime.now().minusHours(StudyRoom.CONFIRMATION_WINDOW_HOURS).plusMinutes(1);
+    moveRoomTo(endsAt.minusHours(2), endsAt);
+
+    // Act
+    room.confirmAttendance(Set.of(ANA));
+
+    // Assert
+    assertEquals(StudyRoomStatus.COMPLETED, room.getStatus());
+    assertTrue(participationOf(ana).isAttended());
+  }
+
+  @Test
+  @DisplayName("A minute after the 48 hours the room is completed with nobody attended (boundary)")
+  void unconfirmedRoomCompletesAfterTheWindow() {
+    // Arrange
+    room.join(ana);
+    LocalDateTime endsAt = LocalDateTime.now().minusHours(StudyRoom.CONFIRMATION_WINDOW_HOURS).minusMinutes(1);
+    moveRoomTo(endsAt.minusHours(2), endsAt);
+
+    // Act
+    StudyRoomStatus status = room.getStatus();
+
+    // Assert
+    assertEquals(StudyRoomStatus.COMPLETED, status);
+    assertFalse(participationOf(ana).isAttended());
+  }
+
+  @Test
+  @DisplayName("After the 48 hours it's too late to confirm")
+  void confirmAfterTheWindowIsRejected() {
+    // Arrange
+    room.join(ana);
+    LocalDateTime endsAt = LocalDateTime.now().minusHours(StudyRoom.CONFIRMATION_WINDOW_HOURS).minusMinutes(1);
+    moveRoomTo(endsAt.minusHours(2), endsAt);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> room.confirmAttendance(Set.of(ANA)));
+
+    // Assert
+    assertEquals(ErrorCode.STUDYROOM_CLOSED, e.getCode());
+    assertFalse(participationOf(ana).isAttended());
   }
 
 }

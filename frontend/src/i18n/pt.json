@@ -503,7 +503,8 @@
     "ADMIN_CANNOT_BE_BLOCKED": "Não é possível bloquear contas de Administrador.",
     "ACCOUNT_ALREADY_BLOCKED": "Esta conta já está bloqueada.",
     "STUDENT_HAS_NO_STATUTE": "Este estudante não tem nenhum estatuto especial.",
-    "ACADEMIC_YEAR_NOT_NEXT": "Este já não é o próximo ano letivo. Recarregue a página e verifique novamente."
+    "ACADEMIC_YEAR_NOT_NEXT": "Este já não é o próximo ano letivo. Recarregue a página e verifique novamente.",
+    "ATTENDEE_NOT_A_PARTICIPANT": "O estudante {{number}} não se inscreveu nesta StudyRoom."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",
