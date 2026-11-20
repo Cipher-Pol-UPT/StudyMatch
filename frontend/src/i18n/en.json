@@ -873,7 +873,7 @@
       "EXAM": "Exam",
       "PRACTICAL_EXAM": "Practical exam"
     },
-    "weightLeft": "{{remaining}}% left in this subject",
+    "weightLeft": "{{remaining}}% left",
     "weightOver": "Only {{remaining}}% is left in this subject.",
     "groupWork": "Group work",
     "groupWorkHint": "Students are put in groups by personality.",

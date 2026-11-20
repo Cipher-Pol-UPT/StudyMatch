@@ -873,7 +873,7 @@
       "EXAM": "Exame",
       "PRACTICAL_EXAM": "Exame prático"
     },
-    "weightLeft": "Resta {{remaining}}% nesta unidade curricular",
+    "weightLeft": "Resta {{remaining}}%",
     "weightOver": "Só resta {{remaining}}% nesta unidade curricular.",
     "groupWork": "Trabalho de grupo",
     "groupWorkHint": "Os estudantes são agrupados pela personalidade.",
