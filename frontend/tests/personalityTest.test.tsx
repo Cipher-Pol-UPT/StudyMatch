@@ -4,7 +4,7 @@ import i18n from '../src/i18n';
 import { PersonalityTestPage } from '../src/pages/personality/PersonalityTestPage';
 import { StudyMatchProvider } from '../src/studymatch-ui';
 
-const PROFILE = { leadership: 0.6417, problemSolving: 0.6333, creativity: 0.9375, execution: 0.4333 };
+const PROFILE = { openness: 1, conscientiousness: 0.3333, extraversion: 0.75, agreeableness: 0.8333, neuroticism: 0.6667 };
 
 interface BackendReply {
   status: number;
@@ -74,8 +74,8 @@ describe('personality test', () => {
     answer(14, 'Strongly disagree');
     submit();
 
-    expect(await screen.findByRole('heading', { name: 'Creativity' })).toBeTruthy();
-    expect(screen.getByText('94%')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Openness' })).toBeTruthy();
+    expect(screen.getByText('100%')).toBeTruthy();
     expect(sentAnswers(fetchMock)).toEqual([5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1]);
     expect(fetchMock).toHaveBeenCalledWith('/api/students/personality-test', expect.objectContaining({
       method: 'POST',

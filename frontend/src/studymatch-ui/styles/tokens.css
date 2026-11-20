@@ -90,11 +90,12 @@
   --sm-shadow-violet: 0 10px 28px -10px rgba(74, 61, 245, 0.55);
   --sm-focus-ring: 0 0 0 2px var(--sm-surface), 0 0 0 4px var(--sm-violet);
 
-  /* Team-role profiles (data palette, CVD-validated) */
+  /* Big Five traits (data palette, CVD-validated): extraversion, agreeableness, openness, conscientiousness, neuroticism */
   --sm-lead: #5b4fe0;
   --sm-tech: #2a9fd6;
   --sm-creative: #eb6834;
   --sm-exec: #1baf7a;
+  --sm-neuro: #6b7a99;
 
   /* Achievement rarity */
   --sm-rarity-common: #8f8fa3;

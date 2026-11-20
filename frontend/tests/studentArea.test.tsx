@@ -76,7 +76,7 @@ describe('StudentArea', () => {
     const profile = await getMyProfile();
     vi.mocked(getMyProfile).mockResolvedValueOnce({
       ...profile,
-      privateProfile: { ...profile.privateProfile!, personalityProfile: { leadership: 0.4, problemSolving: 0.9, creativity: 0.5, execution: 0.6 } },
+      privateProfile: { ...profile.privateProfile!, personalityProfile: { openness: 0.4, conscientiousness: 0.9, extraversion: 0.5, agreeableness: 0.6, neuroticism: 0.2 } },
     });
     renderArea();
     expect(await screen.findByRole('button', { name: /Ana Silva’s student pass/ })).toBeTruthy();

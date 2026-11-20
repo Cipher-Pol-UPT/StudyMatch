@@ -48,7 +48,8 @@ export function DomainStatus({ status, size }: { status: keyof typeof DOMAIN_STA
   );
 }
 
-export type ProfileKey = 'leadership' | 'problemSolving' | 'creativity' | 'execution';
+// the five Big Five traits, as the backend returns them
+export type ProfileKey = 'openness' | 'conscientiousness' | 'extraversion' | 'agreeableness' | 'neuroticism';
 
 export interface ProfileTagProps {
   profile: ProfileKey;

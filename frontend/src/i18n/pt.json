@@ -104,12 +104,33 @@
     "noEnrolledBody": "Os estudantes aparecerão aqui quando forem inscritos nesta edição da unidade curricular.",
     "categoryLevel": "Nível na categoria",
     "subjectAttendance": "Assiduidade nesta unidade curricular",
-    "subjectEvidence": "Esta edição da unidade curricular",
-    "traits": {
-      "leadership": "Liderança",
-      "problemSolving": "Resolução de problemas",
-      "creativity": "Criatividade",
-      "execution": "Execução"
+    "subjectEvidence": "Esta edição da unidade curricular"
+  },
+  "traits": {
+    "openness": {
+      "label": "Abertura",
+      "short": "Aberto",
+      "description": "Curioso e aberto a novas ideias, experiências e formas de fazer as coisas."
+    },
+    "conscientiousness": {
+      "label": "Conscienciosidade",
+      "short": "Consciencioso",
+      "description": "Organizado, fiável e cuidadoso com os planos e os prazos."
+    },
+    "extraversion": {
+      "label": "Extroversão",
+      "short": "Extrovertido",
+      "description": "Ganha energia com outras pessoas, toma a palavra e gosta de trabalhar em grupo."
+    },
+    "agreeableness": {
+      "label": "Amabilidade",
+      "short": "Amável",
+      "description": "Cooperante, atencioso e procura o consenso no grupo."
+    },
+    "neuroticism": {
+      "label": "Neuroticismo",
+      "short": "Neurótico",
+      "description": "Mede a intensidade com que sente stress e preocupação. Um valor mais alto significa mais."
     }
   },
   "common": {
@@ -614,18 +635,6 @@
     "blocked": "Bloqueada",
     "approved": "Aprovada",
     "rejected": "Rejeitada",
-    "leadership": "Liderança",
-    "lead": "Líder",
-    "sets_direction_organises_the_team_and_keeps_everyone_aligned": "Define a direção, organiza a equipa e mantém todos alinhados.",
-    "problem_solving": "Resolução de problemas",
-    "tech": "Técnico",
-    "breaks_problems_down_and_finds_the_technical_path_forward": "Decompõe os problemas e encontra a solução técnica.",
-    "creativity": "Criatividade",
-    "creative": "Criativo",
-    "brings_new_ideas_alternatives_and_a_fresh_point_of_view": "Traz novas ideias, alternativas e perspetivas.",
-    "execution": "Execução",
-    "exec": "Executor",
-    "turns_plans_into_finished_work_on_time_and_in_detail": "Transforma planos em trabalho concluído, com atenção aos prazos e aos detalhes.",
     "studymatch": "StudyMatch",
     "previous_month": "Mês anterior",
     "next_month": "Mês seguinte",

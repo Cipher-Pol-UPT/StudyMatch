@@ -24,7 +24,7 @@ const profile: StudentProfileData = {
     institutionalEmail: '50001@students.test.com',
     degree: 'Test Degree',
     curricularYear: 2,
-    personalityProfile: { leadership: 0.8, problemSolving: 0.6, creativity: 0.4, execution: 0.7 },
+    personalityProfile: { openness: 0.4, conscientiousness: 0.7, extraversion: 0.8, agreeableness: 0.6, neuroticism: 0.3 },
     attendance: 75,
     hasAcademicHistory: true,
   },
