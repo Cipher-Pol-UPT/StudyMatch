@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logout } from '../src/api/auth';
@@ -82,6 +82,23 @@ describe('StudentArea', () => {
     expect(await screen.findByRole('button', { name: /Ana Silva’s student pass/ })).toBeTruthy();
     expect(screen.getByText('45123')).toBeTruthy();
     expect(screen.queryByText(/Student no\./)).toBeNull();
+  });
+
+  it('shows the big five traits on the back of the student pass instead of the group', async () => {
+    const profile = await getMyProfile();
+    vi.mocked(getMyProfile).mockResolvedValueOnce({
+      ...profile,
+      privateProfile: { ...profile.privateProfile!, personalityProfile: { openness: 0.4, conscientiousness: 0.9, extraversion: 0.5, agreeableness: 0.6, neuroticism: 0.2 } },
+    });
+    renderArea();
+    const pass = await screen.findByRole('button', { name: /Ana Silva’s student pass/ });
+    const back = within(pass.querySelector('.sm-pass--back') as HTMLElement);
+    expect(back.getByText('Conscientiousness')).toBeTruthy();
+    expect(back.getByText('90%')).toBeTruthy();
+    expect(back.getByText('Neuroticism')).toBeTruthy();
+    expect(back.queryByText('No group yet')).toBeNull();
+    fireEvent.click(pass);
+    expect(pass.getAttribute('aria-label')).toContain('Showing the personality profile');
   });
 
   it('shows no tasks until there are real ones', () => {

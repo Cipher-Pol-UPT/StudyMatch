@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../../../i18n';
 import { hashString } from '../../utils/shared';
 import { type ProfileKey } from '../badge/Badge';
-import { PROFILES } from '../badge/Badge.shared';
+import { PROFILES,PROFILE_KEYS } from '../badge/Badge.shared';
 import './expressive.css';
 
 function Pattern({ seed, color }: { seed: string; color: string }) {
@@ -33,12 +33,14 @@ export interface StudentPassProps {
   // left out until the student has a group
   group?: string;
   profile: ProfileKey;
+  // the personality profile in %, shown on the back instead of the teammates
+  traits?: Record<ProfileKey, number>;
   teammates?: string[];
   color?: string;
   programme?: string;
 }
 
-export function StudentPass({ name, number, year, group, profile, teammates = [], color = 'var(--sm-violet)', programme = 'StudyMatch' }: StudentPassProps) {
+export function StudentPass({ name, number, year, group, profile, traits, teammates = [], color = 'var(--sm-violet)', programme = 'StudyMatch' }: StudentPassProps) {
   useTranslation();
   const [flipped, setFlipped] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0, gx: 50, gy: 50 });
@@ -61,7 +63,7 @@ export function StudentPass({ name, number, year, group, profile, teammates = []
         animate={{ rotateY: (flipped ? 180 : 0) + tilt.y, rotateX: tilt.x }}
         transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         aria-pressed={flipped}
-        aria-label={i18n.t('ui.student_pass', {name,side: flipped ? i18n.t('ui.showing_teammates') : i18n.t('ui.showing_front')})}
+        aria-label={i18n.t('ui.student_pass', {name,side: !flipped ? i18n.t('ui.showing_front') : traits ? i18n.t('ui.showing_personality') : i18n.t('ui.showing_teammates')})}
       >
         <div className="sm-pass">
           <Pattern seed={name} color={color} />
@@ -86,19 +88,31 @@ export function StudentPass({ name, number, year, group, profile, teammates = []
         <div className="sm-pass sm-pass--back">
           <div className="sm-pass__row">
             <span className="sm-eyebrow" style={{ color: 'rgba(255,255,255,.6)' }}>
-              {group && `${group} ${i18n.t('ui.teammates')}`}
+              {traits ? i18n.t('ui.personality_profile') : group && `${group} ${i18n.t('ui.teammates')}`}
             </span>
             <span className="sm-eyebrow" style={{ color: 'var(--sm-spark)' }}>
               {P.short}
             </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {(teammates.length ? teammates : [i18n.t('ui.no_group_yet')]).slice(0, 4).map((t) => (
-              <div key={t} style={{ fontSize: 17, letterSpacing: '-0.01em' }}>
-                {t}
-              </div>
-            ))}
-          </div>
+          {traits ? (
+            <ul className="sm-pass-traits">
+              {[...PROFILE_KEYS].sort((a, b) => traits[b] - traits[a]).map((key) => (
+                <li key={key}>
+                  <span>{PROFILES[key].label}</span>
+                  <i aria-hidden><b style={{ width: `${traits[key]}%`, background: PROFILES[key].color }} /></i>
+                  <span className="sm-num">{Math.round(traits[key])}%</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {(teammates.length ? teammates : [i18n.t('ui.no_group_yet')]).slice(0, 4).map((t) => (
+                <div key={t} style={{ fontSize: 17, letterSpacing: '-0.01em' }}>
+                  {t}
+                </div>
+              ))}
+            </div>
+          )}
           <div style={{ fontFamily: 'var(--sm-mono)', fontSize: 11, opacity: 0.5 }}> {i18n.t('ui.tap_to_flip_back')} </div>
         </div>
       </motion.button>

@@ -39,6 +39,7 @@ export function HomePage({ currentUser, profile, failed, tasks = [], average, on
             year={profile.curricularYear}
             programme={profile.programme}
             profile={profile.dominantProfile}
+            traits={profile.personality}
           />
         )}
       </header>
