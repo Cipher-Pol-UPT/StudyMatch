@@ -40,8 +40,8 @@ describe('profile view mapping', () => {
     const view = toProfileView(profile);
 
     expect(view.personality).toEqual({ openness: 60, conscientiousness: 40, extraversion: 80, agreeableness: 50, neuroticism: 90 });
-    // follows the backend: neuroticism counts like any other trait
-    expect(view.dominantProfile).toBe('neuroticism');
+    // neuroticism is the highest but is never the strongest trait
+    expect(view.dominantProfile).toBe('extraversion');
   });
 
   it('rounds the attendance', () => {

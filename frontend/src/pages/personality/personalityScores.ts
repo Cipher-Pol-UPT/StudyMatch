@@ -11,7 +11,9 @@ export function toPercentages(profile: PersonalityProfileData): Record<ProfileKe
   };
 }
 
-// the highest of the five traits as the backend measured them, neuroticism included
+// neuroticism is still shown in the bars, but nobody should get "Neurotic" as their strongest trait
+const STRENGTHS = PROFILE_KEYS.filter((key) => key !== 'neuroticism');
+
 export function strongestProfile(percentages: Record<ProfileKey, number>): ProfileKey {
-  return PROFILE_KEYS.reduce((best, key) => (percentages[key] > percentages[best] ? key : best));
+  return STRENGTHS.reduce((best, key) => (percentages[key] > percentages[best] ? key : best), STRENGTHS[0]);
 }
