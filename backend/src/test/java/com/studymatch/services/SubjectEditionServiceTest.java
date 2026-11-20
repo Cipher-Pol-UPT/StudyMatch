@@ -365,4 +365,97 @@ class SubjectEditionServiceTest {
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
   }
 
+  // update subject: the current edition's teachers
+
+  @Test
+  @DisplayName("The current edition is the subject's edition in the current academic year")
+  void currentEditionIsFound() {
+    // Arrange
+    SubjectEdition edition = new SubjectEdition(subject, year2026, Set.of(ana));
+    when(academicYearService.findCurrent()).thenReturn(Optional.of(year2026));
+    when(subjectEditionRepository.findBySubjectAndAcademicYear(subject, year2026)).thenReturn(Optional.of(edition));
+
+    // Act + Assert
+    assertSame(edition, subjectEditionService.getCurrentEdition(subject));
+  }
+
+  @Test
+  @DisplayName("A subject without an edition this year has no current edition: NOT_FOUND")
+  void noEditionThisYearIsNotFound() {
+    // Arrange
+    when(academicYearService.findCurrent()).thenReturn(Optional.of(year2026));
+    when(subjectEditionRepository.findBySubjectAndAcademicYear(subject, year2026)).thenReturn(Optional.empty());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectEditionService.getCurrentEdition(subject));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  @Test
+  @DisplayName("With no academic year registered there's no current edition: NOT_FOUND")
+  void noCurrentYearIsNotFound() {
+    // Act - findCurrent is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectEditionService.getCurrentEdition(subject));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+    verify(subjectEditionRepository, never()).findBySubjectAndAcademicYear(any(), any());
+  }
+
+  @Test
+  @DisplayName("Updating the teachers replaces the current edition's teachers: added ones join, missing ones leave")
+  void currentTeachersAreReplaced() {
+    // Arrange
+    Teacher eva = new Teacher("eva@example.com", "eva@studymatch.com", "Eva", "hash");
+    SubjectEdition edition = new SubjectEdition(subject, year2026, Set.of(ana, eva));
+    when(academicYearService.findCurrent()).thenReturn(Optional.of(year2026));
+    when(subjectEditionRepository.findBySubjectAndAcademicYear(subject, year2026)).thenReturn(Optional.of(edition));
+
+    // Act
+    SubjectEdition result = subjectEditionService.updateCurrentTeachers(subject, List.of(1L, 2L));
+
+    // Assert
+    assertSame(edition, result);
+    assertEquals(Set.of(ana, rui), edition.getTeachers());
+  }
+
+  @Test
+  @DisplayName("Removing every teacher gets AT_LEAST_ONE_TEACHER_REQUIRED and the edition keeps its teachers")
+  void removingEveryTeacherIsRefused() {
+    // Arrange
+    SubjectEdition edition = new SubjectEdition(subject, year2026, Set.of(ana));
+    when(academicYearService.findCurrent()).thenReturn(Optional.of(year2026));
+    when(subjectEditionRepository.findBySubjectAndAcademicYear(subject, year2026)).thenReturn(Optional.of(edition));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectEditionService.updateCurrentTeachers(subject, List.of()));
+
+    // Assert
+    assertEquals(ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED, e.getCode());
+    assertEquals(Set.of(ana), edition.getTeachers());
+  }
+
+  @Test
+  @DisplayName("A teacher number that doesn't exist: the teachers' NOT_FOUND goes through and the edition keeps its teachers")
+  void unknownTeacherKeepsTeachers() {
+    // Arrange
+    SubjectEdition edition = new SubjectEdition(subject, year2026, Set.of(ana));
+    when(academicYearService.findCurrent()).thenReturn(Optional.of(year2026));
+    when(subjectEditionRepository.findBySubjectAndAcademicYear(subject, year2026)).thenReturn(Optional.of(edition));
+    when(teacherService.getTeachers(List.of(99L))).thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectEditionService.updateCurrentTeachers(subject, List.of(99L)));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+    assertEquals(Set.of(ana), edition.getTeachers());
+  }
+
 }

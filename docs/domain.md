@@ -43,16 +43,7 @@ The self-declared fields (about me, skills, interests, banner) are only for disp
 
 Every student takes it on their first login, right after changing their password, and once every academic year (GR1). Until they do, they can only see who they are (`GET /users/me`), change their password and take the test; everything else answers `PERSONALITY_TEST_REQUIRED`. Starting a new academic year deletes every profile, so everyone takes it again, including students who are logged in at that moment (their next request gets the same answer).
 
-There are 15 questions, answered from 1 (disagree) to 5 (agree), three for each Big Five trait. Questions 6 to 10 are worded the other way round, so their answer is flipped (6 minus the answer). Each trait is the average of its three answers, scaled to 0 to 1. Stability is 1 minus neuroticism. The four scores are a mix of the traits:
-
-| Score | Formula |
-| --- | --- |
-| Leadership | 0.50 extraversion + 0.20 conscientiousness + 0.15 stability + 0.15 openness |
-| Problem solving | 0.45 openness + 0.30 conscientiousness + 0.25 stability |
-| Creativity | 0.75 openness + 0.25 extraversion |
-| Execution | 0.60 conscientiousness + 0.20 stability + 0.20 agreeableness |
-
-Each score is between 0 and 1. The code is in `PersonalityProfile.fromAnswers`.
+There are 15 questions, answered from 1 (disagree) to 5 (agree), three for each Big Five trait: openness, conscientiousness, extraversion, agreeableness and neuroticism. Questions 6 to 10 are worded the other way round, so their answer is flipped (6 minus the answer). Each trait is the average of its three answers, scaled to 0 to 1, and the profile is those five traits. Neuroticism is kept as measured, so a higher score means more neurotic. The code is in `PersonalityProfile.fromAnswers`.
 
 ## Grades, category levels and the average
 

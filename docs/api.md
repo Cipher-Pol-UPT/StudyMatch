@@ -54,7 +54,9 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/categories/` | Staff | register a category |
 | GET | `/subjects/`, `/subjects/{id}` | logged in | list subjects with their category and degrees, or one |
 | POST | `/subjects/` | Staff | register a subject and its first edition |
+| PUT | `/subjects/{id}` | Staff | change name and ECTS (code and category stay), and optionally this year's edition's teachers, keeping at least one |
 | POST | `/subjects/{id}/editions` | Staff | add an edition of an existing subject for another year |
+| GET | `/subjects/{id}/editions/current` | Staff | the subject's edition this year with its teachers, to edit them |
 | GET | `/academic-years/` | logged in | academic years, newest (the current one) first |
 | GET | `/academic-years/next` | Staff | the year Start Academic Year would create, and the current year's enrolments with no final grade |
 | POST | `/academic-years/` | Staff | start the next academic year (the body repeats its start year), everyone retakes the personality test |

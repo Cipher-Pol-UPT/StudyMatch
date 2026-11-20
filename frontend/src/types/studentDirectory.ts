@@ -17,6 +17,8 @@ export interface StudentRecordData {
   profile: StudentProfileData; personalEmail: string; accountStatus: AccountStatus; statuteType: StatuteType | null;
   statuteEndDate: string | null; averageGrade: number | null; categoryLevels: CategoryLevelData[]; enrolments: EnrolmentRecordData[];
 }
+// it starts today, so only the type and the last day are sent
+export interface StatuteRequest { type: StatuteType | null; endDate: string | null }
 export interface EditionStudentData {
   number: number; name: string; classSection: string; personalityProfile: PersonalityProfileData | null;
   categoryLevel: number | null; attendance: number | null;

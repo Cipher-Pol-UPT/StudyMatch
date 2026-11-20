@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,6 +17,7 @@ import com.studymatch.dtos.SubjectEditionRequestDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.dtos.SubjectRequestDTO;
 import com.studymatch.dtos.SubjectResponseDTO;
+import com.studymatch.dtos.UpdateSubjectRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.SubjectEdition;
@@ -72,6 +74,25 @@ public class SubjectController {
       @Valid @RequestBody SubjectEditionRequestDTO editionRequest) {
     SubjectEdition edition = subjectService.registerEdition(id, editionRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(SubjectEditionResponseDTO.from(edition));
+  }
+
+  // update subject: the teachers Staff can add or remove are this year's edition's
+  @GetMapping("{id}/editions/current")
+  @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "The subject's edition this year, with its teachers and classes")
+  @ErrorCodes(ErrorCode.NOT_FOUND)
+  public ResponseEntity<SubjectEditionResponseDTO> getCurrentEdition(@PathVariable Long id) {
+    return ResponseEntity.ok(subjectService.getCurrentEdition(id));
+  }
+
+  @PutMapping("{id}")
+  @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Change a subject's name and ECTS, and optionally the teachers of its edition this year. "
+      + "Code and category can't change")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED })
+  public ResponseEntity<SubjectResponseDTO> updateSubject(@PathVariable Long id,
+      @Valid @RequestBody UpdateSubjectRequestDTO updateRequest) {
+    return ResponseEntity.ok(SubjectResponseDTO.from(subjectService.updateSubject(id, updateRequest)));
   }
 
 }
