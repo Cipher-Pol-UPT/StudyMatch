@@ -45,6 +45,7 @@ import com.studymatch.models.Enrolment;
 import com.studymatch.models.Lesson;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
+import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.EnrolmentRepository;
 import com.studymatch.utils.EnrolmentCsvReader;
@@ -55,6 +56,7 @@ class EnrolmentServiceTest {
   private LessonService lessonService;
   private AbsenceService absenceService;
   private SubjectEditionService subjectEditionService;
+  private AcademicYearService academicYearService;
   private EnrolmentService enrolmentService;
 
   private Student student;
@@ -65,9 +67,59 @@ class EnrolmentServiceTest {
     lessonService = mock(LessonService.class);
     absenceService = mock(AbsenceService.class);
     subjectEditionService = mock(SubjectEditionService.class);
-    enrolmentService = new EnrolmentService(enrolmentRepository, lessonService, absenceService, subjectEditionService);
+    academicYearService = mock(AcademicYearService.class);
+    enrolmentService = new EnrolmentService(enrolmentRepository, lessonService, absenceService, subjectEditionService,
+        academicYearService);
 
     student = ModelTestData.student("Test Student");
+  }
+
+  // join StudyRoom (#45)
+
+  @Test
+  @DisplayName("A student is in the subject's current edition when the newest year has it")
+  void enrolledInCurrentEdition() {
+    // Arrange
+    Subject subject = ModelTestData.subject();
+    AcademicYear year = new AcademicYear(2026);
+    when(academicYearService.findCurrent()).thenReturn(Optional.of(year));
+    when(enrolmentRepository.existsByStudent_NumberAndSubjectEdition_SubjectAndSubjectEdition_AcademicYear(
+        1L, subject, year)).thenReturn(true);
+
+    // Act
+    boolean enrolled = enrolmentService.isEnrolledInCurrentEdition(1L, subject);
+
+    // Assert
+    assertTrue(enrolled);
+  }
+
+  @Test
+  @DisplayName("With no academic year registered, nobody is in a current edition")
+  void noCurrentYear() {
+    // Arrange
+    Subject subject = ModelTestData.subject();
+    when(academicYearService.findCurrent()).thenReturn(Optional.empty());
+
+    // Act
+    boolean enrolled = enrolmentService.isEnrolledInCurrentEdition(1L, subject);
+
+    // Assert
+    assertFalse(enrolled);
+  }
+
+  @Test
+  @DisplayName("A student who passed the subject has passed it")
+  void passedSubject() {
+    // Arrange
+    Subject subject = ModelTestData.subject();
+    when(enrolmentRepository.existsByStudent_NumberAndSubjectEdition_SubjectAndStatus(1L, subject,
+        EnrolmentStatus.PASSED)).thenReturn(true);
+
+    // Act
+    boolean passed = enrolmentService.hasPassed(1L, subject);
+
+    // Assert
+    assertTrue(passed);
   }
 
   @Test
