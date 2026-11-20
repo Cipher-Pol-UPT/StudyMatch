@@ -86,6 +86,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | Method | Path | Who | What it does |
 | --- | --- | --- | --- |
 | GET | `/tutors/me/subjects` | Student | the subjects you tutor |
+| GET | `/tutors/me/applicable-subjects` | Student | the subjects you passed, with your grade, position and whether you can apply to tutor them |
+| POST | `/tutor-applications/` | Student in the subject's top 5% | apply to tutor a subject, creating a Pending application |
 | POST | `/study-rooms/` | Student who tutors the subject | create a StudyRoom |
 | GET | `/study-rooms/` | Student | the open StudyRooms (not cancelled, not completed), filtered by subject, tutor, topic or date |
 | GET | `/study-rooms/{id}` | Student | one StudyRoom's description, the tutor's rating in that subject, and whether you can join |
@@ -98,4 +100,4 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 ## Coming next
 
-The other use cases (groups, tutor applications, achievements, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (groups, achievements, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

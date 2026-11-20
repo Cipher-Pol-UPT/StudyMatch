@@ -563,7 +563,11 @@
     "ATTENDEE_NOT_A_PARTICIPANT": "Student {{number}} didn't join this StudyRoom.",
     "ROOM_ALREADY_RATED": "You have already rated this StudyRoom.",
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Only Students enrolled in this Subject who haven't passed it can join.",
-    "JOINED_STUDYROOM_OVERLAP": "This overlaps a StudyRoom you already joined or are hosting ({{subject}}, {{startsAt}} – {{endsAt}})."
+    "JOINED_STUDYROOM_OVERLAP": "This overlaps a StudyRoom you already joined or are hosting ({{subject}}, {{startsAt}} – {{endsAt}}).",
+    "NOT_ELIGIBLE_FOR_TUTORING": "Only Students whose final grade is in the top 5% of their edition can tutor this Subject.",
+    "TUTOR_APPLICATION_ALREADY_PENDING": "You already have a Pending application for this Subject.",
+    "TUTOR_ROLE_ALREADY_EXISTS": "You are already a tutor of this Subject.",
+    "SUBJECT_NOT_TAUGHT_THIS_YEAR": "This Subject isn't taught this academic year."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

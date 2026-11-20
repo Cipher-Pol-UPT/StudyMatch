@@ -95,7 +95,7 @@ Staff can move an enrolled student to another class of the same edition (the stu
 
 ## Tutors and StudyRooms
 
-A student can apply to tutor a subject they passed if their final grade is in the top 5% of the edition they took it in (#41). The cut-off is rounded up with at least one student, and everyone tied at the cut-off is eligible. There's no minimum grade. The teacher of the subject's current edition approves or rejects the application (#81).
+A student can apply to tutor a subject they passed if their final grade is in the top 5% of the edition they took it in, rounded up with at least one student, and everyone tied at the cut-off is eligible (no minimum grade). `GET /tutors/me/applicable-subjects` lists the subjects they passed with their grade, position and eligibility, and `POST /tutor-applications/` creates the Pending application. A Pending application (`TUTOR_APPLICATION_ALREADY_PENDING`) or an existing Tutor Role (`TUTOR_ROLE_ALREADY_EXISTS`) blocks a new one, but a Rejected application doesn't. A subject with no edition this year can't be applied to (`SUBJECT_NOT_TAUGHT_THIS_YEAR`). The teacher of the subject's current edition approves or rejects the application (#81).
 
 A tutor can create StudyRooms for the subjects they tutor (built). A room can't start in the past or end before it starts, and a tutor can't have two rooms at overlapping times.
 

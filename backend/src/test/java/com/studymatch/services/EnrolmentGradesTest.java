@@ -1,6 +1,7 @@
 package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -18,6 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.CategoryLevelDTO;
 import com.studymatch.dtos.EditionStudentDTO;
+import com.studymatch.dtos.TutorRankingDTO;
 import com.studymatch.enums.StatuteType;
 import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Category;
@@ -239,6 +242,72 @@ class EnrolmentGradesTest {
     assertNull(anaRow.attendance());
     assertEquals("T2", anaRow.classSection());
     assertEquals(100.0, ruiRow.attendance());
+  }
+
+  // tutor eligibility (#41)
+
+  // one edition where the given grades belong to as many students, in the same order
+  private List<Enrolment> editionWithGrades(Integer... grades) {
+    Subject subject = new Subject("S" + System.nanoTime(), "Test Subject", 6, programming);
+    SubjectEdition edition = new SubjectEdition(subject, new AcademicYear(2026), Set.of(ModelTestData.teacher()));
+    edition.addClassSection("T1");
+    ReflectionTestUtils.setField(edition, "id", 77L);
+    ClassSection section = edition.getClassSections().iterator().next();
+
+    List<Enrolment> enrolments = new ArrayList<>();
+    for (int i = 0; i < grades.length; i++) {
+      Enrolment enrolment = new Enrolment(ModelTestData.student("Student " + i), section);
+      enrolment.setFinalGrade(grades[i]);
+      enrolments.add(enrolment);
+    }
+    when(enrolmentRepository.findBySubjectEditionId(77L)).thenReturn(enrolments);
+    return enrolments;
+  }
+
+  @Test
+  @DisplayName("A student alone in their edition is eligible (minimum one in the top 5%)")
+  void eligibleAlone() {
+    List<Enrolment> enrolments = editionWithGrades(15);
+    TutorRankingDTO ranking = enrolmentService.getTutorRanking(enrolments.getFirst());
+    assertEquals(1, ranking.position());
+    assertEquals(1, ranking.editionSize());
+    assertTrue(ranking.eligible());
+  }
+
+  @Test
+  @DisplayName("The top 5% rounds up")
+  void topFiveRoundsUp() {
+    // 30 students; 5% is 1.5, so the cut-off is the 2nd best, and only the top two are eligible
+    Integer[] grades = new Integer[30];
+    grades[0] = 20;
+    grades[1] = 19;
+    for (int i = 2; i < 30; i++) {
+      grades[i] = 18;
+    }
+    List<Enrolment> enrolments = editionWithGrades(grades);
+
+    assertTrue(enrolmentService.getTutorRanking(enrolments.get(0)).eligible()); // grade 20
+    assertTrue(enrolmentService.getTutorRanking(enrolments.get(1)).eligible()); // grade 19
+    assertFalse(enrolmentService.getTutorRanking(enrolments.get(2)).eligible()); // grade 18
+  }
+
+  @Test
+  @DisplayName("Students tied at the cut-off are all eligible, and the position counts those above")
+  void tiesAtTheCutoff() {
+    // 40 students: 20, 19, 19, 19, then 36 tens; the cut-off (2nd) is 19, so all three 19s are eligible
+    List<Integer> grades = new ArrayList<>(List.of(20, 19, 19, 19));
+    for (int i = 0; i < 36; i++) {
+      grades.add(10);
+    }
+    List<Enrolment> enrolments = editionWithGrades(grades.toArray(new Integer[0]));
+
+    TutorRankingDTO tied = enrolmentService.getTutorRanking(enrolments.get(3));
+    assertEquals(2, tied.position());
+    assertTrue(tied.eligible());
+
+    TutorRankingDTO below = enrolmentService.getTutorRanking(enrolments.get(4));
+    assertEquals(5, below.position());
+    assertFalse(below.eligible());
   }
 
 }
