@@ -66,8 +66,12 @@ export const ERROR_CODES = [
   "LESSON_IN_FUTURE",
   "ADMIN_CANNOT_BE_BLOCKED",
   "ACCOUNT_ALREADY_BLOCKED",
+  "ACCOUNT_NOT_BLOCKED",
+  "GRADE_OUT_OF_RANGE",
   "STUDENT_HAS_NO_STATUTE",
   "ACADEMIC_YEAR_NOT_NEXT",
+  "ATTENDEE_NOT_A_PARTICIPANT",
+  "ROOM_ALREADY_RATED",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;

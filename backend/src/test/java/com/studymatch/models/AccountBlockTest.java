@@ -105,4 +105,51 @@ class AccountBlockTest {
     assertEquals(ErrorCode.ADMIN_CANNOT_BE_BLOCKED, e.getCode());
   }
 
+  // unblock account (#33)
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("blockableAccounts")
+  @DisplayName("Unblocking makes the account active again and the reason is cleared")
+  void unblockRestoresAccess(User user) {
+    // Arrange
+    user.block("test reason");
+
+    // Act
+    user.unblock();
+
+    // Assert
+    assertFalse(user.isBlocked());
+    assertEquals(AccountStatus.ACTIVE, user.getAccountStatus());
+    assertNull(user.getBlockReason());
+  }
+
+  @Test
+  @DisplayName("Unblocking an active account gives ACCOUNT_NOT_BLOCKED")
+  void unblockActiveAccountIsRejected() {
+    // Arrange
+    User user = ModelTestData.teacher();
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, user::unblock);
+
+    // Assert
+    assertEquals(ErrorCode.ACCOUNT_NOT_BLOCKED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("An unblocked account can be blocked again, with the new reason")
+  void unblockedAccountCanBeBlockedAgain() {
+    // Arrange
+    User user = ModelTestData.teacher();
+    user.block("first reason");
+    user.unblock();
+
+    // Act
+    user.block("second reason");
+
+    // Assert
+    assertTrue(user.isBlocked());
+    assertEquals("second reason", user.getBlockReason());
+  }
+
 }

@@ -18,7 +18,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.studymatch.enums.AccountStatus;
 import com.studymatch.models.Degree;
 import com.studymatch.models.Student;
 import com.studymatch.models.Teacher;
@@ -85,7 +84,7 @@ class StudyMatchUserDetailsServiceTest {
   @DisplayName("Blocked users are still loaded, the blocked check happens after the password")
   void blockedUserIsNotLockedHere() {
     // Arrange
-    teacher.setAccountStatus(AccountStatus.BLOCKED);
+    teacher.block("test reason");
     when(userService.findByInstitutionalEmail("teacher@test.com")).thenReturn(Optional.of(teacher));
 
     // Act

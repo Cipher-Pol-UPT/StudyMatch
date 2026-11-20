@@ -17,7 +17,7 @@ const profile: StudentProfileData = {
     institutionalEmail: '50001@students.test.com',
     degree: 'Test Degree',
     curricularYear: 2,
-    personalityProfile: { leadership: 0.8, problemSolving: 0.6, creativity: 0.9, execution: 0.4 },
+    personalityProfile: { openness: 0.6, conscientiousness: 0.4, extraversion: 0.8, agreeableness: 0.5, neuroticism: 0.9 },
     attendance: 87.5,
     hasAcademicHistory: true,
   },
@@ -39,8 +39,7 @@ describe('profile view mapping', () => {
   it('shows the personality profile as percentages', () => {
     const view = toProfileView(profile);
 
-    expect(view.personality).toEqual({ leadership: 80, problemSolving: 60, creativity: 90, execution: 40 });
-    expect(view.dominantProfile).toBe('creativity');
+    expect(view.personality).toEqual({ openness: 60, conscientiousness: 40, extraversion: 80, agreeableness: 50, neuroticism: 90 });
   });
 
   it('rounds the attendance', () => {
@@ -69,7 +68,6 @@ describe('profile view mapping', () => {
     const view = toProfileView({ ...profile, privateProfile: null });
 
     expect(view.personality).toBeUndefined();
-    expect(view.dominantProfile).toBeUndefined();
     expect(view.attendance).toBeUndefined();
     expect(view.institutionalEmail).toBe('');
   });

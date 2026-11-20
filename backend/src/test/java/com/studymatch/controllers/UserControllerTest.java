@@ -40,7 +40,6 @@ import com.studymatch.dtos.CurrentUserDTO;
 import com.studymatch.dtos.ForgotPasswordRequestDTO;
 import com.studymatch.dtos.LoginRequestDTO;
 import com.studymatch.dtos.ResetPasswordRequestDTO;
-import com.studymatch.enums.AccountStatus;
 import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -164,7 +163,7 @@ class UserControllerTest {
   void blockedUserGetsNoSession() {
     // Arrange
     passwordIsCorrect();
-    teacher.setAccountStatus(AccountStatus.BLOCKED);
+    teacher.block("test reason");
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class, () -> controller.login(LOGIN, request, response));

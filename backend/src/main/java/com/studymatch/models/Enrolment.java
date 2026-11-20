@@ -91,6 +91,9 @@ public class Enrolment {
   }
 
   public void setFinalGrade(int finalGrade) {
+    if (finalGrade < 0 || finalGrade > 20) {
+      throw new StudyMatchException(ErrorCode.GRADE_OUT_OF_RANGE);
+    }
     this.finalGrade = finalGrade;
     this.status = finalGrade >= PASSING_GRADE ? EnrolmentStatus.PASSED : EnrolmentStatus.FAILED;
   }

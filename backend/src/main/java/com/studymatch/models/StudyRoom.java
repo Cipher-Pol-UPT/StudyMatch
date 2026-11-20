@@ -28,6 +28,8 @@ import jakarta.validation.constraints.Size;
 @Entity
 public class StudyRoom {
 
+  public static final int CONFIRMATION_WINDOW_HOURS = 48;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -105,6 +107,11 @@ public class StudyRoom {
   }
 
   public StudyRoomStatus getStatus() {
+    // the tutor didn't confirm in time, so it's completed with nobody attended
+    if (status == StudyRoomStatus.SCHEDULED
+        && LocalDateTime.now().isAfter(endsAt.plusHours(CONFIRMATION_WINDOW_HOURS))) {
+      return StudyRoomStatus.COMPLETED;
+    }
     if (status == StudyRoomStatus.SCHEDULED && participations.size() >= capacity) {
       return StudyRoomStatus.FULL;
     }
@@ -163,12 +170,19 @@ public class StudyRoom {
   }
 
   // participants missing from the set count as not attended, and the room is completed
-  public void confirmAttendance(Set<Student> attendees) {
+  public void confirmAttendance(Set<Long> attendeeNumbers) {
     requireOpen();
     if (LocalDateTime.now().isBefore(endsAt)) {
       throw new StudyMatchException(ErrorCode.STUDYROOM_NOT_ENDED);
     }
-    participations.forEach(p -> p.setAttended(attendees.contains(p.getStudent())));
+    Set<Long> participantNumbers = new HashSet<>();
+    participations.forEach(p -> participantNumbers.add(p.getStudent().getNumber()));
+    for (Long number : attendeeNumbers) {
+      if (!participantNumbers.contains(number)) {
+        throw new StudyMatchException(ErrorCode.ATTENDEE_NOT_A_PARTICIPANT, Map.of("number", number));
+      }
+    }
+    participations.forEach(p -> p.setAttended(attendeeNumbers.contains(p.getStudent().getNumber())));
     this.status = StudyRoomStatus.COMPLETED;
   }
 
@@ -180,7 +194,8 @@ public class StudyRoom {
   }
 
   private void requireOpen() {
-    if (status == StudyRoomStatus.CANCELLED || status == StudyRoomStatus.COMPLETED) {
+    StudyRoomStatus current = getStatus();
+    if (current == StudyRoomStatus.CANCELLED || current == StudyRoomStatus.COMPLETED) {
       throw new StudyMatchException(ErrorCode.STUDYROOM_CLOSED);
     }
   }

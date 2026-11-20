@@ -29,6 +29,7 @@ import com.studymatch.dtos.ImportStudentsRequestDTO;
 import com.studymatch.dtos.PageDTO;
 import com.studymatch.dtos.PersonalityProfileDTO;
 import com.studymatch.dtos.PersonalityTestRequestDTO;
+import com.studymatch.dtos.RatingDTO;
 import com.studymatch.dtos.RegisterStudentRequestDTO;
 import com.studymatch.dtos.RegisteredStudentDTO;
 import com.studymatch.dtos.ResendCredentialsRequestDTO;
@@ -41,6 +42,7 @@ import com.studymatch.enums.AccountStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.User;
+import com.studymatch.services.RatingService;
 import com.studymatch.services.StudentService;
 import com.studymatch.services.UserService;
 import com.studymatch.utils.StudentCsvReader;
@@ -55,11 +57,14 @@ import jakarta.validation.Valid;
 public class StudentController {
 
   private final StudentService studentService;
+  private final RatingService ratingService;
   private final UserService userService;
   private final StudentCsvReader csvReader;
 
-  public StudentController(StudentService studentService, UserService userService, StudentCsvReader csvReader) {
+  public StudentController(StudentService studentService, RatingService ratingService, UserService userService,
+      StudentCsvReader csvReader) {
     this.studentService = studentService;
+    this.ratingService = ratingService;
     this.userService = userService;
     this.csvReader = csvReader;
   }
@@ -195,6 +200,12 @@ public class StudentController {
   public ResponseEntity<StudentProfileDTO> getProfile(@PathVariable Long number, Authentication authentication) {
     User viewer = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(studentService.getProfile(number, viewer));
+  }
+
+  @GetMapping("{number}/ratings")
+  @Operation(summary = "The ratings a tutor got, newest first, without who wrote them. Empty if they never tutored")
+  public ResponseEntity<List<RatingDTO>> getRatings(@PathVariable Long number) {
+    return ResponseEntity.ok(ratingService.listRatings(number));
   }
 
   @PostMapping("personality-test")

@@ -1,0 +1,175 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# a new push to the same PR cancels the run that's still going, main always finishes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend build and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # same database and user as docker-compose.yml, the integration tests need a real PostgreSQL.
+    # trust means no password check, so there's no password written here. it only lives inside this job
+    services:
+      db:
+        image: postgres:17
+        env:
+          POSTGRES_DB: studymatch
+          POSTGRES_USER: studymatch
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U studymatch -d studymatch"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      # the DB_* defaults in application.properties already match the service above
+      - name: Build and test
+        run: ./mvnw -B verify
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: jacoco-report
+          path: backend/target/site/jacoco/
+          if-no-files-found: error
+
+      # what the sonarqube job needs: the compiled classes for the java rules and the coverage xml
+      - name: Keep the build for SonarQube
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-for-sonar
+          path: |
+            backend/target/classes
+            backend/target/site/jacoco/jacoco.xml
+          if-no-files-found: error
+          retention-days: 1
+
+      # only when something broke, so we can see which test failed without rerunning it locally
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: surefire-reports
+          path: backend/target/surefire-reports/
+
+  frontend:
+    name: Frontend lint, tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # ci installs exactly what package-lock.json says, and fails if it doesn't match package.json.
+      # --ignore-scripts stops packages from running their own install scripts on the runner, we don't need any
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      # fastest first, so a lint mistake fails in seconds
+      - name: Lint
+        run: npm run lint
+
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Type-check and build
+        run: npm run build
+
+      - name: Keep the coverage for SonarQube
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-for-sonar
+          path: frontend/coverage/lcov.info
+          if-no-files-found: error
+          retention-days: 1
+
+  sonarqube:
+    name: SonarQube analysis
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # full history, sonarqube uses git blame to tell which lines are new
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # no build here, only the maven cache so the java rules know the spring and jpa types
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Get the backend build
+        uses: actions/download-artifact@v8
+        with:
+          name: backend-for-sonar
+          path: backend/target
+
+      - name: Get the frontend coverage
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-for-sonar
+          path: frontend/coverage
+
+      # vitest writes paths from frontend/ (SF:src/...), sonarqube reads them from the repo root
+      - name: Fix the coverage paths
+        run: sed -i 's#^SF:src/#SF:frontend/src/#' frontend/coverage/lcov.info
+
+      # whole repo, settings in sonar-project.properties. a failed quality gate fails this step.
+      # pinned to a commit, not a tag: a tag can be moved, and this action gets our SONAR_TOKEN
+      - name: SonarQube analysis
+        uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: -Dsonar.java.libraries=/home/runner/.m2/repository/**/*.jar

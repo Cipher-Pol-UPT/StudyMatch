@@ -1,5 +1,8 @@
 package com.studymatch.models;
 
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.StudyMatchException;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -40,7 +43,15 @@ public class Grade {
   public Grade(Enrolment enrolment, Assignment assignment, double value) {
     this.enrolment = enrolment;
     this.assignment = assignment;
-    this.value = value;
+    this.value = checkValue(value);
+  }
+
+  // grades are 0 to 20, the annotations only see it when it's saved
+  private static double checkValue(double value) {
+    if (value < 0 || value > 20) {
+      throw new StudyMatchException(ErrorCode.GRADE_OUT_OF_RANGE);
+    }
+    return value;
   }
 
   public Long getId() {
@@ -60,7 +71,7 @@ public class Grade {
   }
 
   public void setValue(double value) {
-    this.value = value;
+    this.value = checkValue(value);
   }
 
 }
