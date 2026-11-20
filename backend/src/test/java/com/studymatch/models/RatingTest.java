@@ -33,12 +33,14 @@ class RatingTest {
 
     Student ana = ModelTestData.student("Ana Test");
     Student bruno = ModelTestData.student("Bruno Test");
+    ReflectionTestUtils.setField(ana, "number", 1L);
+    ReflectionTestUtils.setField(bruno, "number", 2L);
     room.join(ana);
     room.join(bruno);
 
     // the room happened and ended an hour ago, only ana showed up
     endRoomAt(LocalDateTime.now().minusHours(1));
-    room.confirmAttendance(Set.of(ana));
+    room.confirmAttendance(Set.of(1L));
 
     anaAttended = participationOf(ana);
     brunoDidNotAttend = participationOf(bruno);

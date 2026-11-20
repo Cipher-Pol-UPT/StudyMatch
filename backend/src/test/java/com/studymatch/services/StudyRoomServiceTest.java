@@ -13,6 +13,8 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.CreateStudyRoomRequestDTO;
+import com.studymatch.dtos.ParticipantDTO;
 import com.studymatch.dtos.StudyRoomDTO;
 import com.studymatch.enums.StudyRoomStatus;
 import com.studymatch.exceptions.ErrorCode;
@@ -34,6 +37,7 @@ class StudyRoomServiceTest {
 
   private static final Long TUTOR_NUMBER = 1L;
   private static final Long SUBJECT_ID = 10L;
+  private static final Long ROOM_ID = 20L;
   private static final String LINK = "https://meet.google.com/abc-defg-hij";
 
   private StudyRoomRepository studyRoomRepository;
@@ -173,6 +177,84 @@ class StudyRoomServiceTest {
     // Assert
     assertEquals(1, upcoming);
     assertEquals(StudyRoomStatus.SCHEDULED, room.getStatus());
+  }
+
+  // confirm attendance (#55)
+
+  @Test
+  @DisplayName("The host confirms who attended and the room is saved as COMPLETED")
+  void hostConfirmsAttendance() {
+    // Arrange
+    StudyRoom room = endedRoomWith(student("Ana Test", 2L), student("Bruno Test", 3L));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.confirmAttendance(TUTOR_NUMBER, ROOM_ID, Set.of(2L));
+
+    // Assert
+    assertEquals(StudyRoomStatus.COMPLETED, result.status());
+    verify(studyRoomRepository).save(room);
+  }
+
+  @Test
+  @DisplayName("A student who doesn't host the room gets ACCESS_DENIED and nothing is saved")
+  void notHostCannotConfirm() {
+    // Arrange
+    StudyRoom room = endedRoomWith(student("Ana Test", 2L));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act - ana tries to confirm her own attendance
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.confirmAttendance(2L, ROOM_ID, Set.of(2L)));
+
+    // Assert
+    assertEquals(ErrorCode.ACCESS_DENIED, e.getCode());
+    assertEquals(StudyRoomStatus.SCHEDULED, room.getStatus());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A room that doesn't exist gives NOT_FOUND")
+  void missingRoom() {
+    // Act - findById is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.listParticipants(TUTOR_NUMBER, ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  @Test
+  @DisplayName("The host sees the participants sorted by name, none attended yet")
+  void hostListsParticipants() {
+    // Arrange
+    StudyRoom room = endedRoomWith(student("Bruno Test", 3L), student("Ana Test", 2L));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    List<ParticipantDTO> participants = studyRoomService.listParticipants(TUTOR_NUMBER, ROOM_ID);
+
+    // Assert
+    assertEquals(List.of(new ParticipantDTO(2L, "Ana Test", false), new ParticipantDTO(3L, "Bruno Test", false)),
+        participants);
+  }
+
+  // a room the students joined while it was upcoming, which then ended an hour ago
+  private StudyRoom endedRoomWith(Student... students) {
+    StudyRoom room = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
+    for (Student student : students) {
+      room.join(student);
+    }
+    ReflectionTestUtils.setField(room, "startsAt", LocalDateTime.now().minusHours(3));
+    ReflectionTestUtils.setField(room, "endsAt", LocalDateTime.now().minusHours(1));
+    return room;
+  }
+
+  private static Student student(String name, Long number) {
+    Student student = ModelTestData.student(name);
+    ReflectionTestUtils.setField(student, "number", number);
+    return student;
   }
 
   // tomorrow at the given hour, so tests never depend on the time they run at
