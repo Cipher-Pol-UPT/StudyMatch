@@ -15,7 +15,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.studymatch.enums.AccountStatus;
 import com.studymatch.enums.Language;
 import com.studymatch.enums.Role;
 import com.studymatch.enums.StatuteType;
@@ -55,7 +54,7 @@ class StudentTest {
   @DisplayName("A blocked account is blocked")
   void blockedStudentIsBlocked() {
     // Act
-    student.setAccountStatus(AccountStatus.BLOCKED);
+    student.block("test reason");
 
     // Assert
     assertTrue(student.isBlocked());
@@ -73,7 +72,7 @@ class StudentTest {
   @DisplayName("A student with a personality profile doesn't need the test")
   void doesNotRequirePersonalityTestWithProfile() {
     // Arrange
-    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
 
     // Act + Assert
     assertFalse(student.requiresPersonalityTest());

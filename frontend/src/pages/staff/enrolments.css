@@ -1,0 +1,12 @@
+.enrolments__target { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; max-width: 920px; }
+.enrolments__picker { display: grid; gap: 16px; min-width: 0; }
+.enrolments__actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* same card as the student registration import */
+.enrolments__card { display: grid; gap: 16px; min-width: 0; max-width: 920px; }
+.enrolments__card > .sm-btn { justify-self: start; }
+.enrolments__title { margin: 0; font-size: 1.25rem; font-weight: 500; }
+.enrolments__note { margin: 0; color: var(--sm-text-2); }
+.enrolments__loading { display: grid; place-items: center; min-height: 200px; }
+
+@media (max-width: 560px) { .enrolments__target { grid-template-columns: minmax(0, 1fr); } }

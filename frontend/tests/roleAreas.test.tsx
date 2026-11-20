@@ -69,7 +69,7 @@ describe('role areas', () => {
     start();
     await screen.findByText('Staff workspace', { selector: 'p' });
     expect(screen.getByText('Coming soon')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Enrolments' }).classList.contains('sm-nav-item--muted')).toBe(true);
+    expect(screen.getByRole('link', { name: 'Analytics' }).classList.contains('sm-nav-item--muted')).toBe(true);
     expect(screen.getByRole('link', { name: 'Students' }).classList.contains('sm-nav-item--muted')).toBe(false);
   });
 
@@ -77,9 +77,9 @@ describe('role areas', () => {
     backend({ ...base, role: 'STAFF' });
     start();
     await screen.findByText('Staff workspace', { selector: 'p' });
-    expect(screen.queryByRole('link', { name: /Enrol students in a subject edition/ })).toBeNull();
-    fireEvent.click(screen.getByRole('link', { name: 'Enrolments' }));
-    expect(await screen.findByRole('heading', { name: 'Enrolments' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /Explore student and group indicators/ })).toBeNull();
+    fireEvent.click(screen.getByRole('link', { name: 'Analytics' }));
+    expect(await screen.findByRole('heading', { name: 'Analytics' })).toBeTruthy();
     expect(screen.getByText(i18n.t('placeholder.comingSoon'))).toBeTruthy();
   });
 

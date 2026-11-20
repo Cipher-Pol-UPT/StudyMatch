@@ -123,6 +123,14 @@ public class UserService {
     return new BlockedAccountDTO(AccountSummaryDTO.from(user), cancelledStudyRooms, cancelledTutorApplications);
   }
 
+  // the cancelled StudyRooms stay cancelled. Telling the user comes with notifications (#144)
+  @Transactional
+  public AccountSummaryDTO unblockAccount(Long number) {
+    User user = getByNumber(number);
+    user.unblock();
+    return AccountSummaryDTO.from(userRepository.save(user));
+  }
+
   // account + email are all or nothing: if the email fails, the account is rolled back so the admin can fix it and retry
   @Transactional
   public User createAccount(CreateAccountRequestDTO request) {

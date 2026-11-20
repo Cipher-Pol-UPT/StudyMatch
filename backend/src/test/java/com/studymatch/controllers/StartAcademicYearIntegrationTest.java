@@ -109,7 +109,7 @@ class StartAcademicYearIntegrationTest {
   }
 
   private Student withProfile(Student student) {
-    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
     return studentRepository.save(student);
   }
 
@@ -188,7 +188,7 @@ class StartAcademicYearIntegrationTest {
 
     // Assert
     assertTrue(academicYearRepository.findById(CURRENT_YEAR + 2).isEmpty());
-    assertEquals(0.5, studentRepository.findById(ana.getNumber()).orElseThrow().getPersonalityProfile().getLeadership());
+    assertEquals(0.5, studentRepository.findById(ana.getNumber()).orElseThrow().getPersonalityProfile().getOpenness());
   }
 
   @Test

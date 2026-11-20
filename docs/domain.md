@@ -44,16 +44,7 @@ The self-declared fields (about me, skills, interests, banner) are only for disp
 
 Every student takes it on their first login, right after changing their password, and once every academic year (GR1). Until they do, they can only see who they are (`GET /users/me`), change their password and take the test; everything else answers `PERSONALITY_TEST_REQUIRED`. Starting a new academic year deletes every profile, so everyone takes it again, including students who are logged in at that moment (their next request gets the same answer).
 
-There are 15 questions, answered from 1 (disagree) to 5 (agree), three for each Big Five trait. Questions 6 to 10 are worded the other way round, so their answer is flipped (6 minus the answer). Each trait is the average of its three answers, scaled to 0 to 1. Stability is 1 minus neuroticism. The four scores are a mix of the traits:
-
-| Score | Formula |
-| --- | --- |
-| Leadership | 0.50 extraversion + 0.20 conscientiousness + 0.15 stability + 0.15 openness |
-| Problem solving | 0.45 openness + 0.30 conscientiousness + 0.25 stability |
-| Creativity | 0.75 openness + 0.25 extraversion |
-| Execution | 0.60 conscientiousness + 0.20 stability + 0.20 agreeableness |
-
-Each score is between 0 and 1. The code is in `PersonalityProfile.fromAnswers`.
+There are 15 questions, answered from 1 (disagree) to 5 (agree), three for each Big Five trait: openness, conscientiousness, extraversion, agreeableness and neuroticism. Questions 6 to 10 are worded the other way round, so their answer is flipped (6 minus the answer). Each trait is the average of its three answers, scaled to 0 to 1, and the profile is those five traits. Neuroticism is kept as measured, so a higher score means more neurotic. The code is in `PersonalityProfile.fromAnswers`.
 
 ## Grades, category levels and the average
 
@@ -101,19 +92,23 @@ Students can only be enrolled in editions of the current year (`SUBJECT_EDITION_
 
 A student is enrolled in one class of an edition. Enrolling skips anyone already in that edition or who has already passed the subject. A student who failed can enrol again in a later edition, and the failed attempt stays in their history. We don't check the degree, because students can take optional subjects from other degrees.
 
+Staff can move an enrolled student to another class of the same edition (the student record's enrolments carry the edition id for that). A class of another edition gives `CLASS_SECTION_NOT_IN_SUBJECT_EDITION`, and like enrolling, only editions of the current year can change (`SUBJECT_EDITION_NOT_CURRENT`). The enrolment itself moves, so its grades and final grade stay. Its absences stay stored too, but attendance only counts the lessons and absences of the class the student is in now, so after the move it starts again from the new class's lessons. Correcting a lesson of the old class doesn't touch the absences of someone who left it.
+
 ## Tutors and StudyRooms
 
 A student can apply to tutor a subject they passed if their final grade is in the top 5% of the edition they took it in (#41). The cut-off is rounded up with at least one student, and everyone tied at the cut-off is eligible. There's no minimum grade. The teacher of the subject's current edition approves or rejects the application (#81).
 
 A tutor can create StudyRooms for the subjects they tutor (built). A room can't start in the past or end before it starts, and a tutor can't have two rooms at overlapping times.
 
-Once a room has ended, its tutor ticks who actually came (`POST /study-rooms/{id}/attendance` with their student numbers, the list comes from `GET /study-rooms/{id}/participants`). Everyone else counts as absent, and the room becomes Completed, so it can only be confirmed once. Ticking someone who never joined gives `ATTENDEE_NOT_A_PARTICIPANT`. The tutor has 48 hours after the end. After that the room is Completed with nobody attended, and confirming gives `STUDYROOM_CLOSED`. Nothing runs at the 48-hour mark: the status is worked out when the room is read, the same way Full is. Only the people who attended can rate the tutor. Telling them they can rate waits for the notifications (#144), and checking the tutor's achievements waits for #70.
+A student opens the StudyRooms calendar (`GET /study-rooms/`), which shows every room that isn't cancelled or completed — subject, tutor, date, time and places left, sorted by start — and filters it by subject, tutor, topic or date. A room stays on the calendar until it's cancelled or its 48-hour confirmation window closes, the same moment its status becomes Completed. Picking one (`GET /study-rooms/{id}`) shows its full description, the tutor's average rating in that subject (the same number the profile badge shows), and whether the student can join it: not the tutor, not already joined, still open and not started, and enrolled in the subject's current edition without having passed it. The meeting link is only sent to the tutor and the students who already joined, in the calendar and in the detail. Tutors see the rooms they host in the same calendar and open their participants from there (`GET /study-rooms/{id}/participants`).
+
+Once a room has ended, its tutor ticks who actually came (`POST /study-rooms/{id}/attendance` with their student numbers, the list comes from `GET /study-rooms/{id}/participants`). Everyone else counts as absent, and the room becomes Completed, so it can only be confirmed once. Ticking someone who never joined gives `ATTENDEE_NOT_A_PARTICIPANT`. The tutor has 48 hours after the end. After that the room is Completed with nobody attended, and confirming gives `STUDYROOM_CLOSED`. Nothing runs at the 48-hour mark: the status is worked out when the room is read, the same way Full is. Only the people who attended can rate the tutor. Confirming also checks the tutor's achievements (see below). Telling the attendees they can rate waits for the notifications (#144).
 
 A student whose attendance was confirmed rates the tutor once per room, from 1 to 5 stars with an optional comment, up to 7 days after the room ended (`POST /study-rooms/{id}/rating`). A second rating of the same room gives `ROOM_ALREADY_RATED`, and rating again is only possible after attending another of the tutor's rooms. Comments are public: anyone logged in sees them on the tutor's ratings (`GET /students/{number}/ratings`), but never who wrote them. The badge on the tutor's profile averages each student's own average first, so a student who rated three times counts as much as one who rated once. Ana's 5, 5 and 5 with Bruno's 3 give 4.0, not 4.5. The number next to it is still every rating, 4 in that example.
 
 ## Achievements
 
-Tutors earn achievements automatically (#70). Only StudyRooms with at least two confirmed attendees count, and an achievement is never taken away once earned.
+Tutors earn achievements automatically. Only StudyRooms with at least two confirmed attendees count, and an achievement is never taken away once earned. They're checked every time the tutor confirms a room's attendance or gets rated, in the same transaction, so a rating that fails doesn't leave a badge behind. If two ratings at the same time both earn the tutor the same badge, the second one just skips it, so neither rating fails. "Different students tutored" are the students who attended those counted rooms, and the subject average is the same one the profile badge shows. Checking when a tutor application is approved waits for #81, and telling the tutor about a new achievement waits for the notifications (#144).
 
 | Achievement | Criteria |
 | --- | --- |
@@ -131,6 +126,8 @@ An Admin can block any account except another Admin's, so there's always someone
 A blocked account can't log in, and a session it already had ends on its next request (`AccountStateFilter` checks the status every time). Blocking a tutor also cancels their StudyRooms that haven't started yet, without a reason (the block reason stays private), and their pending tutor applications get the status Cancelled. A room already in progress or finished is left as it is. The participants of the cancelled rooms aren't notified yet, that comes with the notifications (#144).
 
 Before confirming, the Admin sees what blocking would cancel (`GET /users/{number}/block-impact`). For a teacher it also lists their editions this year, because Staff has to give them another teacher; that's a warning, the block still goes through.
+
+Unblocking (`PUT /users/{number}/unblock`) makes the account active again and clears the reason, and it can log in straight away. Nothing the block cancelled comes back: the StudyRooms and tutor applications stay cancelled. The user is placed in groups generated after that, like any other active account. Unblocking an account that isn't blocked gives `ACCOUNT_NOT_BLOCKED`. Telling the user they were unblocked waits for the notifications (#144).
 
 ## Groups
 

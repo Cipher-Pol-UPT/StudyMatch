@@ -3,6 +3,7 @@ package com.studymatch.controllers;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -164,7 +165,7 @@ class BlockAccountIntegrationTest {
     Student student = new Student("it.block.tutor@example.com", "Block Test Tutor", passwordEncoder.encode(PASSWORD),
         degree, 1);
     student.setMustChangePassword(false);
-    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5));
+    student.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
     student = studentRepository.save(student);
     student.generateInstitutionalEmail("studymatch.com");
     return studentRepository.saveAndFlush(student);
@@ -186,6 +187,10 @@ class BlockAccountIntegrationTest {
     return mockMvc.perform(put("/users/{number}/block", number).session(session).with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
         .content(body));
+  }
+
+  private ResultActions unblock(Long number, MockHttpSession session) throws Exception {
+    return mockMvc.perform(put("/users/{number}/unblock", number).session(session).with(csrf()));
   }
 
   private static LocalDateTime tomorrowAt(int hour) {
@@ -470,6 +475,58 @@ class BlockAccountIntegrationTest {
         .content(REASON))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("CSRF_TOKEN_INVALID"));
+  }
+
+  // unblock (#33)
+
+  @Test
+  @DisplayName("Unblocking lets the tutor log in again, the reason is cleared and the cancelled room stays cancelled")
+  void unblockTutor() throws Exception {
+    // Arrange
+    block(tutor.getNumber(), adminSession, REASON).andExpect(status().isOk());
+
+    // Act
+    unblock(tutor.getNumber(), adminSession)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.accountStatus").value("ACTIVE"));
+
+    // Assert
+    var saved = userRepository.findById(tutor.getNumber()).orElseThrow();
+    assertEquals(AccountStatus.ACTIVE, saved.getAccountStatus());
+    assertNull(saved.getBlockReason());
+    assertEquals(StudyRoomStatus.CANCELLED, studyRoomRepository.findById(upcomingRoom.getId()).orElseThrow().getStatus());
+    login(tutor.getInstitutionalEmail()).andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("Unblocking an account that isn't blocked is a conflict")
+  void unblockActiveAccountIsRefused() throws Exception {
+    // Act + Assert
+    unblock(tutor.getNumber(), adminSession)
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("ACCOUNT_NOT_BLOCKED"));
+  }
+
+  @Test
+  @DisplayName("Unblocking an unknown account is NOT_FOUND")
+  void unblockUnknownAccount() throws Exception {
+    // Act + Assert
+    unblock(9_999_999L, adminSession)
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+  }
+
+  @Test
+  @DisplayName("Staff can't unblock accounts")
+  void unblockNeedsAdmin() throws Exception {
+    // Arrange
+    block(tutor.getNumber(), adminSession, REASON).andExpect(status().isOk());
+    MockHttpSession staffSession = loginAndGetSession(staff.getInstitutionalEmail());
+
+    // Act + Assert
+    unblock(tutor.getNumber(), staffSession)
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
   }
 
 }

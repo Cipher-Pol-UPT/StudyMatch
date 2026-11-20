@@ -26,7 +26,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.studymatch.enums.AccountStatus;
 import com.studymatch.enums.StatuteType;
 import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Category;
@@ -181,7 +180,7 @@ class ViewStudentsIntegrationTest {
   @Test
   @DisplayName("Blocked accounts can be filtered by status")
   void staffFilterByStatus() throws Exception {
-    rui.setAccountStatus(AccountStatus.BLOCKED);
+    rui.block("test reason");
     staffList("&status=BLOCKED").andExpect(jsonPath("$.content[*].name").value("Rui View"));
   }
 

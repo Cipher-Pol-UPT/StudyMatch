@@ -21,7 +21,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import com.studymatch.dtos.DegreePlacementDTO;
 import com.studymatch.dtos.SubjectEditionRequestDTO;
+import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.dtos.SubjectRequestDTO;
+import com.studymatch.dtos.UpdateSubjectRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.AcademicYear;
@@ -317,6 +319,121 @@ class SubjectServiceTest {
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectService.getSubject(99L));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // update subject
+
+  @Test
+  @DisplayName("Updating changes the trimmed name and the ECTS, and code and category stay")
+  void updateChangesNameAndEcts() {
+    // Arrange
+    Subject subject = new Subject("MAT1", "Mathematics I", 6, mathematics);
+    when(subjectRepository.findWithDegreesById(1L)).thenReturn(Optional.of(subject));
+
+    // Act
+    Subject result = subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("  Calculus I ", 7, null));
+
+    // Assert
+    assertSame(subject, result);
+    assertEquals("Calculus I", subject.getName());
+    assertEquals(7, subject.getEcts());
+    assertEquals("MAT1", subject.getCode());
+    assertSame(mathematics, subject.getCategory());
+  }
+
+  @Test
+  @DisplayName("Without teachers in the request, the current edition isn't touched")
+  void updateWithoutTeachersKeepsEdition() {
+    // Arrange
+    when(subjectRepository.findWithDegreesById(1L))
+        .thenReturn(Optional.of(new Subject("MAT1", "Mathematics I", 6, mathematics)));
+
+    // Act
+    subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, null));
+
+    // Assert
+    verify(subjectEditionService, never()).updateCurrentTeachers(any(), any());
+  }
+
+  @Test
+  @DisplayName("With teachers in the request, the current edition's teachers are updated")
+  void updateWithTeachersUpdatesEdition() {
+    // Arrange
+    Subject subject = new Subject("MAT1", "Mathematics I", 6, mathematics);
+    when(subjectRepository.findWithDegreesById(1L)).thenReturn(Optional.of(subject));
+
+    // Act
+    subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, List.of(1L, 2L)));
+
+    // Assert
+    verify(subjectEditionService).updateCurrentTeachers(subject, List.of(1L, 2L));
+  }
+
+  @Test
+  @DisplayName("When the teachers are refused, the edition's error goes through")
+  void refusedTeachersArePassedOn() {
+    // Arrange
+    Subject subject = new Subject("MAT1", "Mathematics I", 6, mathematics);
+    when(subjectRepository.findWithDegreesById(1L)).thenReturn(Optional.of(subject));
+    when(subjectEditionService.updateCurrentTeachers(subject, List.of()))
+        .thenThrow(new StudyMatchException(ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, List.of())));
+
+    // Assert
+    assertEquals(ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Updating a subject that doesn't exist gets NOT_FOUND")
+  void updateUnknownSubject() {
+    // Arrange
+    when(subjectRepository.findWithDegreesById(99L)).thenReturn(Optional.empty());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectService.updateSubject(99L, new UpdateSubjectRequestDTO("Calculus I", 6, List.of(1L))));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+    verify(subjectEditionService, never()).updateCurrentTeachers(any(), any());
+  }
+
+  // current edition
+
+  @Test
+  @DisplayName("The current edition comes back with the subject and its teachers")
+  void currentEditionOfSubject() {
+    // Arrange
+    Subject subject = new Subject("MAT1", "Mathematics I", 6, mathematics);
+    when(subjectRepository.findWithDegreesById(1L)).thenReturn(Optional.of(subject));
+    when(subjectEditionService.getCurrentEdition(subject))
+        .thenReturn(new SubjectEdition(subject, new AcademicYear(2026), Set.of(ModelTestData.teacher())));
+
+    // Act
+    SubjectEditionResponseDTO result = subjectService.getCurrentEdition(1L);
+
+    // Assert
+    assertEquals(2026, result.academicYear());
+    assertEquals("MAT1", result.subject().code());
+    assertEquals(1, result.teachers().size());
+  }
+
+  @Test
+  @DisplayName("A subject without an edition this year: the edition's NOT_FOUND goes through")
+  void noCurrentEditionIsPassedOn() {
+    // Arrange
+    Subject subject = new Subject("MAT1", "Mathematics I", 6, mathematics);
+    when(subjectRepository.findWithDegreesById(1L)).thenReturn(Optional.of(subject));
+    when(subjectEditionService.getCurrentEdition(subject)).thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectService.getCurrentEdition(1L));
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());

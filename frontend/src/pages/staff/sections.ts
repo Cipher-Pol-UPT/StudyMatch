@@ -4,10 +4,10 @@ import type { NavigationSection } from '../../types/navigation';
 export const STAFF_SECTIONS: NavigationSection[] = [
   { key: 'students', path: '/students', icon: Users, ready: true },
   { key: 'registerStudent', path: '/students/register', icon: UserPlus, ready: true },
-  { key: 'enrolments', path: '/enrolments', icon: ListChecks },
+  { key: 'enrolments', path: '/enrolments', icon: ListChecks, ready: true },
   { key: 'studentClasses', path: '/student-classes', icon: Layers },
   { key: 'statutes', path: '/student-statutes', icon: ShieldCheck },
-  { key: 'attendance', path: '/attendance', icon: ClipboardList },
+  { key: 'attendance', path: '/attendance', icon: ClipboardList, ready: true },
   { key: 'subjects', path: '/subjects', icon: BookOpen },
   { key: 'degrees', path: '/degrees', icon: GraduationCap },
   { key: 'categories', path: '/categories', icon: Layers, ready: true },
