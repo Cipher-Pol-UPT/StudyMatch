@@ -96,6 +96,9 @@ class ViewStudyRoomsIntegrationTest {
   private StudyRoom openRoom;
   private StudyRoom physicsRoom;
   private StudyRoom fullRoom;
+  private StudyRoom cancelledRoom;
+  private StudyRoom completedRoom;
+  private StudyRoom staleRoom;
 
   // two tutors (one of two subjects), a viewer, and rooms in every state (everything is rolled back after each test)
   @BeforeEach
@@ -127,9 +130,9 @@ class ViewStudyRoomsIntegrationTest {
     fullRoom.join(bruno);
     fullRoom = studyRoomRepository.save(fullRoom);
 
-    saveCancelledRoom();
-    saveCompletedRoomWithRating();
-    saveStaleRoom();
+    cancelledRoom = saveCancelledRoom();
+    completedRoom = saveCompletedRoomWithRating();
+    staleRoom = saveStaleRoom();
   }
 
   private Student saveStudent(String personalEmail, String name) {
@@ -154,7 +157,7 @@ class ViewStudyRoomsIntegrationTest {
   }
 
   // a room the tutor confirmed an hour ago, ana attended and rated 5 stars
-  private void saveCompletedRoomWithRating() {
+  private StudyRoom saveCompletedRoomWithRating() {
     StudyRoom room = new StudyRoom(mathsRole, tomorrowAt(14), tomorrowAt(16), 5, "completed room", LINK);
     room.join(ana);
     ReflectionTestUtils.setField(room, "startsAt", LocalDateTime.now().minusHours(3));
@@ -163,20 +166,21 @@ class ViewStudyRoomsIntegrationTest {
     room = studyRoomRepository.save(room);
     Participation participation = room.getParticipations().iterator().next();
     ratingRepository.save(new Rating(participation, 5, "great"));
+    return room;
   }
 
-  private void saveCancelledRoom() {
+  private StudyRoom saveCancelledRoom() {
     StudyRoom room = new StudyRoom(mathsRole, daysFromNowAt(3, 14), daysFromNowAt(3, 16), 5, "cancelled room", LINK);
     room.cancel("test reason");
-    studyRoomRepository.save(room);
+    return studyRoomRepository.save(room);
   }
 
   // stored SCHEDULED but 49 hours past its end, so it counts as completed
-  private void saveStaleRoom() {
+  private StudyRoom saveStaleRoom() {
     StudyRoom room = new StudyRoom(mathsRole, tomorrowAt(14), tomorrowAt(16), 5, "stale room", LINK);
     ReflectionTestUtils.setField(room, "startsAt", LocalDateTime.now().minusHours(51));
     ReflectionTestUtils.setField(room, "endsAt", LocalDateTime.now().minusHours(49));
-    studyRoomRepository.save(room);
+    return studyRoomRepository.save(room);
   }
 
   private MockHttpSession login(String email) throws Exception {
@@ -207,41 +211,45 @@ class ViewStudyRoomsIntegrationTest {
   // the calendar
 
   @Test
-  @DisplayName("The calendar shows only the open rooms, sorted by start: cancelled, completed and stale are hidden")
+  @DisplayName("The calendar shows the open rooms sorted by start and hides cancelled, completed and stale ones")
   void listsOnlyOpenRooms() throws Exception {
-    // Act + Assert
-    listAs("it.vr.viewer@example.com", "")
+    // filtered by my subject, so other data (demo or real) can't get in the way
+    listAs(viewer.getInstitutionalEmail(), "?subjectId=" + maths.getId())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(3))
         .andExpect(jsonPath("$[0].id").value(openRoom.getId()))
         .andExpect(jsonPath("$[0].availablePlaces").value(5))
-        .andExpect(jsonPath("$[1].id").value(physicsRoom.getId()))
-        .andExpect(jsonPath("$[2].id").value(fullRoom.getId()));
+        .andExpect(jsonPath("$[1].id").value(fullRoom.getId()))
+        .andExpect(jsonPath("$[?(@.id == " + cancelledRoom.getId() + ")]").isEmpty())
+        .andExpect(jsonPath("$[?(@.id == " + completedRoom.getId() + ")]").isEmpty())
+        .andExpect(jsonPath("$[?(@.id == " + staleRoom.getId() + ")]").isEmpty());
   }
 
   @Test
   @DisplayName("Filters can be combined: subject, tutor, topic and date each narrow the calendar")
   void filters() throws Exception {
-    listAs("it.vr.viewer@example.com", "?subjectId=" + physics.getId())
-        .andExpect(jsonPath("$.length()").value(1))
-        .andExpect(jsonPath("$[0].id").value(physicsRoom.getId()));
+    listAs(viewer.getInstitutionalEmail(), "?subjectId=" + physics.getId())
+        .andExpect(jsonPath("$[?(@.id == " + physicsRoom.getId() + ")]").isNotEmpty())
+        .andExpect(jsonPath("$[?(@.id == " + openRoom.getId() + ")]").isEmpty());
 
-    listAs("it.vr.viewer@example.com", "?tutor=other")
-        .andExpect(jsonPath("$.length()").value(1))
-        .andExpect(jsonPath("$[0].id").value(fullRoom.getId()));
+    listAs(viewer.getInstitutionalEmail(), "?tutor=other")
+        .andExpect(jsonPath("$[?(@.id == " + fullRoom.getId() + ")]").isNotEmpty())
+        .andExpect(jsonPath("$[?(@.id == " + openRoom.getId() + ")]").isEmpty());
 
-    listAs("it.vr.viewer@example.com", "?topic=revision")
-        .andExpect(jsonPath("$.length()").value(1))
-        .andExpect(jsonPath("$[0].id").value(physicsRoom.getId()));
+    listAs(viewer.getInstitutionalEmail(), "?topic=revision")
+        .andExpect(jsonPath("$[?(@.id == " + physicsRoom.getId() + ")]").isNotEmpty())
+        .andExpect(jsonPath("$[?(@.id == " + openRoom.getId() + ")]").isEmpty());
 
-    listAs("it.vr.viewer@example.com", "?date=" + LocalDate.now().plusDays(1))
-        .andExpect(jsonPath("$.length()").value(2));
+    listAs(viewer.getInstitutionalEmail(), "?date=" + LocalDate.now().plusDays(1))
+        .andExpect(jsonPath("$[?(@.id == " + openRoom.getId() + ")]").isNotEmpty())
+        .andExpect(jsonPath("$[?(@.id == " + physicsRoom.getId() + ")]").isNotEmpty())
+        .andExpect(jsonPath("$[?(@.id == " + fullRoom.getId() + ")]").isEmpty());
   }
 
   @Test
   @DisplayName("A filter that matches nothing is an empty list, not an error")
   void noMatches() throws Exception {
-    listAs("it.vr.viewer@example.com", "?topic=missing")
+    // a subject that can't exist, so no room (mine or otherwise) matches it
+    listAs(viewer.getInstitutionalEmail(), "?subjectId=999999999")
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(0));
   }
@@ -249,7 +257,7 @@ class ViewStudyRoomsIntegrationTest {
   @Test
   @DisplayName("Teachers and unauthenticated users cannot open the calendar")
   void listOnlyForStudents() throws Exception {
-    mockMvc.perform(get("/study-rooms/").session(login("it.vr.teacher@studymatch.com")))
+    mockMvc.perform(get("/study-rooms/").session(login(teacher.getInstitutionalEmail())))
         .andExpect(status().isForbidden());
     mockMvc.perform(get("/study-rooms/")).andExpect(status().isUnauthorized());
   }
@@ -259,7 +267,7 @@ class ViewStudyRoomsIntegrationTest {
   @Test
   @DisplayName("An open room shows its description, the tutor's rating in that subject, and can be joined")
   void detailOfOpenRoom() throws Exception {
-    detailAs("it.vr.viewer@example.com", openRoom.getId())
+    detailAs(viewer.getInstitutionalEmail(), openRoom.getId())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.description").value("Integration practice"))
         .andExpect(jsonPath("$.availablePlaces").value(5))
@@ -273,7 +281,7 @@ class ViewStudyRoomsIntegrationTest {
   @Test
   @DisplayName("The host opens their own room: hosted and no join option")
   void detailForHost() throws Exception {
-    detailAs("it.vr.tutor@example.com", openRoom.getId())
+    detailAs(tutor.getInstitutionalEmail(), openRoom.getId())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.hosted").value(true))
         .andExpect(jsonPath("$.canJoin").value(false));
@@ -282,7 +290,7 @@ class ViewStudyRoomsIntegrationTest {
   @Test
   @DisplayName("A student who already joined can't join again")
   void detailForJoinedStudent() throws Exception {
-    detailAs("it.vr.ana@example.com", fullRoom.getId())
+    detailAs(ana.getInstitutionalEmail(), fullRoom.getId())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.hosted").value(false))
         .andExpect(jsonPath("$.joined").value(true))
@@ -292,13 +300,13 @@ class ViewStudyRoomsIntegrationTest {
   @Test
   @DisplayName("A room that doesn't exist is 404")
   void unknownRoom() throws Exception {
-    detailAs("it.vr.viewer@example.com", 99999999L).andExpect(status().isNotFound());
+    detailAs(viewer.getInstitutionalEmail(), 99999999L).andExpect(status().isNotFound());
   }
 
   @Test
   @DisplayName("Teachers cannot open a room's detail")
   void detailOnlyForStudents() throws Exception {
-    mockMvc.perform(get("/study-rooms/" + openRoom.getId()).session(login("it.vr.teacher@studymatch.com")))
+    mockMvc.perform(get("/study-rooms/" + openRoom.getId()).session(login(teacher.getInstitutionalEmail())))
         .andExpect(status().isForbidden());
   }
 
