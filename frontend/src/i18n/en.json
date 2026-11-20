@@ -862,5 +862,35 @@
       "INVALID_NUMBER": "Not a valid student number",
       "DUPLICATE": "Appears more than once"
     }
+  },
+  "assignments": {
+    "name": "Name",
+    "type": "Type",
+    "date": "Date",
+    "weight": "Weight (%)",
+    "types": {
+      "PROJECT": "Project",
+      "EXAM": "Exam",
+      "PRACTICAL_EXAM": "Practical exam"
+    },
+    "weightLeft": "{{remaining}}% left in this subject",
+    "weightOver": "Only {{remaining}}% is left in this subject.",
+    "groupWork": "Group work",
+    "groupWorkHint": "Students are put in groups by personality.",
+    "alwaysIndividual": "Exams and practical exams are always individual.",
+    "groups": "Groups",
+    "groupsRule": "2 ≤ minimum ≤ optimal ≤ maximum. Every group shares a language.",
+    "minSize": "Minimum",
+    "optimalSize": "Optimal",
+    "maxSize": "Maximum",
+    "sameClass": "Keep groups within the same class",
+    "keepApart": "Keep apart",
+    "addPair": "Add a pair",
+    "removePair": "Remove this pair",
+    "firstStudent": "Student",
+    "secondStudent": "Keep apart from",
+    "chooseStudent": "Choose a student",
+    "create": "Create assignment",
+    "new": "New assignment"
   }
 }

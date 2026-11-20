@@ -862,5 +862,35 @@
       "INVALID_NUMBER": "Número de estudante inválido",
       "DUPLICATE": "Aparece mais do que uma vez"
     }
+  },
+  "assignments": {
+    "name": "Nome",
+    "type": "Tipo",
+    "date": "Data",
+    "weight": "Peso (%)",
+    "types": {
+      "PROJECT": "Projeto",
+      "EXAM": "Exame",
+      "PRACTICAL_EXAM": "Exame prático"
+    },
+    "weightLeft": "Resta {{remaining}}% nesta unidade curricular",
+    "weightOver": "Só resta {{remaining}}% nesta unidade curricular.",
+    "groupWork": "Trabalho de grupo",
+    "groupWorkHint": "Os estudantes são agrupados pela personalidade.",
+    "alwaysIndividual": "Os exames e os exames práticos são sempre individuais.",
+    "groups": "Grupos",
+    "groupsRule": "2 ≤ mínimo ≤ ideal ≤ máximo. Cada grupo partilha uma língua.",
+    "minSize": "Mínimo",
+    "optimalSize": "Ideal",
+    "maxSize": "Máximo",
+    "sameClass": "Manter os grupos dentro da mesma turma",
+    "keepApart": "Manter separados",
+    "addPair": "Adicionar um par",
+    "removePair": "Remover este par",
+    "firstStudent": "Estudante",
+    "secondStudent": "Manter separado de",
+    "chooseStudent": "Escolha um estudante",
+    "create": "Criar avaliação",
+    "new": "Nova avaliação"
   }
 }
