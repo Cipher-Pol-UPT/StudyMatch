@@ -1,6 +1,11 @@
 package com.studymatch.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -19,11 +24,14 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
 import com.studymatch.models.PersonalityProfile;
@@ -41,6 +49,7 @@ import com.studymatch.repositories.SubjectRepository;
 import com.studymatch.repositories.TeacherRepository;
 import com.studymatch.repositories.TutorApplicationRepository;
 import com.studymatch.repositories.TutorRoleRepository;
+import com.studymatch.utils.MeetLinkGenerator;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -80,6 +89,10 @@ class StudyRoomIntegrationTest {
 
   @Autowired
   private StudyRoomRepository studyRoomRepository;
+
+  // never Google in tests
+  @MockitoBean
+  private MeetLinkGenerator meetLinkGenerator;
 
   private Teacher teacher;
   private Category category;
@@ -176,13 +189,52 @@ class StudyRoomIntegrationTest {
   }
 
   @Test
-  @DisplayName("Missing required fields are reported one by one")
+  @DisplayName("Missing required fields are reported one by one, the link isn't one of them")
   void missingFields() throws Exception {
     // Act + Assert
     create(body(null, null, null, null, null))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
-        .andExpect(jsonPath("$.fieldErrors.length()").value(5));
+        .andExpect(jsonPath("$.fieldErrors.length()").value(4));
+  }
+
+  // generate a Google Meet link (#268)
+
+  @Test
+  @DisplayName("Without a link the StudyRoom is created with the Meet link the server made")
+  void createsWithGeneratedLink() throws Exception {
+    // Arrange
+    when(meetLinkGenerator.createLink(any(), eq(tomorrowAt(14)), eq(tomorrowAt(16))))
+        .thenReturn("https://meet.google.com/xyz-wxyz-xyz");
+
+    // Act + Assert
+    create(body(maths.getId(), tomorrowAt(14), tomorrowAt(16), 5, null))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.link").value("https://meet.google.com/xyz-wxyz-xyz"));
+  }
+
+  @Test
+  @DisplayName("When Google can't make the link the tutor gets MEET_LINK_UNAVAILABLE and no StudyRoom is created")
+  void googleUnavailable() throws Exception {
+    // Arrange
+    when(meetLinkGenerator.createLink(any(), any(), any()))
+        .thenThrow(new StudyMatchException(ErrorCode.MEET_LINK_UNAVAILABLE));
+
+    // Act + Assert
+    create(body(maths.getId(), tomorrowAt(14), tomorrowAt(16), 5, null))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.code").value("MEET_LINK_UNAVAILABLE"));
+    assertTrue(studyRoomRepository.findOverlapping(tutor.getNumber(), tomorrowAt(14), tomorrowAt(16)).isEmpty());
+  }
+
+  @Test
+  @DisplayName("A pasted link doesn't ask Google")
+  void pastedLinkSkipsGoogle() throws Exception {
+    // Act
+    create(body(maths.getId(), tomorrowAt(14), tomorrowAt(16), 5, LINK)).andExpect(status().isCreated());
+
+    // Assert
+    verifyNoInteractions(meetLinkGenerator);
   }
 
   @Test

@@ -41,6 +41,7 @@ import com.studymatch.models.Student;
 import com.studymatch.models.StudyRoom;
 import com.studymatch.models.TutorRole;
 import com.studymatch.repositories.StudyRoomRepository;
+import com.studymatch.utils.MeetLinkGenerator;
 
 class StudyRoomServiceTest {
 
@@ -48,6 +49,7 @@ class StudyRoomServiceTest {
   private static final Long SUBJECT_ID = 10L;
   private static final Long ROOM_ID = 20L;
   private static final String LINK = "https://meet.google.com/abc-defg-hij";
+  private static final String GENERATED_LINK = "https://meet.google.com/xyz-wxyz-xyz";
 
   private StudyRoomRepository studyRoomRepository;
   private TutorRoleService tutorRoleService;
@@ -55,6 +57,7 @@ class StudyRoomServiceTest {
   private EnrolmentService enrolmentService;
   private ParticipationService participationService;
   private ApplicationEventPublisher eventPublisher;
+  private MeetLinkGenerator meetLinkGenerator;
   private StudyRoomService studyRoomService;
 
   private TutorRole tutorRole;
@@ -67,8 +70,9 @@ class StudyRoomServiceTest {
     enrolmentService = mock(EnrolmentService.class);
     participationService = mock(ParticipationService.class);
     eventPublisher = mock(ApplicationEventPublisher.class);
+    meetLinkGenerator = mock(MeetLinkGenerator.class);
     studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService, ratingService, enrolmentService,
-        participationService, eventPublisher);
+        participationService, eventPublisher, meetLinkGenerator);
 
     Student tutor = ModelTestData.student("Test Tutor");
     ReflectionTestUtils.setField(tutor, "number", TUTOR_NUMBER);
@@ -149,6 +153,74 @@ class StudyRoomServiceTest {
 
     // Assert
     verify(studyRoomRepository).save(any(StudyRoom.class));
+  }
+
+  // generate a Google Meet link (#268)
+
+  @Test
+  @DisplayName("A pasted link is saved as it is and Google is never asked")
+  void pastedLinkSkipsGoogle() {
+    // Arrange
+    when(tutorRoleService.getByStudentAndSubject(TUTOR_NUMBER, SUBJECT_ID)).thenReturn(tutorRole);
+    when(studyRoomRepository.save(any(StudyRoom.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    // Act
+    StudyRoomDTO room = studyRoomService.create(TUTOR_NUMBER, request(tomorrowAt(14), tomorrowAt(16)));
+
+    // Assert
+    assertEquals(LINK, room.link());
+    verifyNoInteractions(meetLinkGenerator);
+  }
+
+  @Test
+  @DisplayName("Without a link the room gets the one Google made, titled with the subject and the date")
+  void noLinkGetsGeneratedOne() {
+    // Arrange
+    when(tutorRoleService.getByStudentAndSubject(TUTOR_NUMBER, SUBJECT_ID)).thenReturn(tutorRole);
+    when(studyRoomRepository.save(any(StudyRoom.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(meetLinkGenerator.createLink("Test Subject - StudyRoom " + tomorrowAt(14).toLocalDate(), tomorrowAt(14),
+        tomorrowAt(16))).thenReturn(GENERATED_LINK);
+
+    // Act
+    StudyRoomDTO room = studyRoomService.create(TUTOR_NUMBER, requestWithoutLink(tomorrowAt(14), tomorrowAt(16)));
+
+    // Assert
+    assertEquals(GENERATED_LINK, room.link());
+  }
+
+  @Test
+  @DisplayName("When Google can't make the link, MEET_LINK_UNAVAILABLE and nothing is saved")
+  void googleFailsSavesNothing() {
+    // Arrange
+    when(tutorRoleService.getByStudentAndSubject(TUTOR_NUMBER, SUBJECT_ID)).thenReturn(tutorRole);
+    when(meetLinkGenerator.createLink(any(), any(), any()))
+        .thenThrow(new StudyMatchException(ErrorCode.MEET_LINK_UNAVAILABLE));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.create(TUTOR_NUMBER, requestWithoutLink(tomorrowAt(14), tomorrowAt(16))));
+
+    // Assert
+    assertEquals(ErrorCode.MEET_LINK_UNAVAILABLE, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A room that fails its checks never asks Google for a link")
+  void invalidRoomSkipsGoogle() {
+    // Arrange
+    StudyRoom existing = new StudyRoom(tutorRole, tomorrowAt(15), tomorrowAt(17), 5, "existing room", LINK);
+    ReflectionTestUtils.setField(existing, "id", 7L);
+    when(tutorRoleService.getByStudentAndSubject(TUTOR_NUMBER, SUBJECT_ID)).thenReturn(tutorRole);
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(14), tomorrowAt(16)))
+        .thenReturn(List.of(existing));
+
+    // Act
+    assertThrows(StudyMatchException.class,
+        () -> studyRoomService.create(TUTOR_NUMBER, requestWithoutLink(tomorrowAt(14), tomorrowAt(16))));
+
+    // Assert - otherwise a refused room would leave an event in the calendar
+    verifyNoInteractions(meetLinkGenerator);
   }
 
   // view StudyRooms (#43)
@@ -557,6 +629,10 @@ class StudyRoomServiceTest {
 
   private static CreateStudyRoomRequestDTO request(LocalDateTime startsAt, LocalDateTime endsAt) {
     return new CreateStudyRoomRequestDTO(SUBJECT_ID, startsAt, endsAt, "test room", 5, LINK);
+  }
+
+  private static CreateStudyRoomRequestDTO requestWithoutLink(LocalDateTime startsAt, LocalDateTime endsAt) {
+    return new CreateStudyRoomRequestDTO(SUBJECT_ID, startsAt, endsAt, "test room", 5, null);
   }
 
 }

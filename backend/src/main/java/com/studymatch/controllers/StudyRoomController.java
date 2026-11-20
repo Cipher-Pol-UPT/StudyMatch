@@ -51,8 +51,10 @@ public class StudyRoomController {
 
   @PostMapping
   @PreAuthorize("hasRole('STUDENT')")
-  @Operation(summary = "Create a StudyRoom for a subject you tutor. ACCESS_DENIED if you don't tutor it")
-  @ErrorCodes({ ErrorCode.STUDYROOM_IN_PAST, ErrorCode.STUDYROOM_ENDS_BEFORE_START, ErrorCode.STUDYROOM_OVERLAP })
+  @Operation(summary = "Create a StudyRoom for a subject you tutor. ACCESS_DENIED if you don't tutor it. "
+      + "Without a link the server creates the Google Meet link, MEET_LINK_UNAVAILABLE if Google can't")
+  @ErrorCodes({ ErrorCode.STUDYROOM_IN_PAST, ErrorCode.STUDYROOM_ENDS_BEFORE_START, ErrorCode.STUDYROOM_OVERLAP,
+      ErrorCode.MEET_LINK_UNAVAILABLE })
   public ResponseEntity<StudyRoomDTO> create(@Valid @RequestBody CreateStudyRoomRequestDTO request,
       Authentication authentication) {
     User tutor = userService.getByInstitutionalEmail(authentication.getName());
