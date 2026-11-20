@@ -89,7 +89,7 @@ export function StudentPass({ name, number, year, group, traits, teammates = [],
           </div>
           {showTraits ? (
             <ul className="sm-pass-traits">
-              {[...PROFILE_KEYS].sort((a, b) => traits[b] - traits[a]).map((key) => (
+              {PROFILE_KEYS.map((key) => (
                 <li key={key}>
                   <span>{PROFILES[key].label}</span>
                   <i aria-hidden><b style={{ width: `${traits[key]}%`, background: PROFILES[key].color }} /></i>
