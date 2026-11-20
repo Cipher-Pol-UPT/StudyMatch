@@ -10,6 +10,10 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
 
+[![Backend](https://github.com/Cipher-Pol-UPT/StudyMatch/actions/workflows/backend.yml/badge.svg)](https://github.com/Cipher-Pol-UPT/StudyMatch/actions/workflows/backend.yml)
+[![Frontend](https://github.com/Cipher-Pol-UPT/StudyMatch/actions/workflows/frontend.yml/badge.svg)](https://github.com/Cipher-Pol-UPT/StudyMatch/actions/workflows/frontend.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=Cipher-Pol-UPT_StudyMatch&metric=alert_status)](https://sonarcloud.io/project/overview?id=Cipher-Pol-UPT_StudyMatch)
+
 </div>
 
 ---
@@ -219,7 +223,7 @@ The student numbers are the ones a fresh database gets. If you registered studen
 
 ## How we work
 
-Every change starts as an issue and reaches `main` through a reviewed pull request. Use cases are split into a Frontend and a Backend issue. The work happens on its own branch, someone other than the author approves the PR, and the branch is deleted after the merge. A PR that changes behaviour also updates the docs it touches. The details are in [docs/contributing.md](docs/contributing.md).
+Every change starts as an issue and reaches `main` through a reviewed pull request. Use cases are split into a Frontend and a Backend issue. The work happens on its own branch, someone other than the author approves the PR, and the branch is deleted after the merge. A PR that changes behaviour also updates the docs it touches. GitHub Actions builds and tests the backend and the frontend on every pull request, and a PR can only be merged when both checks pass. The details are in [docs/contributing.md](docs/contributing.md).
 
 ## Team
 
