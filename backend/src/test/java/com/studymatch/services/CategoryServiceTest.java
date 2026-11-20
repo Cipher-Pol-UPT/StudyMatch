@@ -89,6 +89,74 @@ class CategoryServiceTest {
     assertEquals(ErrorCode.CATEGORY_ALREADY_EXISTS, e.getCode());
   }
 
+  // rename category
+
+  @Test
+  @DisplayName("Renaming a category saves it with the new name, without spaces around it")
+  void categoryIsRenamed() {
+    // Arrange
+    Category mathematics = new Category("Mathematics");
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(mathematics));
+    when(categoryRepository.saveAndFlush(mathematics)).thenReturn(mathematics);
+
+    // Act
+    Category result = categoryService.renameCategory(1L, new CategoryRequestDTO("  Applied Mathematics "));
+
+    // Assert
+    assertEquals("Applied Mathematics", result.getName());
+    verify(categoryRepository).existsByNameIgnoreCaseAndIdNot("Applied Mathematics", 1L);
+    verify(categoryRepository).saveAndFlush(mathematics);
+  }
+
+  @Test
+  @DisplayName("Renaming to another category's name gets CATEGORY_ALREADY_EXISTS and keeps the original name")
+  void renameToTakenNameIsRefused() {
+    // Arrange
+    Category mathematics = new Category("Mathematics");
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(mathematics));
+    when(categoryRepository.existsByNameIgnoreCaseAndIdNot("Programming", 1L)).thenReturn(true);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> categoryService.renameCategory(1L, new CategoryRequestDTO("Programming")));
+
+    // Assert
+    assertEquals(ErrorCode.CATEGORY_ALREADY_EXISTS, e.getCode());
+    assertEquals("Mathematics", mathematics.getName());
+    verify(categoryRepository, never()).saveAndFlush(any());
+  }
+
+  @Test
+  @DisplayName("If someone else takes the name first, the unique column's error becomes CATEGORY_ALREADY_EXISTS")
+  void simultaneousRenameIsRefused() {
+    // Arrange - the check passed, but by the time we save another Staff already used the name
+    Category mathematics = new Category("Mathematics");
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(mathematics));
+    when(categoryRepository.saveAndFlush(mathematics)).thenThrow(new DataIntegrityViolationException("unique name"));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> categoryService.renameCategory(1L, new CategoryRequestDTO("Programming")));
+
+    // Assert
+    assertEquals(ErrorCode.CATEGORY_ALREADY_EXISTS, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Renaming an id with no category gets NOT_FOUND")
+  void renameUnknownCategoryIsNotFound() {
+    // Arrange
+    when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> categoryService.renameCategory(99L, new CategoryRequestDTO("Programming")));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+    verify(categoryRepository, never()).saveAndFlush(any());
+  }
+
   // list categories
 
   @Test
