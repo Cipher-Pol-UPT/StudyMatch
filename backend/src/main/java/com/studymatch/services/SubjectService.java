@@ -10,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.DegreePlacementDTO;
 import com.studymatch.dtos.SubjectEditionRequestDTO;
+import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.dtos.SubjectRequestDTO;
+import com.studymatch.dtos.UpdateSubjectRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Category;
@@ -70,6 +72,25 @@ public class SubjectService {
   @Transactional
   public SubjectEdition registerEdition(Long subjectId, SubjectEditionRequestDTO request) {
     return subjectEditionService.createEdition(getSubject(subjectId), request);
+  }
+
+  // only name and ECTS: code and category define the students' category levels.
+  // Teachers change in this year's edition only, and only when the request brings them
+  @Transactional
+  public Subject updateSubject(Long id, UpdateSubjectRequestDTO request) {
+    Subject subject = getSubject(id);
+    subject.setName(request.name().trim());
+    subject.setEcts(request.ects());
+    if (request.teacherNumbers() != null) {
+      subjectEditionService.updateCurrentTeachers(subject, request.teacherNumbers());
+    }
+    return subject;
+  }
+
+  // mapped here, the edition's teachers and classes are lazy and only load inside the transaction
+  @Transactional(readOnly = true)
+  public SubjectEditionResponseDTO getCurrentEdition(Long id) {
+    return SubjectEditionResponseDTO.from(subjectEditionService.getCurrentEdition(getSubject(id)));
   }
 
   public List<Subject> listSubjects() {

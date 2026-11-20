@@ -53,6 +53,21 @@ public class SubjectEditionService {
     }
   }
 
+  // update subject (staff): the subject's edition this year, the only one whose teachers can still change
+  public SubjectEdition getCurrentEdition(Subject subject) {
+    return academicYearService.findCurrent()
+        .flatMap(year -> subjectEditionRepository.findBySubjectAndAcademicYear(subject, year))
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  // past editions keep their teachers. With no teachers the model refuses it (AT_LEAST_ONE_TEACHER_REQUIRED)
+  @Transactional
+  public SubjectEdition updateCurrentTeachers(Subject subject, List<Long> teacherNumbers) {
+    SubjectEdition edition = getCurrentEdition(subject);
+    edition.setTeachers(teacherService.getTeachers(teacherNumbers));
+    return edition;
+  }
+
   // discover the editions assigned to the authenticated teacher
   @Transactional(readOnly = true)
   public List<SubjectEditionResponseDTO> listTaughtBy(Long teacherNumber) {
