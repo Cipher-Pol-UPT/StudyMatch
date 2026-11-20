@@ -1,0 +1,7 @@
+.attendance { display: grid; gap: 24px; max-width: 920px; min-width: 0; }
+.attendance__lesson { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.attendance__sheet { display: grid; gap: 16px; min-width: 0; }
+.attendance__student { display: inline-flex; align-items: center; gap: 12px; min-width: 0; }
+.attendance__actions { display: flex; justify-content: flex-end; }
+
+@media (max-width: 560px) { .attendance__lesson { grid-template-columns: minmax(0, 1fr); } }

@@ -530,7 +530,7 @@
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Selecione pelo menos um docente.",
     "CLASS_SECTION_ALREADY_EXISTS": "Esta turma já existe.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "A turma não pertence a esta edição da unidade curricular.",
-    "SUBJECT_EDITION_NOT_CURRENT": "Só é possível inscrever estudantes em edições do ano letivo atual.",
+    "SUBJECT_EDITION_NOT_CURRENT": "Só é possível alterar edições do ano letivo atual.",
     "GROUP_WORK_NOT_ALLOWED_FOR_EXAMS": "Os exames não permitem trabalho de grupo.",
     "INVALID_GROUP_SIZES": "Os tamanhos dos grupos são inválidos.",
     "SEPARATION_SAME_STUDENT": "Selecione dois estudantes diferentes.",
@@ -862,5 +862,25 @@
       "INVALID_NUMBER": "Número de estudante inválido",
       "DUPLICATE": "Aparece mais do que uma vez"
     }
+  },
+  "attendance": {
+    "intro": "Escolha a aula e depois marque quem faltou.",
+    "chooseLesson": "Escolha a aula",
+    "chooseLessonBody": "Indique a data e a hora de início para ver a turma.",
+    "noEditionsBody": "Só é possível registar presenças em edições do ano letivo atual.",
+    "sheet": "Presenças",
+    "student": "Estudante",
+    "absent": "Faltou",
+    "justified": "Justificada",
+    "absentLabel": "{{name}} faltou",
+    "justifiedLabel": "A falta de {{name}} está justificada",
+    "statute": "Não aplicável · Estatuto especial",
+    "noStudents": "Sem estudantes nesta turma",
+    "noStudentsBody": "Os estudantes inscritos nesta turma aparecem aqui.",
+    "recordedTitle": "Esta aula já tem registo",
+    "recordedBody": "{{lesson}}. Está a corrigi-lo; ao guardar, as faltas são substituídas.",
+    "save": "Guardar presenças · {{count}} faltas",
+    "saved_one": "Presenças guardadas: {{count}} falta.",
+    "saved_other": "Presenças guardadas: {{count}} faltas."
   }
 }
