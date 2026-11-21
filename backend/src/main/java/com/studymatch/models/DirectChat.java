@@ -1,5 +1,7 @@
 package com.studymatch.models;
 
+import java.util.List;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -47,6 +49,11 @@ public class DirectChat extends Chat {
   @Override
   public boolean hasMember(User user) {
     return firstUser.getNumber().equals(user.getNumber()) || secondUser.getNumber().equals(user.getNumber());
+  }
+
+  @Override
+  public List<User> getMembers() {
+    return List.of(firstUser, secondUser);
   }
 
 }

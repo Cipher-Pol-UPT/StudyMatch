@@ -42,7 +42,7 @@ The frontend never talks to the database and the controllers never talk to repos
 
 There are two places. Which one depends on whether the rule needs the database.
 
-**Rules about one object live in the model**, usually in its constructor or setter, and they throw a `StudyMatchException` with an error code. A `StudyRoom` can't start in the past or end before it starts. A `GroupingRule` needs groups of at least 2, with the optimal size between the minimum and the maximum. A `Rating` needs confirmed attendance and has to come within 7 days of the session ending. `PersonalityProfile.fromAnswers` turns the 15 answers into the four scores. These rules hold whoever creates the object, and they're tested with plain JUnit, without Spring.
+**Rules about one object live in the model**, usually in its constructor or setter, and they throw a `StudyMatchException` with an error code. A `StudyRoom` can't start in the past or end before it starts. A `GroupingRule` needs groups of at least 2, with the optimal size between the minimum and the maximum. A `Rating` needs confirmed attendance and has to come within 7 days of the session ending. `PersonalityProfile.fromAnswers` turns the 20 answers into the five scores. These rules hold whoever creates the object, and they're tested with plain JUnit, without Spring.
 
 **Rules that need the database or several objects live in the service.** Is this assignment name already taken in the edition? Do the weights go over 100%? Has the student already passed this subject? Is every assignment graded, so the final grade can be set?
 
@@ -115,7 +115,7 @@ The WebSocket only pushes. Sending, editing and deleting a message are normal RE
 | `/topic/chats/{id}` | the members who have the chat open | `MESSAGE_CREATED`, `MESSAGE_EDITED`, `MESSAGE_DELETED` |
 | `/user/queue/chats` | only that user | `CHAT_UPDATED`, `CHAT_REMOVED` |
 
-Every push looks like `{ "type": ..., "payload": ... }`. `/app` is for frames the browser sends to the server, which only typing will use (#222).
+Every push looks like `{ "type": ..., "payload": ... }`. Sending a message pushes `MESSAGE_CREATED` to the chat's topic and `CHAT_UPDATED` to each member's queue, both with the message as the payload, so the open chat adds it and the chat list moves that chat to the top. `/app` is for frames the browser sends to the server, which only typing will use (#222).
 
 The checks happen in three places:
 

@@ -134,8 +134,9 @@ public class StudyRoomController {
   @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NOT_A_PARTICIPANT, ErrorCode.STUDYROOM_CLOSED,
       ErrorCode.STUDYROOM_ALREADY_STARTED })
   public ResponseEntity<StudyRoomDTO> leave(@PathVariable Long id, Authentication authentication) {
-    User student = userService.getByInstitutionalEmail(authentication.getName());
-    return ResponseEntity.ok(studyRoomService.leave(student.getNumber(), id));
+    // hasRole('STUDENT') guarantees this is a Student
+    Student student = (Student) userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(studyRoomService.leave(student, id));
   }
 
 }

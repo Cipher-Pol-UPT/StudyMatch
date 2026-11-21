@@ -18,6 +18,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/users/logout` | logged in | end the session (204) |
 | GET | `/users/me` | logged in | who's logged in, and whether they still have to change their password or take the personality test |
 | PUT | `/users/change-password` | logged in | change your own password |
+| GET | `/users/chat-contacts?search=&page=` | Student, Teacher | who you can message: Students and Teachers that aren't blocked, by name, institutional email or number, 20 per page, without yourself |
 | POST | `/users/` | Admin | create a Staff or Teacher account |
 | GET | `/users/` | Admin | search accounts of every role by name, institutional email or number, 20 per page, optionally by status |
 | GET | `/users/{number}/block-impact` | Admin | what blocking would cancel, and a teacher's editions this year that need another teacher |
@@ -41,7 +42,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/students/me/profile` | Student | your own profile |
 | PUT | `/students/me/profile` | Student | edit your banner, photo, about me, skills, interests and languages |
 | GET | `/students/{number}/profile` | logged in | a student's profile, with the private part only for them, Staff and their teachers |
-| POST | `/students/personality-test` | Student | send the 15 answers, once per academic year |
+| POST | `/students/personality-test` | Student | send the 20 Mini-IPIP answers, once per academic year |
 
 ## Degrees, categories, subjects and academic years
 
@@ -90,6 +91,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | Method | Path | Who | What it does |
 | --- | --- | --- | --- |
 | GET | `/tutors/me/subjects` | Student | the subjects you tutor |
+| GET | `/tutors/me/applicable-subjects` | Student | the subjects you passed, with your grade, position and whether you can apply to tutor them |
+| POST | `/tutor-applications/` | Student in the subject's top 5% | apply to tutor a subject, creating a Pending application |
 | POST | `/study-rooms/` | Student who tutors the subject | create a StudyRoom, with the tutor's Meet link or, without one, a link the server creates on Google |
 | GET | `/study-rooms/` | Student | the open StudyRooms (not cancelled, not completed), filtered by subject, tutor, topic or date |
 | GET | `/study-rooms/{id}` | Student | one StudyRoom's description, the tutor's rating in that subject, and whether you can join |
@@ -110,7 +113,13 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 ## Chats
 
-Chats don't have REST endpoints yet. The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and Teachers, where the browser subscribes to `/topic/chats/{id}` for a chat it's in and `/user/queue/chats` for its chat list. The CONNECT frame needs the `X-XSRF-TOKEN` header. How it works is in [architecture.md](architecture.md#live-updates).
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/chats/direct/{number}` | Student, Teacher | your DM with that person, `chatId` is null until the first message creates it. Anyone the contact search wouldn't offer is 404 |
+| POST | `/chats/{id}/messages` | member of the chat | send a text message (1 to 2000 characters in UTF-16 units, an emoji is usually 2), pushed to the members |
+| POST | `/chats/direct/{number}/messages` | Student, Teacher | send a DM, the first one creates the chat. Both sending the first one at the same moment gives the second `DIRECT_CHAT_ALREADY_EXISTS`, and sending again works |
+
+The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and Teachers, where the browser subscribes to `/topic/chats/{id}` for a chat it's in and `/user/queue/chats` for its chat list. The CONNECT frame needs the `X-XSRF-TOKEN` header. How it works is in [architecture.md](architecture.md#live-updates).
 
 ## Analytics
 
@@ -120,4 +129,4 @@ Chats don't have REST endpoints yet. The live part is the WebSocket at `/ws` (ST
 
 ## Coming next
 
-The other use cases (editing and viewing groups, tutor applications, notifications, chats) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (editing and viewing groups, tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

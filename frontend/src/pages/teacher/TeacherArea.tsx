@@ -1,5 +1,6 @@
 import { Route, useLocation } from 'react-router-dom';
 import { RoleLayout } from '../../components/layout/RoleLayout';
+import { ChatsPage } from '../chats/ChatsPage';
 import type { CurrentUser } from '../../types/currentUser';
 import { TEACHER_SECTIONS } from './sections';
 import { TeacherSubjectsPage } from './TeacherSubjectsPage';
@@ -22,6 +23,8 @@ export function TeacherArea({ currentUser, onLoggedOut }: TeacherAreaProps) {
   const tab = SUBJECT_TABS.find(item => new RegExp(`^/subject-editions/[^/]+/${item}`).test(pathname));
   return (
     <RoleLayout currentUser={currentUser} sections={TEACHER_SECTIONS} onLoggedOut={onLoggedOut} activePath={tab ? `/${tab}` : pathname}>
+      <Route path="/chats" element={<ChatsPage />} />
+      <Route path="/chats/direct/:number" element={<ChatsPage />} />
       {SUBJECT_TABS.map(item => <Route key={item} path={`/${item}`} element={<TeacherSubjectsPage tab={item} />} />)}
       <Route path="/subject-editions/:editionId" element={<TeacherSubjectLayout />}>
         <Route path="students" element={<TeacherStudentsPage />} />

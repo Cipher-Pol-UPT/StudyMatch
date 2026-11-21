@@ -53,6 +53,7 @@ import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
 import com.studymatch.repositories.ChatRepository;
 import com.studymatch.repositories.DegreeRepository;
+import com.studymatch.repositories.MessageRepository;
 import com.studymatch.repositories.StaffRepository;
 import com.studymatch.repositories.StudentRepository;
 
@@ -81,6 +82,9 @@ class ChatWebSocketIntegrationTest {
 
   @Autowired
   private ChatRepository chatRepository;
+
+  @Autowired
+  private MessageRepository messageRepository;
 
   @Autowired
   private ApplicationEventPublisher eventPublisher;
@@ -117,6 +121,9 @@ class ChatWebSocketIntegrationTest {
   @AfterEach
   void tearDown() {
     stompClient.stop();
+    messageRepository.deleteAll(messageRepository.findAll().stream()
+        .filter(message -> message.getChat().getId().equals(chat.getId()))
+        .toList());
     chatRepository.delete(chat);
     studentRepository.deleteAll(List.of(ana, rui, eva));
     staffRepository.delete(staff);
@@ -161,6 +168,19 @@ class ChatWebSocketIntegrationTest {
 
   private URI url(String path) {
     return URI.create("http://localhost:" + port + path);
+  }
+
+  // a POST with the login's cookies and CSRF header, like client.ts sends it
+  private int post(Map<String, String> cookies, String path, String body) throws Exception {
+    HttpRequest request = HttpRequest.newBuilder(url(path))
+        .header("Cookie", cookies.entrySet().stream()
+            .map(c -> c.getKey() + "=" + c.getValue())
+            .collect(Collectors.joining("; ")))
+        .header("X-XSRF-TOKEN", cookies.get("XSRF-TOKEN"))
+        .header("Content-Type", "application/json")
+        .POST(HttpRequest.BodyPublishers.ofString(body))
+        .build();
+    return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
   }
 
   private StompSession connect(Map<String, String> cookies, boolean withCsrf, BlockingQueue<String> errors)
@@ -321,6 +341,34 @@ class ChatWebSocketIntegrationTest {
     // Assert
     assertNull(frame);
     assertNotNull(errors.poll(WAIT_SECONDS, TimeUnit.SECONDS));
+  }
+
+  @Test
+  @DisplayName("A message sent through REST reaches the other member: in the open chat and in their chat list")
+  void sentMessageIsPushed() throws Exception {
+    // Arrange - a first event on each proves Rui's subscriptions are registered
+    StompSession session = connect(rui);
+    BlockingQueue<Map<String, Object>> chatTopic = subscribe(session, "/topic/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> chatList = subscribe(session, "/user/queue/chats");
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), chatTopic));
+    assertNotNull(publishUntilReceived(new UserChatEvent(rui, ChatEventType.CHAT_UPDATED, Map.of()), chatList));
+    chatTopic.clear();
+    chatList.clear();
+
+    // Act
+    int status = post(login(ana.getInstitutionalEmail()), "/chats/" + chat.getId() + "/messages",
+        "{\"text\":\"hi Rui\"}");
+
+    // Assert
+    assertEquals(201, status);
+    Map<String, Object> created = chatTopic.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(created);
+    assertEquals("MESSAGE_CREATED", created.get("type"));
+    assertEquals("hi Rui", ((Map<?, ?>) created.get("payload")).get("text"));
+    Map<String, Object> updated = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(updated);
+    assertEquals("CHAT_UPDATED", updated.get("type"));
+    assertEquals(chat.getId().intValue(), ((Map<?, ?>) updated.get("payload")).get("chatId"));
   }
 
   @Test

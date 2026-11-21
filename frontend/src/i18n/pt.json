@@ -30,6 +30,7 @@
       "assignments": "Avaliações",
       "groups": "Grupos de trabalho",
       "grades": "Classificações",
+      "chats": "Conversas",
       "tutorApplications": "Candidaturas a tutor"
     },
     "descriptions": {
@@ -51,6 +52,7 @@
       "assignments": "Criar e gerir avaliações das unidades curriculares.",
       "groups": "Consultar, gerar, editar, importar e exportar grupos de trabalho.",
       "grades": "Registar classificações nas suas unidades curriculares.",
+      "chats": "Envie mensagens aos seus estudantes e colegas.",
       "tutorApplications": "Consultar e decidir candidaturas a tutor nas suas unidades curriculares."
     }
   },
@@ -321,7 +323,7 @@
   "personality": {
     "title": "Teste de personalidade",
     "heading": "Como trabalha em equipa?",
-    "lead": "{{count}} afirmações, cerca de 3 minutos. Não há respostas certas: responda com sinceridade, ajuda-nos a formar grupos onde todos têm um papel.",
+    "lead": "{{count}} afirmações, cerca de 3 minutos. Descreva-se como é atualmente, e não como gostaria de ser no futuro. Descreva-se como sinceramente se vê, em relação a outras pessoas que conhece do mesmo sexo que o seu e aproximadamente da mesma idade. Não há respostas certas: responda com sinceridade, ajuda-nos a formar grupos onde todos têm um papel.",
     "yearly": "Tem de fazer este teste uma vez por ano letivo para usar o StudyMatch. Depois de submeter, as respostas não podem ser alteradas.",
     "answered": "Respondidas",
     "progress": "{{answered}} de {{total}}",
@@ -330,29 +332,34 @@
     "privacy": "O seu perfil é usado para equilibrar os grupos neste ano letivo. Só o próprio, os seus docentes e os funcionários o podem ver.",
     "continue": "Continuar para o StudyMatch",
     "questions": {
-      "1": "Sinto-me à vontade a falar em frente à turma.",
-      "2": "Procuro perceber o ponto de vista dos colegas antes de discordar.",
-      "3": "Planeio as tarefas com antecedência para cumprir os prazos.",
-      "4": "Quando um prazo se aproxima, a ansiedade toma conta de mim com facilidade.",
-      "5": "Gosto de experimentar formas diferentes de resolver um problema.",
-      "6": "Em trabalhos de grupo, prefiro ficar em segundo plano.",
-      "7": "Às vezes critico o trabalho dos colegas de forma dura.",
-      "8": "Deixo muitas vezes o trabalho para a última hora.",
-      "9": "Mantenho a calma quando as coisas correm mal no grupo.",
-      "10": "Prefiro seguir métodos conhecidos a explorar ideias novas.",
-      "11": "Costumo ser eu a puxar a conversa quando o grupo está calado.",
-      "12": "Gosto de ajudar um colega com dificuldades, mesmo que isso me atrase.",
-      "13": "Reviso o meu trabalho com cuidado antes de o entregar.",
-      "14": "Preocupo-me muito com a possibilidade de as coisas correrem mal.",
-      "15": "Interesso-me por temas fora da minha área de estudo."
+      "1": "Sou a vida de uma festa.",
+      "2": "Simpatizo com os sentimentos dos outros.",
+      "3": "Realizo as tarefas imediatamente.",
+      "4": "Tenho mudanças frequentes de humor.",
+      "5": "Tenho uma imaginação vívida.",
+      "6": "Não falo muito.",
+      "7": "Não estou interessado nos problemas dos outros.",
+      "8": "Muitas vezes esqueço-me de colocar as coisas no seu devido lugar.",
+      "9": "Estou calmo a maior parte do tempo.",
+      "10": "Não me interesso por ideias abstratas.",
+      "11": "Falo com muitas pessoas diferentes em festas.",
+      "12": "Sinto as emoções dos outros.",
+      "13": "Gosto de ordem.",
+      "14": "Fico perturbado com facilidade.",
+      "15": "Tenho dificuldade em entender ideias abstratas.",
+      "16": "Prefiro manter-me em segundo plano.",
+      "17": "Não estou realmente interessado nos outros.",
+      "18": "Faço uma confusão com as coisas.",
+      "19": "Raramente me sinto triste.",
+      "20": "Não tenho uma boa imaginação."
     }
   },
   "likert": {
-    "1": "Discordo totalmente",
-    "2": "Discordo",
-    "3": "Neutro",
-    "4": "Concordo",
-    "5": "Concordo totalmente"
+    "1": "Muito inexato",
+    "2": "Moderadamente inexato",
+    "3": "Nem exato nem inexato",
+    "4": "Moderadamente exato",
+    "5": "Muito exato"
   },
   "roles": {
     "ADMIN": "Administrador",
@@ -488,6 +495,7 @@
     "quickActions": "Acesso rápido",
     "actions": {
       "rooms": "Um espaço partilhado para se concentrar, trocar ideias e progredir em conjunto.",
+      "chats": "Envie mensagens aos seus colegas e professores.",
       "subjects": "Explore as suas unidades curriculares e aprofunde cada uma.",
       "groups": "Consulte os seus grupos e conheça a sua equipa.",
       "assignments": "Veja o que está para entregar e acompanhe as suas entregas."
@@ -606,8 +614,13 @@
     "ROOM_ALREADY_RATED": "Já avaliou esta StudyRoom.",
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Só os estudantes inscritos nesta unidade curricular que ainda não a concluíram podem inscrever-se.",
     "JOINED_STUDYROOM_OVERLAP": "Sobrepõe-se a uma sala de estudo em que já está inscrito ou que orienta ({{subject}}, {{startsAt}} – {{endsAt}}).",
+    "NOT_ELIGIBLE_FOR_TUTORING": "Só os estudantes cuja nota final está entre os 5% melhores da sua edição podem ser tutores desta unidade curricular.",
+    "TUTOR_APPLICATION_ALREADY_PENDING": "Já tem uma candidatura pendente para esta unidade curricular.",
+    "TUTOR_ROLE_ALREADY_EXISTS": "Já é tutor desta unidade curricular.",
+    "SUBJECT_NOT_TAUGHT_THIS_YEAR": "Esta unidade curricular não é lecionada este ano letivo.",
     "ACHIEVEMENT_NOT_EARNED": "Ainda não obteve uma destas conquistas.",
-    "MEET_LINK_UNAVAILABLE": "Não foi possível criar a ligação do Google Meet neste momento. Cole a sua própria ligação para criar a StudyRoom."
+    "MEET_LINK_UNAVAILABLE": "Não foi possível criar a ligação do Google Meet neste momento. Cole a sua própria ligação para criar a StudyRoom.",
+    "DIRECT_CHAT_ALREADY_EXISTS": "Esta conversa acabou de ser iniciada pela outra pessoa. Envie a sua mensagem novamente."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",
@@ -825,6 +838,7 @@
   "nav": {
     "home": "Início",
     "rooms": "Salas de estudo",
+    "chats": "Conversas",
     "subjects": "Unidades curriculares",
     "groups": "Grupos de estudo",
     "assignments": "Trabalhos",
@@ -1057,5 +1071,24 @@
     "replaceWarning": "Os estudantes podem já ter visto os seus grupos. Os novos grupos substituem-nos, bem como quaisquer alterações manuais, quando confirmar.",
     "keep": "Mantê-los",
     "replace": "Gerar novos grupos"
+  },
+  "chats": {
+    "title": "Conversas",
+    "newMessage": "Nova mensagem",
+    "newMessageDescription": "Procure Estudantes e Professores por nome ou número.",
+    "searchPeople": "Procurar pessoas",
+    "searchPlaceholder": "Nome ou número",
+    "people": "Pessoas",
+    "noOneFound": "Ninguém encontrado",
+    "narrowDown": "A mostrar {{shown}} de {{total}}. Escreva um nome ou número para restringir a pesquisa.",
+    "contactLine": "{{role}} · {{number}}",
+    "noChats": "Ainda não tem conversas",
+    "noChatsBody": "Envie uma mensagem a um colega ou professor. A conversa aparece aqui depois da primeira mensagem.",
+    "pickChat": "Escolha uma conversa",
+    "pickChatBody": "Escolha uma conversa à esquerda ou comece uma nova.",
+    "conversation": "Conversa",
+    "with": "Conversa com {{name}}",
+    "back": "Voltar às conversas",
+    "sayHi": "{{line}}. Ainda não conversaram, diga olá a {{name}}."
   }
 }

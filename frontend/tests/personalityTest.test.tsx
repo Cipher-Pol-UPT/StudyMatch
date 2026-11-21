@@ -54,30 +54,31 @@ afterEach(() => {
 });
 
 describe('personality test', () => {
-  it('shows the 15 statements in the order the backend scores them', () => {
+  it('shows the 20 Mini-IPIP statements in the order the backend scores them', () => {
     mockBackend();
     renderPage();
 
     const groups = questionGroups();
 
-    expect(groups).toHaveLength(15);
-    expect(within(groups[0]).getByText('I feel comfortable speaking in front of the class.')).toBeTruthy();
-    expect(within(groups[14]).getByText("I'm interested in topics outside my field of study.")).toBeTruthy();
+    expect(groups).toHaveLength(20);
+    expect(within(groups[0]).getByText('I am the life of the party.')).toBeTruthy();
+    expect(within(groups[14]).getByText('I have difficulty understanding abstract ideas.')).toBeTruthy();
+    expect(within(groups[19]).getByText('I do not have a good imagination.')).toBeTruthy();
   });
 
   it('sends the answers in question order and shows the profile the backend calculated', async () => {
     const fetchMock = mockBackend();
     renderPage();
 
-    answerAll('Agree');
-    answer(0, 'Strongly agree');
-    answer(14, 'Strongly disagree');
+    answerAll('Moderately accurate');
+    answer(0, 'Very accurate');
+    answer(19, 'Very inaccurate');
     submit();
 
     expect(await screen.findByRole('heading', { name: 'Your profile' })).toBeTruthy();
     expect(screen.queryByText('Your strongest profile')).toBeNull();
     expect(screen.getByText('100%')).toBeTruthy();
-    expect(sentAnswers(fetchMock)).toEqual([5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1]);
+    expect(sentAnswers(fetchMock)).toEqual([5, ...Array(18).fill(4), 1]);
     expect(fetchMock).toHaveBeenCalledWith('/api/students/personality-test', expect.objectContaining({
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'test-csrf-token' },
@@ -91,7 +92,7 @@ describe('personality test', () => {
     });
     renderPage();
 
-    answerAll('Neutral');
+    answerAll('Neither accurate nor inaccurate');
     submit();
 
     expect(await screen.findByText('Check the highlighted fields.')).toBeTruthy();
@@ -104,18 +105,18 @@ describe('personality test', () => {
     const fetchMock = mockBackend({ status: 400, body: { code: 'VALIDATION_FAILED', fieldErrors: [] } });
     renderPage();
 
-    answer(0, 'Agree');
+    answer(0, 'Moderately accurate');
     submit();
 
     await screen.findByText('Check the highlighted fields.');
-    expect(sentAnswers(fetchMock)).toEqual([4, null, null, null, null, null, null, null, null, null, null, null, null, null, null]);
+    expect(sentAnswers(fetchMock)).toEqual([4, ...Array(19).fill(null)]);
   });
 
   it('shows the backend message when the test was already taken this year', async () => {
     mockBackend({ status: 409, body: { code: 'PERSONALITY_TEST_ALREADY_TAKEN' } });
     renderPage();
 
-    answerAll('Agree');
+    answerAll('Moderately accurate');
     submit();
 
     expect(await screen.findByText('You have already taken the personality test this academic year.')).toBeTruthy();
@@ -125,17 +126,17 @@ describe('personality test', () => {
     mockBackend();
     renderPage();
 
-    answer(0, 'Agree');
-    answer(1, 'Disagree');
+    answer(0, 'Moderately accurate');
+    answer(1, 'Moderately inaccurate');
 
-    expect(screen.getByText('2 of 15')).toBeTruthy();
+    expect(screen.getByText('2 of 20')).toBeTruthy();
   });
 
   it('unlocks the platform after seeing the profile', async () => {
     mockBackend();
     const onCompleted = renderPage();
 
-    answerAll('Agree');
+    answerAll('Moderately accurate');
     submit();
     fireEvent.click(await screen.findByRole('button', { name: 'Continue to StudyMatch' }));
 

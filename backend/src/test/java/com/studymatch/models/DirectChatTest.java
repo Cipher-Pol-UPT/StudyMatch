@@ -1,8 +1,11 @@
 package com.studymatch.models;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -62,6 +65,16 @@ class DirectChatTest {
 
     // Act + Assert
     assertTrue(chat.hasMember(anaAgain));
+  }
+
+  @Test
+  @DisplayName("The members are exactly the two users")
+  void membersList() {
+    // Arrange
+    DirectChat chat = new DirectChat(rui, ana);
+
+    // Act + Assert
+    assertEquals(List.of(ana, rui), chat.getMembers());
   }
 
   @Test

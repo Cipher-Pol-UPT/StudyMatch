@@ -18,6 +18,7 @@ import com.studymatch.dtos.AccountSummaryDTO;
 import com.studymatch.dtos.BlockImpactDTO;
 import com.studymatch.dtos.BlockedAccountDTO;
 import com.studymatch.dtos.ChangePasswordRequestDTO;
+import com.studymatch.dtos.ChatContactDTO;
 import com.studymatch.dtos.CreateAccountRequestDTO;
 import com.studymatch.dtos.PageDTO;
 import com.studymatch.dtos.ResetPasswordRequestDTO;
@@ -28,6 +29,7 @@ import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.utils.EmailSender;
 import com.studymatch.utils.SearchPatterns;
 import com.studymatch.models.Staff;
+import com.studymatch.models.Student;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.User;
 import com.studymatch.repositories.UserRepository;
@@ -100,6 +102,34 @@ public class UserService {
       }
       return byText;
     };
+  }
+
+  // who you can message: Students and Teachers that aren't blocked, never yourself (GR8). the only place this rule lives
+  private static Specification<User> chatContactOf(User user) {
+    return Specification.allOf(
+        (contact, query, where) -> contact.type().in(Student.class, Teacher.class),
+        (contact, query, where) -> where.equal(contact.get("accountStatus"), AccountStatus.ACTIVE),
+        (contact, query, where) -> where.notEqual(contact.get("number"), user.getNumber()));
+  }
+
+  // start a DM
+  @Transactional(readOnly = true)
+  public PageDTO<ChatContactDTO> listChatContacts(String search, User user, int page) {
+    Specification<User> filter = chatContactOf(user);
+    if (search != null && !search.isBlank()) {
+      filter = filter.and(matchesSearch(search.trim()));
+    }
+
+    PageRequest pageRequest = PageRequest.of(Math.max(page, 0), ACCOUNTS_PER_PAGE, Sort.by("name", "number"));
+    return PageDTO.from(userRepository.findAll(filter, pageRequest), ChatContactDTO::from);
+  }
+
+  // the same rule as the search, so someone it wouldn't offer looks the same as nobody
+  @Transactional(readOnly = true)
+  public User getChatContact(Long number, User user) {
+    Specification<User> byNumber = (contact, query, where) -> where.equal(contact.get("number"), number);
+    return userRepository.findOne(chatContactOf(user).and(byNumber))
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
   }
 
   // what blocking would cancel, the queries just come back empty for roles that have none of it

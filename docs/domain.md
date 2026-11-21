@@ -20,7 +20,7 @@ The diagram shows the entities and how they relate. This page covers what it can
 | Assignment | Something graded in an edition: project, exam and so on, with a date and a weight. Group work also has a `GroupingRule` (min, optimal and max group size, same class or not, and pairs of students to keep apart). |
 | Grade | One student's grade (0 to 20, two decimals) on one assignment. |
 | Lesson, Absence | A lesson of a class at a given start time. Only absences are stored, each one justified or not. |
-| Personality profile | Four scores from the yearly personality test. |
+| Personality profile | Five scores from the yearly personality test. |
 | Special statute | Worker-student, athlete and so on, with an end date. A student has one at most, with no history. |
 | Tutor application, Tutor role | A student asks to tutor a subject they passed; the teacher approves it and the student gets the tutor role for that subject. |
 | StudyRoom, Participation, Rating | An online session a tutor hosts for one subject, the students who join it (and whether they attended), and their 1 to 5 star ratings. |
@@ -44,7 +44,11 @@ The self-declared fields (about me, skills, interests, banner) are only for disp
 
 Every student takes it on their first login, right after changing their password, and once every academic year (GR1). Until they do, they can only see who they are (`GET /users/me`), change their password and take the test; everything else answers `PERSONALITY_TEST_REQUIRED`. Starting a new academic year deletes every profile, so everyone takes it again, including students who are logged in at that moment (their next request gets the same answer).
 
-There are 15 questions, answered from 1 (disagree) to 5 (agree), three for each Big Five trait: openness, conscientiousness, extraversion, agreeableness and neuroticism. Questions 6 to 10 are worded the other way round, so their answer is flipped (6 minus the answer). Each trait is the average of its three answers, scaled to 0 to 1, and the profile is those five traits. Neuroticism is kept as measured, so a higher score means more neurotic. The code is in `PersonalityProfile.fromAnswers`.
+The test is the Mini-IPIP (Donnellan, Oswald, Baird & Lucas, 2006): 20 statements, four for each Big Five trait, asked in the paper's order with the item wording from the IPIP key (ipip.ori.org/MiniIPIPKey.htm). Students describe themselves as they generally are now, from 1 (very inaccurate) to 5 (very accurate). Eleven statements are keyed the other way ("I don't talk a lot" counts against extraversion), so their answer is flipped to 6 minus the answer. Every item weighs the same: a trait is the average of its four answers, scaled to 0 to 1, so it has 17 possible values. The Mini-IPIP calls openness Intellect/Imagination; we keep the name openness. Neuroticism is kept as measured, so a higher score means more neurotic. The code is in `PersonalityProfile.fromAnswers`.
+
+There's no validated Portuguese Mini-IPIP. The Portuguese statements come from João P. Oliveira's translation of the 50-item IPIP markers (ipip.ori.org/Portuguese50-itemBigFiveFactorMarkers.htm), which has all 20 items. We changed two things: the spelling follows the current agreement ("abstratas"), and "Get upset easily" is "Fico perturbado com facilidade", because the translation says "preocupado" (worried), which is a different thing.
+
+Donnellan, M. B., Oswald, F. L., Baird, B. M., & Lucas, R. E. (2006). The Mini-IPIP scales: Tiny-yet-effective measures of the Big Five factors of personality. *Psychological Assessment, 18*(2), 192-203.
 
 ## Grades, category levels and the average
 
@@ -96,7 +100,7 @@ Staff can move an enrolled student to another class of the same edition (the stu
 
 ## Tutors and StudyRooms
 
-A student can apply to tutor a subject they passed if their final grade is in the top 5% of the edition they took it in (#41). The cut-off is rounded up with at least one student, and everyone tied at the cut-off is eligible. There's no minimum grade. The teacher of the subject's current edition approves or rejects the application (#81).
+A student can apply to tutor a subject they passed if their final grade is in the top 5% of the edition they took it in, rounded up with at least one student, and everyone tied at the cut-off is eligible (no minimum grade). `GET /tutors/me/applicable-subjects` lists the subjects they passed with their grade, position and eligibility, and `POST /tutor-applications/` creates the Pending application. A Pending application (`TUTOR_APPLICATION_ALREADY_PENDING`) or an existing Tutor Role (`TUTOR_ROLE_ALREADY_EXISTS`) blocks a new one, but a Rejected application doesn't. A subject with no edition this year can't be applied to (`SUBJECT_NOT_TAUGHT_THIS_YEAR`). The teacher of the subject's current edition approves or rejects the application (#81).
 
 A tutor can create StudyRooms for the subjects they tutor (built). A room can't start in the past or end before it starts, and a tutor can't have two rooms at overlapping times. The tutor pastes their own Google Meet link, or leaves it out and the server creates one (#268): an open Meet space on the StudyMatch Google account, so the students join without knocking even though nobody from that account is in the call. The link isn't tied to a date, the room's date and time are the StudyRoom's. Google is only asked once the room passed every check, and gets 5 seconds to connect and 5 to answer. If it can't make the link (not set up, unreachable, too slow or refused) the room isn't created and the tutor gets `MEET_LINK_UNAVAILABLE`, so they can paste their own.
 
@@ -159,6 +163,8 @@ Only Students and Teachers take part in chats; Staff and Admin don't. A DM is be
 
 Any user can block any other user. A blocked user can't send DMs to the user who blocked them, and can't add them to a group chat. The DM is hidden for the user who blocked while the block lasts. Group chats they already share aren't affected (GR9).
 
-A message is text (up to 2000 characters) with up to 5 attachments, or one GIF, or one sticker, and never empty. Attachments are PNG, JPEG, GIF, WebP, PDF, Office documents (docx, xlsx, pptx) or plain text, up to 10 MB each, checked by their file signature. Only the author edits a message, only its text, and an edited message shows "(edited)". Only the author deletes a message, and deleting removes it, its attachments and its reactions for good, with no notice to anyone (GR10).
+A message is text (up to 2000 characters, counted in UTF-16 units like a text box's `maxlength`, so most emoji count as 2) with up to 5 attachments, or one GIF, or one sticker, and never empty. Attachments are PNG, JPEG, GIF, WebP, PDF, Office documents (docx, xlsx, pptx) or plain text, up to 10 MB each, checked by their file signature. Only the author edits a message, only its text, and an edited message shows "(edited)". Only the author deletes a message, and deleting removes it, its attachments and its reactions for good, with no notice to anyone (GR10).
 
 Each member picks a notification level per chat: All (the default), Only @mentions or None. A chat has at most one unread notification per member, updated with the number of new messages and marked as read when the chat is opened (GR11).
+
+On the frontend, Students and Teachers have a Chats page (`/chats`), laid out like the approved chat prototype with its pieces in the library's `blocks/chat`. New message searches who you can message by name or number (`GET /users/chat-contacts`) and opens the DM at `/chats/direct/{number}` (`GET /chats/direct/{number}`): with someone you've never talked to it's empty, with a hint to say hi, and it only reaches the chat list once its first message exists. Anyone the search wouldn't offer gives `NOT_FOUND`, shown as a banner in the conversation (#199). The list itself, the messages and the message box come with #201, #203 and #205.
