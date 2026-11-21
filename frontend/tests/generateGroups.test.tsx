@@ -68,6 +68,17 @@ describe('generate groups (teacher)', () => {
     expect(screen.getAllByText('Draft')).toHaveLength(2);
   });
 
+  it('shows the loading bar on the first generate too, until the draft is there', async () => {
+    backend({ [GENERATE]: () => reply(draft, 201) });
+    open();
+
+    fireEvent.click(await button('Generate groups'));
+
+    expect(await screen.findByRole('progressbar', { name: 'Generating groups…' })).toBeTruthy();
+    expect(await screen.findByText('Group 1')).toBeTruthy();
+    expect(screen.queryByRole('progressbar')).toBeNull();
+  });
+
   it('shows a loading bar while generating, with the actions disabled', async () => {
     let finish: (response: Response) => void = () => undefined;
     backend({ [GENERATE]: () => reply(draft, 201) });
@@ -79,7 +90,7 @@ describe('generate groups (teacher)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
 
-    expect(await screen.findByRole('progressbar', { name: 'Generating groups' })).toBeTruthy();
+    expect(await screen.findByRole('progressbar', { name: 'Generating groups…' })).toBeTruthy();
     expect((screen.getByRole('button', { name: 'Confirm and publish' }) as HTMLButtonElement).disabled).toBe(true);
     finish(reply(draft, 201));
     await waitFor(() => expect(screen.queryByRole('progressbar')).toBeNull());
