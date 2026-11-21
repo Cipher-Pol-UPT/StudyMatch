@@ -259,6 +259,11 @@
     "places": "Lugares",
     "placesHint": "{{min}}–{{max}} participantes",
     "meetLink": "Ligação do Google Meet",
+    "meetChoice": "Ligação da reunião",
+    "meetAuto": "Criar a ligação do Meet por mim",
+    "meetAutoHint": "A StudyMatch cria-a no Google para a data e hora da StudyRoom.",
+    "meetOwn": "Usar a minha ligação",
+    "meetOwnHint": "Cole uma ligação do Google Meet que já tenha.",
     "descriptionPlaceholder": "O que vai abordar? O que devem trazer os participantes?",
     "created": "Sala de estudo criada."
   },
@@ -590,7 +595,8 @@
     "ROOM_ALREADY_RATED": "Já avaliou esta StudyRoom.",
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Só os estudantes inscritos nesta unidade curricular que ainda não a concluíram podem inscrever-se.",
     "JOINED_STUDYROOM_OVERLAP": "Sobrepõe-se a uma sala de estudo em que já está inscrito ou que orienta ({{subject}}, {{startsAt}} – {{endsAt}}).",
-    "ACHIEVEMENT_NOT_EARNED": "Ainda não obteve uma destas conquistas."
+    "ACHIEVEMENT_NOT_EARNED": "Ainda não obteve uma destas conquistas.",
+    "MEET_LINK_UNAVAILABLE": "Não foi possível criar a ligação do Google Meet neste momento. Cole a sua própria ligação para criar a StudyRoom."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",
