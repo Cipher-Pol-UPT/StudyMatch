@@ -20,7 +20,7 @@ The diagram shows the entities and how they relate. This page covers what it can
 | Assignment | Something graded in an edition: project, exam and so on, with a date and a weight. Group work also has a `GroupingRule` (min, optimal and max group size, same class or not, and pairs of students to keep apart). |
 | Grade | One student's grade (0 to 20, two decimals) on one assignment. |
 | Lesson, Absence | A lesson of a class at a given start time. Only absences are stored, each one justified or not. |
-| Personality profile | Four scores from the yearly personality test. |
+| Personality profile | Five scores from the yearly personality test. |
 | Special statute | Worker-student, athlete and so on, with an end date. A student has one at most, with no history. |
 | Tutor application, Tutor role | A student asks to tutor a subject they passed; the teacher approves it and the student gets the tutor role for that subject. |
 | StudyRoom, Participation, Rating | An online session a tutor hosts for one subject, the students who join it (and whether they attended), and their 1 to 5 star ratings. |
@@ -44,7 +44,11 @@ The self-declared fields (about me, skills, interests, banner) are only for disp
 
 Every student takes it on their first login, right after changing their password, and once every academic year (GR1). Until they do, they can only see who they are (`GET /users/me`), change their password and take the test; everything else answers `PERSONALITY_TEST_REQUIRED`. Starting a new academic year deletes every profile, so everyone takes it again, including students who are logged in at that moment (their next request gets the same answer).
 
-There are 15 questions, answered from 1 (disagree) to 5 (agree), three for each Big Five trait: openness, conscientiousness, extraversion, agreeableness and neuroticism. Questions 6 to 10 are worded the other way round, so their answer is flipped (6 minus the answer). Each trait is the average of its three answers, scaled to 0 to 1, and the profile is those five traits. Neuroticism is kept as measured, so a higher score means more neurotic. The code is in `PersonalityProfile.fromAnswers`.
+The test is the Mini-IPIP (Donnellan, Oswald, Baird & Lucas, 2006): 20 statements, four for each Big Five trait, asked in the paper's order with the item wording from the IPIP key (ipip.ori.org/MiniIPIPKey.htm). Students describe themselves as they generally are now, from 1 (very inaccurate) to 5 (very accurate). Eleven statements are keyed the other way ("I don't talk a lot" counts against extraversion), so their answer is flipped to 6 minus the answer. Every item weighs the same: a trait is the average of its four answers, scaled to 0 to 1, so it has 17 possible values. The Mini-IPIP calls openness Intellect/Imagination; we keep the name openness. Neuroticism is kept as measured, so a higher score means more neurotic. The code is in `PersonalityProfile.fromAnswers`.
+
+There's no validated Portuguese Mini-IPIP. The Portuguese statements come from João P. Oliveira's translation of the 50-item IPIP markers (ipip.ori.org/Portuguese50-itemBigFiveFactorMarkers.htm), which has all 20 items. We changed two things: the spelling follows the current agreement ("abstratas"), and "Get upset easily" is "Fico perturbado com facilidade", because the translation says "preocupado" (worried), which is a different thing.
+
+Donnellan, M. B., Oswald, F. L., Baird, B. M., & Lucas, R. E. (2006). The Mini-IPIP scales: Tiny-yet-effective measures of the Big Five factors of personality. *Psychological Assessment, 18*(2), 192-203.
 
 ## Grades, category levels and the average
 

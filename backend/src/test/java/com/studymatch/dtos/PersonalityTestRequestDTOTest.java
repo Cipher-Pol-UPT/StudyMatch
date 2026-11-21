@@ -41,30 +41,30 @@ class PersonalityTestRequestDTOTest {
   // number of answers
 
   @Test
-  @DisplayName("Exactly 15 answers is valid")
-  void fifteenAnswersIsValid() {
+  @DisplayName("Exactly 20 answers is valid")
+  void twentyAnswersIsValid() {
     // Act
-    Set<ConstraintViolation<PersonalityTestRequestDTO>> violations = validator.validate(withAnswerCount(15));
+    Set<ConstraintViolation<PersonalityTestRequestDTO>> violations = validator.validate(withAnswerCount(20));
 
     // Assert
     assertTrue(violations.isEmpty());
   }
 
   @Test
-  @DisplayName("14 answers is too few")
-  void fourteenAnswersIsInvalid() {
+  @DisplayName("19 answers is too few")
+  void nineteenAnswersIsInvalid() {
     // Act
-    Set<ConstraintViolation<PersonalityTestRequestDTO>> violations = validator.validate(withAnswerCount(14));
+    Set<ConstraintViolation<PersonalityTestRequestDTO>> violations = validator.validate(withAnswerCount(19));
 
     // Assert
     assertOnlyViolationOn(violations, "answers");
   }
 
   @Test
-  @DisplayName("16 answers is too many")
-  void sixteenAnswersIsInvalid() {
+  @DisplayName("21 answers is too many")
+  void twentyOneAnswersIsInvalid() {
     // Act
-    Set<ConstraintViolation<PersonalityTestRequestDTO>> violations = validator.validate(withAnswerCount(16));
+    Set<ConstraintViolation<PersonalityTestRequestDTO>> violations = validator.validate(withAnswerCount(21));
 
     // Assert
     assertOnlyViolationOn(violations, "answers");

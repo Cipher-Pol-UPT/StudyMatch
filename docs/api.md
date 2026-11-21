@@ -41,7 +41,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/students/me/profile` | Student | your own profile |
 | PUT | `/students/me/profile` | Student | edit your banner, photo, about me, skills, interests and languages |
 | GET | `/students/{number}/profile` | logged in | a student's profile, with the private part only for them, Staff and their teachers |
-| POST | `/students/personality-test` | Student | send the 15 answers, once per academic year |
+| POST | `/students/personality-test` | Student | send the 20 Mini-IPIP answers, once per academic year |
 
 ## Degrees, categories, subjects and academic years
 
