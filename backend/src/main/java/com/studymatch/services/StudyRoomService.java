@@ -25,6 +25,7 @@ import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Student;
 import com.studymatch.models.StudyRoom;
+import com.studymatch.models.Subject;
 import com.studymatch.models.TutorRole;
 import com.studymatch.repositories.StudyRoomRepository;
 import com.studymatch.utils.MeetLinkGenerator;
@@ -120,12 +121,16 @@ public class StudyRoomService {
     boolean joined = room.getParticipations().stream()
         .anyMatch(participation -> participation.getStudent().getNumber().equals(viewerNumber));
     // the same checks the Join use case (#45) enforces, so the option is only shown when it can work
-    boolean eligible = enrolmentService.isEnrolledInCurrentEdition(viewerNumber, tutorRole.getSubject())
-        && !enrolmentService.hasPassed(viewerNumber, tutorRole.getSubject());
     boolean canJoin = !hosted && !joined && room.getStatus() == StudyRoomStatus.SCHEDULED
-        && LocalDateTime.now().isBefore(room.getStartsAt()) && eligible;
+        && LocalDateTime.now().isBefore(room.getStartsAt()) && isEligible(viewerNumber, tutorRole.getSubject());
     return StudyRoomDetailDTO.from(room, ratingService.getAverageStars(tutorRole),
         ratingService.countRatings(tutorRole), hosted, joined, canJoin);
+  }
+
+  // join StudyRoom (#45): eligible when enrolled in the subject's current edition and hasn't passed it
+  private boolean isEligible(Long studentNumber, Subject subject) {
+    return enrolmentService.isEnrolledInCurrentEdition(studentNumber, subject)
+        && !enrolmentService.hasPassed(studentNumber, subject);
   }
 
   // the link is private: only the tutor and the students who joined see it
@@ -177,6 +182,38 @@ public class StudyRoomService {
     StudyRoom saved = studyRoomRepository.save(room);
     eventPublisher.publishEvent(new TutorActivityEvent(saved.getTutorRole().getStudent()));
     return StudyRoomDTO.from(saved);
+  }
+
+  @Transactional
+  public StudyRoomDTO join(Student student, Long roomId) {
+    // locked so two students joining the last place at the same time don't both get in
+    StudyRoom room = studyRoomRepository.findLockedById(roomId)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    Long studentNumber = student.getNumber();
+
+    // eligibility (#45): enrolled in the subject's current edition and hasn't passed it
+    if (!isEligible(studentNumber, room.getTutorRole().getSubject())) {
+      throw new StudyMatchException(ErrorCode.NOT_ELIGIBLE_FOR_STUDYROOM);
+    }
+
+    // a student can't be in two rooms at the same time, whether they joined one or host it
+    List<StudyRoom> overlapping = new ArrayList<>();
+    overlapping.addAll(studyRoomRepository.findJoinedOverlapping(studentNumber, roomId, room.getStartsAt(),
+        room.getEndsAt()));
+    overlapping.addAll(studyRoomRepository.findOverlapping(studentNumber, room.getStartsAt(), room.getEndsAt()));
+    if (!overlapping.isEmpty()) {
+      StudyRoom conflict = overlapping.get(0);
+      throw new StudyMatchException(ErrorCode.JOINED_STUDYROOM_OVERLAP, Map.of(
+          "id", conflict.getId(),
+          "subject", conflict.getTutorRole().getSubject().getName(),
+          "startsAt", conflict.getStartsAt().toString(),
+          "endsAt", conflict.getEndsAt().toString()));
+    }
+
+    // the model checks it's open, not started, not the tutor, not already joined, and not full
+    room.join(student);
+    // notifying the tutor comes with notifications (#144)
+    return StudyRoomDTO.from(studyRoomRepository.save(room));
   }
 
   @Transactional

@@ -1,14 +1,17 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, Outlet, useMatch, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Outlet, useLocation, useMatch, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getMySubjectEditions } from '../../api/studentDirectory';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
-import { Breadcrumbs } from '../../studymatch-ui';
+import { Breadcrumbs, Tabs } from '../../studymatch-ui';
+import { SUBJECT_TABS, type SubjectTab } from './subjectTabs';
 import '../../styles/studentDirectory.css';
 
 export function TeacherSubjectLayout() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { editionId } = useParams();
   const id = Number(editionId);
   const load = useCallback(async () => {
@@ -21,13 +24,14 @@ export function TeacherSubjectLayout() {
   // on a student's page the trail goes one step further, and the subject links back to its list
   const student = useMatch('/subject-editions/:editionId/students/:number');
   const [params] = useSearchParams();
+  const tab = SUBJECT_TABS.find(item => pathname.startsWith(`/subject-editions/${editionId}/${item}`)) ?? 'students';
 
   return (
     <div className="role-page directory-page">
       <Breadcrumbs
         linkAs={Link}
         items={[
-          { label: t('workspace.sections.students'), href: '/students' },
+          { label: t(`workspace.sections.${tab}`), href: `/${tab}` },
           {
             label: edition.data?.subject.name ?? t('directory.subject'),
             href: student ? `/subject-editions/${editionId}/students?${params}` : undefined,
@@ -47,6 +51,9 @@ export function TeacherSubjectLayout() {
               <span>{edition.data.subject.category.name}</span>
             </p>
           </header>
+          <Tabs<SubjectTab> label={t('subjectTabs.label')} value={tab}
+            onValueChange={next => navigate(`/subject-editions/${editionId}/${next}`)}
+            tabs={SUBJECT_TABS.map(value => ({ value, label: t(`workspace.sections.${value}`) }))} />
           <Outlet context={edition.data} />
         </>
       )}
