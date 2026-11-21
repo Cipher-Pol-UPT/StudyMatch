@@ -2,6 +2,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { getCurrentUser } from './api/auth';
+import { connectChatSocket, disconnectChatSocket } from './api/chatSocket';
 import { LoginPage } from './pages/login/LoginPage';
 import { ChangePasswordPage } from './pages/password/ChangePasswordPage';
 import { PersonalityTestPage } from './pages/personality/PersonalityTestPage';
@@ -36,12 +37,26 @@ function ApplicationSession() {
       .finally(() => setIsCheckingSession(false));
   }, []);
 
+  const canChat = currentUser !== null && canUseChats(currentUser);
+  useEffect(() => {
+    if (!canChat) {
+      return;
+    }
+    connectChatSocket();
+    return () => { void disconnectChatSocket(); };
+  }, [canChat]);
+
   return (
     <>
       <AnimatePresence>{isCheckingSession && <LoadingScreen key="loading" />}</AnimatePresence>
       {!isCheckingSession && <SessionPage currentUser={currentUser} setCurrentUser={setCurrentUser} />}
     </>
   );
+}
+
+// the backend only opens the chat socket for these, after the password change and the personality test
+function canUseChats(user: CurrentUser): boolean {
+  return (user.role === 'STUDENT' || user.role === 'TEACHER') && !user.mustChangePassword && !user.personalityTestRequired;
 }
 
 interface SessionPageProps {

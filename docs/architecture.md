@@ -104,6 +104,29 @@ Swagger UI does the same thing (`springdoc.swagger-ui.csrf.enabled=true`), so "T
 
 Not logged in at all gets 401 `UNAUTHENTICATED`, except for `POST /users/login`, `/users/forgot-password`, `/users/reset-password` and the API docs. Errors from the security layer are written by `SecurityErrorWriter` in the same JSON shape as every other error.
 
+### Live updates
+
+Chats need the server to tell the browser about a new message without the browser asking, and a normal request can't do that. So the backend also has a WebSocket at `/ws`, a connection that stays open. It speaks STOMP, a small protocol on top of WebSocket that adds subscribing to a destination and sending to one. Spring's in-memory broker keeps track of who is subscribed to what.
+
+The WebSocket only pushes. Sending, editing and deleting a message are normal REST requests, with the same validation, error codes and tests as everything else. When one of them changes a chat, the service publishes a `ChatEvent` (or a `UserChatEvent` for one user's chat list) and `ChatEventRelay` pushes it. The relay listens with `@TransactionalEventListener`, which waits for the transaction to commit, so a change that rolls back is never pushed.
+
+| Destination | Who gets it | Events |
+| --- | --- | --- |
+| `/topic/chats/{id}` | the members who have the chat open | `MESSAGE_CREATED`, `MESSAGE_EDITED`, `MESSAGE_DELETED` |
+| `/user/queue/chats` | only that user | `CHAT_UPDATED`, `CHAT_REMOVED` |
+
+Every push looks like `{ "type": ..., "payload": ... }`. `/app` is for frames the browser sends to the server, which only typing will use (#222).
+
+The checks happen in three places:
+
+1. The handshake is a normal HTTP request, so it goes through the filter chain above with the session cookie. Only Students and Teachers get through (GR8). Staff and Admin get 403, and someone not logged in gets 401.
+2. `WebSocketSecurityConfig` puts Spring Security on every STOMP frame. CONNECT has to carry the `X-XSRF-TOKEN` header with the cookie's value, the same as a POST. After that the browser can only subscribe to a chat topic with a numeric id or its own queue and send to `/app`; anything else is refused, so nobody can send straight to `/topic/chats/5` and fake a message.
+3. `ChatSubscriptionInterceptor` refuses a SUBSCRIBE to a chat the user isn't a member of, using the same check as the REST endpoints (`ChatService.getChatFor`). It also refuses any other `/topic` destination, because the broker reads `*`, `**` or `{id}` in a subscription as a pattern, and `/topic/chats/*` would get every chat's messages. The browser gets an ERROR frame.
+
+Spring's default CSRF check for WebSockets wants the masked token it puts in server-rendered forms, and our frontend only has the cookie's value. We swapped in the plain check (`CsrfChannelInterceptor`), which compares that value, the same thing `csrf.spa()` accepts on REST.
+
+On the frontend, `api/chatSocket.ts` holds the one connection, at `/api/ws` like every other call (Vite's proxy has `ws: true` so it forwards the WebSocket too). `App.tsx` opens it once a Student or Teacher is logged in with their password changed and the personality test done, and closes it on logout. If the connection drops, stompjs reconnects every 5 seconds, reads the CSRF cookie again and makes every subscription again, because the server forgets them with the old connection. Screens don't touch the connection: they use `useChatEvents(chatId, onEvent)` or `useChatListEvents(onEvent)` from `hooks/useChatEvents.ts`, which listen while the component is on screen.
+
 ## Persistence
 
 We use JPA with Hibernate, and `ddl-auto=update` creates and extends the tables from the models when the backend starts. It never drops or renames columns, so after renaming a field the old column stays behind. It doesn't update the check constraint Hibernate puts on an enum column either, so after adding a value to an enum (like `CANCELLED` for tutor applications) an older database still refuses it. `docker compose down -v` gives you a clean database.

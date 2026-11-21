@@ -58,6 +58,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
             .requestMatchers(HttpMethod.GET, API_DOCS).permitAll()
             .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS.toArray(String[]::new)).permitAll()
+            .requestMatchers("/ws").hasAnyRole("STUDENT", "TEACHER")
             .anyRequest().authenticated())
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)
