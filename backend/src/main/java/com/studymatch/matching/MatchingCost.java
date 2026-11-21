@@ -27,9 +27,8 @@ public final class MatchingCost {
   public static final double LANGUAGE_WEIGHT = 10;
   public static final double SIZE_WEIGHT = 0.5;
 
-  // in z-scores: a bigger emotional stability gap in one group is penalised, and so is a group of all the same level
+  // in z-scores: a bigger emotional stability gap in one group is penalised
   public static final double EMOTIONAL_STABILITY_MAX_RANGE = 2.0;
-  public static final double LEVEL_MIN_SPREAD = 0.5;
 
   private MatchingCost() {
   }
@@ -78,6 +77,7 @@ public final class MatchingCost {
         traitMeans[trait][group] = mean(values);
         traitSpreads[trait][group] = standardDeviation(values);
       }
+      // grades only count here, as even group averages; without grades a student is left out (GR6)
       double[] levels = levels(members);
       if (levels.length > 0) {
         levelMeans.add(mean(levels));
@@ -97,12 +97,6 @@ public final class MatchingCost {
     double total = personalityPenalty(members);
     total += LANGUAGE_WEIGHT * (sharesLanguage(members) ? 0 : 1);
     total += SIZE_WEIGHT * (members.size() == problem.getOptimalSize() ? 0 : 1);
-
-    // GR6: students without grades are left out, so on a cold start this is zero
-    double[] levels = levels(members);
-    if (levels.length > 1) {
-      total += LEVEL_WEIGHT * Math.max(0, LEVEL_MIN_SPREAD - standardDeviation(levels));
-    }
     return total;
   }
 

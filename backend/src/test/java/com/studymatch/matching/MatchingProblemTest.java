@@ -99,7 +99,7 @@ class MatchingProblemTest {
     List<Member> members = Collections.nCopies(3, member);
 
     // Act + Assert
-    assertThrows(IllegalArgumentException.class, () -> new MatchingProblem(members, List.of(), 4, 4, 5));
+    assertThrows(NoValidSplitException.class, () -> new MatchingProblem(members, List.of(), 4, 4, 5));
   }
 
   @Test

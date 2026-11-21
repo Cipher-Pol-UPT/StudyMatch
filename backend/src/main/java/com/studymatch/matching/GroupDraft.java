@@ -6,7 +6,6 @@ import static com.studymatch.matching.MatchingCost.EMOTIONAL_STABILITY_MAX_RANGE
 import static com.studymatch.matching.MatchingCost.EMOTIONAL_STABILITY_WEIGHT;
 import static com.studymatch.matching.MatchingCost.EXTRAVERSION_WEIGHT;
 import static com.studymatch.matching.MatchingCost.LANGUAGE_WEIGHT;
-import static com.studymatch.matching.MatchingCost.LEVEL_MIN_SPREAD;
 import static com.studymatch.matching.MatchingCost.LEVEL_WEIGHT;
 import static com.studymatch.matching.MatchingCost.SIZE_WEIGHT;
 import static com.studymatch.matching.MatchingProblem.EMOTIONAL_STABILITY;
@@ -38,7 +37,6 @@ final class GroupDraft {
   private double maxStability = Double.NEGATIVE_INFINITY;
   private int levels;
   private double levelSum;
-  private double levelSquares;
 
   GroupDraft(MatchingProblem problem) {
     this.problem = problem;
@@ -76,20 +74,18 @@ final class GroupDraft {
     if (member.hasLevel()) {
       levels++;
       levelSum += member.level();
-      levelSquares += member.level() * member.level();
     }
   }
 
   double cost() {
     return cost(size(), lowAgreeableness, lowEmotionalStability, lowConscientiousness > 0 && highConscientiousness > 0,
-        highExtraversion, languages, maxStability - minStability, levels, levelSum, levelSquares);
+        highExtraversion, languages, maxStability - minStability);
   }
 
   // what cost() would be after add(student), without adding them
   double costWith(int student) {
     Member member = problem.member(student);
     double stability = member.traits()[EMOTIONAL_STABILITY];
-    boolean leveled = member.hasLevel();
     return cost(size() + 1,
         lowAgreeableness + (member.has(LOW_AGREEABLENESS) ? 1 : 0),
         lowEmotionalStability + (member.has(LOW_EMOTIONAL_STABILITY) ? 1 : 0),
@@ -97,10 +93,7 @@ final class GroupDraft {
             && (highConscientiousness > 0 || member.has(HIGH_CONSCIENTIOUSNESS)),
         highExtraversion + (member.has(HIGH_EXTRAVERSION) ? 1 : 0),
         languages & member.languages(),
-        Math.max(maxStability, stability) - Math.min(minStability, stability),
-        levels + (leveled ? 1 : 0),
-        levelSum + (leveled ? member.level() : 0),
-        levelSquares + (leveled ? member.level() * member.level() : 0));
+        Math.max(maxStability, stability) - Math.min(minStability, stability));
   }
 
   // how much the fairness terms would grow if the student joined: each group's share of the variance of the
@@ -124,7 +117,7 @@ final class GroupDraft {
 
   // the same rules as MatchingCost.groupCost, from the counts
   private double cost(int size, int lowA, int lowEs, boolean conscientiousnessGap, int extraverts, int common,
-      double stabilityRange, int levelCount, double sum, double squares) {
+      double stabilityRange) {
     // an empty group has no extravert and isn't at the optimal size
     if (size == 0) {
       return EXTRAVERSION_WEIGHT + SIZE_WEIGHT;
@@ -136,11 +129,6 @@ final class GroupDraft {
     total += extraverts == 0 || extraverts >= 3 ? EXTRAVERSION_WEIGHT : 0;
     total += common == 0 ? LANGUAGE_WEIGHT : 0;
     total += size == problem.getOptimalSize() ? 0 : SIZE_WEIGHT;
-    if (levelCount > 1) {
-      double mean = sum / levelCount;
-      double spread = Math.sqrt(Math.max(0, squares / levelCount - mean * mean));
-      total += LEVEL_WEIGHT * Math.max(0, LEVEL_MIN_SPREAD - spread);
-    }
     return total;
   }
 

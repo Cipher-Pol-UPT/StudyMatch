@@ -59,7 +59,7 @@ class AntColonyMatchingTest {
         List.of(new int[] { 0, 1 }, new int[] { 0, 2 }, new int[] { 0, 3 }), 2, 2, 2);
 
     // Act + Assert
-    assertThrows(IllegalStateException.class,
+    assertThrows(UnmetSeparationsException.class,
         () -> colony.solve(problem, MatchingBudget.evaluations(BUDGET), new Random(1)));
   }
 

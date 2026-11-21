@@ -22,7 +22,7 @@ public final class GreedyMatching implements MatchingAlgorithm {
         return new Grouping(groupOf, problem.getGroupCount());
       }
     }
-    throw new IllegalStateException("the separations leave no valid grouping");
+    throw new UnmetSeparationsException();
   }
 
   // null when a student ends up with nowhere to go

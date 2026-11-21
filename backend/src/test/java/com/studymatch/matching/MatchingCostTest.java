@@ -174,12 +174,12 @@ class MatchingCostTest {
     assertEquals(0.5, cost, DELTA);
   }
 
-  // grades (GR3)
+  // grades: only the group averages count, never how mixed a group is
 
   @Test
-  @DisplayName("A group where everyone has the same level costs 1.25")
+  @DisplayName("A group where everyone has the same level costs nothing")
   void sameLevelGroup() {
-    // Arrange - spread 0, so 2.5 * (0.5 - 0)
+    // Arrange - spread 0
     List<Member> members = List.of(withLevel(HIGH_EXTRAVERSION, 0), withLevel(0, 0), withLevel(0, 0),
         withLevel(0, 0));
 
@@ -187,11 +187,11 @@ class MatchingCostTest {
     double cost = costAsOneGroup(members);
 
     // Assert
-    assertEquals(1.25, cost, DELTA);
+    assertEquals(0, cost, DELTA);
   }
 
   @Test
-  @DisplayName("A group with mixed levels costs nothing")
+  @DisplayName("A group with mixed levels costs nothing either")
   void mixedLevelGroup() {
     // Arrange - spread 1
     List<Member> members = List.of(withLevel(HIGH_EXTRAVERSION, -1), withLevel(0, -1), withLevel(0, 1),

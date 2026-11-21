@@ -109,14 +109,15 @@ describe('logout', () => {
     if (role !== 'STUDENT') expect(await screen.findByText('You have been logged out.')).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledWith('/api/users/logout', expect.objectContaining({ method: 'POST', credentials: 'include', headers: { 'X-XSRF-TOKEN': 'test-token' } }));
     expect(window.location.pathname).toBe('/');
-    expect(disconnectChatSocket).toHaveBeenCalledTimes(role === 'STUDENT' || role === 'TEACHER' ? 1 : 0);
+    // the socket calls happen in an effect, which can land a moment after the screen updates
+    await waitFor(() => expect(disconnectChatSocket).toHaveBeenCalledTimes(role === 'STUDENT' || role === 'TEACHER' ? 1 : 0));
   });
 
   it.each(['ADMIN', 'STAFF', 'TEACHER', 'STUDENT'] as Role[])('opens the chat socket for %s only if they can chat', async role => {
     backend({ ...base, role });
     start();
     expect(await screen.findByRole('button', { name: 'Account menu' })).toBeTruthy();
-    expect(connectChatSocket).toHaveBeenCalledTimes(role === 'STUDENT' || role === 'TEACHER' ? 1 : 0);
+    await waitFor(() => expect(connectChatSocket).toHaveBeenCalledTimes(role === 'STUDENT' || role === 'TEACHER' ? 1 : 0));
   });
 
   it('opens the chat socket only after the first password change', async () => {

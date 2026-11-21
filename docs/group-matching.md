@@ -1,6 +1,6 @@
 # Group matching
 
-How Generate Groups (#57) splits a pool of students into groups: what a good grouping is, how it's scored, and how we picked the algorithm that searches for it. The code is in `backend/src/main/java/com/studymatch/matching`. `GroupService` (the next part of #57) turns the enrolled students into pools and calls it.
+How Generate Groups (#57) splits a pool of students into groups: what a good grouping is, how it's scored, and how we picked the algorithm that searches for it. The code is in `backend/src/main/java/com/studymatch/matching`, and `GroupService` turns the enrolled students into pools and calls it (see [From a class to pools](#from-a-class-to-pools)).
 
 ## The problem
 
@@ -14,6 +14,25 @@ Every grouping has to respect three hard rules, and an algorithm never returns o
 
 The number of groups is fixed before the search: as many groups at the optimal size as possible, then as few that aren't. 10 students at 3/4/5 are 4 + 3 + 3, not 5 + 5.
 
+## From a class to pools
+
+`GroupService` collects the edition's students, leaves out blocked accounts (GR5) and hands each one over as a `Candidate`: their test scores, their level and their attendance. The level is the average of their finished subjects in the assignment's category, or their overall average if they have nothing there yet; attendance works the same way, the category first and everything otherwise (GR6). A student with an active special statute has no attendance (GR7).
+
+`EditionScores` ranks everyone against the whole edition. Traits and levels become z-scores, and the flags go by rank, with ties broken by the order of the list so the same class always gets the same flags. A student who hasn't taken the test yet sits at the average on every trait and gets no flags.
+
+`PoolPlanner` then splits the class (layer 1 in #57):
+
+1. With "same class" on, each class section is planned on its own.
+2. Students with attendance go into four tiers: 90% and up, 75 to 90, 50 to 75, and below 50.
+3. A tier too small to form valid groups joins the neighbouring tier closest in average attendance.
+4. Students without a tier (a statute, or no lessons yet) are placed one at a time: in a pool that can't be split yet if there is one, otherwise where one more student leaves the most groups at the optimal size, and in the smaller pool on a tie. On a cold start nobody has a tier, so they are the whole pool.
+5. Students without a test form their own pool if there are enough of them; otherwise they're placed like the students without a tier.
+6. If a pool still can't be split, the whole section becomes one pool.
+
+`GroupGenerator` runs the algorithm on each pool with only that pool's separations (a separated pair in different pools is already apart). The time limit, 3 seconds for the whole class (`studymatch.matching-seconds`), is shared out by pool size.
+
+Layers 2 and 3 (groups with similar average grades, and complementary personalities in every group) are the cost below. Grades aren't turned into labels like "high" or "developing": what counts as a good grade depends on the subject, so the cost only compares z-scores within the edition. For the issue's "students near a tier edge" we only have the merge in step 3; there's no separate band around the edges.
+
 ## The cost
 
 Everything else is a cost to minimize (`MatchingCost`). Lower is better; a grouping with no penalties at all would cost 0.
@@ -26,10 +45,9 @@ Everything else is a cost to minimize (`MatchingCost`). Lower is better; a group
 | Extraverts | 1 if there are none or 3 or more | 1.5 |
 | No shared language (GR4) | 1 | 10 |
 | Not at the optimal size | 1 | 0.5 |
-| Everyone at the same level | how far the group's level spread is under 0.5 z-scores | 2.5 |
 | Fairness, across groups | the variance of the group averages and spreads of every trait, and of the group average levels | 1 per trait (openness 0.5), 2.5 for level |
 
-The traits and levels are z-scores within the subject edition, and "low" and "high" are by rank in the edition: bottom 20% in agreeableness, emotional stability (the opposite of neuroticism) and conscientiousness, top 20% in conscientiousness, top 33% in extraversion. Students without grades yet are left out of the level terms, so on a cold start the cost is all personality (GR6). The language term is high enough that the search never trades a shared language for anything else; a group that still has none is flagged.
+The traits and levels are z-scores within the subject edition, and "low" and "high" are by rank in the edition: bottom 20% in agreeableness, emotional stability (the opposite of neuroticism) and conscientiousness, top 20% in conscientiousness, top 33% in extraversion. Grades only count through the group averages: a group of two students with 15 isn't worse than one with a 20 and a 10, so nothing asks for a mix inside a group. Students without grades yet are left out, so on a cold start the cost is all personality (GR6). The language term is high enough that the search never trades a shared language for anything else; a group that still has none is flagged.
 
 ### Why these personality rules
 
@@ -49,7 +67,8 @@ The weights are constants at the top of `MatchingCost`, so they're easy to chang
 - `MatchingProblem`: one pool as plain numbers (traits, level, languages, flags, separations, sizes). No entities, no Spring.
 - `Grouping`: one answer, a group per student.
 - `MatchingCost`: the cost above and the hard rules. `TrackedCost` keeps the same cost up to date while a search swaps students, recalculating only the two groups that changed; the tests check it against `MatchingCost` after every step.
-- `MatchingAlgorithm`: `solve(problem, budget, random)`. Every algorithm implements it, so `GroupService` doesn't know which one it runs.
+- `MatchingAlgorithm`: `solve(problem, budget, random)`. Every algorithm implements it, so `GroupGenerator` doesn't know which one it runs.
+- `Candidate`, `EditionScores`, `PoolPlanner` and `GroupGenerator`: from the class to pools and back, described above.
 - `MatchingBudget`: how long an algorithm may search, as a number of cost calculations (repeatable, for tests) or a time limit.
 - `Step`: a swap or a move that can be tried and taken back, shared by the searches.
 
@@ -111,7 +130,7 @@ What came out of it:
 
 ## Result
 
-Average cost against annealing, class by class, on classes no algorithm was tuned on (5 classes x 2 runs per row, 10 s each). Negative is better than annealing.
+Average cost against annealing, class by class, on classes no algorithm was tuned on (5 classes x 2 runs per row, 10 s each). Negative is better than annealing. These runs still had a term that charged a group whose levels were all alike, which we dropped afterwards; it was a small part of the cost and the same for every algorithm, so we didn't run the comparison again.
 
 | Pool | Bee colony | Ants | Genetic | FTTA | Greedy |
 | --- | --- | --- | --- | --- | --- |
@@ -126,7 +145,7 @@ The bee colony was better than annealing on 27 of the 30 classes; that many by c
 
 ## The choice
 
-`BeeColonyMatching` is the algorithm Generate Groups uses (`GroupService` calls it in the next part of #57). It's level with annealing on small pools and better on the bigger ones, the first-year case, by up to 6% of the cost. On pools up to 80 students the margins are small (a few percent of the cost, often less than one penalty for the whole class), so annealing would still be a reasonable choice there; the bee colony is what came out on top.
+`BeeColonyMatching` is the algorithm Generate Groups uses; `MatchingConfig` is where it's picked. It's level with annealing on small pools and better on the bigger ones, the first-year case, by up to 6% of the cost. On pools up to 80 students the margins are small (a few percent of the cost, often less than one penalty for the whole class), so annealing would still be a reasonable choice there; the bee colony is what came out on top.
 
 The other four stay in the code behind `MatchingAlgorithm`, with their tests, so switching is one line and we can come back to them. The settings of every algorithm are in its `DEFAULTS`, tuned with `MatchingTuning`.
 
