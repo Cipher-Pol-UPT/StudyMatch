@@ -1,13 +1,21 @@
 package com.studymatch.repositories;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 
 import com.studymatch.enums.TutorApplicationStatus;
 import com.studymatch.models.TutorApplication;
 
+import jakarta.persistence.LockModeType;
+
 public interface TutorApplicationRepository extends JpaRepository<TutorApplication, Long> {
+
+  // approve tutor application (#81): lock the application so two teachers can't both decide it as PENDING
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  Optional<TutorApplication> findLockedById(Long id);
 
   List<TutorApplication> findByStudentNumberAndStatus(Long studentNumber, TutorApplicationStatus status);
 

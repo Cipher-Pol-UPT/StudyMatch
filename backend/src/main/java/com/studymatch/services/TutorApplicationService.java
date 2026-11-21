@@ -149,7 +149,8 @@ public class TutorApplicationService {
   }
 
   private TutorApplication getApplication(Long applicationId) {
-    return tutorApplicationRepository.findById(applicationId)
+    // locked so two teachers can't both decide the same application as PENDING
+    return tutorApplicationRepository.findLockedById(applicationId)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
   }
 

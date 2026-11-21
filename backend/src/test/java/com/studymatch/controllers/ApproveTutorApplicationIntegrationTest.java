@@ -162,6 +162,31 @@ class ApproveTutorApplicationIntegrationTest {
   }
 
   @Test
+  @DisplayName("Rejecting without a reason still works")
+  void rejectsWithoutReason() throws Exception {
+    mockMvc.perform(post("/tutor-applications/" + application.getId() + "/reject").with(csrf()).session(teacherSession)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("REJECTED"));
+  }
+
+  @Test
+  @DisplayName("A decided application can't be decided again")
+  void decidingTwiceIsRejected() throws Exception {
+    // Arrange - approve once
+    mockMvc.perform(post("/tutor-applications/" + application.getId() + "/approve").with(csrf()).session(teacherSession))
+        .andExpect(status().isOk());
+
+    // Act + Assert - reject again
+    mockMvc.perform(post("/tutor-applications/" + application.getId() + "/reject").with(csrf()).session(teacherSession)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{}"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("APPLICATION_ALREADY_DECIDED"));
+  }
+
+  @Test
   @DisplayName("A teacher who doesn't teach the subject's current edition can't decide")
   void notTeacherCannotApprove() throws Exception {
     // Arrange

@@ -319,7 +319,7 @@ class TutorApplicationServiceTest {
     // Arrange
     Subject subject = taughtSubject();
     TutorApplication application = new TutorApplication(student, subject, "test motivation");
-    when(tutorApplicationRepository.findById(7L)).thenReturn(Optional.of(application));
+    when(tutorApplicationRepository.findLockedById(7L)).thenReturn(Optional.of(application));
     when(tutorApplicationRepository.save(application)).thenReturn(application);
     when(tutorRoleService.save(any(TutorRole.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -337,7 +337,7 @@ class TutorApplicationServiceTest {
     // Arrange
     Subject subject = taughtSubject();
     TutorApplication application = new TutorApplication(student, subject, "test motivation");
-    when(tutorApplicationRepository.findById(7L)).thenReturn(Optional.of(application));
+    when(tutorApplicationRepository.findLockedById(7L)).thenReturn(Optional.of(application));
     when(tutorApplicationRepository.save(application)).thenReturn(application);
 
     // Act
@@ -354,7 +354,7 @@ class TutorApplicationServiceTest {
     // Arrange
     Subject subject = taughtSubject();
     TutorApplication application = new TutorApplication(student, subject, "test motivation");
-    when(tutorApplicationRepository.findById(7L)).thenReturn(Optional.of(application));
+    when(tutorApplicationRepository.findLockedById(7L)).thenReturn(Optional.of(application));
     doThrow(new StudyMatchException(ErrorCode.ACCESS_DENIED))
         .when(subjectEditionService).checkTaughtBy(77L, 99L);
 
@@ -385,7 +385,7 @@ class TutorApplicationServiceTest {
     Subject subject = taughtSubject();
     TutorApplication application = new TutorApplication(student, subject, "test motivation");
     application.approve(ModelTestData.teacher());
-    when(tutorApplicationRepository.findById(7L)).thenReturn(Optional.of(application));
+    when(tutorApplicationRepository.findLockedById(7L)).thenReturn(Optional.of(application));
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
