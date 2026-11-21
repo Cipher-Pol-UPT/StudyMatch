@@ -52,7 +52,7 @@ public class GroupService {
   // generate groups: the new groups replace the drafts, the published ones stay until the teacher confirms
   @Transactional
   public List<GroupPreviewDTO> generateGroups(Long subjectEditionId, Long assignmentId, boolean replacePublished) {
-    Assignment assignment = assignmentService.getAssignment(subjectEditionId, assignmentId);
+    Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
     GroupingRule rule = assignment.getGroupingRule();
     if (rule == null) {
       throw new StudyMatchException(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK);
@@ -88,7 +88,7 @@ public class GroupService {
   // generate groups, confirm: the drafts replace whatever was published before
   @Transactional
   public void publishGroups(Long subjectEditionId, Long assignmentId) {
-    Assignment assignment = assignmentService.getAssignment(subjectEditionId, assignmentId);
+    Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
     List<Group> drafts = groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT);
     if (drafts.isEmpty()) {
       throw new StudyMatchException(ErrorCode.NO_DRAFT_GROUPS);
@@ -102,7 +102,7 @@ public class GroupService {
   // generate groups, cancel: the published groups, if any, stay as they were
   @Transactional
   public void discardGroups(Long subjectEditionId, Long assignmentId) {
-    Assignment assignment = assignmentService.getAssignment(subjectEditionId, assignmentId);
+    Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
     groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.DRAFT);
   }
 
