@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { getCurrentUser } from './api/auth';
 import { connectChatSocket, disconnectChatSocket } from './api/chatSocket';
+import { forgetConversations } from './pages/chats/conversations';
 import { LoginPage } from './pages/login/LoginPage';
 import { ChangePasswordPage } from './pages/password/ChangePasswordPage';
 import { PersonalityTestPage } from './pages/personality/PersonalityTestPage';
@@ -69,7 +70,10 @@ function SessionPage({ currentUser, setCurrentUser }: SessionPageProps) {
     return <LoginPage onLoggedIn={setCurrentUser} />;
   }
 
-  const onLoggedOut = () => setCurrentUser(null);
+  const onLoggedOut = () => {
+    forgetConversations();
+    setCurrentUser(null);
+  };
 
   if (currentUser.mustChangePassword) {
     return <ChangePasswordPage onPasswordChanged={setCurrentUser} onLoggedOut={onLoggedOut} />;

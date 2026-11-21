@@ -1089,6 +1089,14 @@
     "conversation": "Conversa",
     "with": "Conversa com {{name}}",
     "back": "Voltar às conversas",
-    "sayHi": "{{line}}. Ainda não conversaram, diga olá a {{name}}."
+    "sayHi": "{{line}}. Ainda não conversaram, diga olá a {{name}}.",
+    "messages": "Mensagens",
+    "messageLabel": "Mensagem para {{name}}",
+    "send": "Enviar",
+    "sending": "A enviar…",
+    "notSent": "Não enviada",
+    "retry": "Tentar novamente",
+    "discard": "Descartar",
+    "startOfConversation": "Este é o início da sua conversa com {{name}}."
   }
 }
