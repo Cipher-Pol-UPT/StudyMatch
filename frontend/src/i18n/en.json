@@ -1060,6 +1060,12 @@
     "notSent": "Not sent",
     "retry": "Retry",
     "discard": "Discard",
-    "startOfConversation": "This is the start of your conversation with {{name}}."
+    "startOfConversation": "This is the start of your conversation with {{name}}.",
+    "openProfile": "Open {{name}}'s profile"
+  },
+  "classmate": {
+    "title": "Student profile",
+    "back": "Back",
+    "message": "Message"
   }
 }

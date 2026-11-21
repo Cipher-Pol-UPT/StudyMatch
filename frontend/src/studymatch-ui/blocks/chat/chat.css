@@ -24,6 +24,11 @@
   display: flex; align-items: center; gap: 12px; height: 65px; padding: 0 16px;
   background: var(--sm-glass); backdrop-filter: blur(14px); border-bottom: 1px solid var(--sm-hairline);
 }
+/* who it's with: a link to their profile when they have one */
+.sm-chat__who { display: flex; flex: 1; align-items: center; gap: 12px; min-width: 0; }
+.sm-chat__who--link { margin: -4px -8px; padding: 4px 8px; border-radius: var(--sm-r-md); color: inherit; text-decoration: none; transition: background var(--sm-dur-1); }
+.sm-chat__who--link:hover { background: var(--sm-fill); }
+.sm-chat__who--link:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-chat__head-text { flex: 1; min-width: 0; }
 .sm-chat__head-name { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sm-chat__head-sub { font-size: 12.5px; color: var(--sm-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
