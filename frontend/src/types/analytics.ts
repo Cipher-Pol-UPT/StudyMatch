@@ -12,7 +12,7 @@ export interface AnalyticsData {
   academicYear: number | null; totalStudents: number; activeSubjects: number; averageAttendance: number | null;
   attendanceOverTime: { month: string; attendance: number }[];
   personalityDistribution: { trait: TraitName; students: number }[];
-  groupBalance: { groupId: number; assignment: string; number: number; members: number; averageGrade: number | null }[];
+  groupBalance: { groupId: number; assignmentId: number; assignment: string; subjectCode: string; number: number; members: number; averageGrade: number | null }[];
   firstYearOnly: boolean;
   filters: AnalyticsFiltersData;
 }

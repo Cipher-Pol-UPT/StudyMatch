@@ -40,6 +40,7 @@ export function StaffAnalyticsPage() {
   const editionId = params.get('subjectEditionId') ?? '';
   const edition = options?.subjectEditions.find(item => String(item.id) === editionId);
   const groups = options?.groups.filter(group => !edition || group.subjectEditionId === edition.id) ?? [];
+  const codeOf = (id: number) => options?.subjectEditions.find(item => item.id === id)?.subjectCode ?? '';
   const year = params.get('academicYear') ?? (analytics.data?.academicYear ? String(analytics.data.academicYear) : '');
 
   return (
@@ -61,7 +62,7 @@ export function StaffAnalyticsPage() {
           onChange={event => choose('classSection', event.target.value)} />
         <Select label={t('analytics.group')} value={params.get('groupId') ?? ''} disabled={groups.length === 0}
           options={[{ value: '', label: t('analytics.allGroups') },
-            ...groups.map(group => ({ value: String(group.id), label: t('analytics.groupOf', { assignment: group.assignment, number: group.number }) }))]}
+            ...groups.map(group => ({ value: String(group.id), label: t('analytics.groupOf', { assignment: edition ? group.assignment : `${codeOf(group.subjectEditionId)} · ${group.assignment}`, number: group.number }) }))]}
           onChange={event => choose('groupId', event.target.value)} />
       </form>
       {analytics.error !== undefined ? (
@@ -123,16 +124,22 @@ function GroupBalance({ data }: { data: AnalyticsData }) {
   if (data.firstYearOnly) return <p className="sm-caption">{t('analytics.noGradeHistory')}</p>;
   const graded = data.groupBalance.filter(group => group.averageGrade !== null);
   if (graded.length === 0) return <p className="sm-caption">{t('analytics.noGroups')}</p>;
-  const means = new Map<string, number>();
-  for (const assignment of new Set(graded.map(group => group.assignment))) {
-    const grades = graded.filter(group => group.assignment === assignment).map(group => group.averageGrade ?? 0);
-    means.set(assignment, grades.reduce((sum, grade) => sum + grade, 0) / grades.length);
+  // by id: two subjects can each have a "Project"
+  const means = new Map<number, number>();
+  for (const assignmentId of new Set(graded.map(group => group.assignmentId))) {
+    const grades = graded.filter(group => group.assignmentId === assignmentId).map(group => group.averageGrade ?? 0);
+    means.set(assignmentId, grades.reduce((sum, grade) => sum + grade, 0) / grades.length);
   }
+  const subjects = new Set(graded.map(group => group.subjectCode)).size;
+  const label = (group: AnalyticsData['groupBalance'][number]) => {
+    if (subjects > 1) return `${group.subjectCode} ${group.assignment} G${group.number}`;
+    return means.size > 1 ? `${group.assignment} G${group.number}` : `G${group.number}`;
+  };
   return (
     <BarChart label={t('analytics.groupBalance')} format={value => `±${value.toFixed(1)}`}
       data={graded.map(group => ({
-        label: means.size > 1 ? `${group.assignment} G${group.number}` : `G${group.number}`,
-        value: Math.abs((group.averageGrade ?? 0) - (means.get(group.assignment) ?? 0)),
+        label: label(group),
+        value: Math.abs((group.averageGrade ?? 0) - (means.get(group.assignmentId) ?? 0)),
       }))} />
   );
 }
