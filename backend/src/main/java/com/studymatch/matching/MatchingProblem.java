@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 // one pool of students for group matching, as plain arrays: a student is just their index
@@ -33,6 +34,24 @@ public final class MatchingProblem {
 
     public boolean hasLevel() {
       return !Double.isNaN(level);
+    }
+
+    // records compare arrays by reference, so compare the traits by content
+    @Override
+    public boolean equals(Object other) {
+      return other instanceof Member member && Arrays.equals(traits, member.traits)
+          && Double.compare(level, member.level) == 0 && languages == member.languages && flags == member.flags;
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * Objects.hash(level, languages, flags) + Arrays.hashCode(traits);
+    }
+
+    @Override
+    public String toString() {
+      return "Member[traits=" + Arrays.toString(traits) + ", level=" + level + ", languages=" + languages
+          + ", flags=" + flags + "]";
     }
 
   }

@@ -17,6 +17,24 @@ public final class GeneticMatching implements MatchingAlgorithm {
 
   // an order of the students and its score
   private record Individual(int[] order, double score) {
+
+    // records compare arrays by reference, so compare the order by content
+    @Override
+    public boolean equals(Object other) {
+      return other instanceof Individual individual && Arrays.equals(order, individual.order)
+          && Double.compare(score, individual.score) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * Double.hashCode(score) + Arrays.hashCode(order);
+    }
+
+    @Override
+    public String toString() {
+      return "Individual[order=" + Arrays.toString(order) + ", score=" + score + "]";
+    }
+
   }
 
   private final GreedyMatching greedy = new GreedyMatching();
