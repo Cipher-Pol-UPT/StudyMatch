@@ -1,5 +1,6 @@
 package com.studymatch.controllers;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -144,7 +145,8 @@ class LeaveStudyRoomIntegrationTest {
     leave(room.getId(), session)
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.participantCount").value(0))
-        .andExpect(jsonPath("$.status").value("SCHEDULED"));
+        .andExpect(jsonPath("$.status").value("SCHEDULED"))
+        .andExpect(jsonPath("$.link").value(nullValue()));
 
     assertEquals(0, studyRoomRepository.findById(room.getId()).orElseThrow().getParticipations().size());
   }
