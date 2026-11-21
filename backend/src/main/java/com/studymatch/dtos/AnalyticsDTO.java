@@ -16,7 +16,9 @@ public record AnalyticsDTO(Integer academicYear, int totalStudents, int activeSu
   }
 
   // averageGrade is the members' average grade, null while none of them finished a subject
-  public record GroupBalance(Long groupId, String assignment, int number, int members, Double averageGrade) {
+  // the assignment id groups them, names repeat across subjects
+  public record GroupBalance(Long groupId, Long assignmentId, String assignment, String subjectCode, int number,
+      int members, Double averageGrade) {
   }
 
   // what the filters offer for the year, whatever is selected

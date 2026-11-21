@@ -153,12 +153,16 @@ public class AnalyticsService {
         .filter(group -> groupId == null || group.getId().equals(groupId))
         .filter(group -> group.getMembers().stream().anyMatch(member -> editionsOf.getOrDefault(member.getNumber(),
             Set.of()).contains(group.getAssignment().getSubjectEdition().getId())))
-        .sorted(Comparator.comparing((Group group) -> group.getAssignment().getName()).thenComparing(Group::getNumber))
+        .sorted(Comparator.comparing((Group group) -> group.getAssignment().getSubjectEdition().getSubject().getCode())
+            .thenComparing(group -> group.getAssignment().getName())
+            .thenComparing(group -> group.getAssignment().getId())
+            .thenComparing(Group::getNumber))
         .toList();
     Map<Long, Double> averages = enrolmentService.getAverageGrades(
         shown.stream().flatMap(group -> group.getMembers().stream()).distinct().toList());
     return shown.stream()
-        .map(group -> new GroupBalance(group.getId(), group.getAssignment().getName(), group.getNumber(),
+        .map(group -> new GroupBalance(group.getId(), group.getAssignment().getId(), group.getAssignment().getName(),
+            group.getAssignment().getSubjectEdition().getSubject().getCode(), group.getNumber(),
             group.getMembers().size(), averageGrade(group, averages)))
         .toList();
   }
