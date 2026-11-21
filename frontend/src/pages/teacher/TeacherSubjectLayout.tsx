@@ -21,8 +21,9 @@ export function TeacherSubjectLayout() {
     return edition;
   }, [id]);
   const edition = useRemoteData(`edition:${editionId}`, load);
-  // on a student's page the trail goes one step further, and the subject links back to its list
+  // on a student's page or an assignment's groups the trail goes one step further, and the subject links back to its list
   const student = useMatch('/subject-editions/:editionId/students/:number');
+  const groups = useMatch('/subject-editions/:editionId/assignments/:assignmentId/groups');
   const [params] = useSearchParams();
   const tab = SUBJECT_TABS.find(item => pathname.startsWith(`/subject-editions/${editionId}/${item}`)) ?? 'students';
 
@@ -34,9 +35,10 @@ export function TeacherSubjectLayout() {
           { label: t(`workspace.sections.${tab}`), href: `/${tab}` },
           {
             label: edition.data?.subject.name ?? t('directory.subject'),
-            href: student ? `/subject-editions/${editionId}/students?${params}` : undefined,
+            href: student ? `/subject-editions/${editionId}/students?${params}` : groups ? `/subject-editions/${editionId}/assignments` : undefined,
           },
           ...(student ? [{ label: student.params.number }] : []),
+          ...(groups ? [{ label: t('assignments.groups') }] : []),
         ]}
       />
       {edition.loading || edition.error !== undefined ? (

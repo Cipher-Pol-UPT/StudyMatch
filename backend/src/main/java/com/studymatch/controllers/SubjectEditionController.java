@@ -38,6 +38,7 @@ import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.GradeRequestDTO;
 import com.studymatch.dtos.GradeResponseDTO;
 import com.studymatch.dtos.GradeSheetDTO;
+import com.studymatch.dtos.GroupGenerationDTO;
 import com.studymatch.dtos.GroupPreviewDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.exceptions.ErrorCode;
@@ -215,6 +216,19 @@ public class SubjectEditionController {
     subjectEditionService.checkTaughtBy(id, teacher.getNumber());
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(groupService.generateGroups(id, assignmentId, replacePublished));
+  }
+
+  // generate groups, before generating: the page's loader follows the real search time
+  @GetMapping("{id}/assignments/{assignmentId}/groups/generation")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "How many groups generating will form, their optimal size and how long the matching algorithm "
+      + "searches, so the page can show its progress")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK })
+  public ResponseEntity<GroupGenerationDTO> planGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    return ResponseEntity.ok(groupService.planGroups(id, assignmentId));
   }
 
   // generate groups, confirm
