@@ -400,7 +400,7 @@ class ChatWebSocketIntegrationTest {
   }
 
   @Test
-  @DisplayName("An edit reaches the open chat with the new text, the chat list isn't told (GR10)")
+  @DisplayName("An edit reaches the open chat and the chat list with the new text, as an edit, not a new message (GR10)")
   void editedMessageIsPushed() throws Exception {
     // Arrange
     Message message = messageRepository.save(new Message(chat, ana, "see you at 10"));
@@ -425,6 +425,10 @@ class ChatWebSocketIntegrationTest {
     assertEquals(message.getId().intValue(), payload.get("id"));
     assertEquals("see you at 11", payload.get("text"));
     assertNotNull(payload.get("editedAt"));
+    Map<String, Object> preview = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(preview);
+    assertEquals("MESSAGE_EDITED", preview.get("type"));
+    assertEquals("see you at 11", ((Map<?, ?>) preview.get("payload")).get("text"));
     assertNull(chatList.poll(500, TimeUnit.MILLISECONDS));
   }
 
