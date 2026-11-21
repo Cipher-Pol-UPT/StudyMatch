@@ -13,7 +13,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+import jakarta.persistence.EntityManager;
+
 import org.hamcrest.Matchers;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -61,7 +65,8 @@ import com.studymatch.repositories.SubjectEditionRepository;
 import com.studymatch.repositories.SubjectRepository;
 import com.studymatch.repositories.TeacherRepository;
 
-@SpringBootTest
+// statistics on, so a test can count the selects one request runs
+@SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
@@ -90,7 +95,12 @@ class AnalyticsIntegrationTest {
   @Autowired private AssignmentRepository assignmentRepository;
   @Autowired private GroupRepository groupRepository;
 
+  @Autowired private EntityManager entityManager;
+
+  private Degree degree;
+  private SubjectEdition lastYear;
   private SubjectEdition programming;
+  private Assignment project;
   private SubjectEdition maths;
   private Group published;
 
@@ -102,12 +112,12 @@ class AnalyticsIntegrationTest {
         passwordEncoder.encode(PASSWORD))));
     Teacher teacher = teacherRepository.save(withoutPasswordChange(new Teacher("it.analytics.teacher@example.com",
         TEACHER, "Test Teacher", passwordEncoder.encode(PASSWORD))));
-    Degree degree = degreeRepository.save(new Degree("IT Analytics Degree", 3));
+    degree = degreeRepository.save(new Degree("IT Analytics Degree", 3));
     Category category = categoryRepository.save(new Category("IT Analytics Category"));
     Subject programmingSubject = subjectRepository.save(new Subject("ITANALYT1", "Test Programming", 6, category));
     Subject mathsSubject = subjectRepository.save(new Subject("ITANALYT2", "Test Maths", 6, category));
 
-    SubjectEdition lastYear = edition(programmingSubject, academicYearRepository.save(new AcademicYear(YEAR - 1)),
+    lastYear = edition(programmingSubject, academicYearRepository.save(new AcademicYear(YEAR - 1)),
         teacher, "T1");
     AcademicYear year = academicYearRepository.save(new AcademicYear(YEAR));
     programming = edition(programmingSubject, year, teacher, "T1", "T2");
@@ -134,7 +144,7 @@ class AnalyticsIntegrationTest {
     absenceRepository.save(new Absence(november, anaProgramming, false));
     absenceRepository.save(new Absence(november, ruiProgramming, false));
 
-    Assignment project = assignmentRepository.save(new Assignment(programming, "Test Project", AssignmentType.PROJECT,
+    project = assignmentRepository.save(new Assignment(programming, "Test Project", AssignmentType.PROJECT,
         LocalDate.of(YEAR + 1, 1, 15), new BigDecimal("0.5"), new GroupingRule(2, 2, 3, false)));
     published = new Group(project, 1);
     published.addMember(ana);
@@ -251,6 +261,31 @@ class AnalyticsIntegrationTest {
   }
 
   @Test
+  @DisplayName("Group balance keeps to the chosen subject: ana's Programming group isn't shown for Maths")
+  void groupBalanceKeepsToTheSubject() throws Exception {
+    analytics("subjectEditionId", String.valueOf(maths.getId()))
+        .andExpect(jsonPath("$.totalStudents").value(1))
+        .andExpect(jsonPath("$.groupBalance.length()").value(0));
+  }
+
+  @Test
+  @DisplayName("Group balance shows only the chosen group, not the members' other groups")
+  void groupBalanceKeepsToTheGroup() throws Exception {
+    // Arrange - ana and eva are in a published group of another Programming assignment too
+    Assignment report = assignmentRepository.save(new Assignment(programming, "Test Report", AssignmentType.PROJECT,
+        LocalDate.of(YEAR + 1, 2, 15), new BigDecimal("0.5"), new GroupingRule(2, 2, 3, false)));
+    Group other = new Group(report, 1);
+    published.getMembers().forEach(other::addMember);
+    other.publish();
+    groupRepository.saveAndFlush(other);
+
+    // Act + Assert
+    analytics("groupId", String.valueOf(published.getId()))
+        .andExpect(jsonPath("$.groupBalance.length()").value(1))
+        .andExpect(jsonPath("$.groupBalance[0].groupId").value(published.getId()));
+  }
+
+  @Test
   @DisplayName("A selection with nobody in it gives empty analytics, not an error")
   void noData() throws Exception {
     analytics("subjectEditionId", String.valueOf(maths.getId()), "classSection", "T2")
@@ -272,6 +307,42 @@ class AnalyticsIntegrationTest {
 
     analytics("groupId", String.valueOf(draftId))
         .andExpect(jsonPath("$.totalStudents").value(0));
+  }
+
+  // the selects one analytics request runs, with nothing left in memory from the setup
+  private long selectsFor(MockHttpSession session) throws Exception {
+    entityManager.flush();
+    entityManager.clear();
+    Statistics statistics = entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics();
+    statistics.clear();
+    mockMvc.perform(get("/analytics/").session(session).param("academicYear", String.valueOf(YEAR)))
+        .andExpect(status().isOk());
+    return statistics.getPrepareStatementCount();
+  }
+
+  @Test
+  @DisplayName("More students and groups don't mean more queries")
+  void queriesDontGrowWithTheData() throws Exception {
+    // Arrange - measured once, then a second published group of three students who each finished a subject
+    MockHttpSession session = loginAs(STAFF);
+    long before = selectsFor(session);
+    Group second = new Group(project, 3);
+    for (String name : new String[] { "leo", "mia", "noa" }) {
+      Student student = student(name, degree, 2, new PersonalityProfile(0.1, 0.9, 0.2, 0.3, 0.1));
+      Enrolment finished = new Enrolment(student, lastYear.getClassSection("T1"));
+      finished.setFinalGrade(12);
+      enrolmentRepository.save(finished);
+      enrolmentRepository.save(new Enrolment(student, programming.getClassSection("T1")));
+      second.addMember(student);
+    }
+    second.publish();
+    groupRepository.save(second);
+
+    // Act
+    long after = selectsFor(session);
+
+    // Assert
+    assertEquals(before, after);
   }
 
   @Test
