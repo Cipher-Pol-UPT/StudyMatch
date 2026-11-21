@@ -19,6 +19,8 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
 
   List<Enrolment> findBySubjectEditionId(Long subjectEditionId);
 
+  List<Enrolment> findBySubjectEdition_AcademicYear(AcademicYear academicYear);
+
   List<Enrolment> findByClassSection(ClassSection classSection);
 
   Optional<Enrolment> findBySubjectEditionIdAndStudent_Number(Long subjectEditionId, Long studentNumber);

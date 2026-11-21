@@ -146,6 +146,11 @@ public class EnrolmentService {
         EnrolmentStatus.PASSED);
   }
 
+  // analytics: every enrolment of the year
+  public List<Enrolment> listEnrolments(AcademicYear academicYear) {
+    return enrolmentRepository.findBySubjectEdition_AcademicYear(academicYear);
+  }
+
   public Double getAttendanceRate(Student student) {
     long lessons = 0;
     long absences = 0;

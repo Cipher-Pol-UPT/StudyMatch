@@ -1,5 +1,6 @@
 package com.studymatch.models;
 
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,9 @@ public class PersonalityProfile {
   private enum Trait {
     OPENNESS, CONSCIENTIOUSNESS, EXTRAVERSION, AGREEABLENESS, NEUROTICISM
   }
+
+  // the five traits in OCEAN order, as analytics lists them
+  public static final List<String> TRAITS = Arrays.stream(Trait.values()).map(Enum::name).toList();
 
   private record Item(Trait trait, boolean reversed) {
   }
