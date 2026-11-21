@@ -65,7 +65,7 @@ Generating groups (#57) will use the best evidence each student has, in this ord
 2. if there are none, their grades and attendance overall
 3. if there are none either, the personality profile only
 
-So the personality test carries the whole decision for a new student. It counts less as their grades and attendance build up, because those take its place. On the profile, `hasAcademicHistory` turns true with the student's first enrolment, while the category levels and the average stay empty until a subject is finished. The full matching strategy gets its own document with #57.
+So the personality test carries the whole decision for a new student. It counts less as their grades and attendance build up, because those take its place. On the profile, `hasAcademicHistory` turns true with the student's first enrolment, while the category levels and the average stay empty until a subject is finished. The full matching strategy is in [group-matching.md](group-matching.md).
 
 ## Attendance
 
