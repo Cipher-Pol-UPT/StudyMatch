@@ -108,14 +108,16 @@ Not logged in at all gets 401 `UNAUTHENTICATED`, except for `POST /users/login`,
 
 Chats need the server to tell the browser about a new message without the browser asking, and a normal request can't do that. So the backend also has a WebSocket at `/ws`, a connection that stays open. It speaks STOMP, a small protocol on top of WebSocket that adds subscribing to a destination and sending to one. Spring's in-memory broker keeps track of who is subscribed to what.
 
-The WebSocket only pushes. Sending, editing and deleting a message are normal REST requests, with the same validation, error codes and tests as everything else. When one of them changes a chat, the service publishes a `ChatEvent` (or a `UserChatEvent` for one user's chat list) and `ChatEventRelay` pushes it. The relay listens with `@TransactionalEventListener`, which waits for the transaction to commit, so a change that rolls back is never pushed.
+The WebSocket mostly pushes: the only thing the browser sends over it is that the user is typing. Sending, editing and deleting a message are normal REST requests, with the same validation, error codes and tests as everything else. When one of them changes a chat, the service publishes a `ChatEvent` (or a `UserChatEvent` for one user's chat list) and `ChatEventRelay` pushes it. The relay listens with `@TransactionalEventListener`, which waits for the transaction to commit, so a change that rolls back is never pushed.
 
 | Destination | Who gets it | Events |
 | --- | --- | --- |
-| `/topic/chats/{id}` | the members who have the chat open | `MESSAGE_CREATED`, `MESSAGE_EDITED`, `MESSAGE_DELETED` |
-| `/user/queue/chats` | only that user | `CHAT_UPDATED`, `CHAT_READ`, `CHAT_REMOVED` |
+| `/topic/chats/{id}` | the members who have the chat open | `MESSAGE_CREATED`, `MESSAGE_EDITED`, `MESSAGE_DELETED`, `TYPING` |
+| `/user/queue/chats` | only that user | `CHAT_UPDATED`, `CHAT_READ`, `CHAT_REMOVED`, `USER_ONLINE`, `USER_OFFLINE` |
 
-Every push looks like `{ "type": ..., "payload": ... }`. Sending a message pushes `MESSAGE_CREATED` to the chat's topic and `CHAT_UPDATED` to each member's queue, both with the message as the payload, so the open chat adds it and the chat list moves that chat to the top. Marking a chat as read pushes `CHAT_READ` with the chat's id to that user only, so their other tabs clear its badge. `/app` is for frames the browser sends to the server, which only typing will use (#222).
+Every push looks like `{ "type": ..., "payload": ... }`. Sending a message pushes `MESSAGE_CREATED` to the chat's topic and `CHAT_UPDATED` to each member's queue, both with the message as the payload, so the open chat adds it and the chat list moves that chat to the top. Marking a chat as read pushes `CHAT_READ` with the chat's id to that user only, so their other tabs clear its badge.
+
+Typing and online status are never saved. While the user types, the browser sends an empty frame to `/app/chats/{id}/typing` every few seconds. `ChatController.typing` checks they're a member with `getChatFor`, drops the frame if not, and pushes `TYPING` with `{ chatId, user }` to the chat's topic. There is no "stopped typing" event: the frontend hides it after 5 seconds without another one, or when that person's message arrives. Online means having at least one WebSocket open. `PresenceListener` hears Spring's connect and disconnect events and tells `ChatService`, which counts each user's open sessions in `PresenceTracker`, a map in memory. The first tab pushes `USER_ONLINE` with the user's number to everyone they share a chat with, and the last tab closing pushes `USER_OFFLINE`. A second tab pushes nothing. The chat list gets who is online on its first load from `GET /chats/online`.
 
 The checks happen in three places:
 
