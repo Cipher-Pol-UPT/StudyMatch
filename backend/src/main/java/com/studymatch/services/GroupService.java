@@ -1,6 +1,7 @@
 package com.studymatch.services;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,7 +83,7 @@ public class GroupService {
     return previews;
   }
 
-  // generate groups, before generating: how many groups and how long the search takes, for the page's loader
+  // generate groups, before generating: about how many groups and how long the search takes, for the page's loader
   @Transactional(readOnly = true)
   public GroupGenerationDTO planGroups(Long subjectEditionId, Long assignmentId) {
     Assignment assignment = assignmentService.getAssignment(subjectEditionId, assignmentId);
@@ -90,20 +92,14 @@ public class GroupService {
       throw new StudyMatchException(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK);
     }
     List<Enrolment> enrolments = groupable(subjectEditionId);
-    int groups = 0;
-    long searchMillis = 0;
-    // a class that can't be split plans nothing: generating says why
-    if (enrolments.size() >= rule.getMinSize()) {
-      try {
-        GroupGenerator.Plan plan = groupGenerator.plan(candidates(assignment, enrolments), rule.getMinSize(),
-            rule.getOptimalSize(), rule.getMaxSize(), rule.isSameClass());
-        groups = plan.groups();
-        searchMillis = plan.search().toMillis();
-      } catch (NoValidSplitException e) {
-        groups = 0;
-      }
-    }
-    return new GroupGenerationDTO(enrolments.size(), groups, rule.getOptimalSize(), searchMillis);
+    // only the class sizes: the evidence each student's grouping needs is generate's to load
+    List<Integer> classSizes = rule.isSameClass()
+        ? enrolments.stream().collect(Collectors.groupingBy(enrolment -> enrolment.getClassSection().getCode(),
+            Collectors.summingInt(enrolment -> 1))).values().stream().toList()
+        : List.of(enrolments.size());
+    GroupGenerator.Plan plan = enrolments.isEmpty() ? new GroupGenerator.Plan(0, Duration.ZERO)
+        : groupGenerator.estimate(classSizes, rule.getMinSize(), rule.getOptimalSize(), rule.getMaxSize());
+    return new GroupGenerationDTO(enrolments.size(), plan.groups(), rule.getOptimalSize(), plan.search().toMillis());
   }
 
   // generate groups, confirm: the drafts replace whatever was published before

@@ -51,7 +51,7 @@ export function TeacherGroupsPage() {
     setGenerated(undefined);
     const started = Date.now();
     const request = generateGroups(edition.id, id, replacePublished);
-    // asked at the same time: its round trip is the server's loading, searchMillis the algorithm's real time
+    // asked at the same time, it's cheap (class sizes only): its round trip stands for the server's own time, searchMillis is the most the algorithm searches
     getGroupGeneration(edition.id, id).then(
       data => { if (run.current === current) setPlan({ data, expectedMs: Date.now() - started + data.searchMillis }); },
       () => { if (run.current === current) setPlan({ data: null }); },

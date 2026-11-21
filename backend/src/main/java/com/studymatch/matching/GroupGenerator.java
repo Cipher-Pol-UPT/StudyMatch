@@ -36,16 +36,23 @@ public final class GroupGenerator {
     return groups;
   }
 
-  // what generate will do, worked out before running it: how many groups and how long the search takes
-  public Plan plan(List<Candidate> candidates, int minSize, int optimalSize, int maxSize, boolean sameClass) {
+  // what generate will do, estimated before running it from the size of each class it keeps apart (one size when
+  // classes mix), so nobody's evidence is loaded. Generate can split a class further by attendance tier, so the
+  // groups can be off by one and the search is the most it takes: a tier of one group searches nothing.
+  // No groups and no search when a class can't be split; generating says why
+  public Plan estimate(List<Integer> classSizes, int minSize, int optimalSize, int maxSize) {
+    int students = classSizes.stream().mapToInt(Integer::intValue).sum();
     int groups = 0;
     Duration search = Duration.ZERO;
-    for (List<Integer> pool : PoolPlanner.plan(candidates, minSize, optimalSize, maxSize, sameClass)) {
-      int count = MatchingProblem.groupCount(pool.size(), minSize, optimalSize, maxSize);
+    for (int size : classSizes) {
+      int count = MatchingProblem.groupCount(size, minSize, optimalSize, maxSize);
+      if (count < 1) {
+        return new Plan(0, Duration.ZERO);
+      }
       groups += count;
-      // a pool of one group has nothing to search, the algorithm hands it back straight away
+      // a class of one group has nothing to search, the algorithm hands it back straight away
       if (count >= 2) {
-        search = search.plus(share(pool, candidates));
+        search = search.plus(timeLimit.multipliedBy(size).dividedBy(students));
       }
     }
     return new Plan(groups, search);
