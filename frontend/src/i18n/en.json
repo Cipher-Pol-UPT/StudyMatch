@@ -607,7 +607,8 @@
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Only Students enrolled in this Subject who haven't passed it can join.",
     "JOINED_STUDYROOM_OVERLAP": "This overlaps a StudyRoom you already joined or are hosting ({{subject}}, {{startsAt}} – {{endsAt}}).",
     "ACHIEVEMENT_NOT_EARNED": "You haven't earned one of these achievements yet.",
-    "MEET_LINK_UNAVAILABLE": "The Google Meet link couldn't be created right now. Paste your own link to create the StudyRoom."
+    "MEET_LINK_UNAVAILABLE": "The Google Meet link couldn't be created right now. Paste your own link to create the StudyRoom.",
+    "DIRECT_CHAT_ALREADY_EXISTS": "This conversation was just started from the other side. Send your message again."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

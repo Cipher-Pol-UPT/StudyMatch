@@ -607,7 +607,8 @@
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Só os estudantes inscritos nesta unidade curricular que ainda não a concluíram podem inscrever-se.",
     "JOINED_STUDYROOM_OVERLAP": "Sobrepõe-se a uma sala de estudo em que já está inscrito ou que orienta ({{subject}}, {{startsAt}} – {{endsAt}}).",
     "ACHIEVEMENT_NOT_EARNED": "Ainda não obteve uma destas conquistas.",
-    "MEET_LINK_UNAVAILABLE": "Não foi possível criar a ligação do Google Meet neste momento. Cole a sua própria ligação para criar a StudyRoom."
+    "MEET_LINK_UNAVAILABLE": "Não foi possível criar a ligação do Google Meet neste momento. Cole a sua própria ligação para criar a StudyRoom.",
+    "DIRECT_CHAT_ALREADY_EXISTS": "Esta conversa acabou de ser iniciada pela outra pessoa. Envie a sua mensagem novamente."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",
