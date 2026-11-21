@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { getMyProfile } from '../../api/students';
-import { Button, buttonClass, EmptyState, ProfileView, Spinner, useToast } from '../../studymatch-ui';
+import { Button, buttonClass, EmptyState, ProfileView, Spinner, useToast, type AchievementId } from '../../studymatch-ui';
 import type { StudentProfileData } from '../../types/studentProfile';
+import { ExportCertificateDialog } from '../achievements/ExportCertificateDialog';
 import { EditProfile } from './EditProfile';
 import { toProfileView } from './toProfileView';
 import './ProfilePage.css';
@@ -20,6 +21,7 @@ export function ProfilePage({ onSaved }: ProfilePageProps) {
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
+  const [exporting, setExporting] = useState<AchievementId | null>(null);
 
   useEffect(() => {
     let isCurrentAttempt = true;
@@ -70,6 +72,7 @@ export function ProfilePage({ onSaved }: ProfilePageProps) {
       ) : (
         <ProfileView
           profile={toProfileView(profile)}
+          onExportCertificate={setExporting}
           viewer={{ showPrivate: true, canEdit: true }}
           onEdit={() => setIsEditing(true)}
           actions={
@@ -86,6 +89,8 @@ export function ProfilePage({ onSaved }: ProfilePageProps) {
           }
         />
       )}
+      <ExportCertificateDialog open={exporting !== null} earned={toProfileView(profile).achievements ?? []}
+        chosen={exporting === null ? [] : [exporting]} onClose={() => setExporting(null)} />
     </div>
   );
 }

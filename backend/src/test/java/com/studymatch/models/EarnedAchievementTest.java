@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,6 +47,31 @@ class EarnedAchievementTest {
 
     // Assert - otherwise the QR on the certificate proves nothing
     assertNotEquals(first.getVerificationCode(), second.getVerificationCode());
+  }
+
+  @Test
+  @DisplayName("A new earned achievement has no evidence until its first certificate")
+  void noEvidenceAtFirst() {
+    // Act
+    EarnedAchievement earned = new EarnedAchievement(tutor, Achievement.MENTOR);
+
+    // Assert
+    assertNull(earned.getEvidence());
+  }
+
+  @Test
+  @DisplayName("The evidence of the first certificate stays, a later one doesn't replace it")
+  void firstEvidenceStays() {
+    // Arrange
+    EarnedAchievement earned = new EarnedAchievement(tutor, Achievement.MENTOR);
+    CertificateEvidence first = new CertificateEvidence(3L, 15L, 4.5, "Test Subject", LocalDate.of(2026, 1, 10));
+
+    // Act
+    earned.recordEvidence(first);
+    earned.recordEvidence(new CertificateEvidence(9L, 30L, 4.9, "Other Subject", LocalDate.of(2026, 6, 10)));
+
+    // Assert - otherwise the paper and the verify page would disagree
+    assertEquals(first, earned.getEvidence());
   }
 
 }

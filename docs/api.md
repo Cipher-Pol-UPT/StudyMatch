@@ -77,6 +77,9 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/subject-editions/{id}/assignments` | Teacher of the edition | add an assignment, with group sizes and separations for group work |
 | GET | `/subject-editions/{id}/grades` | Teacher of the edition | the grade sheet |
 | PUT | `/subject-editions/{id}/assignments/{assignmentId}/grades/{studentNumber}` | Teacher of the edition | give or change a grade; sets the final grade once everything's graded |
+| POST | `/subject-editions/{id}/assignments/{assignmentId}/groups?replacePublished=` | Teacher of the edition | generate (or regenerate) a group assignment's groups as drafts and preview them; with published groups already, `replacePublished=true` is needed |
+| POST | `/subject-editions/{id}/assignments/{assignmentId}/groups/publish` | Teacher of the edition | publish the drafts, replacing the groups published before |
+| DELETE | `/subject-editions/{id}/assignments/{assignmentId}/groups/draft` | Teacher of the edition | discard the drafts, the published groups stay |
 | GET | `/subject-editions/{id}/attendance?classSection=&startsAt=` | Staff | one lesson's attendance sheet, with the saved record if there is one |
 | PUT | `/subject-editions/{id}/attendance` | Staff | register or correct a lesson's absences (current year only) |
 | DELETE | `/subject-editions/{id}/attendance?classSection=&startsAt=` | Staff | delete a lesson registered by mistake, with its absences (current year only) |
@@ -88,7 +91,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/tutors/me/subjects` | Student | the subjects you tutor |
 | GET | `/tutors/me/applicable-subjects` | Student | the subjects you passed, with your grade, position and whether you can apply to tutor them |
 | POST | `/tutor-applications/` | Student in the subject's top 5% | apply to tutor a subject, creating a Pending application |
-| POST | `/study-rooms/` | Student who tutors the subject | create a StudyRoom |
+| POST | `/study-rooms/` | Student who tutors the subject | create a StudyRoom, with the tutor's Meet link or, without one, a link the server creates on Google |
 | GET | `/study-rooms/` | Student | the open StudyRooms (not cancelled, not completed), filtered by subject, tutor, topic or date |
 | GET | `/study-rooms/{id}` | Student | one StudyRoom's description, the tutor's rating in that subject, and whether you can join |
 | GET | `/study-rooms/{id}/participants` | the room's tutor | who joined, and whether they attended |
@@ -98,6 +101,24 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/study-rooms/{id}/leave` | Student who joined | leave a StudyRoom before it starts, freeing the place |
 | GET | `/students/{number}/ratings` | Anyone logged in | a tutor's ratings and comments, newest first, without who wrote them |
 
+## Achievements
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/achievements/me` | Student | all four achievements, with the date and verification code of the ones you've earned |
+| POST | `/achievements/certificate` | Student | the PDF certificate of the achievements chosen (one achievement, or a record with several), in English or Portuguese |
+| GET | `/achievements/certificates/{code}` | Anyone, no login | what a certificate's QR code checks: who earned which achievements and when |
+
+## Chats
+
+Chats don't have REST endpoints yet. The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and Teachers, where the browser subscribes to `/topic/chats/{id}` for a chat it's in and `/user/queue/chats` for its chat list. The CONNECT frame needs the `X-XSRF-TOKEN` header. How it works is in [architecture.md](architecture.md#live-updates).
+
+## Analytics
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/analytics/?academicYear=&subjectEditionId=&classSection=&groupId=` | Staff | a year's indicators (students, active subjects, average attendance), attendance per month, students by strongest Big Five trait and the published groups' balance, with what each filter offers. Every filter is optional, the year defaults to the current one |
+
 ## Coming next
 
-The other use cases (groups, achievements, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (editing and viewing groups, tutor applications, notifications, chats) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

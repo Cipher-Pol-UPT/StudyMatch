@@ -68,6 +68,12 @@ public class AssignmentService {
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
   }
 
+  // the same, locked until the transaction ends, for changes that can't run twice at once
+  public Assignment getLockedAssignment(Long subjectEditionId, Long assignmentId) {
+    return assignmentRepository.findLockedByIdAndSubjectEditionId(assignmentId, subjectEditionId)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
   // in the order they happen, the grade sheet's columns
   public List<Assignment> listAssignments(SubjectEdition edition) {
     return assignmentRepository.findBySubjectEdition(edition).stream()

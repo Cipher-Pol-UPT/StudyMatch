@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { isBackendError,type BackendError,type FieldError } from '../../api/errors';
+import { isBackendError,type BackendError,type ErrorCode,type FieldError } from '../../api/errors';
 
-export function useFormFeedback(fieldErrors: FieldError[] = []) {
+// codeFields puts a backend code under one field instead of the banner, e.g. a taken name under the name
+export function useFormFeedback(fieldErrors: FieldError[] = [], codeFields: Partial<Record<ErrorCode, string>> = {}) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<BackendError | null>(null);
   const [failed, setFailed] = useState(false);
   const fields = [...fieldErrors, ...(error?.fieldErrors ?? [])];
-  const fieldError = (field: string) => fields.filter(e => e.field === field)
-    .map(e => t(`validation.${e.code}`, { ...e.params, defaultValue: t('validation.INVALID') })).join(' ') || undefined;
+  const codeField = error ? codeFields[error.code] : undefined;
+  const fieldError = (field: string) => [
+    ...fields.filter(e => e.field === field).map(e => t(`validation.${e.code}`, { ...e.params, defaultValue: t('validation.INVALID') })),
+    ...(error && codeField === field ? [t(`errors.${error.code}`, error.params ?? {})] : []),
+  ].join(' ') || undefined;
   const submit = async (action: () => Promise<void>) => {
     setBusy(true); setError(null); setFailed(false);
     try { const result: unknown = await action(); if (isBackendError(result)) setError(result); }
@@ -17,6 +21,6 @@ export function useFormFeedback(fieldErrors: FieldError[] = []) {
     finally { setBusy(false); }
   };
   return { busy, fieldError, submit,
-    message: error ? t(`errors.${error.code}`, error.params ?? {}) : failed ? t('common.unexpectedError') : undefined,
+    message: error && !codeField ? t(`errors.${error.code}`, error.params ?? {}) : failed ? t('common.unexpectedError') : undefined,
   };
 }

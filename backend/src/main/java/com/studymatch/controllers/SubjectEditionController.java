@@ -38,6 +38,7 @@ import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.GradeRequestDTO;
 import com.studymatch.dtos.GradeResponseDTO;
 import com.studymatch.dtos.GradeSheetDTO;
+import com.studymatch.dtos.GroupPreviewDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
@@ -46,6 +47,7 @@ import com.studymatch.models.User;
 import com.studymatch.services.AssignmentService;
 import com.studymatch.services.EnrolmentService;
 import com.studymatch.services.GradeService;
+import com.studymatch.services.GroupService;
 import com.studymatch.services.StudentService;
 import com.studymatch.services.SubjectEditionService;
 import com.studymatch.services.UserService;
@@ -67,10 +69,11 @@ public class SubjectEditionController {
   private final StudentService studentService;
   private final EnrolmentCsvReader enrolmentCsvReader;
   private final GradeService gradeService;
+  private final GroupService groupService;
 
   public SubjectEditionController(SubjectEditionService subjectEditionService, EnrolmentService enrolmentService,
       UserService userService, AssignmentService assignmentService, StudentService studentService,
-      EnrolmentCsvReader enrolmentCsvReader, GradeService gradeService) {
+      EnrolmentCsvReader enrolmentCsvReader, GradeService gradeService, GroupService groupService) {
     this.subjectEditionService = subjectEditionService;
     this.enrolmentService = enrolmentService;
     this.userService = userService;
@@ -78,6 +81,7 @@ public class SubjectEditionController {
     this.studentService = studentService;
     this.enrolmentCsvReader = enrolmentCsvReader;
     this.gradeService = gradeService;
+    this.groupService = groupService;
   }
 
   @GetMapping
@@ -196,6 +200,47 @@ public class SubjectEditionController {
     User teacher = userService.getByInstitutionalEmail(authentication.getName());
     subjectEditionService.checkTaughtBy(id, teacher.getNumber());
     return ResponseEntity.ok(gradeService.gradeStudent(id, assignmentId, studentNumber, request.value()));
+  }
+
+  // generate groups: regenerating is the same call, the new drafts replace the old ones
+  @PostMapping("{id}/assignments/{assignmentId}/groups")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Generate draft groups for a group assignment and preview them. With published groups already, "
+      + "replacePublished=true confirms they'll be replaced once the new ones are confirmed")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, ErrorCode.GROUPS_ALREADY_PUBLISHED,
+      ErrorCode.NOT_ENOUGH_STUDENTS_FOR_GROUPS, ErrorCode.NO_VALID_GROUP_SPLIT, ErrorCode.SEPARATIONS_CANNOT_BE_MET })
+  public ResponseEntity<List<GroupPreviewDTO>> generateGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      @RequestParam(defaultValue = "false") boolean replacePublished, Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(groupService.generateGroups(id, assignmentId, replacePublished));
+  }
+
+  // generate groups, confirm
+  @PostMapping("{id}/assignments/{assignmentId}/groups/publish")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Publish the draft groups, replacing the ones published before")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NO_DRAFT_GROUPS })
+  public ResponseEntity<Void> publishGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    groupService.publishGroups(id, assignmentId);
+    return ResponseEntity.noContent().build();
+  }
+
+  // generate groups, cancel
+  @DeleteMapping("{id}/assignments/{assignmentId}/groups/draft")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Discard the draft groups, the published ones stay as they are")
+  @ErrorCodes(ErrorCode.NOT_FOUND)
+  public ResponseEntity<Void> discardGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    groupService.discardGroups(id, assignmentId);
+    return ResponseEntity.noContent().build();
   }
 
   // register attendance: the class's students for one lesson, with the record if it was registered before

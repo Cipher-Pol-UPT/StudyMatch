@@ -2,12 +2,14 @@ package com.studymatch.services;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -147,10 +149,40 @@ public class EnrolmentService {
         EnrolmentStatus.PASSED);
   }
 
+  // analytics: every enrolment of the year
+  public List<Enrolment> listEnrolments(AcademicYear academicYear) {
+    return enrolmentRepository.findBySubjectEdition_AcademicYear(academicYear);
+  }
+
   public Double getAttendanceRate(Student student) {
+    return attendanceRate(enrolmentRepository.findByStudent(student));
+  }
+
+  // what generate groups knows about a student, null where there's nothing yet
+  public record GroupingEvidence(Double level, Double attendance) {
+  }
+
+  // the category first, everything when the category has nothing yet (GR6); no attendance with a statute (GR7)
+  public GroupingEvidence getGroupingEvidence(Student student, Long categoryId) {
+    List<Enrolment> enrolments = enrolmentRepository.findByStudent(student);
+    List<Enrolment> inCategory = enrolments.stream()
+        .filter(enrolment -> categoryOf(enrolment).getId().equals(categoryId)).toList();
+    OptionalDouble categoryLevel = inCategory.stream().filter(Enrolment::isFinished)
+        .mapToInt(Enrolment::getFinalGrade).average();
+    Double level = categoryLevel.isPresent() ? Double.valueOf(categoryLevel.getAsDouble())
+        : weightedAverage(enrolments.stream().filter(Enrolment::isFinished).toList());
+    Double attendance = null;
+    if (!student.hasActiveStatute()) {
+      attendance = attendanceRate(inCategory);
+      attendance = attendance != null ? attendance : attendanceRate(enrolments);
+    }
+    return new GroupingEvidence(level, attendance);
+  }
+
+  private Double attendanceRate(List<Enrolment> enrolments) {
     long lessons = 0;
     long absences = 0;
-    for (Enrolment enrolment : enrolmentRepository.findByStudent(student)) {
+    for (Enrolment enrolment : enrolments) {
       lessons += lessonService.countLessons(enrolment.getClassSection());
       absences += absenceService.countUnjustifiedAbsences(enrolment);
     }
@@ -338,9 +370,26 @@ public class EnrolmentService {
 
   // finished subjects only, weighted by ECTS, so a 10 ECTS subject counts twice as much as a 5 ECTS one
   public Double getAverageGrade(Student student) {
+    return weightedAverage(finishedEnrolments(student));
+  }
+
+  // analytics: the average of many students in one query, keyed by number; students with nothing finished are left out
+  public Map<Long, Double> getAverageGrades(Collection<Student> students) {
+    Map<Long, Double> averages = new HashMap<>();
+    if (students.isEmpty()) {
+      return averages;
+    }
+    enrolmentRepository.findByStudentInAndFinalGradeIsNotNull(students).stream()
+        .collect(Collectors.groupingBy(enrolment -> enrolment.getStudent().getNumber()))
+        .forEach((number, finished) -> averages.put(number, weightedAverage(finished)));
+    return averages;
+  }
+
+  // weighted by ECTS, null when there's nothing to weigh
+  private static Double weightedAverage(List<Enrolment> finished) {
     double weightedSum = 0;
     int totalEcts = 0;
-    for (Enrolment enrolment : finishedEnrolments(student)) {
+    for (Enrolment enrolment : finished) {
       int ects = enrolment.getSubjectEdition().getSubject().getEcts();
       weightedSum += ects * enrolment.getFinalGrade();
       totalEcts += ects;

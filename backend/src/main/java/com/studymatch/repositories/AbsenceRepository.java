@@ -1,5 +1,6 @@
 package com.studymatch.repositories;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,8 @@ public interface AbsenceRepository extends JpaRepository<Absence, Long> {
   long countByEnrolmentAndJustifiedFalseAndLesson_ClassSection(Enrolment enrolment, ClassSection classSection);
 
   List<Absence> findByLesson(Lesson lesson);
+
+  List<Absence> findByEnrolmentInAndJustifiedFalse(Collection<Enrolment> enrolments);
 
   void deleteByLesson(Lesson lesson);
 

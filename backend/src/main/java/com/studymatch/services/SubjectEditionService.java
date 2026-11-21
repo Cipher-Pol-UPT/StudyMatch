@@ -98,6 +98,11 @@ public class SubjectEditionService {
         .orElse(List.of());
   }
 
+  // analytics: the year's editions, the filter offers them even before anyone enrols
+  public List<SubjectEdition> listEditions(AcademicYear academicYear) {
+    return subjectEditionRepository.findByAcademicYear(academicYear);
+  }
+
   // block account (admin): a teacher's editions this year need another teacher once they're blocked
   @Transactional(readOnly = true)
   public List<SubjectEditionResponseDTO> listCurrentTaughtBy(Long teacherNumber) {

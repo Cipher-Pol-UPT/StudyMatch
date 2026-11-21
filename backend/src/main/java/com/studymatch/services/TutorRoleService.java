@@ -1,6 +1,8 @@
 package com.studymatch.services;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,13 @@ public class TutorRoleService {
     return tutorRoleRepository.findByStudent(student).stream()
         .map(this::toTutorBadge)
         .toList();
+  }
+
+  // certificates: the subject with the best rating, empty if nobody rated them yet
+  public Optional<TutorBadgeDTO> getBestRatedSubject(Student student) {
+    return getTutorBadges(student).stream()
+        .filter(badge -> badge.averageRating() != null)
+        .max(Comparator.comparing(TutorBadgeDTO::averageRating));
   }
 
   // create StudyRoom: the subjects a tutor can pick, empty for students who don't tutor anything

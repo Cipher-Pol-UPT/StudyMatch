@@ -23,7 +23,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "student_group", uniqueConstraints = @UniqueConstraint(columnNames = { "assignment_id", "number" }))
+// a draft group 1 can sit next to the published group 1 until the teacher confirms the new groups
+@Table(name = "student_group",
+    uniqueConstraints = @UniqueConstraint(columnNames = { "assignment_id", "number", "status" }))
 public class Group {
 
   @Id

@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.studymatch.enums.Achievement;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -44,6 +45,10 @@ public class EarnedAchievement {
   @Column(unique = true)
   private String verificationCode;
 
+  // null until the first certificate
+  @Embedded
+  private CertificateEvidence evidence;
+
   protected EarnedAchievement() {
   }
 
@@ -72,6 +77,17 @@ public class EarnedAchievement {
 
   public String getVerificationCode() {
     return verificationCode;
+  }
+
+  public CertificateEvidence getEvidence() {
+    return evidence;
+  }
+
+  // only the first time, a later certificate shows the same figures as the first one
+  public void recordEvidence(CertificateEvidence evidence) {
+    if (this.evidence == null) {
+      this.evidence = evidence;
+    }
   }
 
 }

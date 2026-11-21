@@ -1,6 +1,8 @@
 package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
@@ -16,12 +18,14 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.AchievementBadgeDTO;
+import com.studymatch.dtos.MyAchievementDTO;
 import com.studymatch.enums.Achievement;
 import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.models.EarnedAchievement;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
 import com.studymatch.repositories.EarnedAchievementRepository;
+import com.studymatch.utils.CertificatePdfWriter;
 
 class EarnedAchievementServiceTest {
 
@@ -42,7 +46,7 @@ class EarnedAchievementServiceTest {
     participationService = mock(ParticipationService.class);
     tutorRoleService = mock(TutorRoleService.class);
     earnedAchievementService = new EarnedAchievementService(earnedAchievementRepository, studyRoomService,
-        participationService, tutorRoleService);
+        participationService, tutorRoleService, mock(AchievementRecordService.class), mock(CertificatePdfWriter.class));
 
     student = ModelTestData.student("Test Student");
     ReflectionTestUtils.setField(student, "number", TUTOR_NUMBER);
@@ -80,6 +84,42 @@ class EarnedAchievementServiceTest {
 
     // Assert
     assertTrue(achievements.isEmpty());
+  }
+
+  // view achievements (#22)
+
+  @Test
+  @DisplayName("A student sees every achievement, with the date and code only on the one they earned")
+  void studentSeesEveryAchievement() {
+    // Arrange
+    EarnedAchievement mentor = new EarnedAchievement(student, Achievement.MENTOR);
+    when(earnedAchievementRepository.findByStudentNumber(TUTOR_NUMBER)).thenReturn(List.of(mentor));
+
+    // Act
+    List<MyAchievementDTO> achievements = earnedAchievementService.getMyAchievements(TUTOR_NUMBER);
+
+    // Assert
+    assertEquals(List.of(Achievement.values()), achievements.stream().map(MyAchievementDTO::achievement).toList());
+    MyAchievementDTO earned = achievements.get(Achievement.MENTOR.ordinal());
+    assertTrue(earned.earned());
+    assertEquals(mentor.getEarnedAt(), earned.earnedAt());
+    assertEquals(mentor.getVerificationCode(), earned.verificationCode());
+    assertFalse(achievements.get(Achievement.FIRST_STUDYROOM.ordinal()).earned());
+  }
+
+  @Test
+  @DisplayName("A student with no achievements still sees all of them, none earned")
+  void studentWithNoneSeesAllNotEarned() {
+    // Act
+    List<MyAchievementDTO> achievements = earnedAchievementService.getMyAchievements(TUTOR_NUMBER);
+
+    // Assert
+    assertEquals(Achievement.values().length, achievements.size());
+    for (MyAchievementDTO achievement : achievements) {
+      assertFalse(achievement.earned());
+      assertNull(achievement.earnedAt());
+      assertNull(achievement.verificationCode());
+    }
   }
 
   // award achievement (#70)

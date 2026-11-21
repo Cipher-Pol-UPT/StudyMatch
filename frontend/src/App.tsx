@@ -1,7 +1,8 @@
 import { AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { getCurrentUser } from './api/auth';
+import { connectChatSocket, disconnectChatSocket } from './api/chatSocket';
 import { LoginPage } from './pages/login/LoginPage';
 import { ChangePasswordPage } from './pages/password/ChangePasswordPage';
 import { PersonalityTestPage } from './pages/personality/PersonalityTestPage';
@@ -9,11 +10,20 @@ import { StudentArea } from './pages/student/StudentArea';
 import { AdminArea } from './pages/admin/AdminArea';
 import { StaffArea } from './pages/staff/StaffArea';
 import { TeacherArea } from './pages/teacher/TeacherArea';
+import { VerifyCertificatePage } from './pages/verify/VerifyCertificatePage';
 import { LoadingScreen } from './studymatch-ui';
 import type { CurrentUser } from './types/currentUser';
 
 export default function App() {
-  return <BrowserRouter><ApplicationSession /></BrowserRouter>;
+  // a certificate's QR code works for anyone, so it's outside the session
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/verify/:code" element={<VerifyCertificatePage />} />
+        <Route path="*" element={<ApplicationSession />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 function ApplicationSession() {
@@ -27,12 +37,26 @@ function ApplicationSession() {
       .finally(() => setIsCheckingSession(false));
   }, []);
 
+  const canChat = currentUser !== null && canUseChats(currentUser);
+  useEffect(() => {
+    if (!canChat) {
+      return;
+    }
+    connectChatSocket();
+    return () => { void disconnectChatSocket(); };
+  }, [canChat]);
+
   return (
     <>
       <AnimatePresence>{isCheckingSession && <LoadingScreen key="loading" />}</AnimatePresence>
       {!isCheckingSession && <SessionPage currentUser={currentUser} setCurrentUser={setCurrentUser} />}
     </>
   );
+}
+
+// the backend only opens the chat socket for these, after the password change and the personality test
+function canUseChats(user: CurrentUser): boolean {
+  return (user.role === 'STUDENT' || user.role === 'TEACHER') && !user.mustChangePassword && !user.personalityTestRequired;
 }
 
 interface SessionPageProps {
