@@ -619,7 +619,8 @@
     "TUTOR_ROLE_ALREADY_EXISTS": "You are already a tutor of this Subject.",
     "SUBJECT_NOT_TAUGHT_THIS_YEAR": "This Subject isn't taught this academic year.",
     "ACHIEVEMENT_NOT_EARNED": "You haven't earned one of these achievements yet.",
-    "MEET_LINK_UNAVAILABLE": "The Google Meet link couldn't be created right now. Paste your own link to create the StudyRoom."
+    "MEET_LINK_UNAVAILABLE": "The Google Meet link couldn't be created right now. Paste your own link to create the StudyRoom.",
+    "DIRECT_CHAT_ALREADY_EXISTS": "This conversation was just started from the other side. Send your message again."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",
