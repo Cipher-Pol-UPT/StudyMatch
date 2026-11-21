@@ -83,7 +83,9 @@ public class EarnedAchievementService {
     Locale locale = Locale.forLanguageTag("pt".equals(request.language()) ? "pt-PT" : "en-GB");
     if (chosen.size() == 1) {
       EarnedAchievement only = chosen.get(0);
-      return certificatePdfWriter.writeCertificate(holder, toEntry(only), only.getVerificationCode(), LocalDate.now(), locale);
+      // the first export's date, the one the verify page shows, so a later export prints the same paper
+      return certificatePdfWriter.writeCertificate(holder, toEntry(only), only.getVerificationCode(),
+          only.getEvidence().recordedAt(), locale);
     }
     AchievementRecord record = achievementRecordService.create(student, chosen);
     return certificatePdfWriter.writeRecord(holder, chosen.stream().map(EarnedAchievementService::toEntry).toList(),

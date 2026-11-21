@@ -16,6 +16,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.enums.Achievement;
 import com.studymatch.models.AchievementRecord;
+import com.studymatch.models.CertificateEvidence;
 import com.studymatch.models.Degree;
 import com.studymatch.models.EarnedAchievement;
 import com.studymatch.models.PersonalityProfile;
@@ -130,6 +134,29 @@ class ExportCertificateIntegrationTest {
     assertEquals(LocalDate.now(), saved.getEvidence().recordedAt());
     assertNull(earnedAchievementRepository.findById(firstRoom.getId()).orElseThrow().getEvidence());
     assertEquals(0, achievementRecordRepository.count());
+  }
+
+  @Test
+  @DisplayName("Exporting again later prints the first export's date and figures, the ones the verify page shows")
+  void laterExportKeepsTheFirstDate() throws Exception {
+    // Arrange - first exported in January
+    mentor.recordEvidence(new CertificateEvidence(3L, 15L, 4.5, "Test Subject", LocalDate.of(2026, 1, 10)));
+    earnedAchievementRepository.saveAndFlush(mentor);
+
+    // Act
+    byte[] pdf = export(session, "{\"achievements\":[\"MENTOR\"],\"language\":\"en\"}")
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsByteArray();
+
+    // Assert
+    String text;
+    try (PDDocument document = Loader.loadPDF(pdf)) {
+      text = new PDFTextStripper().getText(document);
+    }
+    assertTrue(text.contains("10 January 2026"));
+    assertTrue(text.contains("Test Subject"));
+    mockMvc.perform(get("/achievements/certificates/" + mentor.getVerificationCode()))
+        .andExpect(jsonPath("$.issuedAt").value("2026-01-10"));
   }
 
   @Test
