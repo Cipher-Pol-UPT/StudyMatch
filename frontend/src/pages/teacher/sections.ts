@@ -1,4 +1,4 @@
-import { BookOpen, ClipboardList, FilePenLine, Star, Users } from 'lucide-react';
+import { BookOpen, ClipboardList, FilePenLine, MessagesSquare, Star, Users } from 'lucide-react';
 import type { NavigationSection } from '../../types/navigation';
 
 export const TEACHER_SECTIONS: NavigationSection[] = [
@@ -7,5 +7,6 @@ export const TEACHER_SECTIONS: NavigationSection[] = [
   { key: 'assignments', path: '/assignments', icon: ClipboardList, ready: true },
   { key: 'groups', path: '/groups', icon: Users },
   { key: 'grades', path: '/grades', icon: FilePenLine, ready: true },
+  { key: 'chats', path: '/chats', icon: MessagesSquare, ready: true },
   { key: 'tutorApplications', path: '/tutor-applications', icon: Star },
 ];
