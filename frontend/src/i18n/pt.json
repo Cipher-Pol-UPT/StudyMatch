@@ -321,7 +321,7 @@
   "personality": {
     "title": "Teste de personalidade",
     "heading": "Como trabalha em equipa?",
-    "lead": "{{count}} afirmações, cerca de 3 minutos. Descreva-se como é atualmente, e não como gostaria de ser no futuro, em comparação com outras pessoas da sua idade. Não há respostas certas: responda com sinceridade, ajuda-nos a formar grupos onde todos têm um papel.",
+    "lead": "{{count}} afirmações, cerca de 3 minutos. Descreva-se como é atualmente, e não como gostaria de ser no futuro. Descreva-se como sinceramente se vê, em relação a outras pessoas que conhece do mesmo sexo que o seu e aproximadamente da mesma idade. Não há respostas certas: responda com sinceridade, ajuda-nos a formar grupos onde todos têm um papel.",
     "yearly": "Tem de fazer este teste uma vez por ano letivo para usar o StudyMatch. Depois de submeter, as respostas não podem ser alteradas.",
     "answered": "Respondidas",
     "progress": "{{answered}} de {{total}}",
