@@ -26,12 +26,9 @@ export interface ChatListPaneProps {
 export function ChatListPane({ title, actions, children }: ChatListPaneProps) {
   return (
     <section className="sm-chat__list" aria-label={title}>
-      <div className="sm-chat__list-head">
-        <div className="sm-chat__list-title">
-          <h1>{title}</h1>
-          {actions && <div className="sm-chat__new">{actions}</div>}
-        </div>
-      </div>
+      {/* the top bar already shows the page's name; the heading stays for screen readers */}
+      <h1 className="sm-visually-hidden">{title}</h1>
+      {actions && <div className="sm-chat__list-head"><div className="sm-chat__new">{actions}</div></div>}
       <div className="sm-chat__rows">{children}</div>
     </section>
   );
