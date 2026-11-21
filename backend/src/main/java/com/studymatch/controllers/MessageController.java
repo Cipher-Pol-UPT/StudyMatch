@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -72,6 +73,19 @@ public class MessageController {
       @Valid @RequestBody SendMessageRequestDTO editRequest, Authentication authentication) {
     User user = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(messageService.edit(chatId, messageId, user, editRequest.text()));
+  }
+
+  // delete your own message, the confirmation is the frontend's
+  @DeleteMapping("{chatId}/messages/{messageId}")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Delete a message you sent for good, it disappears from the open chat and the unread counts "
+      + "go down with it")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NOT_MESSAGE_AUTHOR })
+  public ResponseEntity<Void> delete(@PathVariable Long chatId, @PathVariable Long messageId,
+      Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    messageService.delete(chatId, messageId, user);
+    return ResponseEntity.noContent().build();
   }
 
   @PostMapping("direct/{number}/messages")
