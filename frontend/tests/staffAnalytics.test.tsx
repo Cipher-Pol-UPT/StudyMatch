@@ -1,0 +1,113 @@
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import i18n from '../src/i18n';
+import { StaffArea } from '../src/pages/staff/StaffArea';
+import { StudyMatchProvider } from '../src/studymatch-ui';
+import type { AnalyticsData } from '../src/types/analytics';
+
+const analytics: AnalyticsData = {
+  academicYear: 2026, totalStudents: 12, activeSubjects: 3, averageAttendance: 87.4,
+  attendanceOverTime: [{ month: '2026-10', attendance: 90 }, { month: '2026-11', attendance: 84.8 }],
+  personalityDistribution: [
+    { trait: 'OPENNESS', students: 4 }, { trait: 'CONSCIENTIOUSNESS', students: 3 }, { trait: 'EXTRAVERSION', students: 2 },
+    { trait: 'AGREEABLENESS', students: 1 }, { trait: 'NEUROTICISM', students: 0 },
+  ],
+  groupBalance: [
+    { groupId: 7, assignment: 'Test Project', number: 1, members: 3, averageGrade: 14 },
+    { groupId: 8, assignment: 'Test Project', number: 2, members: 3, averageGrade: 12 },
+  ],
+  firstYearOnly: false,
+  filters: {
+    academicYears: [2026, 2025],
+    subjectEditions: [{ id: 11, subjectCode: 'TST1', subjectName: 'Test Programming', classSections: ['T1', 'T2'] }],
+    groups: [{ id: 7, subjectEditionId: 11, assignment: 'Test Project', number: 1 }, { id: 8, subjectEditionId: 11, assignment: 'Test Project', number: 2 }],
+  },
+};
+const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+
+// answers GET /analytics/ with whatever the test gives for the query
+function backend(answer: (query: URLSearchParams) => AnalyticsData = () => analytics) {
+  const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+    const url = new URL(String(input), 'https://test.invalid');
+    if (url.pathname === '/api/analytics/') return reply(answer(url.searchParams));
+    throw new Error(`Unexpected request: ${init?.method ?? 'GET'} ${url.pathname}`);
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+
+function open(path = '/analytics') {
+  render(<StudyMatchProvider><MemoryRouter initialEntries={[path]}><StaffArea currentUser={{ number: 9, name: 'Test Staff', institutionalEmail: 'staff@school.pt', role: 'STAFF', mustChangePassword: false, personalityTestRequired: false }} onLoggedOut={vi.fn()} /></MemoryRouter></StudyMatchProvider>);
+}
+
+const card = (title: string) => within(screen.getByText(title).closest('.sm-card') as HTMLElement);
+
+// the charts animate in when seen, and jsdom has no IntersectionObserver
+class NoIntersection { observe() {} unobserve() {} disconnect() {} takeRecords() { return []; } }
+
+beforeEach(async () => { vi.stubGlobal('IntersectionObserver', NoIntersection); await i18n.changeLanguage('en'); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+
+describe('view analytics (staff)', () => {
+  it('shows the indicators, attendance per month, strongest traits and group balance', async () => {
+    backend();
+    open();
+
+    expect(await screen.findByText('12')).toBeTruthy();
+    expect(card('Active subjects').getByText('3')).toBeTruthy();
+    expect(card('Average attendance').getByText('87')).toBeTruthy();
+    // november's 84.8 is rounded
+    expect(within(screen.getByRole('figure', { name: 'Attendance by month' })).getAllByText('85%').length).toBeGreaterThan(0);
+    expect(screen.getByRole('figure', { name: 'Students by strongest trait' })).toBeTruthy();
+    // each group is 1 point away from the 13 the groups average
+    expect(within(screen.getByRole('figure', { name: 'Group balance' })).getAllByText('±1.0').length).toBeGreaterThan(1);
+  });
+
+  it('asks again for the chosen subject, and only offers its classes and groups', async () => {
+    const fetchMock = backend();
+    open();
+
+    fireEvent.change(await screen.findByLabelText('Subject'), { target: { value: '11' } });
+
+    await waitFor(() => expect(fetchMock.mock.calls.some(([input]) => String(input).endsWith('/analytics/?subjectEditionId=11'))).toBe(true));
+    const classes = within(screen.getByLabelText('Class')).getAllByRole('option').map(option => option.textContent);
+    expect(classes).toEqual(['All classes', 'T1', 'T2']);
+    expect((screen.getByLabelText('Group') as HTMLSelectElement).disabled).toBe(false);
+  });
+
+  it('a new subject clears the class chosen for the old one', async () => {
+    const fetchMock = backend();
+    open('/analytics?subjectEditionId=11&classSection=T2');
+
+    fireEvent.change(await screen.findByLabelText('Subject'), { target: { value: '' } });
+
+    await waitFor(() => expect(fetchMock.mock.calls.at(-1)?.[0]).toMatch(/\/analytics\/$/));
+  });
+
+  it('suggests a broader selection when nobody is in it', async () => {
+    backend(() => ({ ...analytics, totalStudents: 0, activeSubjects: 0, averageAttendance: null, attendanceOverTime: [], groupBalance: [],
+      personalityDistribution: analytics.personalityDistribution.map(item => ({ ...item, students: 0 })) }));
+    open('/analytics?subjectEditionId=11&classSection=T2');
+
+    expect(await screen.findByText('No data for this selection')).toBeTruthy();
+    expect(screen.getByText(/Try a broader selection/)).toBeTruthy();
+    expect(screen.queryByText('Group balance')).toBeNull();
+  });
+
+  it('only first-year students: no grade history instead of the group balance', async () => {
+    backend(() => ({ ...analytics, firstYearOnly: true }));
+    open();
+
+    expect(await screen.findByText('No grade history yet: only first-year students are selected.')).toBeTruthy();
+    expect(screen.queryByText('±1.0')).toBeNull();
+  });
+
+  it('never shows a statute type', async () => {
+    backend();
+    open();
+
+    await screen.findByText('12');
+    expect(document.body.textContent).not.toMatch(/working student|statute holder/i);
+  });
+});
