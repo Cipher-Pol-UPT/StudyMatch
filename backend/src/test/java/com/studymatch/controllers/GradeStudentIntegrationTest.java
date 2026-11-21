@@ -174,6 +174,7 @@ class GradeStudentIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.assignments[0].name").value("Project"))
         .andExpect(jsonPath("$.assignments[0].weight").value(40))
+        .andExpect(jsonPath("$.assignments[0].groupWork").value(false))
         .andExpect(jsonPath("$.assignments[1].name").value("Exam"))
         .andExpect(jsonPath("$.students.length()").value(2))
         .andExpect(jsonPath("$.students[0].name").value("Ana Grade"))
