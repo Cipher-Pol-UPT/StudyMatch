@@ -1,13 +1,13 @@
-import { ClipboardList, Plus } from 'lucide-react';
+import { ClipboardList, Plus, Users } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { createAssignment } from '../../api/assignments';
 import { getGradeSheet } from '../../api/grades';
 import { getEditionStudents } from '../../api/studentDirectory';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
-import { Button, Dialog, EmptyState, Table, useToast, type TableColumn } from '../../studymatch-ui';
+import { Button, buttonClass, Dialog, EmptyState, Table, useToast, type TableColumn } from '../../studymatch-ui';
 import type { AssignmentRequest } from '../../types/assignments';
 import type { GradeColumn } from '../../types/grades';
 import type { SubjectEditionData } from '../../types/studentDirectory';
@@ -37,6 +37,14 @@ export function TeacherAssignmentsPage() {
     { key: 'name', header: t('assignments.name') },
     { key: 'type', header: t('assignments.type'), render: row => t(`assignments.types.${row.type}`) },
     { key: 'weight', header: t('assignments.weightColumn'), align: 'right', render: row => <span className="sm-num">{row.weight}%</span> },
+    {
+      key: 'actions', header: <span className="sm-visually-hidden">{t('ui.actions')}</span>, align: 'right',
+      render: row => row.groupWork && (
+        <Link className={buttonClass({ variant: 'secondary', size: 'sm' })} to={`${row.id}/groups`} aria-label={t('groups.of', { name: row.name })}>
+          <Users size={14} aria-hidden="true" />{t('assignments.groups')}
+        </Link>
+      ),
+    },
   ];
 
   return (

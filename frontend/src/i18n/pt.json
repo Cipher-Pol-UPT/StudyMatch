@@ -1036,6 +1036,43 @@
     "noData": "Sem dados para esta seleção",
     "noDataHint": "Experimente uma seleção mais ampla, por exemplo todas as turmas ou todas as unidades curriculares."
   },
+  "groups": {
+    "of": "Grupos de {{name}}",
+    "title": "Grupos · {{name}}",
+    "intro": "Forme grupos a partir da personalidade, assiduidade e classificações dos estudantes.",
+    "draftIntro": "Um rascunho do algoritmo de emparelhamento. Os estudantes só o veem depois de confirmar.",
+    "count_one": "{{count}} grupo, {{students}} estudantes.",
+    "count_other": "{{count}} grupos, {{students}} estudantes.",
+    "generate": "Gerar grupos",
+    "generateBody": "O algoritmo propõe um rascunho que pode verificar antes de os estudantes o verem.",
+    "generating": "A gerar grupos…",
+    "generatingCount_one": "A gerar {{count}} grupo de {{size}}…",
+    "generatingCount_other": "A gerar {{count}} grupos de {{size}}…",
+    "generatingTime_one": "Cerca de {{count}} segundo",
+    "generatingTime_other": "Cerca de {{count}} segundos",
+    "generatingMoment": "Só um momento",
+    "steps": {
+      "personality": "A ler as personalidades",
+      "record": "A pesar assiduidade e classificações",
+      "languages": "A procurar uma língua em comum",
+      "balance": "A equilibrar os grupos"
+    },
+    "regenerate": "Gerar de novo",
+    "discard": "Descartar rascunho",
+    "publish": "Confirmar e publicar",
+    "published": "Grupos publicados. Os estudantes já os podem ver.",
+    "discarded": "Rascunho descartado.",
+    "groupNumber": "Grupo {{number}}",
+    "size_one": "{{count}} estudante",
+    "size_other": "{{count}} estudantes",
+    "sharedLanguages": "Partilham {{languages}}.",
+    "noSharedLanguage": "Estes estudantes não têm nenhuma língua em comum.",
+    "replaceTitle": "Gerar novos grupos?",
+    "replaceDescription": "{{name}} já tem grupos publicados.",
+    "replaceWarning": "Os estudantes podem já ter visto os seus grupos. Os novos grupos substituem-nos, bem como quaisquer alterações manuais, quando confirmar.",
+    "keep": "Mantê-los",
+    "replace": "Gerar novos grupos"
+  },
   "chats": {
     "title": "Conversas",
     "newMessage": "Nova mensagem",
@@ -1053,6 +1090,14 @@
     "conversation": "Conversa",
     "with": "Conversa com {{name}}",
     "back": "Voltar às conversas",
-    "sayHi": "{{line}}. Ainda não conversaram, diga olá a {{name}}."
+    "sayHi": "{{line}}. Ainda não conversaram, diga olá a {{name}}.",
+    "messages": "Mensagens",
+    "messageLabel": "Mensagem para {{name}}",
+    "send": "Enviar",
+    "sending": "A enviar…",
+    "notSent": "Não enviada",
+    "retry": "Tentar novamente",
+    "discard": "Descartar",
+    "startOfConversation": "Este é o início da sua conversa com {{name}}."
   }
 }

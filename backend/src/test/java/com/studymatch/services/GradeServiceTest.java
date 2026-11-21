@@ -33,6 +33,7 @@ import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Assignment;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.Grade;
+import com.studymatch.models.GroupingRule;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
 import com.studymatch.models.SubjectEdition;
@@ -230,7 +231,8 @@ class GradeServiceTest {
   @Test
   @DisplayName("The sheet has a column per assignment and a row per student, each with only their own grades")
   void gradeSheet() {
-    // Arrange
+    // Arrange - the project is group work, the exam isn't
+    ReflectionTestUtils.setField(project, "groupingRule", new GroupingRule(2, 3, 4, false));
     Enrolment rui = enrolment(2L, "Rui", 1002L);
     when(enrolmentService.listEnrolments(EDITION_ID)).thenReturn(List.of(ana, rui));
     grade(project, "14");
@@ -239,8 +241,8 @@ class GradeServiceTest {
     GradeSheetDTO sheet = gradeService.getGradeSheet(EDITION_ID);
 
     // Assert
-    assertEquals(List.of(new GradeSheetDTO.Column(1L, "Project", AssignmentType.PROJECT, 40),
-        new GradeSheetDTO.Column(2L, "Exam", AssignmentType.EXAM, 60)), sheet.assignments());
+    assertEquals(List.of(new GradeSheetDTO.Column(1L, "Project", AssignmentType.PROJECT, 40, true),
+        new GradeSheetDTO.Column(2L, "Exam", AssignmentType.EXAM, 60, false)), sheet.assignments());
     assertEquals(new GradeSheetDTO.Row(1001L, "Ana", "T1", Map.of(1L, 14.0), null, EnrolmentStatus.IN_PROGRESS),
         sheet.students().get(0));
     assertEquals(Map.of(), sheet.students().get(1).grades());

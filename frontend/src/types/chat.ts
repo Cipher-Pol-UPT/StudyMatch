@@ -11,3 +11,16 @@ export interface ChatContactData { number: number; name: string; role: Role }
 
 // your DM with someone: chatId is null until the first message creates it
 export interface DirectChatData { chatId: number | null; contact: ChatContactData }
+
+// a message as the chat shows it; editedAt is null until it's edited
+export interface MessageData {
+  id: number;
+  chatId: number;
+  author: ChatContactData;
+  text: string;
+  sentAt: string;
+  editedAt: string | null;
+}
+
+// the most characters a message can have (GR10)
+export const MESSAGE_MAX_LENGTH = 2000;
