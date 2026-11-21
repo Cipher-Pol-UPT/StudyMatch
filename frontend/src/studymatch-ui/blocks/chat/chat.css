@@ -1,23 +1,25 @@
 /* Chats: the list and the open conversation side by side, one at a time on a phone.
    The layout follows the approved chat prototype; every value comes from the theme tokens. */
+/* the chat fills the page under the shell's top bar, edge to edge, instead of sitting in it as a card */
+.sm-shell__content:has(> .sm-chat) { max-width: none; padding: 0; }
 .sm-chat {
   display: grid; grid-template-columns: 320px minmax(0, 1fr);
-  /* the viewport less the shell's top bar (68px) and the content's padding (32px + 64px) */
-  height: min(780px, calc(100dvh - 164px)); min-height: 480px;
-  border-radius: var(--sm-r-lg); overflow: hidden;
-  background: var(--sm-canvas); box-shadow: var(--sm-shadow-md);
+  /* the viewport less the shell's top bar */
+  height: calc(100dvh - 68px); min-height: 420px;
+  overflow: hidden; background: var(--sm-canvas);
   font-family: var(--sm-font);
 }
 
-.sm-chat__list { display: flex; flex-direction: column; min-height: 0; background: var(--sm-surface); border-right: 1px solid var(--sm-hairline); }
-.sm-chat__list-head { display: grid; gap: 12px; padding: 18px 16px 12px; }
-.sm-chat__list-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.sm-chat__list-title h1 { margin: 0; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
-.sm-chat__new { display: flex; gap: 6px; }
+/* the list reads like a second column of the sidebar beside it */
+.sm-chat__list { display: flex; flex-direction: column; min-height: 0; background: var(--sm-glass); border-right: 1px solid var(--sm-hairline); }
+/* the page's name is in the top bar, so the head only holds the actions */
+.sm-chat__list-head { display: flex; align-items: center; gap: 8px; padding: 16px 16px 12px; }
+.sm-chat__new { display: flex; flex: 1; gap: 6px; }
+.sm-chat__new > .sm-btn { flex: 1; }
 .sm-chat__rows { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0 8px 8px; }
 .sm-chat__rows:has(> .sm-empty:only-child) { display: grid; align-content: center; }
 
-.sm-chat__thread { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; background: var(--sm-canvas); }
+.sm-chat__thread { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; background: var(--sm-canvas); }
 .sm-chat__head {
   display: flex; align-items: center; gap: 12px; height: 65px; padding: 0 16px;
   background: var(--sm-glass); backdrop-filter: blur(14px); border-bottom: 1px solid var(--sm-hairline);
@@ -27,7 +29,9 @@
 .sm-chat__head-sub { font-size: 12.5px; color: var(--sm-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sm-chat__back { display: none; }
 /* row 2 even without a head, so the body always fills the height */
-.sm-chat__scroll { grid-row: 2; display: grid; align-content: start; gap: 12px; overflow-y: auto; padding: 16px 20px 8px; }
+/* on a wide screen the conversation keeps a readable width, in the middle */
+.sm-chat { --sm-chat-gutter: max(20px, calc((100% - 880px) / 2)); }
+.sm-chat__scroll { grid-row: 2; display: grid; align-content: start; gap: 12px; overflow-y: auto; padding: 16px var(--sm-chat-gutter) 8px; }
 .sm-chat__scroll > .sm-btn { justify-self: start; }
 /* an empty conversation, or none open: its content sits in the middle */
 .sm-chat__scroll:has(> .sm-chat__start:only-child, > .sm-empty:only-child) { align-content: center; }
@@ -35,6 +39,44 @@
 .sm-chat__start { display: grid; justify-items: center; gap: 6px; padding: 8px 0 22px; text-align: center; }
 .sm-chat__start h3 { margin: 6px 0 0; font-size: 17px; font-weight: 500; }
 .sm-chat__start p { margin: 0; max-width: 34ch; font-size: 14px; line-height: 1.45; color: var(--sm-text-2); }
+
+/* the messages: someone else's on the left with their picture, yours on the right in violet */
+.sm-chat__messages { display: grid; align-content: start; }
+.sm-msg { position: relative; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; padding: 2px 8px; margin: 0 -8px; border-radius: var(--sm-r-md); }
+.sm-msg--first { margin-top: 12px; }
+.sm-msg__avatar { grid-row: span 2; padding-top: 2px; }
+.sm-msg__main { grid-column: 2; display: grid; justify-items: start; gap: 4px; min-width: 0; }
+.sm-msg__meta { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
+.sm-msg__meta b { font-weight: 500; }
+.sm-msg__meta time { font-size: 12px; color: var(--sm-text-3); font-variant-numeric: tabular-nums; }
+.sm-msg__bubble { max-width: min(560px, 100%); padding: 9px 13px; border-radius: 6px 18px 18px 18px; background: var(--sm-surface); box-shadow: var(--sm-shadow-sm); font-size: 14.5px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sm-msg:not(.sm-msg--first) .sm-msg__bubble { border-radius: 18px; }
+.sm-msg--mine { grid-template-columns: minmax(0, 1fr); }
+.sm-msg--mine .sm-msg__main { grid-column: 1; justify-items: end; }
+.sm-msg--mine .sm-msg__bubble { background: var(--sm-violet); color: var(--sm-on-accent); border-radius: 18px 6px 18px 18px; box-shadow: none; }
+.sm-msg--mine:not(.sm-msg--first) .sm-msg__bubble { border-radius: 18px; }
+/* greyed out until the backend confirms it */
+.sm-msg--sending .sm-msg__bubble { opacity: 0.5; }
+.sm-msg__status { font-size: 11.5px; color: var(--sm-text-3); }
+.sm-msg__failed { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--sm-danger-ink); }
+.sm-msg__failed button { border: 0; background: none; padding: 0; font: inherit; font-weight: 500; color: var(--sm-danger-ink); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.sm-msg__failed button:focus-visible { outline: none; border-radius: var(--sm-r-sm); box-shadow: var(--sm-focus-ring); }
+
+/* the message box */
+.sm-composer { display: grid; gap: 8px; padding: 6px var(--sm-chat-gutter) 14px; }
+.sm-composer__box { display: flex; align-items: flex-end; gap: 4px; padding: 6px 6px 6px 14px; border-radius: var(--sm-r-xl); background: var(--sm-surface); box-shadow: var(--sm-shadow-md); transition: box-shadow var(--sm-dur-1); }
+.sm-composer__box:focus-within { box-shadow: 0 0 0 2px var(--sm-violet), var(--sm-shadow-md); }
+.sm-composer__input { flex: 1; min-width: 0; max-height: 160px; min-height: 36px; padding: 8px 4px; border: 0; background: none; resize: none; outline: none; color: var(--sm-text); font: inherit; font-size: 14.5px; line-height: 1.4; }
+.sm-composer__input::placeholder { color: var(--sm-text-3); }
+.sm-composer__send { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--sm-violet); color: var(--sm-on-accent); box-shadow: var(--sm-shadow-violet); flex-shrink: 0; cursor: pointer; transition: transform var(--sm-dur-1) var(--sm-ease-out), opacity var(--sm-dur-1); }
+.sm-composer__send svg { width: 17px; height: 17px; }
+.sm-composer__send:disabled { opacity: 0.3; box-shadow: none; cursor: default; }
+.sm-composer__send:active:not(:disabled) { transform: scale(0.9); }
+.sm-composer__send:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-composer__foot { display: flex; justify-content: space-between; gap: 8px; padding: 0 12px; font-size: 12px; }
+.sm-composer__error { color: var(--sm-danger-ink); }
+.sm-composer__count { margin-left: auto; color: var(--sm-text-3); font-variant-numeric: tabular-nums; }
+.sm-composer__count--over { color: var(--sm-danger-ink); font-weight: 500; }
 
 /* the New message search */
 .sm-chat__people { display: grid; gap: 2px; max-height: 320px; overflow-y: auto; margin: 0 -10px; padding: 0; list-style: none; }
@@ -48,9 +90,8 @@
 
 /* a phone: the list and the conversation are separate screens */
 @media (max-width: 720px) {
-  /* on a phone the content's padding is 24px + 96px */
-  .sm-chat { grid-template-columns: minmax(0, 1fr); height: calc(100dvh - 188px); min-height: 420px; border-radius: var(--sm-r-md); }
+  .sm-chat { grid-template-columns: minmax(0, 1fr); }
   .sm-chat[data-view="thread"] .sm-chat__list, .sm-chat[data-view="list"] .sm-chat__thread { display: none; }
   .sm-chat__back { display: inline-grid; }
-  .sm-chat__scroll { padding-inline: 14px; }
+  .sm-chat { --sm-chat-gutter: 12px; }
 }

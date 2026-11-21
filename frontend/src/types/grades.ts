@@ -1,7 +1,7 @@
 import type { AssignmentType, EnrolmentStatus } from './enums';
 
-// one column per assignment, weight as a whole percentage
-export interface GradeColumn { id: number; name: string; type: AssignmentType; weight: number }
+// one column per assignment, weight as a whole percentage; groupWork means its groups can be generated
+export interface GradeColumn { id: number; name: string; type: AssignmentType; weight: number; groupWork: boolean }
 
 // grades by assignment id, a missing one isn't graded yet; finalGrade only once every assignment is graded
 export interface GradeRow { number: number; name: string; classSection: string; grades: Record<string, number>; finalGrade: number | null; status: EnrolmentStatus }

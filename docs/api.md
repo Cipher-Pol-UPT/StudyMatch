@@ -77,8 +77,9 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/subject-editions/{id}/enrolments/import` | Staff | enrol the students in a CSV, with a result per row |
 | GET | `/subject-editions/{id}/students` | Teacher of the edition | its students, with personality, category level and attendance |
 | POST | `/subject-editions/{id}/assignments` | Teacher of the edition | add an assignment, with group sizes and separations for group work |
-| GET | `/subject-editions/{id}/grades` | Teacher of the edition | the grade sheet |
+| GET | `/subject-editions/{id}/grades` | Teacher of the edition | the grade sheet; each assignment says whether it's group work (`groupWork`, it has a grouping rule) |
 | PUT | `/subject-editions/{id}/assignments/{assignmentId}/grades/{studentNumber}` | Teacher of the edition | give or change a grade; sets the final grade once everything's graded |
+| GET | `/subject-editions/{id}/assignments/{assignmentId}/groups/generation` | Teacher of the edition | about what generating will do, from the class sizes alone (no student's evidence is loaded): the students who can be grouped, how many groups, their optimal size and the most the matching algorithm searches (`searchMillis`, 0 when every class is a single group). The page's loader follows it |
 | POST | `/subject-editions/{id}/assignments/{assignmentId}/groups?replacePublished=` | Teacher of the edition | generate (or regenerate) a group assignment's groups as drafts and preview them; with published groups already, `replacePublished=true` is needed |
 | POST | `/subject-editions/{id}/assignments/{assignmentId}/groups/publish` | Teacher of the edition | publish the drafts, replacing the groups published before |
 | DELETE | `/subject-editions/{id}/assignments/{assignmentId}/groups/draft` | Teacher of the edition | discard the drafts, the published groups stay |
@@ -118,6 +119,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | --- | --- | --- | --- |
 | GET | `/chats/` | Student, Teacher | your chats, the one with the latest message first, each with its name, the other person in a DM, the last message and how many you haven't read |
 | GET | `/chats/unread-count` | Student, Teacher | how many messages you haven't read across every chat, for the side menu |
+| GET | `/chats/{id}/messages?before=` | member of the chat | open a chat: its 50 newest messages oldest first, or with `before` (the oldest message id on screen) the 50 before it. `hasMore` is false once the first message is in |
+| PUT | `/chats/{id}/read` | member of the chat | mark the chat as read up to now (204), when it opens and when a message arrives while it's on screen |
 | GET | `/chats/direct/{number}` | Student, Teacher | your DM with that person, `chatId` is null until the first message creates it. Anyone the contact search wouldn't offer is 404 |
 | POST | `/chats/{id}/messages` | member of the chat | send a text message (1 to 2000 characters in UTF-16 units, an emoji is usually 2), pushed to the members |
 | POST | `/chats/direct/{number}/messages` | Student, Teacher | send a DM, the first one creates the chat. Both sending the first one at the same moment gives the second `DIRECT_CHAT_ALREADY_EXISTS`, and sending again works |

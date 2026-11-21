@@ -52,6 +52,7 @@ import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
 import com.studymatch.repositories.ChatRepository;
+import com.studymatch.repositories.ChatSettingsRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.MessageRepository;
 import com.studymatch.repositories.StaffRepository;
@@ -85,6 +86,9 @@ class ChatWebSocketIntegrationTest {
 
   @Autowired
   private MessageRepository messageRepository;
+
+  @Autowired
+  private ChatSettingsRepository chatSettingsRepository;
 
   @Autowired
   private ApplicationEventPublisher eventPublisher;
@@ -123,6 +127,9 @@ class ChatWebSocketIntegrationTest {
     stompClient.stop();
     messageRepository.deleteAll(messageRepository.findAll().stream()
         .filter(message -> message.getChat().getId().equals(chat.getId()))
+        .toList());
+    chatSettingsRepository.deleteAll(chatSettingsRepository.findAll().stream()
+        .filter(settings -> settings.getChat().getId().equals(chat.getId()))
         .toList());
     chatRepository.delete(chat);
     studentRepository.deleteAll(List.of(ana, rui, eva));
@@ -170,15 +177,15 @@ class ChatWebSocketIntegrationTest {
     return URI.create("http://localhost:" + port + path);
   }
 
-  // a POST with the login's cookies and CSRF header, like client.ts sends it
-  private int post(Map<String, String> cookies, String path, String body) throws Exception {
+  // a POST or PUT with the login's cookies and CSRF header, like client.ts sends it
+  private int send(String method, Map<String, String> cookies, String path, String body) throws Exception {
     HttpRequest request = HttpRequest.newBuilder(url(path))
         .header("Cookie", cookies.entrySet().stream()
             .map(c -> c.getKey() + "=" + c.getValue())
             .collect(Collectors.joining("; ")))
         .header("X-XSRF-TOKEN", cookies.get("XSRF-TOKEN"))
         .header("Content-Type", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(body))
+        .method(method, HttpRequest.BodyPublishers.ofString(body))
         .build();
     return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
   }
@@ -356,7 +363,7 @@ class ChatWebSocketIntegrationTest {
     chatList.clear();
 
     // Act
-    int status = post(login(ana.getInstitutionalEmail()), "/chats/" + chat.getId() + "/messages",
+    int status = send("POST", login(ana.getInstitutionalEmail()), "/chats/" + chat.getId() + "/messages",
         "{\"text\":\"hi Rui\"}");
 
     // Assert
@@ -369,6 +376,26 @@ class ChatWebSocketIntegrationTest {
     assertNotNull(updated);
     assertEquals("CHAT_UPDATED", updated.get("type"));
     assertEquals(chat.getId().intValue(), ((Map<?, ?>) updated.get("payload")).get("chatId"));
+  }
+
+  @Test
+  @DisplayName("Marking a chat read tells the user's other tabs, so they clear its badge")
+  void markReadIsPushedToTheUser() throws Exception {
+    // Arrange
+    StompSession session = connect(ana);
+    BlockingQueue<Map<String, Object>> chatList = subscribe(session, "/user/queue/chats");
+    assertNotNull(publishUntilReceived(new UserChatEvent(ana, ChatEventType.CHAT_UPDATED, Map.of()), chatList));
+    chatList.clear();
+
+    // Act
+    int status = send("PUT", login(ana.getInstitutionalEmail()), "/chats/" + chat.getId() + "/read", "");
+
+    // Assert
+    assertEquals(204, status);
+    Map<String, Object> read = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(read);
+    assertEquals("CHAT_READ", read.get("type"));
+    assertEquals(chat.getId().intValue(), read.get("payload"));
   }
 
   @Test
