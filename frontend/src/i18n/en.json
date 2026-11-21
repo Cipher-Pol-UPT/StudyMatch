@@ -235,6 +235,10 @@
     "newCategory": "New category",
     "registerCategory": "Register category",
     "categoryRegistered": "Category {{name}} registered.",
+    "rename": "Rename",
+    "renameCategory": "Rename category",
+    "renameCategoryOf": "Rename {{name}}",
+    "categoryRenamed": "Category renamed to {{name}}.",
     "noCategories": "No categories yet",
     "noCategoriesBody": "Register the first one so it can be chosen for subjects."
   },

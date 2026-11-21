@@ -235,6 +235,10 @@
     "newCategory": "Nova categoria",
     "registerCategory": "Registar categoria",
     "categoryRegistered": "Categoria {{name}} registada.",
+    "rename": "Mudar o nome",
+    "renameCategory": "Mudar o nome da categoria",
+    "renameCategoryOf": "Mudar o nome de {{name}}",
+    "categoryRenamed": "Categoria renomeada para {{name}}.",
     "noCategories": "Ainda não existem categorias",
     "noCategoriesBody": "Registe a primeira para a poder escolher nas unidades curriculares."
   },
