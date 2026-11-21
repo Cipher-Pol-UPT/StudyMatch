@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.models.ChatSettings;
 import com.studymatch.models.Degree;
 import com.studymatch.models.DirectChat;
 import com.studymatch.models.Message;
@@ -314,6 +316,24 @@ class OpenChatIntegrationTest {
 
     // Act
     markRead(anaSession);
+
+    // Assert
+    assertEquals(1, settingsRows());
+    mockMvc.perform(get("/chats/unread-count").session(anaSession))
+        .andExpect(content().string("0"));
+  }
+
+  @Test
+  @DisplayName("A read that finishes late with an older time doesn't move lastReadAt back")
+  void olderReadDoesntMoveBack() throws Exception {
+    // Arrange - the older read started before rui's message, the newer one after it
+    LocalDateTime olderRead = LocalDateTime.now().minusMinutes(1);
+    message(withRui, rui, "seen");
+    markRead(anaSession);
+
+    // Act
+    chatSettingsRepository.upsertLastReadAt(withRui.getId(), ana.getNumber(), olderRead,
+        new ChatSettings(withRui, ana).getNotificationLevel().name());
 
     // Assert
     assertEquals(1, settingsRows());
