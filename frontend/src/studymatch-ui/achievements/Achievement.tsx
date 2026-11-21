@@ -102,10 +102,5 @@ export function AchievementDialog({ id, onClose, earnedAt, onExportCertificate, 
     </div>}
   </Dialog>;
 }
-export interface AchievementCertificateProps { id: AchievementId; recipient: string; earnedAt: string; verificationCode: string }
-export function AchievementCertificate({ id, recipient, earnedAt, verificationCode }: AchievementCertificateProps) {
-  const { t } = useTranslation(); return <article><h2>{t('achievements.certificate')}</h2><p>{recipient}</p>
-    <AchievementCard id={id} earnedAt={earnedAt} /><p>{verificationCode}</p></article>;
-}
 export interface AchievementUnlockedProps { id: AchievementId | null; onClose: () => void }
 export function AchievementUnlocked(props: AchievementUnlockedProps) { return <AchievementDialog {...props} />; }

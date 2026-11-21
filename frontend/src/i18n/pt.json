@@ -441,7 +441,14 @@
     "countedRooms": "Só contam as salas de estudo com pelo menos 2 presenças confirmadas.",
     "seeAll": "Ver todas",
     "export": "Exportar certificado",
-    "certificate": "Certificado de conquista",
+    "exportDescription": "Uma conquista dá um certificado, várias dão um registo com todas. Cada um tem um código QR que qualquer pessoa pode ler para o confirmar.",
+    "chooseAchievements": "Conquistas",
+    "chooseOne": "Escolha pelo menos uma conquista.",
+    "pdfLanguage": "Idioma do PDF",
+    "english": "Inglês",
+    "portuguese": "Português",
+    "download": "Descarregar PDF",
+    "downloaded": "Certificado descarregado.",
     "earnedOn": "Obtida a {{date}}",
     "rarity": {
       "common": "Comum",
@@ -449,6 +456,21 @@
       "epic": "Épica",
       "legendary": "Lendária"
     }
+  },
+  "verify": {
+    "title": "Verificação de certificado",
+    "valid": "Certificado válido",
+    "validRecord": "Registo de conquistas válido",
+    "issuedOn": "Emitido pela StudyMatch a {{date}}",
+    "studentLine": "Estudante n.º {{number}}",
+    "roomsHeld_one": "{{count}} StudyRoom realizada",
+    "roomsHeld": "{{count}} StudyRooms realizadas",
+    "studentsTutored_one": "{{count}} estudante acompanhado",
+    "studentsTutored": "{{count}} estudantes acompanhados",
+    "averageRating": "Média de {{rating}} em {{subject}}",
+    "notFound": "Não encontrámos este certificado",
+    "notFoundHint": "Confirme a ligação, ou o código escrito por baixo do código QR do certificado.",
+    "goToStudyMatch": "Ir para a StudyMatch"
   },
   "home": {
     "greeting": "Olá, {{name}}.",
@@ -569,6 +591,7 @@
     "ROOM_ALREADY_RATED": "Já avaliou esta StudyRoom.",
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Só os estudantes inscritos nesta unidade curricular que ainda não a concluíram podem inscrever-se.",
     "JOINED_STUDYROOM_OVERLAP": "Sobrepõe-se a uma sala de estudo em que já está inscrito ou que orienta ({{subject}}, {{startsAt}} – {{endsAt}}).",
+    "ACHIEVEMENT_NOT_EARNED": "Ainda não obteve uma destas conquistas.",
     "MEET_LINK_UNAVAILABLE": "Não foi possível criar a ligação do Google Meet neste momento. Cole a sua própria ligação para criar a StudyRoom."
   },
   "validation": {
