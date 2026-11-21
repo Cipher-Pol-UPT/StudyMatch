@@ -2,8 +2,10 @@ package com.studymatch.controllers;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.studymatch.dtos.EditStudentRequestDTO;
+import com.studymatch.dtos.ImageFileDTO;
 import com.studymatch.dtos.ImportPreviewRowDTO;
 import com.studymatch.dtos.ImportResultRowDTO;
 import com.studymatch.dtos.ImportStudentsRequestDTO;
@@ -200,6 +203,18 @@ public class StudentController {
   public ResponseEntity<StudentProfileDTO> getProfile(@PathVariable Long number, Authentication authentication) {
     User viewer = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(studentService.getProfile(number, viewer));
+  }
+
+  // private cache: a new photo takes up to 5 minutes to show elsewhere, but lists don't refetch every one
+  @GetMapping("{number}/pfp")
+  @Operation(summary = "A student's profile photo as an image, for <img src>. NOT_FOUND if they don't have one")
+  @ErrorCodes(ErrorCode.NOT_FOUND)
+  public ResponseEntity<byte[]> getPfp(@PathVariable Long number) {
+    ImageFileDTO pfp = studentService.getPfp(number);
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType(pfp.contentType()))
+        .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePrivate())
+        .body(pfp.bytes());
   }
 
   @GetMapping("{number}/ratings")
