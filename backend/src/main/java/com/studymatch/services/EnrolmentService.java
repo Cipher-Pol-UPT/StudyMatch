@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -147,9 +148,33 @@ public class EnrolmentService {
   }
 
   public Double getAttendanceRate(Student student) {
+    return attendanceRate(enrolmentRepository.findByStudent(student));
+  }
+
+  // what generate groups knows about a student, null where there's nothing yet
+  public record GroupingEvidence(Double level, Double attendance) {
+  }
+
+  // the category first, everything when the category has nothing yet (GR6); no attendance with a statute (GR7)
+  public GroupingEvidence getGroupingEvidence(Student student, Long categoryId) {
+    List<Enrolment> enrolments = enrolmentRepository.findByStudent(student);
+    List<Enrolment> inCategory = enrolments.stream()
+        .filter(enrolment -> categoryOf(enrolment).getId().equals(categoryId)).toList();
+    OptionalDouble categoryLevel = inCategory.stream().filter(Enrolment::isFinished)
+        .mapToInt(Enrolment::getFinalGrade).average();
+    Double level = categoryLevel.isPresent() ? Double.valueOf(categoryLevel.getAsDouble()) : averageGrade(enrolments);
+    Double attendance = null;
+    if (!student.hasActiveStatute()) {
+      attendance = attendanceRate(inCategory);
+      attendance = attendance != null ? attendance : attendanceRate(enrolments);
+    }
+    return new GroupingEvidence(level, attendance);
+  }
+
+  private Double attendanceRate(List<Enrolment> enrolments) {
     long lessons = 0;
     long absences = 0;
-    for (Enrolment enrolment : enrolmentRepository.findByStudent(student)) {
+    for (Enrolment enrolment : enrolments) {
       lessons += lessonService.countLessons(enrolment.getClassSection());
       absences += absenceService.countUnjustifiedAbsences(enrolment);
     }
@@ -302,9 +327,13 @@ public class EnrolmentService {
 
   // finished subjects only, weighted by ECTS, so a 10 ECTS subject counts twice as much as a 5 ECTS one
   public Double getAverageGrade(Student student) {
+    return averageGrade(enrolmentRepository.findByStudent(student));
+  }
+
+  private static Double averageGrade(List<Enrolment> enrolments) {
     double weightedSum = 0;
     int totalEcts = 0;
-    for (Enrolment enrolment : finishedEnrolments(student)) {
+    for (Enrolment enrolment : enrolments.stream().filter(Enrolment::isFinished).toList()) {
       int ects = enrolment.getSubjectEdition().getSubject().getEcts();
       weightedSum += ects * enrolment.getFinalGrade();
       totalEcts += ects;

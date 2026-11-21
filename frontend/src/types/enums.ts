@@ -16,6 +16,9 @@ export type GroupStatus = typeof GroupStatus[number];
 export const Language = ["PORTUGUESE", "ENGLISH", "SPANISH", "FRENCH", "GERMAN", "ITALIAN", "DUTCH", "RUSSIAN", "UKRAINIAN", "ARABIC", "HINDI", "MANDARIN", "JAPANESE", "KOREAN"] as const;
 export type Language = typeof Language[number];
 
+export const LevelBand = ["HIGH", "AVERAGE", "DEVELOPING"] as const;
+export type LevelBand = typeof LevelBand[number];
+
 export const StatuteType = ["WORKING_STUDENT", "HIGH_PERFORMANCE_ATHLETE", "STUDENT_ASSOCIATION_LEADER", "STUDENT_PARENT", "SPECIAL_NEEDS"] as const;
 export type StatuteType = typeof StatuteType[number];
 
