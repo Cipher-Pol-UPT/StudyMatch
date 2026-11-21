@@ -472,6 +472,127 @@ class StudyRoomServiceTest {
         participants);
   }
 
+  // join (#45)
+
+  @Test
+  @DisplayName("An eligible student joins and the room is saved with one more participant")
+  void studentJoins() {
+    // Arrange
+    Student participant = student("Ana Test", 2L);
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findLockedById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(2L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(2L, tutorRole.getSubject())).thenReturn(false);
+    when(studyRoomRepository.findJoinedOverlapping(2L, ROOM_ID, room.getStartsAt(), room.getEndsAt()))
+        .thenReturn(List.of());
+    when(studyRoomRepository.findOverlapping(2L, room.getStartsAt(), room.getEndsAt())).thenReturn(List.of());
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.join(participant, ROOM_ID);
+
+    // Assert
+    assertEquals(1, result.participantCount());
+    assertEquals(StudyRoomStatus.SCHEDULED, result.status());
+    verify(studyRoomRepository).save(room);
+  }
+
+  @Test
+  @DisplayName("A student not enrolled in the subject's current edition can't join")
+  void notEligibleCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findLockedById(ROOM_ID)).thenReturn(Optional.of(room));
+    // isEnrolledInCurrentEdition is false by default
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.join(student("Ana Test", 2L), ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_ELIGIBLE_FOR_STUDYROOM, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A student who passed the subject can't join")
+  void passedCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findLockedById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(2L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(2L, tutorRole.getSubject())).thenReturn(true);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.join(student("Ana Test", 2L), ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_ELIGIBLE_FOR_STUDYROOM, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A student who already joined an overlapping room can't join")
+  void overlapCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    StudyRoom conflict = new StudyRoom(tutorRole, tomorrowAt(15), tomorrowAt(17), 5, "existing room", LINK);
+    ReflectionTestUtils.setField(conflict, "id", 7L);
+    when(studyRoomRepository.findLockedById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(2L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(2L, tutorRole.getSubject())).thenReturn(false);
+    when(studyRoomRepository.findJoinedOverlapping(2L, ROOM_ID, room.getStartsAt(), room.getEndsAt()))
+        .thenReturn(List.of(conflict));
+    when(studyRoomRepository.findOverlapping(2L, room.getStartsAt(), room.getEndsAt())).thenReturn(List.of());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.join(student("Ana Test", 2L), ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.JOINED_STUDYROOM_OVERLAP, e.getCode());
+    assertEquals(7L, e.getParams().get("id"));
+    assertEquals("Test Subject", e.getParams().get("subject"));
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A tutor hosting an overlapping room can't join someone else's")
+  void hostedRoomOverlapCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    StudyRoom hosted = new StudyRoom(tutorRole, tomorrowAt(15), tomorrowAt(17), 5, "hosted room", LINK);
+    ReflectionTestUtils.setField(hosted, "id", 8L);
+    when(studyRoomRepository.findLockedById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(2L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(2L, tutorRole.getSubject())).thenReturn(false);
+    when(studyRoomRepository.findJoinedOverlapping(2L, ROOM_ID, room.getStartsAt(), room.getEndsAt()))
+        .thenReturn(List.of());
+    when(studyRoomRepository.findOverlapping(2L, room.getStartsAt(), room.getEndsAt()))
+        .thenReturn(List.of(hosted));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.join(student("Ana Test", 2L), ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.JOINED_STUDYROOM_OVERLAP, e.getCode());
+    assertEquals(8L, e.getParams().get("id"));
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A room that doesn't exist gives NOT_FOUND")
+  void missingRoomForJoin() {
+    // Act - findLockedById is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.join(student("Ana Test", 2L), ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
   // leave (#47)
 
   @Test
