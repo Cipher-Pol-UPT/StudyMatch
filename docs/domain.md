@@ -163,4 +163,6 @@ Any user can block any other user. A blocked user can't send DMs to the user who
 
 A message is text (up to 2000 characters, counted in UTF-16 units like a text box's `maxlength`, so most emoji count as 2) with up to 5 attachments, or one GIF, or one sticker, and never empty. Attachments are PNG, JPEG, GIF, WebP, PDF, Office documents (docx, xlsx, pptx) or plain text, up to 10 MB each, checked by their file signature. Only the author edits a message, only its text, and an edited message shows "(edited)". Only the author deletes a message, and deleting removes it, its attachments and its reactions for good, with no notice to anyone (GR10).
 
+The chat list puts the chat with the latest message first. A message is unread for a member when someone else sent it after the member last opened the chat (their `lastReadAt`), so a chat they never opened counts every message from the others, and their own messages never count. A DM is listed under the other person's name and photo.
+
 Each member picks a notification level per chat: All (the default), Only @mentions or None. A chat has at most one unread notification per member, updated with the number of new messages and marked as read when the chat is opened (GR11).
