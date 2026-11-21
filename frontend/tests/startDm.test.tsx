@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
+import { StudentArea } from '../src/pages/student/StudentArea';
 import { TeacherArea } from '../src/pages/teacher/TeacherArea';
 import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { ChatContactData, DirectChatData } from '../src/types/chat';
@@ -23,6 +24,8 @@ function backend(direct: (number: number) => Response = number => reply({ chatId
     }
     const dm = url.pathname.match(/^\/api\/chats\/direct\/(\d+)$/);
     if (dm) return direct(Number(dm[1]));
+    // the student area loads its own profile for the menu; this test doesn't need it
+    if (url.pathname === '/api/students/me/profile') return reply({ code: 'NOT_FOUND' }, 404);
     throw new Error(`Unexpected request: ${url.pathname}`);
   }));
   return searches;
@@ -107,6 +110,17 @@ describe('start a DM', () => {
 
     expect(await screen.findByText(i18n.t('errors.NOT_FOUND'))).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Back to chats' })).toBeTruthy();
+  });
+
+  it('a student opens Chats and starts a DM too', async () => {
+    backend();
+    render(<StudyMatchProvider><MemoryRouter initialEntries={['/chats']}><StudentArea currentUser={{ number: 50002, name: 'Test Student', institutionalEmail: 'student@school.pt', role: 'STUDENT', mustChangePassword: false, personalityTestRequired: false }} onLoggedOut={vi.fn()} /></MemoryRouter></StudyMatchProvider>);
+    const dialog = await newMessage();
+
+    fireEvent.click(await dialog.findByRole('button', { name: /Test Rui/ }));
+
+    expect(await screen.findByRole('region', { name: 'Conversation with Test Rui' })).toBeTruthy();
+    expect(screen.queryByText(i18n.t('placeholder.comingSoon'))).toBeNull();
   });
 
   it('without a conversation open, asks to pick one', async () => {
