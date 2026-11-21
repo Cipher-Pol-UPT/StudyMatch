@@ -104,26 +104,31 @@ public class UserService {
     };
   }
 
-  // start a DM: Students and Teachers that aren't blocked, never yourself (GR8)
+  // who you can message: Students and Teachers that aren't blocked, never yourself (GR8). the only place this rule lives
+  private static Specification<User> chatContactOf(User user) {
+    return Specification.allOf(
+        (contact, query, where) -> contact.type().in(Student.class, Teacher.class),
+        (contact, query, where) -> where.equal(contact.get("accountStatus"), AccountStatus.ACTIVE),
+        (contact, query, where) -> where.notEqual(contact.get("number"), user.getNumber()));
+  }
+
+  // start a DM
   @Transactional(readOnly = true)
   public PageDTO<ChatContactDTO> listChatContacts(String search, User user, int page) {
-    List<Specification<User>> filters = new ArrayList<>();
-    filters.add((contact, query, where) -> contact.type().in(Student.class, Teacher.class));
-    filters.add((contact, query, where) -> where.equal(contact.get("accountStatus"), AccountStatus.ACTIVE));
-    filters.add((contact, query, where) -> where.notEqual(contact.get("number"), user.getNumber()));
+    Specification<User> filter = chatContactOf(user);
     if (search != null && !search.isBlank()) {
-      filters.add(matchesSearch(search.trim()));
+      filter = filter.and(matchesSearch(search.trim()));
     }
 
     PageRequest pageRequest = PageRequest.of(Math.max(page, 0), ACCOUNTS_PER_PAGE, Sort.by("name", "number"));
-    return PageDTO.from(userRepository.findAll(Specification.allOf(filters), pageRequest), ChatContactDTO::from);
+    return PageDTO.from(userRepository.findAll(filter, pageRequest), ChatContactDTO::from);
   }
 
-  // someone the search wouldn't offer looks the same as nobody
+  // the same rule as the search, so someone it wouldn't offer looks the same as nobody
   @Transactional(readOnly = true)
   public User getChatContact(Long number, User user) {
-    return userRepository.findById(number)
-        .filter(contact -> contact.canChat() && !contact.getNumber().equals(user.getNumber()))
+    Specification<User> byNumber = (contact, query, where) -> where.equal(contact.get("number"), number);
+    return userRepository.findOne(chatContactOf(user).and(byNumber))
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
   }
 
