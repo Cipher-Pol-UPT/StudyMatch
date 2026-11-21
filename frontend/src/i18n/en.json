@@ -1030,7 +1030,8 @@
     "count_other": "{{count}} groups, {{students}} students.",
     "generate": "Generate groups",
     "generateBody": "The algorithm proposes a draft you can check before students see it.",
-    "generating": "Generating groups",
+    "generating": "Generating groups…",
+    "generatingBody": "Matching the students by personality, attendance and grades.",
     "regenerate": "Regenerate",
     "discard": "Discard draft",
     "publish": "Confirm and publish",
@@ -1043,7 +1044,7 @@
     "noSharedLanguage": "These students have no language in common.",
     "replaceTitle": "Generate new groups?",
     "replaceDescription": "{{name}} already has published groups.",
-    "replaceWarning": "Students have already seen their groups. New groups replace them and any manual edits when you confirm.",
+    "replaceWarning": "Students may have already seen their groups. New groups replace them and any manual edits when you confirm.",
     "keep": "Keep them",
     "replace": "Generate new groups"
   }
