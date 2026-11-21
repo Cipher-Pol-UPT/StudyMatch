@@ -1,6 +1,7 @@
 package com.studymatch.models;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -35,5 +36,8 @@ public abstract class Chat {
 
   // each kind of chat knows its own members (GR8)
   public abstract boolean hasMember(User user);
+
+  // who gets the chat list updates
+  public abstract List<User> getMembers();
 
 }
