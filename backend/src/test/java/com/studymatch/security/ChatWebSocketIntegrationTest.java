@@ -190,6 +190,17 @@ class ChatWebSocketIntegrationTest {
     return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
   }
 
+  // a GET with the login's cookies, the body as text
+  private HttpResponse<String> get(Map<String, String> cookies, String path) throws Exception {
+    HttpRequest request = HttpRequest.newBuilder(url(path))
+        .header("Cookie", cookies.entrySet().stream()
+            .map(c -> c.getKey() + "=" + c.getValue())
+            .collect(Collectors.joining("; ")))
+        .GET()
+        .build();
+    return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+  }
+
   private StompSession connect(Map<String, String> cookies, boolean withCsrf, BlockingQueue<String> errors)
       throws Exception {
     WebSocketHttpHeaders handshake = new WebSocketHttpHeaders();
@@ -240,6 +251,26 @@ class ChatWebSocketIntegrationTest {
       }
     }
     return null;
+  }
+
+  // the student's chat list, ready to listen: a first event proves the subscription is registered
+  private BlockingQueue<Map<String, Object>> chatListOf(Student student) throws Exception {
+    BlockingQueue<Map<String, Object>> chatList = subscribe(connect(student), "/user/queue/chats");
+    assertNotNull(publishUntilReceived(new UserChatEvent(student, ChatEventType.CHAT_UPDATED, Map.of()), chatList));
+    chatList.clear();
+    return chatList;
+  }
+
+  // the online list changes once the server handles the connect or disconnect, a moment after the client's side
+  private String awaitOnline(Map<String, String> cookies, String expected) throws Exception {
+    String body = null;
+    for (int attempt = 0; attempt < 20 && !expected.equals(body); attempt++) {
+      if (attempt > 0) {
+        TimeUnit.MILLISECONDS.sleep(250);
+      }
+      body = get(cookies, "/chats/online").body();
+    }
+    return body;
   }
 
   // collects ERROR frames, the server's answer to a refused frame
@@ -302,9 +333,9 @@ class ChatWebSocketIntegrationTest {
   @Test
   @DisplayName("A user's chat list events only reach that user")
   void userQueueOnlyReachesTheUser() throws Exception {
-    // Arrange
+    // Arrange - eva shares no chat with ana, so neither one going online pushes anything to the other
     BlockingQueue<Map<String, Object>> toAna = subscribe(connect(ana), "/user/queue/chats");
-    BlockingQueue<Map<String, Object>> toRui = subscribe(connect(rui), "/user/queue/chats");
+    BlockingQueue<Map<String, Object>> toEva = subscribe(connect(eva), "/user/queue/chats");
 
     // Act
     Map<String, Object> frame = publishUntilReceived(
@@ -313,7 +344,7 @@ class ChatWebSocketIntegrationTest {
     // Assert
     assertNotNull(frame);
     assertEquals("CHAT_UPDATED", frame.get("type"));
-    assertNull(toRui.poll(500, TimeUnit.MILLISECONDS));
+    assertNull(toEva.poll(500, TimeUnit.MILLISECONDS));
   }
 
   @Test
@@ -424,6 +455,131 @@ class ChatWebSocketIntegrationTest {
 
     // Act + Assert - the server answers with an ERROR frame instead of CONNECTED
     assertThrows(Exception.class, () -> connect(cookies, false, errors));
+  }
+
+  @Test
+  @DisplayName("A member typing reaches whoever has the chat open, with who is typing")
+  void typingReachesTheChat() throws Exception {
+    // Arrange
+    BlockingQueue<Map<String, Object>> ruiTopic = subscribe(connect(rui), "/topic/chats/" + chat.getId());
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiTopic));
+    ruiTopic.clear();
+    StompSession anaSession = connect(ana);
+
+    // Act
+    anaSession.send("/app/chats/" + chat.getId() + "/typing", "");
+
+    // Assert
+    Map<String, Object> typing = ruiTopic.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(typing);
+    assertEquals("TYPING", typing.get("type"));
+    Map<?, ?> payload = (Map<?, ?>) typing.get("payload");
+    assertEquals(chat.getId(), ((Number) payload.get("chatId")).longValue());
+    Map<?, ?> user = (Map<?, ?>) payload.get("user");
+    assertEquals(ana.getNumber(), ((Number) user.get("number")).longValue());
+    assertEquals("Ana Test", user.get("name"));
+  }
+
+  @Test
+  @DisplayName("Typing in a chat you're not in is dropped (GR8)")
+  void nonMemberTypingIsDropped() throws Exception {
+    // Arrange
+    BlockingQueue<Map<String, Object>> ruiTopic = subscribe(connect(rui), "/topic/chats/" + chat.getId());
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiTopic));
+    ruiTopic.clear();
+    StompSession evaSession = connect(eva);
+
+    // Act
+    evaSession.send("/app/chats/" + chat.getId() + "/typing", "");
+
+    // Assert
+    assertNull(ruiTopic.poll(1, TimeUnit.SECONDS));
+  }
+
+  @Test
+  @DisplayName("Opening the app puts you online for the people you share a chat with, nobody else")
+  void onlineReachesContactsOnly() throws Exception {
+    // Arrange
+    BlockingQueue<Map<String, Object>> toRui = chatListOf(rui);
+    BlockingQueue<Map<String, Object>> toEva = chatListOf(eva);
+
+    // Act
+    connect(ana);
+
+    // Assert
+    Map<String, Object> online = toRui.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(online);
+    assertEquals("USER_ONLINE", online.get("type"));
+    assertEquals(ana.getNumber(), ((Number) online.get("payload")).longValue());
+    assertNull(toEva.poll(1, TimeUnit.SECONDS));
+  }
+
+  @Test
+  @DisplayName("A second tab doesn't put you online again")
+  void secondTabPushesNothing() throws Exception {
+    // Arrange
+    BlockingQueue<Map<String, Object>> toRui = chatListOf(rui);
+    connect(ana);
+    assertNotNull(toRui.poll(WAIT_SECONDS, TimeUnit.SECONDS));
+
+    // Act
+    connect(ana);
+
+    // Assert
+    assertNull(toRui.poll(1, TimeUnit.SECONDS));
+  }
+
+  @Test
+  @DisplayName("You go offline when your last tab closes, not before")
+  void lastTabClosingPushesOffline() throws Exception {
+    // Arrange
+    BlockingQueue<Map<String, Object>> toRui = chatListOf(rui);
+    StompSession firstTab = connect(ana);
+    StompSession secondTab = connect(ana);
+    assertNotNull(toRui.poll(WAIT_SECONDS, TimeUnit.SECONDS));
+
+    // Act
+    firstTab.disconnect();
+    Map<String, Object> afterFirst = toRui.poll(1, TimeUnit.SECONDS);
+    secondTab.disconnect();
+
+    // Assert
+    assertNull(afterFirst);
+    Map<String, Object> offline = toRui.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(offline);
+    assertEquals("USER_OFFLINE", offline.get("type"));
+    assertEquals(ana.getNumber(), ((Number) offline.get("payload")).longValue());
+  }
+
+  @Test
+  @DisplayName("The online list has the people you share a chat with who have the app open, and drops them on close")
+  void onlineContactsList() throws Exception {
+    // Arrange - eva is online too, but shares no chat with rui
+    StompSession anaSession = connect(ana);
+    connect(eva);
+    Map<String, String> ruiCookies = login(rui.getInstitutionalEmail());
+
+    // Act
+    String whileOpen = awaitOnline(ruiCookies, "[" + ana.getNumber() + "]");
+    anaSession.disconnect();
+    String afterClose = awaitOnline(ruiCookies, "[]");
+
+    // Assert
+    assertEquals("[" + ana.getNumber() + "]", whileOpen);
+    assertEquals("[]", afterClose);
+  }
+
+  @Test
+  @DisplayName("Staff can't ask who is online (GR8)")
+  void staffCantListOnline() throws Exception {
+    // Arrange
+    Map<String, String> cookies = login(staff.getInstitutionalEmail());
+
+    // Act
+    HttpResponse<String> response = get(cookies, "/chats/online");
+
+    // Assert
+    assertEquals(403, response.statusCode());
   }
 
 }

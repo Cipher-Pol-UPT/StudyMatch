@@ -7,27 +7,36 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.studymatch.enums.ChatEventType;
+import com.studymatch.events.UserChatEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.DirectChat;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
+import com.studymatch.models.User;
 import com.studymatch.repositories.ChatRepository;
+import com.studymatch.utils.PresenceTracker;
 
 class ChatServiceTest {
 
   private ChatRepository chatRepository;
+  private PresenceTracker presenceTracker;
+  private ApplicationEventPublisher eventPublisher;
   private ChatService chatService;
 
   private Student ana;
@@ -36,7 +45,9 @@ class ChatServiceTest {
   @BeforeEach
   void setUp() {
     chatRepository = mock(ChatRepository.class);
-    chatService = new ChatService(chatRepository);
+    presenceTracker = new PresenceTracker();
+    eventPublisher = mock(ApplicationEventPublisher.class);
+    chatService = new ChatService(chatRepository, presenceTracker, eventPublisher);
 
     ana = student("Ana", 1001L);
     chat = new DirectChat(ana, student("Rui", 1002L));
@@ -159,6 +170,68 @@ class ChatServiceTest {
 
     // Assert
     assertEquals(ErrorCode.DIRECT_CHAT_ALREADY_EXISTS, e.getCode());
+  }
+
+  @Test
+  @DisplayName("The contacts are everyone the user shares a chat with, without the user")
+  void contactsAreTheOtherMembers() {
+    // Arrange
+    Student eva = student("Eva", 1003L);
+    when(chatRepository.findDirectChatsOf(1001L)).thenReturn(List.of(chat, new DirectChat(eva, ana)));
+
+    // Act
+    List<User> contacts = chatService.getContactsOf(ana);
+
+    // Assert
+    assertEquals(List.of(1002L, 1003L), contacts.stream().map(User::getNumber).toList());
+  }
+
+  @Test
+  @DisplayName("Only the contacts with the app open are online")
+  void onlineContactsOnly() {
+    // Arrange
+    Student eva = student("Eva", 1003L);
+    when(chatRepository.findDirectChatsOf(1001L)).thenReturn(List.of(chat, new DirectChat(ana, eva)));
+    presenceTracker.connect(1003L, "eva-tab");
+    presenceTracker.connect(1004L, "stranger-tab");
+
+    // Act
+    List<Long> online = chatService.getOnlineContacts(ana);
+
+    // Assert
+    assertEquals(List.of(1003L), online);
+  }
+
+  @Test
+  @DisplayName("The first tab tells each contact the user is online, the second tells nobody")
+  void onlinePushedOnce() {
+    // Arrange
+    when(chatRepository.findDirectChatsOf(1001L)).thenReturn(List.of(chat));
+
+    // Act
+    chatService.userConnected(ana, "first-tab");
+    chatService.userConnected(ana, "second-tab");
+
+    // Assert
+    verify(eventPublisher, times(1)).publishEvent(any(UserChatEvent.class));
+    verify(eventPublisher).publishEvent(new UserChatEvent(chat.getOtherUser(ana), ChatEventType.USER_ONLINE, 1001L));
+  }
+
+  @Test
+  @DisplayName("Only the last tab closing tells the contacts the user is offline")
+  void offlinePushedOnLastTab() {
+    // Arrange
+    when(chatRepository.findDirectChatsOf(1001L)).thenReturn(List.of(chat));
+    presenceTracker.connect(1001L, "first-tab");
+    presenceTracker.connect(1001L, "second-tab");
+
+    // Act
+    chatService.userDisconnected(ana, "first-tab");
+    chatService.userDisconnected(ana, "second-tab");
+
+    // Assert
+    verify(eventPublisher, times(1)).publishEvent(any(UserChatEvent.class));
+    verify(eventPublisher).publishEvent(new UserChatEvent(chat.getOtherUser(ana), ChatEventType.USER_OFFLINE, 1001L));
   }
 
 }
