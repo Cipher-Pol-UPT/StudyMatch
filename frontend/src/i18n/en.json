@@ -1020,5 +1020,31 @@
     "noGroups": "No published groups with grades in this selection.",
     "noData": "No data for this selection",
     "noDataHint": "Try a broader selection, for example all classes or all subjects."
+  },
+  "groups": {
+    "of": "Groups of {{name}}",
+    "title": "Groups · {{name}}",
+    "intro": "Form groups from the students' personality, attendance and grades.",
+    "draftIntro": "A draft from the matching algorithm. Students don't see it until you confirm.",
+    "count_one": "{{count}} group, {{students}} students.",
+    "count_other": "{{count}} groups, {{students}} students.",
+    "generate": "Generate groups",
+    "generateBody": "The algorithm proposes a draft you can check before students see it.",
+    "generating": "Generating groups",
+    "regenerate": "Regenerate",
+    "discard": "Discard draft",
+    "publish": "Confirm and publish",
+    "published": "Groups published. Students can see them now.",
+    "discarded": "Draft discarded.",
+    "groupNumber": "Group {{number}}",
+    "size_one": "{{count}} student",
+    "size_other": "{{count}} students",
+    "sharedLanguages": "Shares {{languages}}.",
+    "noSharedLanguage": "These students have no language in common.",
+    "replaceTitle": "Generate new groups?",
+    "replaceDescription": "{{name}} already has published groups.",
+    "replaceWarning": "Students have already seen their groups. New groups replace them and any manual edits when you confirm.",
+    "keep": "Keep them",
+    "replace": "Generate new groups"
   }
 }

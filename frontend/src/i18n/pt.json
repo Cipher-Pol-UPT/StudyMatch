@@ -1020,5 +1020,31 @@
     "noGroups": "Não há grupos publicados com classificações nesta seleção.",
     "noData": "Sem dados para esta seleção",
     "noDataHint": "Experimente uma seleção mais ampla, por exemplo todas as turmas ou todas as unidades curriculares."
+  },
+  "groups": {
+    "of": "Grupos de {{name}}",
+    "title": "Grupos · {{name}}",
+    "intro": "Forme grupos a partir da personalidade, assiduidade e classificações dos estudantes.",
+    "draftIntro": "Um rascunho do algoritmo de emparelhamento. Os estudantes só o veem depois de confirmar.",
+    "count_one": "{{count}} grupo, {{students}} estudantes.",
+    "count_other": "{{count}} grupos, {{students}} estudantes.",
+    "generate": "Gerar grupos",
+    "generateBody": "O algoritmo propõe um rascunho que pode verificar antes de os estudantes o verem.",
+    "generating": "A gerar grupos",
+    "regenerate": "Gerar de novo",
+    "discard": "Descartar rascunho",
+    "publish": "Confirmar e publicar",
+    "published": "Grupos publicados. Os estudantes já os podem ver.",
+    "discarded": "Rascunho descartado.",
+    "groupNumber": "Grupo {{number}}",
+    "size_one": "{{count}} estudante",
+    "size_other": "{{count}} estudantes",
+    "sharedLanguages": "Partilham {{languages}}.",
+    "noSharedLanguage": "Estes estudantes não têm nenhuma língua em comum.",
+    "replaceTitle": "Gerar novos grupos?",
+    "replaceDescription": "{{name}} já tem grupos publicados.",
+    "replaceWarning": "Os estudantes já viram os seus grupos. Os novos grupos substituem-nos, bem como quaisquer alterações manuais, quando confirmar.",
+    "keep": "Mantê-los",
+    "replace": "Gerar novos grupos"
   }
 }
