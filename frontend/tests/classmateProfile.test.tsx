@@ -8,7 +8,8 @@ import type { ChatContactData } from '../src/types/chat';
 import type { CurrentUser } from '../src/types/currentUser';
 
 // these render a whole area, which takes longer than the default second when every test file runs at once
-configure({ asyncUtilTimeout: 3000 });
+configure({ asyncUtilTimeout: 5000 });
+vi.setConfig({ testTimeout: 15000 });
 
 const me: CurrentUser = { number: 50002, name: 'Test Student', institutionalEmail: 'student@school.pt', role: 'STUDENT', mustChangePassword: false, personalityTestRequired: false };
 const ana: ChatContactData = { number: 50001, name: 'Test Ana', role: 'STUDENT' };
