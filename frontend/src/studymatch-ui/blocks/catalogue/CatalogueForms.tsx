@@ -13,6 +13,7 @@ export function CategoryDialog({ open, title, submitLabel, name, onClose, onSubm
   if (!open) return null;
   return <Dialog open={open} onClose={onClose} title={t(title)}>
     <FormFields fields={[{ name: 'name', label: 'fields.name', value: name }]} submitLabel={submitLabel} fieldErrors={fieldErrors}
+      codeFields={{ CATEGORY_ALREADY_EXISTS: 'name' }}
       onCancel={onClose} onSubmit={v => onSubmit(v.name.trim())} />
   </Dialog>;
 }
