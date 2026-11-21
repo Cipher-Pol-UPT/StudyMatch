@@ -120,7 +120,7 @@ Tutors earn achievements automatically. Only StudyRooms with at least two confir
 | Top Rated | an average of 4.5 or more in a subject, from at least 5 different students |
 | Mentor | 15 different students tutored |
 
-Each one has a verification code, so the PDF certificate (#32) can be checked.
+Each one has a verification code, so the PDF certificate (#32) can be checked. Only the student who earned it ever gets the code, through `GET /achievements/me`, which lists all four achievements in a fixed order with the date and code on the ones they earned. The public profile shows the earned achievements but never their codes.
 
 ## Blocked accounts
 

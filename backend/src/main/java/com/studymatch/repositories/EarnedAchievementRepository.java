@@ -14,6 +14,8 @@ public interface EarnedAchievementRepository extends JpaRepository<EarnedAchieve
 
   List<EarnedAchievement> findByStudentOrderByEarnedAtDesc(Student student);
 
+  List<EarnedAchievement> findByStudentNumber(Long studentNumber);
+
   // two ratings at the same time can both award the same badge: the second waits for the first and adds nothing,
   // instead of failing on the unique key and taking its rating down with it. 1 if it was added, 0 if it was there
   @Modifying
