@@ -42,7 +42,11 @@ function open(path = `/chats/direct/${ana.number}`) {
 }
 
 const box = (name = 'Test Ana') => screen.findByRole('textbox', { name: `Message ${name}` });
-const type = (field: HTMLElement, text: string) => fireEvent.change(field, { target: { value: text } });
+// waits until the box shows the text, so what follows (Enter, the count) sees it
+async function type(field: HTMLElement, text: string) {
+  fireEvent.change(field, { target: { value: text } });
+  await waitFor(() => expect((field as HTMLTextAreaElement).value).toBe(text));
+}
 const enter = (field: HTMLElement, shiftKey = false) => fireEvent.keyDown(field, { key: 'Enter', shiftKey });
 // lets a send that wrongly started reach the backend stub, and the page render, before checking nothing was sent
 const settle = () => act(() => new Promise(resolve => setTimeout(resolve, 50)));
@@ -57,7 +61,7 @@ describe('send a message', () => {
     open();
     const field = await box();
 
-    type(field, '  Hello Ana  ');
+    await type(field, '  Hello Ana  ');
     enter(field);
 
     const log = within(await screen.findByRole('log', { name: 'Messages' }));
@@ -76,7 +80,7 @@ describe('send a message', () => {
   it('sends with the Send button too', async () => {
     const sends = backend();
     open();
-    type(await box(), 'Hi');
+    await type(await box(), 'Hi');
 
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
@@ -87,7 +91,7 @@ describe('send a message', () => {
     const sends = backend();
     open();
     const field = await box();
-    type(field, 'First line');
+    await type(field, 'First line');
 
     enter(field, true);
     await settle();
@@ -101,7 +105,7 @@ describe('send a message', () => {
     const sends = backend();
     open();
     const field = await box();
-    type(field, '   ');
+    await type(field, '   ');
 
     enter(field);
     await settle();
@@ -115,13 +119,13 @@ describe('send a message', () => {
     open();
     const field = await box();
 
-    type(field, 'a'.repeat(1700));
+    await type(field, 'a'.repeat(1700));
     expect(screen.queryByText('1700 / 2000')).toBeNull();
 
-    type(field, 'a'.repeat(1900));
-    expect(screen.getByText('1900 / 2000')).toBeTruthy();
+    await type(field, 'a'.repeat(1900));
+    expect(await screen.findByText('1900 / 2000')).toBeTruthy();
 
-    type(field, 'a'.repeat(2001));
+    await type(field, 'a'.repeat(2001));
     enter(field);
     await settle();
 
@@ -135,7 +139,7 @@ describe('send a message', () => {
     open();
     const field = await box();
 
-    type(field, `  ${'a'.repeat(2000)}\n`);
+    await type(field, `  ${'a'.repeat(2000)}\n`);
     enter(field);
 
     expect(screen.queryByText('2003 / 2000')).toBeNull();
@@ -147,7 +151,7 @@ describe('send a message', () => {
     const sends = backend(async text => fail ? Promise.reject(new TypeError('Failed to fetch')) : reply(sent(text), 201));
     open();
     const field = await box();
-    type(field, 'Are you there?');
+    await type(field, 'Are you there?');
     enter(field);
 
     expect(await screen.findByText('Not sent')).toBeTruthy();
@@ -165,7 +169,7 @@ describe('send a message', () => {
     backend(async () => reply({ code: 'NOT_FOUND' }, 404));
     open();
     const field = await box();
-    type(field, 'Hello?');
+    await type(field, 'Hello?');
     enter(field);
     await screen.findByText('Not sent');
 
@@ -179,7 +183,7 @@ describe('send a message', () => {
     backend(async () => reply({ code: 'VALIDATION_FAILED', fieldErrors: [{ field: 'text', code: 'NOT_BLANK' }] }, 400));
     open();
     const field = await box();
-    type(field, 'Hello');
+    await type(field, 'Hello');
     enter(field);
 
     expect((await screen.findByRole('alert')).textContent).toBe(i18n.t('validation.NOT_BLANK'));
@@ -189,7 +193,7 @@ describe('send a message', () => {
   it("keeps the draft when you switch to another chat and back", async () => {
     backend();
     open();
-    type(await box(), 'Half a thought');
+    await type(await box(), 'Half a thought');
 
     fireEvent.click(screen.getByRole('button', { name: 'New message' }));
     fireEvent.click(await within(await screen.findByRole('dialog')).findByRole('button', { name: /Test Rui/ }));
@@ -206,7 +210,7 @@ describe('send a message', () => {
     backend(() => new Promise((_, reject) => { fail = reject; }));
     open();
     const field = await box();
-    type(field, 'Bye');
+    await type(field, 'Bye');
     enter(field);
     await screen.findByText('Sending…');
 
