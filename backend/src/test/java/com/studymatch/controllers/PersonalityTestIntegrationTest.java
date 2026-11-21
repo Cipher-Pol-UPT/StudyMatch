@@ -39,7 +39,7 @@ class PersonalityTestIntegrationTest {
   private static final String PASSWORD = "Test1234";
   private static final double DELTA = 1e-4;
   // the worked example from the spec
-  private static final String ANSWERS = "{\"answers\":[4,5,2,4,5,2,2,4,3,1,4,4,3,4,5]}";
+  private static final String ANSWERS = "{\"answers\":[4,5,2,4,5,2,2,4,3,1,4,4,3,4,2,1,1,3,2,1]}";
 
   @Autowired
   private MockMvc mockMvc;
@@ -81,11 +81,11 @@ class PersonalityTestIntegrationTest {
     // Act
     submitTest(session)
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.openness").value(closeTo(1.0, DELTA), Double.class))
-        .andExpect(jsonPath("$.conscientiousness").value(closeTo(0.3333, DELTA), Double.class))
-        .andExpect(jsonPath("$.extraversion").value(closeTo(0.75, DELTA), Double.class))
-        .andExpect(jsonPath("$.agreeableness").value(closeTo(0.8333, DELTA), Double.class))
-        .andExpect(jsonPath("$.neuroticism").value(closeTo(0.6667, DELTA), Double.class));
+        .andExpect(jsonPath("$.openness").value(closeTo(0.9375, DELTA), Double.class))
+        .andExpect(jsonPath("$.conscientiousness").value(closeTo(0.375, DELTA), Double.class))
+        .andExpect(jsonPath("$.extraversion").value(closeTo(0.8125, DELTA), Double.class))
+        .andExpect(jsonPath("$.agreeableness").value(closeTo(0.875, DELTA), Double.class))
+        .andExpect(jsonPath("$.neuroticism").value(closeTo(0.6875, DELTA), Double.class));
 
     // Assert - same session, no new login needed
     mockMvc.perform(get("/users/me").session(session))
@@ -93,7 +93,7 @@ class PersonalityTestIntegrationTest {
         .andExpect(jsonPath("$.personalityTestRequired").value(false));
     mockMvc.perform(get("/students/me/profile").session(session))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.privateProfile.personalityProfile.openness").value(closeTo(1.0, DELTA),
+        .andExpect(jsonPath("$.privateProfile.personalityProfile.openness").value(closeTo(0.9375, DELTA),
             Double.class));
   }
 
@@ -107,7 +107,7 @@ class PersonalityTestIntegrationTest {
     // Act + Assert
     mockMvc.perform(post("/students/personality-test").with(csrf()).session(session)
         .contentType(MediaType.APPLICATION_JSON)
-        .content("{\"answers\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}"))
+        .content("{\"answers\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}"))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("PERSONALITY_TEST_ALREADY_TAKEN"));
   }
@@ -118,10 +118,10 @@ class PersonalityTestIntegrationTest {
     // Arrange
     MockHttpSession session = loginAs(student.getInstitutionalEmail());
 
-    // Act - 14 answers
+    // Act - the 15 answers of the old test
     mockMvc.perform(post("/students/personality-test").with(csrf()).session(session)
         .contentType(MediaType.APPLICATION_JSON)
-        .content("{\"answers\":[3,3,3,3,3,3,3,3,3,3,3,3,3,3]}"))
+        .content("{\"answers\":[3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
 
