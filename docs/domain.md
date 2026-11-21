@@ -137,7 +137,11 @@ Unblocking (`PUT /users/{number}/unblock`) makes the account active again and cl
 
 ## Groups
 
-Groups are generated per group assignment (#57). Blocked accounts aren't placed in new groups but keep their old ones (GR5), every group shares at least one language (GR4), and students with a special statute are placed last, filling the groups that need members (GR7). The teacher reviews the draft groups and can edit them before publishing.
+Groups are generated per group assignment (#57). Blocked accounts aren't placed in new groups but keep their old ones (GR5), every group shares at least one language (GR4), and students with a special statute are placed last, filling the groups that need members (GR7). How the class is split and matched is in [group-matching.md](group-matching.md).
+
+Generating saves the groups as drafts and answers with a preview: each group's members with their class and level band (High, Average or Developing, the edition's thirds by level, GR3), and the languages the whole group shares. An empty list means the group has none in common, so the page marks it and the teacher edits it or confirms anyway. The preview never shows attendance or statutes. Generating again replaces the drafts, confirming publishes them and cancelling deletes them. The teacher can also edit the drafts before publishing (#63).
+
+If the assignment already has published groups, generating answers `GROUPS_ALREADY_PUBLISHED`, so the page can warn that students have already seen them; with `replacePublished=true` it goes ahead. The published groups stay until the new ones are confirmed, which is why a draft and a published group can share a number. Fewer students than the minimum size gives `NOT_ENOUGH_STUDENTS_FOR_GROUPS`, a class that can't be split within the sizes gives `NO_VALID_GROUP_SPLIT` (the teacher widens the range), separations that leave no valid grouping give `SEPARATIONS_CANNOT_BE_MET`, and confirming without drafts gives `NO_DRAFT_GROUPS`. Telling the students about their groups waits for the notifications (#144).
 
 ## Chats
 
