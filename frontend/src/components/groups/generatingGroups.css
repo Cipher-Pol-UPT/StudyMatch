@@ -3,7 +3,10 @@
 /* three groups forming: the dots move between them while the algorithm tries splits */
 .generating-groups__slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .generating-groups__slot { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 8px; min-height: 72px; padding: 12px; border-radius: 14px; background: var(--sm-fill); }
-.generating-groups__dot { display: block; width: 20px; height: 20px; border-radius: 50%; box-shadow: 0 0 0 2px var(--sm-surface); }
+.generating-groups__dot { display: block; width: 20px; height: 20px; border-radius: 50%; box-shadow: 0 0 0 2px var(--sm-surface); will-change: transform; }
+
+/* the value moves once a second: a linear glide over that second keeps the fill at a steady speed */
+.generating-groups .sm-progress > i { transition: width 1s linear; }
 
 .generating-groups__steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
 .generating-groups__steps li { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.4; color: var(--sm-text-3); transition: color 0.3s var(--sm-ease-out); }
