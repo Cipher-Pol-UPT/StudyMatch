@@ -1010,7 +1010,7 @@
     "studentsCaption_other": "estudantes",
     "noProfiles": "Ninguém nesta seleção fez ainda o teste de personalidade.",
     "groupBalance": "Equilíbrio dos grupos",
-    "groupBalanceDescription": "A distância da média de cada grupo à média dos grupos.",
+    "groupBalanceDescription": "A distância da média de cada grupo à média dos grupos do mesmo trabalho.",
     "noGradeHistory": "Ainda não há histórico de classificações: só estão selecionados estudantes do 1.º ano.",
     "noGroups": "Não há grupos publicados com classificações nesta seleção.",
     "noData": "Sem dados para esta seleção",

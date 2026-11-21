@@ -117,19 +117,22 @@ function AnalyticsCards({ data }: { data?: AnalyticsData }) {
   );
 }
 
-// how far each group's average grade is from the average of the groups shown
+// how far each group's average grade is from the average of its assignment's groups
 function GroupBalance({ data }: { data: AnalyticsData }) {
   const { t } = useTranslation();
   if (data.firstYearOnly) return <p className="sm-caption">{t('analytics.noGradeHistory')}</p>;
   const graded = data.groupBalance.filter(group => group.averageGrade !== null);
   if (graded.length === 0) return <p className="sm-caption">{t('analytics.noGroups')}</p>;
-  const mean = graded.reduce((sum, group) => sum + (group.averageGrade ?? 0), 0) / graded.length;
-  const assignments = new Set(graded.map(group => group.assignment)).size;
+  const means = new Map<string, number>();
+  for (const assignment of new Set(graded.map(group => group.assignment))) {
+    const grades = graded.filter(group => group.assignment === assignment).map(group => group.averageGrade ?? 0);
+    means.set(assignment, grades.reduce((sum, grade) => sum + grade, 0) / grades.length);
+  }
   return (
     <BarChart label={t('analytics.groupBalance')} format={value => `±${value.toFixed(1)}`}
       data={graded.map(group => ({
-        label: assignments > 1 ? `${group.assignment} G${group.number}` : `G${group.number}`,
-        value: Math.abs((group.averageGrade ?? 0) - mean),
+        label: means.size > 1 ? `${group.assignment} G${group.number}` : `G${group.number}`,
+        value: Math.abs((group.averageGrade ?? 0) - (means.get(group.assignment) ?? 0)),
       }))} />
   );
 }

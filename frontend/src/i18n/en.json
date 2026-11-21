@@ -1010,7 +1010,7 @@
     "studentsCaption_other": "students",
     "noProfiles": "Nobody in this selection has taken the personality test yet.",
     "groupBalance": "Group balance",
-    "groupBalanceDescription": "How far each group's average grade is from the average of the groups.",
+    "groupBalanceDescription": "How far each group's average grade is from the average of its assignment's groups.",
     "noGradeHistory": "No grade history yet: only first-year students are selected.",
     "noGroups": "No published groups with grades in this selection.",
     "noData": "No data for this selection",
