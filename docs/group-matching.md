@@ -45,10 +45,9 @@ Everything else is a cost to minimize (`MatchingCost`). Lower is better; a group
 | Extraverts | 1 if there are none or 3 or more | 1.5 |
 | No shared language (GR4) | 1 | 10 |
 | Not at the optimal size | 1 | 0.5 |
-| Everyone at the same level | how far the group's level spread is under 0.5 z-scores | 2.5 |
 | Fairness, across groups | the variance of the group averages and spreads of every trait, and of the group average levels | 1 per trait (openness 0.5), 2.5 for level |
 
-The traits and levels are z-scores within the subject edition, and "low" and "high" are by rank in the edition: bottom 20% in agreeableness, emotional stability (the opposite of neuroticism) and conscientiousness, top 20% in conscientiousness, top 33% in extraversion. Students without grades yet are left out of the level terms, so on a cold start the cost is all personality (GR6). The language term is high enough that the search never trades a shared language for anything else; a group that still has none is flagged.
+The traits and levels are z-scores within the subject edition, and "low" and "high" are by rank in the edition: bottom 20% in agreeableness, emotional stability (the opposite of neuroticism) and conscientiousness, top 20% in conscientiousness, top 33% in extraversion. Grades only count through the group averages: a group of two students with 15 isn't worse than one with a 20 and a 10, so nothing asks for a mix inside a group. Students without grades yet are left out, so on a cold start the cost is all personality (GR6). The language term is high enough that the search never trades a shared language for anything else; a group that still has none is flagged.
 
 ### Why these personality rules
 
@@ -131,7 +130,7 @@ What came out of it:
 
 ## Result
 
-Average cost against annealing, class by class, on classes no algorithm was tuned on (5 classes x 2 runs per row, 10 s each). Negative is better than annealing.
+Average cost against annealing, class by class, on classes no algorithm was tuned on (5 classes x 2 runs per row, 10 s each). Negative is better than annealing. These runs still had a term that charged a group whose levels were all alike, which we dropped afterwards; it was a small part of the cost and the same for every algorithm, so we didn't run the comparison again.
 
 | Pool | Bee colony | Ants | Genetic | FTTA | Greedy |
 | --- | --- | --- | --- | --- | --- |
