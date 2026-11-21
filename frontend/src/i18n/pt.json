@@ -584,6 +584,8 @@
     "ACADEMIC_YEAR_NOT_NEXT": "Este já não é o próximo ano letivo. Recarregue a página e verifique novamente.",
     "ATTENDEE_NOT_A_PARTICIPANT": "O estudante {{number}} não se inscreveu nesta StudyRoom.",
     "ROOM_ALREADY_RATED": "Já avaliou esta StudyRoom.",
+    "NOT_ELIGIBLE_FOR_STUDYROOM": "Só os estudantes inscritos nesta unidade curricular que ainda não a concluíram podem inscrever-se.",
+    "JOINED_STUDYROOM_OVERLAP": "Sobrepõe-se a uma sala de estudo em que já está inscrito ou que orienta ({{subject}}, {{startsAt}} – {{endsAt}}).",
     "ACHIEVEMENT_NOT_EARNED": "Ainda não obteve uma destas conquistas."
   },
   "validation": {
@@ -885,6 +887,71 @@
       "INVALID_NUMBER": "Número de estudante inválido",
       "DUPLICATE": "Aparece mais do que uma vez"
     }
+  },
+  "assignments": {
+    "name": "Nome",
+    "type": "Tipo",
+    "date": "Data",
+    "weight": "Peso (%)",
+    "types": {
+      "PROJECT": "Projeto",
+      "EXAM": "Exame",
+      "PRACTICAL_EXAM": "Exame prático"
+    },
+    "weightLeft": "Resta {{remaining}}%",
+    "weightOver": "Só resta {{remaining}}% nesta unidade curricular.",
+    "groupWork": "Trabalho de grupo",
+    "groupWorkHint": "Os estudantes são agrupados pela personalidade.",
+    "alwaysIndividual": "Os exames e os exames práticos são sempre individuais.",
+    "groups": "Grupos",
+    "groupsRule": "2 ≤ mínimo ≤ ideal ≤ máximo. Cada grupo partilha uma língua.",
+    "minSize": "Mínimo",
+    "optimalSize": "Ideal",
+    "maxSize": "Máximo",
+    "sameClass": "Manter os grupos dentro da mesma turma",
+    "keepApart": "Manter separados",
+    "addPair": "Adicionar um par",
+    "removePair": "Remover este par",
+    "firstStudent": "Estudante",
+    "secondStudent": "Manter separado de",
+    "chooseStudent": "Escolha um estudante",
+    "create": "Criar avaliação",
+    "new": "Nova avaliação",
+    "weightColumn": "Peso",
+    "weightsTotal": "Os pesos somam {{total}}%",
+    "none": "Ainda sem avaliações",
+    "noneBody": "Crie a primeira. Os pesos devem somar 100%.",
+    "created": "{{name}} foi criada."
+  },
+  "subjectTabs": {
+    "label": "Páginas da unidade curricular",
+    "choose": {
+      "students": "Escolha uma edição de uma unidade curricular para consultar os estudantes inscritos.",
+      "assignments": "Escolha uma edição de uma unidade curricular para ver e criar as suas avaliações.",
+      "grades": "Escolha uma edição de uma unidade curricular para classificar os seus estudantes."
+    },
+    "open": {
+      "students": "Consultar estudantes",
+      "assignments": "Abrir avaliações",
+      "grades": "Abrir classificações"
+    }
+  },
+  "grades": {
+    "student": "Estudante",
+    "status": "Estado",
+    "grade": "Classificação",
+    "range": "0 a 20",
+    "final": "Final",
+    "cellLabel": "Classificação de {{name}} em {{assignment}}",
+    "incompleteTitle": "Os pesos somam {{total}}%",
+    "incompleteBody": "As classificações ficam guardadas, mas as classificações finais só são calculadas quando as avaliações somarem 100%.",
+    "noAssignments": "Ainda sem avaliações para classificar",
+    "noAssignmentsBody": "Crie-as primeiro no separador Avaliações.",
+    "noStudents": "Sem estudantes inscritos",
+    "noStudentsBody": "Os estudantes inscritos nesta edição aparecem aqui.",
+    "changeTitle": "Alterar a classificação de {{name}}?",
+    "changeBody": "{{assignment}} · de {{from}} para {{to}}. A classificação final é recalculada.",
+    "change": "Alterar classificação"
   },
   "attendance": {
     "intro": "Escolha a aula e depois marque quem faltou.",

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.AchievementBadgeDTO;
 import com.studymatch.dtos.ExportCertificateRequestDTO;
+import com.studymatch.dtos.MyAchievementDTO;
 import com.studymatch.dtos.TutorBadgeDTO;
 import com.studymatch.dtos.VerifiedAchievementDTO;
 import com.studymatch.dtos.VerifiedCertificateDTO;
@@ -59,6 +60,18 @@ public class EarnedAchievementService {
   public List<AchievementBadgeDTO> getAchievements(Student student) {
     return earnedAchievementRepository.findByStudentOrderByEarnedAtDesc(student).stream()
         .map(AchievementBadgeDTO::from)
+        .toList();
+  }
+
+  // every achievement, so a student with none still sees what there is to earn
+  public List<MyAchievementDTO> getMyAchievements(Long studentNumber) {
+    Map<Achievement, EarnedAchievement> earned = earnedAchievementRepository.findByStudentNumber(studentNumber)
+        .stream()
+        .collect(Collectors.toMap(EarnedAchievement::getAchievement, Function.identity()));
+    return Arrays.stream(Achievement.values())
+        .map(achievement -> earned.containsKey(achievement)
+            ? MyAchievementDTO.earned(earned.get(achievement))
+            : MyAchievementDTO.notEarned(achievement))
         .toList();
   }
 
