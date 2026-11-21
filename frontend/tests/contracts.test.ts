@@ -12,7 +12,7 @@ const backend = new URL('../../backend/src/main/java/com/studymatch/', import.me
 const enumNamespaces: Record<string, keyof typeof en> = {
   AccountStatus:'accountStatuses', StudyRoomStatus:'studyRoomStatuses', Role:'roles', Language:'languages',
   StatuteType:'statutes', AssignmentType:'assignmentTypes', GroupStatus:'groupStatuses', EnrolmentStatus:'enrolmentStatuses',
-  TutorApplicationStatus:'tutorApplicationStatuses', Achievement:'achievements',
+  TutorApplicationStatus:'tutorApplicationStatuses', Achievement:'achievements', LevelBand:'levelBands',
 };
 const keys = (value: unknown, prefix = ''): string[] => Object.entries(value as Record<string, unknown>)
   .flatMap(([key, entry]) => typeof entry === 'string' ? [prefix + key] : keys(entry, prefix + key + '.'));

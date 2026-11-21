@@ -101,6 +101,16 @@ public final class MatchingProblem {
 
   // most groups at the optimal size, then the fewest that aren't; -1 when no split fits the sizes
   public static int groupCount(int students, int minSize, int optimalSize, int maxSize) {
+    return bestSplit(students, minSize, optimalSize, maxSize)[0];
+  }
+
+  // how many groups of that split are at the optimal size; -1 when no split fits the sizes
+  public static int optimalGroups(int students, int minSize, int optimalSize, int maxSize) {
+    return bestSplit(students, minSize, optimalSize, maxSize)[1];
+  }
+
+  // the group count and how many of those groups are at the optimal size
+  private static int[] bestSplit(int students, int minSize, int optimalSize, int maxSize) {
     int best = -1;
     int bestOptimal = -1;
     for (int groups = 1; groups * minSize <= students; groups++) {
@@ -116,7 +126,7 @@ public final class MatchingProblem {
         bestOptimal = optimal;
       }
     }
-    return best;
+    return new int[] { best, bestOptimal };
   }
 
   // the size of each group: the optimal one, with the leftover pushed into as few groups as possible
