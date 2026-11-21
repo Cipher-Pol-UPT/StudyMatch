@@ -124,4 +124,4 @@ The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and 
 
 ## Coming next
 
-The other use cases (editing and viewing groups, tutor applications, notifications, chats) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (editing and viewing groups, tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
