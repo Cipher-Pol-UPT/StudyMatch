@@ -21,6 +21,8 @@ const EMPTY: Conversation = { draft: '', messages: [] };
 // kept outside the page while the app is open, so switching chats, or going back to the list on a phone, loses no draft
 const conversations = new Map<number, Conversation>();
 const listeners = new Set<() => void>();
+// goes up on every logout, so a send that finishes later can't put a forgotten conversation back
+let generation = 0;
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
@@ -30,15 +32,18 @@ function subscribe(listener: () => void) {
 // the conversation with that person, and a way to change it that still works after the page is gone (a send finishing late)
 export function useConversation(number: number) {
   const conversation = useSyncExternalStore(subscribe, () => conversations.get(number) ?? EMPTY);
+  const session = generation;
   const update = useCallback((change: (current: Conversation) => Conversation) => {
+    if (session !== generation) return;
     conversations.set(number, change(conversations.get(number) ?? EMPTY));
     listeners.forEach(listener => listener());
-  }, [number]);
+  }, [number, session]);
   return [conversation, update] as const;
 }
 
 // on logout, so the next person on this browser doesn't see them
 export function forgetConversations() {
+  generation++;
   conversations.clear();
   listeners.forEach(listener => listener());
 }
