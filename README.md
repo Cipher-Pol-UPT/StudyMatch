@@ -87,7 +87,7 @@ StudyMatch/
 │   ├── src/                  # pages, api client, studymatch-ui components, i18n
 │   ├── tests/                # Vitest tests
 │   └── package.json
-├── docs/                     # architecture, domain, conventions, contributing, testing, api
+├── docs/                     # architecture, domain, conventions, contributing, testing, api, group matching
 └── README.md
 ```
 
@@ -225,6 +225,7 @@ The student numbers are the ones a fresh database gets. If you registered studen
 | [docs/contributing.md](docs/contributing.md) | issues, branches, commits, reviews and the Definition of Done |
 | [docs/testing.md](docs/testing.md) | running the tests, the coverage report, and how we write tests |
 | [docs/performance.md](docs/performance.md) | the JMeter load test of the student directory, its settings and results |
+| [docs/group-matching.md](docs/group-matching.md) | how Generate Groups scores a grouping, the personality rules behind it, and how we picked the algorithm |
 | [docs/api.md](docs/api.md) | the endpoints per area and role (the details are in Swagger UI) |
 
 ## How we work
