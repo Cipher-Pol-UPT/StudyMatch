@@ -73,6 +73,41 @@ class GroupGeneratorTest {
         () -> generator.generate(candidates, separations, 2, 2, 2, false, new Random(1)));
   }
 
+  @Test
+  @DisplayName("The plan has the groups generate forms, and the search fits in the time limit")
+  void planMatchesTheGeneratedGroups() {
+    // Arrange - two classes kept apart: the pools share the time, a pool of one group gets none
+    Random random = new Random(5);
+    List<Candidate> candidates = new ArrayList<>(mixedClass(random, "A"));
+    candidates.addAll(mixedClass(random, "B"));
+
+    // Act
+    GroupGenerator.Plan plan = generator.plan(candidates, 3, 4, 5, true);
+    List<List<Integer>> groups = generator.generate(candidates, List.of(), 3, 4, 5, true, new Random(6));
+
+    // Assert
+    assertEquals(groups.size(), plan.groups());
+    assertTrue(plan.search().isPositive());
+    assertTrue(plan.search().compareTo(Duration.ofMillis(100)) <= 0);
+  }
+
+  @Test
+  @DisplayName("A class that makes one group has nothing to search")
+  void oneGroupHasNoSearch() {
+    // Arrange
+    List<Candidate> candidates = new ArrayList<>();
+    for (int i = 0; i < 4; i++) {
+      candidates.add(new Candidate(null, null, null, 1, "A"));
+    }
+
+    // Act
+    GroupGenerator.Plan plan = generator.plan(candidates, 2, 4, 4, false);
+
+    // Assert
+    assertEquals(1, plan.groups());
+    assertEquals(Duration.ZERO, plan.search());
+  }
+
   // 41 students: tested ones in every tier, a few fillers and a few without a test
   private static List<Candidate> mixedClass(Random random, String classSection) {
     List<Candidate> candidates = new ArrayList<>();

@@ -1,12 +1,12 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GeneratingGroups } from '../src/components/groups/GeneratingGroups';
+import { FINISH_MS, GeneratingGroups } from '../src/components/groups/GeneratingGroups';
 import i18n from '../src/i18n';
 import { TeacherArea } from '../src/pages/teacher/TeacherArea';
 import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { GradeColumn } from '../src/types/grades';
-import type { GroupPreviewData } from '../src/types/groups';
+import type { GroupGenerationData, GroupPreviewData } from '../src/types/groups';
 import type { SubjectEditionData } from '../src/types/studentDirectory';
 
 const edition: SubjectEditionData = { id: 7, academicYear: 2026, subject: { id: 3, code: 'TST', name: 'Test Subject', ects: 6, category: { id: 1, name: 'Test Category' }, degrees: [] }, teachers: [{ number: 9, name: 'Test Teacher' }], classSections: ['T1'] };
@@ -16,6 +16,8 @@ const draft: GroupPreviewData[] = [
   { number: 1, size: 2, sharedLanguages: ['PORTUGUESE', 'ENGLISH'], members: [{ number: 50001, name: 'Test Ana', classSection: 'T1' }, { number: 50002, name: 'Test Rui', classSection: 'T1' }] },
   { number: 2, size: 2, sharedLanguages: [], members: [{ number: 50003, name: 'Test Eva', classSection: 'T1' }, { number: 50004, name: 'Test Leo', classSection: 'T1' }] },
 ];
+// a small class: two groups of two, nothing to search
+const smallClass: GroupGenerationData = { students: 4, groups: 2, optimalSize: 2, searchMillis: 0 };
 const reply = (body: unknown, status = 200) => new Response(status === 204 ? null : JSON.stringify(body), { status });
 
 // each groups call is answered by the test, in the order they come
@@ -26,6 +28,8 @@ function backend(answers: Record<string, (url: URL) => Response> = {}) {
     const method = init?.method ?? 'GET';
     if (url.pathname === '/api/subject-editions/') return reply([edition]);
     if (url.pathname === '/api/subject-editions/7/grades') return reply({ assignments: [project, exam], students: [], weightsComplete: true });
+    // what generating will do comes with every generate, answered unless the test says otherwise
+    if (url.pathname.endsWith('/groups/generation') && !answers[`GET ${url.pathname}`]) return reply(smallClass);
     const key = `${method} ${url.pathname}`;
     calls.push(`${key}${url.search}`);
     const answer = answers[key];
@@ -175,37 +179,65 @@ describe('generate groups (teacher)', () => {
 describe('the loader while groups are generated', () => {
   const current = () => screen.getByRole('listitem', { current: 'step' }).textContent;
   const progress = () => Number(screen.getByRole('progressbar').getAttribute('aria-valuenow'));
+  const students = (container: HTMLElement) => container.querySelectorAll('.generating-groups__student');
+  const bigClass: GroupGenerationData = { students: 40, groups: 10, optimalSize: 4, searchMillis: 8000 };
 
-  it('walks through what the matching weighs over about ten seconds', () => {
-    vi.useFakeTimers();
-    try {
-      render(<GeneratingGroups />);
-      expect(current()).toContain('Reading personalities');
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
 
-      act(() => { vi.advanceTimersByTime(5000); });
-      expect(current()).toContain('Finding a shared language');
+  it("follows the server's search time, with its groups and their size", () => {
+    render(<GeneratingGroups plan={bigClass} expectedMs={8000} done={false} onFinished={vi.fn()} />);
+    expect(screen.getByText('Generating 10 groups of 4…')).toBeTruthy();
+    expect(screen.getByText('About 8 seconds')).toBeTruthy();
 
-      act(() => { vi.advanceTimersByTime(4800); });
-      expect(current()).toContain('Balancing the groups');
-    } finally {
-      vi.useRealTimers();
-    }
+    act(() => { vi.advanceTimersByTime(4000); });
+
+    // half the search time is half the bar
+    expect(progress()).toBeGreaterThan(45);
+    expect(progress()).toBeLessThan(50);
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(current()).toContain('Finding a shared language');
   });
 
-  it("slows down near the end and never fills while the groups aren't there", () => {
-    vi.useFakeTimers();
-    try {
-      render(<GeneratingGroups />);
-      act(() => { vi.advanceTimersByTime(10_000); });
-      const atTen = progress();
+  it('waits short of the end while the server is still working', () => {
+    render(<GeneratingGroups plan={bigClass} expectedMs={8000} done={false} onFinished={vi.fn()} />);
 
-      act(() => { vi.advanceTimersByTime(30_000); });
+    act(() => { vi.advanceTimersByTime(30_000); });
 
-      expect(atTen).toBeGreaterThan(80);
-      expect(progress()).toBeGreaterThan(atTen);
-      expect(progress()).toBeLessThanOrEqual(95);
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(progress()).toBeLessThan(100);
+    expect(progress()).toBeGreaterThan(90);
+  });
+
+  it('fills fast and hands over as soon as the groups are back, even halfway', () => {
+    const onFinished = vi.fn();
+    const { rerender } = render(<GeneratingGroups plan={bigClass} expectedMs={8000} done={false} onFinished={onFinished} />);
+    act(() => { vi.advanceTimersByTime(2000); });
+
+    rerender(<GeneratingGroups plan={bigClass} expectedMs={8000} done onFinished={onFinished} />);
+
+    expect(progress()).toBe(100);
+    expect(screen.queryByRole('listitem', { current: 'step' })).toBeNull();
+    act(() => { vi.advanceTimersByTime(FINISH_MS - 1); });
+    expect(onFinished).not.toHaveBeenCalled();
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(onFinished).toHaveBeenCalledOnce();
+  });
+
+  it('draws three of the groups, one circle per student at the optimal size, all seated at the end', () => {
+    const { container, rerender } = render(<GeneratingGroups plan={bigClass} expectedMs={8000} done={false} onFinished={vi.fn()} />);
+    expect(students(container)).toHaveLength(3 * 4);
+    expect(container.querySelectorAll('.generating-groups__student.is-placed')).toHaveLength(0);
+
+    rerender(<GeneratingGroups plan={bigClass} expectedMs={8000} done onFinished={vi.fn()} />);
+
+    expect(container.querySelectorAll('.generating-groups__student.is-placed')).toHaveLength(12);
+  });
+
+  it('a class of two groups of five draws just those', () => {
+    const { container } = render(<GeneratingGroups plan={{ students: 10, groups: 2, optimalSize: 5, searchMillis: 3000 }}
+      expectedMs={3000} done={false} onFinished={vi.fn()} />);
+
+    expect(students(container)).toHaveLength(2 * 5);
+    expect(container.querySelectorAll('.generating-groups__slot')).toHaveLength(2);
   });
 });
