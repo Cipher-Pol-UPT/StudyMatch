@@ -1,0 +1,52 @@
+.generating-groups { display: grid; gap: 20px; padding: 24px; border-radius: 18px; background: var(--sm-surface); box-shadow: inset 0 0 0 1px var(--sm-border); }
+
+/* the class in rows on top, the groups under it; every student moves by transform only, so nothing reflows.
+   A student is a layer as wide as the stage, so a percentage in its translate is a share of the stage. */
+.generating-groups__stage {
+  --step: 26px; --dot: 20px;
+  --slot-top: calc(var(--queue-rows) * var(--step) + 16px);
+  --slot-width: calc((100% - (var(--slots) - 1) * 12px) / var(--slots));
+  position: relative;
+  height: calc(var(--slot-top) + var(--seat-rows) * var(--step) + 40px);
+}
+.generating-groups__slot {
+  position: absolute; top: var(--slot-top); bottom: 0;
+  left: calc(var(--slot) * (100% + 12px) / var(--slots)); width: var(--slot-width);
+  border-radius: 14px; background: var(--sm-fill);
+  transition: box-shadow 0.6s var(--sm-ease-out) 0.5s;
+}
+.generating-groups__slot.is-full { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sm-violet) 35%, transparent); }
+.generating-groups__student {
+  position: absolute; top: 0; left: 0; width: 100%; height: 0; pointer-events: none;
+  transform: translate(calc(var(--queue-x) * var(--step)), calc(8px + (var(--queue-y) + 0.5) * var(--step)));
+  transition: transform 0.9s var(--sm-ease-out);
+  will-change: transform;
+}
+/* the seat: the slot's centre, then the seats in rows inside it */
+.generating-groups__student.is-placed {
+  transform: translate(
+    calc(var(--slot) * (100% + 12px) / var(--slots) + var(--slot-width) / 2 - 50% + var(--seat-x) * var(--step)),
+    calc(var(--slot-top) + 20px + (var(--seat-y) + 0.5) * var(--step)));
+}
+.generating-groups__student b {
+  position: absolute; left: 50%; top: calc(var(--dot) / -2); width: var(--dot); height: var(--dot); margin-left: calc(var(--dot) / -2);
+  border-radius: 50%; box-shadow: 0 0 0 2px var(--sm-surface);
+}
+
+/* the value moves every 0.2 s: a straight glide over that time keeps the fill at a steady speed */
+.generating-groups .sm-progress > i { transition: width 0.2s linear; }
+/* the groups are back: everything finishes together, fast */
+.generating-groups.is-done .sm-progress > i,
+.generating-groups.is-done .generating-groups__student { transition-duration: 0.45s; transition-timing-function: var(--sm-ease-out); }
+
+.generating-groups__steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.generating-groups__steps li { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.4; color: var(--sm-text-3); transition: color 0.3s var(--sm-ease-out); }
+.generating-groups__steps li.is-current { color: var(--sm-text); font-weight: 500; }
+.generating-groups__steps li.is-done { color: var(--sm-text-2); }
+.generating-groups__mark { display: inline-grid; place-items: center; flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; background: var(--sm-fill); }
+.is-current .generating-groups__mark { background: var(--sm-violet); color: var(--sm-white); }
+.is-done .generating-groups__mark { background: var(--sm-exec); color: var(--sm-white); }
+
+@media (max-width: 720px) { .generating-groups__steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .generating-groups__stage { --step: 17px; --dot: 14px; } }
+@media (prefers-reduced-motion: reduce) { .generating-groups__student, .generating-groups__slot, .generating-groups .sm-progress > i { transition: none; } }
