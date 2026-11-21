@@ -115,7 +115,7 @@ The WebSocket only pushes. Sending, editing and deleting a message are normal RE
 | `/topic/chats/{id}` | the members who have the chat open | `MESSAGE_CREATED`, `MESSAGE_EDITED`, `MESSAGE_DELETED` |
 | `/user/queue/chats` | only that user | `CHAT_UPDATED`, `CHAT_REMOVED` |
 
-Every push looks like `{ "type": ..., "payload": ... }`. `/app` is for frames the browser sends to the server, which only typing will use (#222).
+Every push looks like `{ "type": ..., "payload": ... }`. Sending a message pushes `MESSAGE_CREATED` to the chat's topic and `CHAT_UPDATED` to each member's queue, both with the message as the payload, so the open chat adds it and the chat list moves that chat to the top. `/app` is for frames the browser sends to the server, which only typing will use (#222).
 
 The checks happen in three places:
 
