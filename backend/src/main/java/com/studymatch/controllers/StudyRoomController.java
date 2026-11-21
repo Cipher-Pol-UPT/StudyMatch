@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.studymatch.dtos.CancelStudyRoomRequestDTO;
 import com.studymatch.dtos.ConfirmAttendanceRequestDTO;
 import com.studymatch.dtos.CreateStudyRoomRequestDTO;
 import com.studymatch.dtos.ParticipantDTO;
@@ -152,6 +153,18 @@ public class StudyRoomController {
     // hasRole('STUDENT') guarantees this is a Student
     Student student = (Student) userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(studyRoomService.leave(student, id));
+  }
+
+  @PostMapping("{id}/cancel")
+  @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "Cancel a StudyRoom you host before it starts, with an optional reason. "
+      + "It leaves the calendar and never counts toward achievements")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ACCESS_DENIED, ErrorCode.STUDYROOM_CLOSED,
+      ErrorCode.STUDYROOM_ALREADY_STARTED })
+  public ResponseEntity<StudyRoomDTO> cancel(@PathVariable Long id,
+      @Valid @RequestBody(required = false) CancelStudyRoomRequestDTO request, Authentication authentication) {
+    User tutor = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(studyRoomService.cancel(tutor.getNumber(), id, request == null ? null : request.reason()));
   }
 
 }

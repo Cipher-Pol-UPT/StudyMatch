@@ -895,6 +895,68 @@ class StudyRoomServiceTest {
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
   }
 
+  // cancel (#53)
+
+  @Test
+  @DisplayName("A tutor cancels their room and the reason is kept")
+  void cancelsStudyRoom() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.cancel(TUTOR_NUMBER, ROOM_ID, "tutor is sick");
+
+    // Assert
+    assertEquals(StudyRoomStatus.CANCELLED, result.status());
+    assertEquals("tutor is sick", room.getCancellationReason());
+    verify(studyRoomRepository).save(room);
+  }
+
+  @Test
+  @DisplayName("Cancelling without a reason still works")
+  void cancelsWithoutReason() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.cancel(TUTOR_NUMBER, ROOM_ID, null);
+
+    // Assert
+    assertEquals(StudyRoomStatus.CANCELLED, result.status());
+    assertNull(room.getCancellationReason());
+  }
+
+  @Test
+  @DisplayName("A student who doesn't host the room can't cancel it")
+  void notHostCannotCancel() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.cancel(2L, ROOM_ID, null));
+
+    // Assert
+    assertEquals(ErrorCode.ACCESS_DENIED, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A room that doesn't exist gives NOT_FOUND")
+  void missingRoomForCancel() {
+    // Act - findById is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.cancel(TUTOR_NUMBER, ROOM_ID, null));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
   // a room tomorrow, open for the given students to join
   private StudyRoom openRoomWith(Student... participants) {
     StudyRoom room = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);

@@ -258,6 +258,16 @@ public class StudyRoomService {
     return StudyRoomDTO.from(studyRoomRepository.save(room));
   }
 
+  // cancel StudyRoom (#53): a tutor cancels their room before it starts, with an optional reason
+  @Transactional
+  public StudyRoomDTO cancel(Long tutorNumber, Long roomId, String reason) {
+    StudyRoom room = getHostedRoom(tutorNumber, roomId);
+    // the model checks it's still open and not started
+    room.cancel(reason);
+    // notifying the participants, with the reason if given, comes with notifications (#144)
+    return StudyRoomDTO.from(studyRoomRepository.save(room));
+  }
+
   // only the tutor who hosts the room can see who joined and confirm it
   private StudyRoom getHostedRoom(Long tutorNumber, Long roomId) {
     StudyRoom room = studyRoomRepository.findById(roomId)
