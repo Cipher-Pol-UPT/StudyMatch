@@ -129,4 +129,16 @@ public class PersonalityProfile {
     return neuroticism;
   }
 
+  // analytics: the highest of the five, a tie goes to the first in OCEAN order
+  public String strongestTrait() {
+    double[] scores = { openness, conscientiousness, extraversion, agreeableness, neuroticism };
+    int strongest = 0;
+    for (int i = 1; i < scores.length; i++) {
+      if (scores[i] > scores[strongest]) {
+        strongest = i;
+      }
+    }
+    return Trait.values()[strongest].name();
+  }
+
 }
