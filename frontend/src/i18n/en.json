@@ -1052,6 +1052,14 @@
     "conversation": "Conversation",
     "with": "Conversation with {{name}}",
     "back": "Back to chats",
-    "sayHi": "{{line}}. You haven't talked yet, say hi to {{name}}."
+    "sayHi": "{{line}}. You haven't talked yet, say hi to {{name}}.",
+    "messages": "Messages",
+    "messageLabel": "Message {{name}}",
+    "send": "Send",
+    "sending": "Sending…",
+    "notSent": "Not sent",
+    "retry": "Retry",
+    "discard": "Discard",
+    "startOfConversation": "This is the start of your conversation with {{name}}."
   }
 }
