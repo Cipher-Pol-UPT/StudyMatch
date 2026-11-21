@@ -56,4 +56,9 @@ public class DirectChat extends Chat {
     return List.of(firstUser, secondUser);
   }
 
+  @Override
+  public String getNameFor(User viewer) {
+    return getOtherUser(viewer).getName();
+  }
+
 }

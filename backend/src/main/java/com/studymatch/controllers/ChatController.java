@@ -1,5 +1,7 @@
 package com.studymatch.controllers;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -9,12 +11,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.studymatch.dtos.ChatContactDTO;
+import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.DirectChatDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.Chat;
 import com.studymatch.models.User;
 import com.studymatch.services.ChatService;
+import com.studymatch.services.MessageService;
 import com.studymatch.services.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,11 +31,30 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class ChatController {
 
   private final ChatService chatService;
+  private final MessageService messageService;
   private final UserService userService;
 
-  public ChatController(ChatService chatService, UserService userService) {
+  public ChatController(ChatService chatService, MessageService messageService, UserService userService) {
     this.chatService = chatService;
+    this.messageService = messageService;
     this.userService = userService;
+  }
+
+  @GetMapping
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Your chats, the latest message first, each with its last message and how many you haven't read")
+  public ResponseEntity<List<ChatSummaryDTO>> listChats(Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(messageService.listChats(user));
+  }
+
+  // the side menu's badge, so it doesn't load the whole list on every page
+  @GetMapping("unread-count")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "How many messages you haven't read, across all your chats")
+  public ResponseEntity<Long> countUnread(Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(messageService.countUnread(user));
   }
 
   // start a DM: open the one you have, or an empty conversation until the first message
