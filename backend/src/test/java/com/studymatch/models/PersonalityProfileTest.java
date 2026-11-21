@@ -131,6 +131,26 @@ class PersonalityProfileTest {
   }
 
   @Test
+  @DisplayName("The strongest trait is the highest score")
+  void strongestTraitIsTheHighest() {
+    // Arrange
+    PersonalityProfile profile = new PersonalityProfile(0.2, 0.4, 0.9, 0.3, 0.1);
+
+    // Act + Assert
+    assertEquals("EXTRAVERSION", profile.strongestTrait());
+  }
+
+  @Test
+  @DisplayName("A tie goes to the trait that comes first in OCEAN order")
+  void strongestTraitTieGoesToTheFirst() {
+    // Arrange
+    PersonalityProfile profile = new PersonalityProfile(0.5, 0.7, 0.2, 0.7, 0.7);
+
+    // Act + Assert
+    assertEquals("CONSCIENTIOUSNESS", profile.strongestTrait());
+  }
+
+  @Test
   @DisplayName("The wrong number of answers is a VALIDATION_FAILED, not a crash")
   void wrongNumberOfAnswersIsRejected() {
     // Arrange

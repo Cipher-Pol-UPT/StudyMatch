@@ -143,6 +143,12 @@ Generating saves the groups as drafts and answers with a preview: each group's m
 
 If the assignment already has published groups, generating answers `GROUPS_ALREADY_PUBLISHED`, so the page can warn that students have already seen them; with `replacePublished=true` it goes ahead. The published groups stay until the new ones are confirmed, which is why a draft and a published group can share a number. Fewer students than the minimum size gives `NOT_ENOUGH_STUDENTS_FOR_GROUPS`, a class that can't be split within the sizes gives `NO_VALID_GROUP_SPLIT` (the teacher widens the range), separations that leave no valid grouping give `SEPARATIONS_CANNOT_BE_MET`, and confirming without drafts gives `NO_DRAFT_GROUPS`. Telling the students about their groups waits for the notifications (#144).
 
+## Analytics
+
+Staff sees analytics for one academic year, the current one unless another is asked for, and can narrow it to a subject edition, one of its classes, or a published group. A group only counts its members in the group's own subject. A filter that matches nobody gives empty analytics (zero students, no attendance), not an error, so the page can suggest a broader selection.
+
+Everything is aggregated. Average attendance and attendance per month use the same rule as the profile (current class only, justified absences count as attended), and students with an active special statute are left out of attendance, the same as GR7. Their statute type never appears. The personality chart counts students by their strongest Big Five trait, a tie going to the first in OCEAN order, and students who haven't taken the test aren't counted. Group balance shows each published group's size and its members' average grade (the ECTS-weighted average of what they finished), and the page compares each group with the other groups of the same assignment, so a group that is far from them stands out. It keeps to the selection: a group is shown when one of its members is selected in the group's own subject, and with a group filter only that group is. Drafts aren't shown because the teacher can still change them. `firstYearOnly` is true when everyone selected is in their first year, who have no grade history yet.
+
 ## Chats
 
 There are three kinds of chat: DMs, group chats a user creates (#226), and one chat per assignment group (#236). How messages reach the browser live is in [architecture.md](architecture.md#live-updates).

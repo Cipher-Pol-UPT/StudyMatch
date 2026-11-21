@@ -20,6 +20,7 @@ import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.matching.Candidate;
 import com.studymatch.matching.GroupGenerator;
+import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Assignment;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.Group;
@@ -162,6 +163,11 @@ public class GroupService {
     }
     members.sort(Comparator.comparing(GroupPreviewDTO.Member::name).thenComparing(GroupPreviewDTO.Member::number));
     return new GroupPreviewDTO(number, members.size(), List.copyOf(shared), members);
+  }
+
+  // analytics: drafts can still change, so only the published groups are measured
+  public List<Group> listPublishedGroups(AcademicYear academicYear) {
+    return groupRepository.findByAssignment_SubjectEdition_AcademicYearAndStatus(academicYear, GroupStatus.PUBLISHED);
   }
 
 }

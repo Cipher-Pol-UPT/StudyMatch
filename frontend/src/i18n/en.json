@@ -993,5 +993,32 @@
     "save": "Save attendance · {{count}} absent",
     "saved_one": "Attendance saved: {{count}} absent.",
     "saved_other": "Attendance saved: {{count}} absent."
+  },
+  "analytics": {
+    "intro": "Aggregated data about students and groups. Special statute types are never shown.",
+    "filters": "Analytics filters",
+    "year": "Academic year",
+    "allSubjects": "All subjects",
+    "allClasses": "All classes",
+    "group": "Group",
+    "allGroups": "All groups",
+    "groupOf": "{{assignment}} · group {{number}}",
+    "students": "Students",
+    "activeSubjects": "Active subjects",
+    "averageAttendance": "Average attendance",
+    "attendanceOverTime": "Attendance over time",
+    "attendanceByMonth": "Attendance by month",
+    "noLessons": "No lessons registered yet.",
+    "strongestTrait": "Strongest trait",
+    "studentsByTrait": "Students by strongest trait",
+    "studentsCaption_one": "student",
+    "studentsCaption_other": "students",
+    "noProfiles": "Nobody in this selection has taken the personality test yet.",
+    "groupBalance": "Group balance",
+    "groupBalanceDescription": "How far each group's average grade is from the average of its assignment's groups.",
+    "noGradeHistory": "No grade history yet: only first-year students are selected.",
+    "noGroups": "No published groups with grades in this selection.",
+    "noData": "No data for this selection",
+    "noDataHint": "Try a broader selection, for example all classes or all subjects."
   }
 }
