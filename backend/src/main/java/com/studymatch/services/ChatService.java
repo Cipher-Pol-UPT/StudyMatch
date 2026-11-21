@@ -2,6 +2,7 @@ package com.studymatch.services;
 
 import java.util.Optional;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,18 @@ public class ChatService {
     long first = Math.min(user.getNumber(), other.getNumber());
     long second = Math.max(user.getNumber(), other.getNumber());
     return chatRepository.findDirectChat(first, second);
+  }
+
+  // the first message creates the DM (GR8), both sending the first one at once trips the unique pair
+  @Transactional
+  public DirectChat getOrCreateDirectChat(User user, User other) {
+    return findDirectChat(user, other).orElseGet(() -> {
+      try {
+        return chatRepository.saveAndFlush(new DirectChat(user, other));
+      } catch (DataIntegrityViolationException e) {
+        throw new StudyMatchException(ErrorCode.DIRECT_CHAT_ALREADY_EXISTS);
+      }
+    });
   }
 
 }
