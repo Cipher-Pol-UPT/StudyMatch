@@ -8,7 +8,7 @@ import { getStudentRecord, removeStatute, setStatute } from '../../api/studentDi
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
 import { useStudentFormatting } from '../../hooks/useStudentFormatting';
-import { Breadcrumbs, Button, Card, ConfirmDialog, Dialog, ProfileView, StatusPill, Table, useToast, type TableColumn } from '../../studymatch-ui';
+import { Breadcrumbs, Button, Card, ConfirmDialog, Dialog, IconButton, ProfileView, StatusPill, Table, useToast, type TableColumn } from '../../studymatch-ui';
 import type { EnrolmentRecordData, StatuteRequest, StudentRecordData } from '../../types/studentDirectory';
 import { toProfileView } from '../profile/toProfileView';
 import { ChangeClassForm } from './ChangeClassForm';
@@ -34,19 +34,20 @@ export function StaffStudentDetailsPage() {
   const columns: TableColumn<EnrolmentRecordData>[] = [
     { key: 'subjectName', header: t('directory.subject'), render: row => `${row.subjectCode} · ${row.subjectName}` },
     { key: 'academicYear', header: t('directory.academicYear'), render: row => `${row.academicYear}/${row.academicYear + 1}` },
-    { key: 'classSection', header: t('directory.class') },
+    {
+      // the button sits by the class it changes, so the table stays narrow enough to show it
+      key: 'classSection', header: t('directory.class'),
+      render: row => otherClasses(row).length === 0 ? row.classSection : (
+        <span className="directory-class-cell">
+          {row.classSection}
+          <IconButton icon={ArrowLeftRight} variant="ghost" size="sm" onClick={() => setMoving(row)}
+            label={t('directory.changeClassOf', { subject: row.subjectName })} />
+        </span>
+      ),
+    },
     { key: 'ects', header: 'ECTS' },
     { key: 'status', header: t('directory.status'), render: row => t(`enrolmentStatuses.${row.status}`) },
     { key: 'finalGrade', header: t('directory.finalGrade'), render: row => format.grade(row.finalGrade) },
-    {
-      key: 'actions', header: <span className="sm-visually-hidden">{t('ui.actions')}</span>, align: 'right',
-      render: row => otherClasses(row).length > 0 && (
-        <Button size="sm" variant="ghost" icon={ArrowLeftRight} onClick={() => setMoving(row)}
-          aria-label={t('directory.changeClassOf', { subject: row.subjectName })}>
-          {t('directory.changeClass')}
-        </Button>
-      ),
-    },
   ];
   // the card shows what the backend answered last, without loading the whole record again
   const [changed, setChanged] = useState<StudentRecordData>();
