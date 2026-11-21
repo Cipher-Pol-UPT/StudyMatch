@@ -42,7 +42,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/students/me/profile` | Student | your own profile |
 | PUT | `/students/me/profile` | Student | edit your banner, photo, about me, skills, interests and languages |
 | GET | `/students/{number}/profile` | logged in | a student's profile, with the private part only for them, Staff and their teachers |
-| POST | `/students/personality-test` | Student | send the 15 answers, once per academic year |
+| POST | `/students/personality-test` | Student | send the 20 Mini-IPIP answers, once per academic year |
 
 ## Degrees, categories, subjects and academic years
 
@@ -126,4 +126,4 @@ The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and 
 
 ## Coming next
 
-The other use cases (editing and viewing groups, tutor applications, notifications, chats) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (editing and viewing groups, tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

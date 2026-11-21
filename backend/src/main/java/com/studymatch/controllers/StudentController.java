@@ -210,7 +210,7 @@ public class StudentController {
 
   @PostMapping("personality-test")
   @PreAuthorize("hasRole('STUDENT')")
-  @Operation(summary = "Send the 15 answers (1 to 5), once per academic year. Returns the four profile scores")
+  @Operation(summary = "Send the 20 Mini-IPIP answers (1 to 5), once per academic year. Returns the five profile scores")
   @ErrorCodes(ErrorCode.PERSONALITY_TEST_ALREADY_TAKEN)
   public ResponseEntity<PersonalityProfileDTO> takePersonalityTest(@Valid @RequestBody PersonalityTestRequestDTO test,
       Authentication authentication) {

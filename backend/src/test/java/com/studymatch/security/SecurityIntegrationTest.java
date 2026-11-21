@@ -231,7 +231,7 @@ class SecurityIntegrationTest {
     // the test itself gets through the gate
     mockMvc.perform(post("/students/personality-test").with(csrf()).session(session)
         .contentType(MediaType.APPLICATION_JSON)
-        .content("{\"answers\":[3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]}"))
+        .content("{\"answers\":[3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]}"))
         .andExpect(status().isOk());
   }
 

@@ -18,7 +18,7 @@ import jakarta.validation.constraints.DecimalMin;
 @Entity
 public class PersonalityProfile {
 
-  public static final int QUESTION_COUNT = 15;
+  public static final int QUESTION_COUNT = 20;
 
   private enum Trait {
     OPENNESS, CONSCIENTIOUSNESS, EXTRAVERSION, AGREEABLENESS, NEUROTICISM
@@ -30,23 +30,28 @@ public class PersonalityProfile {
   private record Item(Trait trait, boolean reversed) {
   }
 
-  // the trait each question measures, in the order the questions are asked
+  // the Mini-IPIP (Donnellan et al., 2006) in its own order, four items per trait, all weighted the same
   private static final List<Item> ITEMS = List.of(
-      new Item(Trait.EXTRAVERSION, false),
-      new Item(Trait.AGREEABLENESS, false),
-      new Item(Trait.CONSCIENTIOUSNESS, false),
-      new Item(Trait.NEUROTICISM, false),
-      new Item(Trait.OPENNESS, false),
-      new Item(Trait.EXTRAVERSION, true),
-      new Item(Trait.AGREEABLENESS, true),
-      new Item(Trait.CONSCIENTIOUSNESS, true),
-      new Item(Trait.NEUROTICISM, true),
-      new Item(Trait.OPENNESS, true),
-      new Item(Trait.EXTRAVERSION, false),
-      new Item(Trait.AGREEABLENESS, false),
-      new Item(Trait.CONSCIENTIOUSNESS, false),
-      new Item(Trait.NEUROTICISM, false),
-      new Item(Trait.OPENNESS, false));
+      new Item(Trait.EXTRAVERSION, false), // am the life of the party
+      new Item(Trait.AGREEABLENESS, false), // sympathize with others' feelings
+      new Item(Trait.CONSCIENTIOUSNESS, false), // get chores done right away
+      new Item(Trait.NEUROTICISM, false), // have frequent mood swings
+      new Item(Trait.OPENNESS, false), // have a vivid imagination
+      new Item(Trait.EXTRAVERSION, true), // don't talk a lot
+      new Item(Trait.AGREEABLENESS, true), // am not interested in other people's problems
+      new Item(Trait.CONSCIENTIOUSNESS, true), // often forget to put things back in their proper place
+      new Item(Trait.NEUROTICISM, true), // am relaxed most of the time
+      new Item(Trait.OPENNESS, true), // am not interested in abstract ideas
+      new Item(Trait.EXTRAVERSION, false), // talk to a lot of different people at parties
+      new Item(Trait.AGREEABLENESS, false), // feel others' emotions
+      new Item(Trait.CONSCIENTIOUSNESS, false), // like order
+      new Item(Trait.NEUROTICISM, false), // get upset easily
+      new Item(Trait.OPENNESS, true), // have difficulty understanding abstract ideas
+      new Item(Trait.EXTRAVERSION, true), // keep in the background
+      new Item(Trait.AGREEABLENESS, true), // am not really interested in others
+      new Item(Trait.CONSCIENTIOUSNESS, true), // make a mess of things
+      new Item(Trait.NEUROTICISM, true), // seldom feel blue
+      new Item(Trait.OPENNESS, true)); // do not have a good imagination
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
