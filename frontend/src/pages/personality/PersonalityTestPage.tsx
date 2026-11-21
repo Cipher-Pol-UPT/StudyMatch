@@ -14,7 +14,7 @@ import type { PersonalityProfileData } from '../../types/personalityProfile';
 import { toPercentages } from './personalityScores';
 import './PersonalityTestPage.css';
 
-const QUESTION_COUNT = 15;
+const QUESTION_COUNT = 20;
 
 export interface PersonalityTestPageProps {
   onCompleted: () => void;
