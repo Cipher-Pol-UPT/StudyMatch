@@ -178,7 +178,7 @@ class ChatWebSocketIntegrationTest {
     return URI.create("http://localhost:" + port + path);
   }
 
-  // a POST or PUT with the login's cookies and CSRF header, like client.ts sends it
+  // a POST, PUT or DELETE with the login's cookies and CSRF header, like client.ts sends it
   private int send(String method, Map<String, String> cookies, String path, String body) throws Exception {
     HttpRequest request = HttpRequest.newBuilder(url(path))
         .header("Cookie", cookies.entrySet().stream()
@@ -426,6 +426,35 @@ class ChatWebSocketIntegrationTest {
     assertEquals("see you at 11", payload.get("text"));
     assertNotNull(payload.get("editedAt"));
     assertNull(chatList.poll(500, TimeUnit.MILLISECONDS));
+  }
+
+  @Test
+  @DisplayName("A delete reaches the open chat and the chat list, so the unread count can drop (GR10)")
+  void deletedMessageIsPushed() throws Exception {
+    // Arrange
+    Message message = messageRepository.save(new Message(chat, ana, "see you at 10"));
+    StompSession session = connect(rui);
+    BlockingQueue<Map<String, Object>> chatTopic = subscribe(session, "/topic/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> chatList = subscribe(session, "/user/queue/chats");
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), chatTopic));
+    assertNotNull(publishUntilReceived(new UserChatEvent(rui, ChatEventType.CHAT_UPDATED, Map.of()), chatList));
+    chatTopic.clear();
+    chatList.clear();
+
+    // Act
+    int status = send("DELETE", login(ana.getInstitutionalEmail()),
+        "/chats/" + chat.getId() + "/messages/" + message.getId(), "");
+
+    // Assert
+    assertEquals(204, status);
+    for (BlockingQueue<Map<String, Object>> received : List.of(chatTopic, chatList)) {
+      Map<String, Object> deleted = received.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(deleted);
+      assertEquals("MESSAGE_DELETED", deleted.get("type"));
+      Map<?, ?> payload = (Map<?, ?>) deleted.get("payload");
+      assertEquals(chat.getId().intValue(), payload.get("chatId"));
+      assertEquals(message.getId().intValue(), payload.get("messageId"));
+    }
   }
 
   @Test
