@@ -18,3 +18,4 @@
 .directory-statute-form { display: flex; flex-direction: column; gap: 16px; }
 .directory-statute-form__actions { display: flex; justify-content: flex-end; gap: 8px; }
 .directory-statute-actions { display: flex; gap: 8px; }
+.directory-class-cell { display: inline-flex; align-items: center; gap: 4px; }
