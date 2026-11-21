@@ -97,6 +97,10 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/students/{number}/ratings` | Anyone logged in | a tutor's ratings and comments, newest first, without who wrote them |
 | GET | `/achievements/me` | Student | all four achievements, with the date and verification code of the ones you've earned |
 
+## Chats
+
+Chats don't have REST endpoints yet. The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and Teachers, where the browser subscribes to `/topic/chats/{id}` for a chat it's in and `/user/queue/chats` for its chat list. The CONNECT frame needs the `X-XSRF-TOKEN` header. How it works is in [architecture.md](architecture.md#live-updates).
+
 ## Coming next
 
-The other use cases (groups, tutor applications, achievement certificates, analytics, notifications) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (groups, tutor applications, achievement certificates, analytics, notifications, chats) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

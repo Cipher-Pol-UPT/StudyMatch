@@ -9,6 +9,8 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         rewrite: path => path.replace(/^\/api/, ''),
+        // also forwards the chat websocket (/api/ws)
+        ws: true,
       },
     },
   },
