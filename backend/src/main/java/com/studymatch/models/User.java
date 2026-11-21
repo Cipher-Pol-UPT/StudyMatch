@@ -174,6 +174,11 @@ public abstract class User {
     return false;
   }
 
+  // only Students and Teachers chat, and a blocked account drops out of the search (GR8)
+  public boolean canChat() {
+    return (getRole() == Role.STUDENT || getRole() == Role.TEACHER) && !isBlocked();
+  }
+
   // a new code replaces any previous one, with a fresh time window and attempt count
   public void startPasswordReset(String codeHash) {
     this.resetCodeHash = codeHash;

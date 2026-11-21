@@ -18,6 +18,7 @@ import com.studymatch.dtos.AccountSummaryDTO;
 import com.studymatch.dtos.BlockImpactDTO;
 import com.studymatch.dtos.BlockedAccountDTO;
 import com.studymatch.dtos.ChangePasswordRequestDTO;
+import com.studymatch.dtos.ChatContactDTO;
 import com.studymatch.dtos.CreateAccountRequestDTO;
 import com.studymatch.dtos.PageDTO;
 import com.studymatch.dtos.ResetPasswordRequestDTO;
@@ -28,6 +29,7 @@ import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.utils.EmailSender;
 import com.studymatch.utils.SearchPatterns;
 import com.studymatch.models.Staff;
+import com.studymatch.models.Student;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.User;
 import com.studymatch.repositories.UserRepository;
@@ -100,6 +102,29 @@ public class UserService {
       }
       return byText;
     };
+  }
+
+  // start a DM: Students and Teachers that aren't blocked, never yourself (GR8)
+  @Transactional(readOnly = true)
+  public PageDTO<ChatContactDTO> listChatContacts(String search, User user, int page) {
+    List<Specification<User>> filters = new ArrayList<>();
+    filters.add((contact, query, where) -> contact.type().in(Student.class, Teacher.class));
+    filters.add((contact, query, where) -> where.equal(contact.get("accountStatus"), AccountStatus.ACTIVE));
+    filters.add((contact, query, where) -> where.notEqual(contact.get("number"), user.getNumber()));
+    if (search != null && !search.isBlank()) {
+      filters.add(matchesSearch(search.trim()));
+    }
+
+    PageRequest pageRequest = PageRequest.of(Math.max(page, 0), ACCOUNTS_PER_PAGE, Sort.by("name", "number"));
+    return PageDTO.from(userRepository.findAll(Specification.allOf(filters), pageRequest), ChatContactDTO::from);
+  }
+
+  // someone the search wouldn't offer looks the same as nobody
+  @Transactional(readOnly = true)
+  public User getChatContact(Long number, User user) {
+    return userRepository.findById(number)
+        .filter(contact -> contact.canChat() && !contact.getNumber().equals(user.getNumber()))
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
   }
 
   // what blocking would cancel, the queries just come back empty for roles that have none of it

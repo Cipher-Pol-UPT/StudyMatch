@@ -23,6 +23,7 @@ import com.studymatch.dtos.BlockAccountRequestDTO;
 import com.studymatch.dtos.BlockImpactDTO;
 import com.studymatch.dtos.BlockedAccountDTO;
 import com.studymatch.dtos.ChangePasswordRequestDTO;
+import com.studymatch.dtos.ChatContactDTO;
 import com.studymatch.dtos.CreateAccountRequestDTO;
 import com.studymatch.dtos.CreatedAccountDTO;
 import com.studymatch.dtos.CurrentUserDTO;
@@ -127,6 +128,16 @@ public class UserController {
   @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ACCOUNT_NOT_BLOCKED })
   public ResponseEntity<AccountSummaryDTO> unblockAccount(@PathVariable Long number) {
     return ResponseEntity.ok(userService.unblockAccount(number));
+  }
+
+  // start a DM
+  @GetMapping("chat-contacts")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Students and Teachers you can message, by name, institutional email or number, 20 per page")
+  public ResponseEntity<PageDTO<ChatContactDTO>> listChatContacts(@RequestParam(required = false) String search,
+      @RequestParam(defaultValue = "0") int page, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(userService.listChatContacts(search, user, page));
   }
 
   @GetMapping("me")
