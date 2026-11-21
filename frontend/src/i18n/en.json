@@ -436,7 +436,6 @@
     "countedRooms": "Only StudyRooms with at least 2 confirmed attendees count.",
     "seeAll": "See all",
     "export": "Export certificate",
-    "certificate": "Achievement certificate",
     "exportDescription": "One achievement gives a certificate, several give one record with all of them. Each has a QR code anyone can scan to check it.",
     "chooseAchievements": "Achievements",
     "chooseOne": "Choose at least one achievement.",

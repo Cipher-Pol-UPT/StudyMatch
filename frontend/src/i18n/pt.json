@@ -436,7 +436,6 @@
     "countedRooms": "Só contam as salas de estudo com pelo menos 2 presenças confirmadas.",
     "seeAll": "Ver todas",
     "export": "Exportar certificado",
-    "certificate": "Certificado de conquista",
     "exportDescription": "Uma conquista dá um certificado, várias dão um registo com todas. Cada um tem um código QR que qualquer pessoa pode ler para o confirmar.",
     "chooseAchievements": "Conquistas",
     "chooseOne": "Escolha pelo menos uma conquista.",
