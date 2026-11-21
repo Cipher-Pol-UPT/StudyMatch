@@ -1,8 +1,10 @@
 package com.studymatch.repositories;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.studymatch.enums.EnrolmentStatus;
@@ -19,7 +21,13 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
 
   List<Enrolment> findBySubjectEditionId(Long subjectEditionId);
 
+  // analytics: each student comes with their profile in the same select, not one select per student
+  @EntityGraph(attributePaths = { "student", "student.degree", "student.personalityProfile", "classSection",
+      "subjectEdition", "subjectEdition.subject", "subjectEdition.subject.category" })
   List<Enrolment> findBySubjectEdition_AcademicYear(AcademicYear academicYear);
+  // analytics: every group member's finished subjects at once, with the ECTS to weigh them
+  @EntityGraph(attributePaths = { "student", "subjectEdition", "subjectEdition.subject" })
+  List<Enrolment> findByStudentInAndFinalGradeIsNotNull(Collection<Student> students);
 
   List<Enrolment> findByClassSection(ClassSection classSection);
 

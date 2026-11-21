@@ -83,7 +83,7 @@ public class AnalyticsService {
         months.entrySet().stream()
             .map(month -> new MonthAttendance(month.getKey().toString(), rate(month.getValue()[0], month.getValue()[1])))
             .toList(),
-        personality(students), groupBalance(groups, students),
+        personality(students), groupBalance(groups, enrolments, groupId),
         !students.isEmpty() && students.stream().allMatch(student -> student.getCurricularYear() == 1),
         filters(years, year.get(), groups));
   }
@@ -145,20 +145,28 @@ public class AnalyticsService {
         .toList();
   }
 
-  // the published groups with a member among the selected students
-  private List<GroupBalance> groupBalance(List<Group> groups, List<Student> students) {
-    Set<Long> selected = students.stream().map(Student::getNumber).collect(Collectors.toSet());
-    return groups.stream()
-        .filter(group -> group.getMembers().stream().anyMatch(member -> selected.contains(member.getNumber())))
+  // the published groups with a member selected in the group's own subject, so a subject or class filter keeps to it
+  private List<GroupBalance> groupBalance(List<Group> groups, List<Enrolment> enrolments, Long groupId) {
+    Map<Long, Set<Long>> editionsOf = enrolments.stream().collect(Collectors.groupingBy(e -> e.getStudent().getNumber(),
+        Collectors.mapping(e -> e.getSubjectEdition().getId(), Collectors.toSet())));
+    List<Group> shown = groups.stream()
+        .filter(group -> groupId == null || group.getId().equals(groupId))
+        .filter(group -> group.getMembers().stream().anyMatch(member -> editionsOf.getOrDefault(member.getNumber(),
+            Set.of()).contains(group.getAssignment().getSubjectEdition().getId())))
         .sorted(Comparator.comparing((Group group) -> group.getAssignment().getName()).thenComparing(Group::getNumber))
+        .toList();
+    Map<Long, Double> averages = enrolmentService.getAverageGrades(
+        shown.stream().flatMap(group -> group.getMembers().stream()).distinct().toList());
+    return shown.stream()
         .map(group -> new GroupBalance(group.getId(), group.getAssignment().getName(), group.getNumber(),
-            group.getMembers().size(), averageGrade(group)))
+            group.getMembers().size(), averageGrade(group, averages)))
         .toList();
   }
 
-  private Double averageGrade(Group group) {
+  // the mean of the members' averages, members with nothing finished don't count
+  private static Double averageGrade(Group group, Map<Long, Double> averages) {
     List<Double> grades = group.getMembers().stream()
-        .map(enrolmentService::getAverageGrade)
+        .map(member -> averages.get(member.getNumber()))
         .filter(Objects::nonNull)
         .toList();
     return grades.isEmpty() ? null : grades.stream().mapToDouble(Double::doubleValue).average().orElseThrow();
