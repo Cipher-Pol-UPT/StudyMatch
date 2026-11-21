@@ -136,6 +136,23 @@ describe('verify certificate', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 
+  it("doesn't call the certificate invalid when the backend fails, and can try again", async () => {
+    vi.mocked(verifyCertificate)
+      .mockRejectedValueOnce(new Error('GET /achievements/certificates/test-code failed with status 503'))
+      .mockResolvedValueOnce({
+        record: false, studentName: 'Test Tutor', studentNumber: 50003, degree: null, issuedAt: '2026-11-20',
+        achievements: [{ achievement: 'MENTOR', earnedAt: '2026-11-12T10:00:00', evidence: null }],
+      });
+    renderVerify('test-code');
+
+    expect(await screen.findByText('Something went wrong. Please try again.')).toBeTruthy();
+    expect(screen.queryByText("We couldn't find this certificate")).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(await screen.findByText('Valid certificate')).toBeTruthy();
+    expect(verifyCertificate).toHaveBeenCalledTimes(2);
+  });
+
   it("says when the code doesn't belong to any certificate", async () => {
     vi.mocked(verifyCertificate).mockRejectedValue({ code: 'NOT_FOUND' });
     renderVerify('not-a-code');

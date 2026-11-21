@@ -1,9 +1,10 @@
-import { ShieldCheck, ShieldX } from 'lucide-react';
+import { CircleAlert, RefreshCw, ShieldCheck, ShieldX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { verifyCertificate } from '../../api/certificates';
-import { AchievementBadge, AuthHeader, AuthLayout, AuthStatus, Spinner, ThemeSwitcher } from '../../studymatch-ui';
+import { isBackendError } from '../../api/errors';
+import { AchievementBadge, AuthHeader, AuthLayout, AuthStatus, Button, Spinner, ThemeSwitcher } from '../../studymatch-ui';
 import type { VerifiedAchievementData, VerifiedCertificateData } from '../../types/certificates';
 import './verify.css';
 
@@ -12,21 +13,34 @@ export function VerifyCertificatePage() {
   const { t } = useTranslation();
   const { code = '' } = useParams();
   const [certificate, setCertificate] = useState<VerifiedCertificateData | null>(null);
-  const [notFound, setNotFound] = useState(false);
+  const [failure, setFailure] = useState<'notFound' | 'failed' | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
+  // only an unknown code means the certificate isn't valid, anything else (the backend down) can be tried again
   useEffect(() => {
-    verifyCertificate(code).then(setCertificate).catch(() => setNotFound(true));
-  }, [code]);
+    verifyCertificate(code).then(setCertificate)
+      .catch((error: unknown) => setFailure(isBackendError(error) && error.code === 'NOT_FOUND' ? 'notFound' : 'failed'));
+  }, [code, attempt]);
+
+  const retry = () => {
+    setFailure(null);
+    setAttempt(previous => previous + 1);
+  };
 
   return (
     <AuthLayout centerBrand hideFooter topRight={<ThemeSwitcher />} headline={t('verify.title')} tagline={null}>
-      {notFound && (
+      {failure === 'notFound' && (
         <AuthStatus icon={ShieldX} title={t('verify.notFound')}>
           <p>{t('verify.notFoundHint')}</p>
           <a href="/">{t('verify.goToStudyMatch')}</a>
         </AuthStatus>
       )}
-      {!notFound && certificate === null && <div className="verify__loading"><Spinner /></div>}
+      {failure === 'failed' && (
+        <AuthStatus icon={CircleAlert} title={t('common.unexpectedError')}>
+          <Button variant="secondary" icon={RefreshCw} onClick={retry}>{t('profile.tryAgain')}</Button>
+        </AuthStatus>
+      )}
+      {failure === null && certificate === null && <div className="verify__loading"><Spinner /></div>}
       {certificate && <VerifiedCertificate certificate={certificate} />}
     </AuthLayout>
   );
