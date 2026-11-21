@@ -1031,7 +1031,11 @@
     "generate": "Generate groups",
     "generateBody": "The algorithm proposes a draft you can check before students see it.",
     "generating": "Generating groups…",
-    "generatingTime": "Usually about 10 seconds",
+    "generatingCount_one": "Generating {{count}} group of {{size}}…",
+    "generatingCount_other": "Generating {{count}} groups of {{size}}…",
+    "generatingTime_one": "About {{count}} second",
+    "generatingTime_other": "About {{count}} seconds",
+    "generatingMoment": "Just a moment",
     "steps": {
       "personality": "Reading personalities",
       "record": "Weighing attendance and grades",

@@ -1,16 +1,16 @@
 import { Check, RefreshCw, Sparkles, Trash2, Users } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext, useParams } from 'react-router-dom';
 import { isBackendError } from '../../api/errors';
 import { getGradeSheet } from '../../api/grades';
-import { discardGroups, generateGroups, publishGroups } from '../../api/groups';
+import { discardGroups, generateGroups, getGroupGeneration, publishGroups } from '../../api/groups';
 import { GeneratingGroups } from '../../components/groups/GeneratingGroups';
 import { GroupCard } from '../../components/groups/GroupCard';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
 import { Banner, Button, Dialog, EmptyState, useToast } from '../../studymatch-ui';
-import type { GroupPreviewData, GroupStatus } from '../../types/groups';
+import type { GroupGenerationData, GroupPreviewData, GroupStatus } from '../../types/groups';
 import type { SubjectEditionData } from '../../types/studentDirectory';
 import './assignments.css';
 
@@ -35,24 +35,43 @@ export function TeacherGroupsPage() {
   const [busy, setBusy] = useState<Busy>();
   const [error, setError] = useState<string>();
   const [replacing, setReplacing] = useState(false);
+  // while generating: what the server plans, and the groups once back, kept until the loader has finished
+  const [plan, setPlan] = useState<{ data: GroupGenerationData | null; expectedMs?: number }>();
+  const [generated, setGenerated] = useState<GroupPreviewData[]>();
+  const run = useRef(0);
 
   const message = (caught: unknown) => isBackendError(caught) ? t(`errors.${caught.code}`, caught.params ?? {}) : t('common.unexpectedError');
 
   async function generate(replacePublished = false) {
+    const current = ++run.current;
     setReplacing(false);
     setBusy('generating');
     setError(undefined);
+    setPlan(undefined);
+    setGenerated(undefined);
+    const started = Date.now();
+    const request = generateGroups(edition.id, id, replacePublished);
+    // asked at the same time: its round trip is the server's loading, searchMillis the algorithm's real time
+    getGroupGeneration(edition.id, id).then(
+      data => { if (run.current === current) setPlan({ data, expectedMs: Date.now() - started + data.searchMillis }); },
+      () => { if (run.current === current) setPlan({ data: null }); },
+    );
     try {
-      setGroups(await generateGroups(edition.id, id, replacePublished));
-      setStatus('DRAFT');
+      setGenerated(await request);
     } catch (caught) {
       // published groups: warn first, students have seen them
       if (isBackendError(caught) && caught.code === 'GROUPS_ALREADY_PUBLISHED') setReplacing(true);
       else setError(message(caught));
-    } finally {
       setBusy(undefined);
     }
   }
+
+  // the loader filled its bar: now the groups take its place
+  const showGenerated = useCallback(() => {
+    setGroups(generated);
+    setStatus('DRAFT');
+    setBusy(undefined);
+  }, [generated]);
 
   async function act(action: Exclude<Busy, 'generating'>) {
     setBusy(action);
@@ -107,7 +126,7 @@ export function TeacherGroupsPage() {
       </div>
       {error && <Banner tone="danger">{error}</Banner>}
       {busy === 'generating' ? (
-        <GeneratingGroups />
+        <GeneratingGroups plan={plan?.data} expectedMs={plan?.expectedMs} done={generated !== undefined} onFinished={showGenerated} />
       ) : !groups ? (
         <EmptyState icon={Users} title={t('groups.generate')} body={t('groups.generateBody')}
           action={<Button icon={Sparkles} disabled={busy !== undefined} onClick={() => generate()}>{t('groups.generate')}</Button>} />

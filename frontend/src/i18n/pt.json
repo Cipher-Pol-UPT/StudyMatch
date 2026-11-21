@@ -1031,7 +1031,11 @@
     "generate": "Gerar grupos",
     "generateBody": "O algoritmo propõe um rascunho que pode verificar antes de os estudantes o verem.",
     "generating": "A gerar grupos…",
-    "generatingTime": "Normalmente cerca de 10 segundos",
+    "generatingCount_one": "A gerar {{count}} grupo de {{size}}…",
+    "generatingCount_other": "A gerar {{count}} grupos de {{size}}…",
+    "generatingTime_one": "Cerca de {{count}} segundo",
+    "generatingTime_other": "Cerca de {{count}} segundos",
+    "generatingMoment": "Só um momento",
     "steps": {
       "personality": "A ler as personalidades",
       "record": "A pesar assiduidade e classificações",
