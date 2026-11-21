@@ -988,5 +988,32 @@
     "save": "Guardar presenças · {{count}} faltas",
     "saved_one": "Presenças guardadas: {{count}} falta.",
     "saved_other": "Presenças guardadas: {{count}} faltas."
+  },
+  "analytics": {
+    "intro": "Dados agregados sobre estudantes e grupos. Os tipos de estatuto especial nunca são mostrados.",
+    "filters": "Filtros da análise",
+    "year": "Ano letivo",
+    "allSubjects": "Todas as unidades curriculares",
+    "allClasses": "Todas as turmas",
+    "group": "Grupo",
+    "allGroups": "Todos os grupos",
+    "groupOf": "{{assignment}} · grupo {{number}}",
+    "students": "Estudantes",
+    "activeSubjects": "Unidades curriculares ativas",
+    "averageAttendance": "Assiduidade média",
+    "attendanceOverTime": "Assiduidade ao longo do tempo",
+    "attendanceByMonth": "Assiduidade por mês",
+    "noLessons": "Ainda não há aulas registadas.",
+    "strongestTrait": "Traço mais forte",
+    "studentsByTrait": "Estudantes por traço mais forte",
+    "studentsCaption_one": "estudante",
+    "studentsCaption_other": "estudantes",
+    "noProfiles": "Ninguém nesta seleção fez ainda o teste de personalidade.",
+    "groupBalance": "Equilíbrio dos grupos",
+    "groupBalanceDescription": "A distância da média de cada grupo à média dos grupos.",
+    "noGradeHistory": "Ainda não há histórico de classificações: só estão selecionados estudantes do 1.º ano.",
+    "noGroups": "Não há grupos publicados com classificações nesta seleção.",
+    "noData": "Sem dados para esta seleção",
+    "noDataHint": "Experimente uma seleção mais ampla, por exemplo todas as turmas ou todas as unidades curriculares."
   }
 }
