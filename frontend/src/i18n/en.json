@@ -261,6 +261,11 @@
     "places": "Places",
     "placesHint": "{{min}}–{{max}} participants",
     "meetLink": "Google Meet link",
+    "meetChoice": "Meeting link",
+    "meetAuto": "Create a Meet link for me",
+    "meetAutoHint": "StudyMatch creates it on Google for the StudyRoom's date and time.",
+    "meetOwn": "Use my own link",
+    "meetOwnHint": "Paste a Google Meet link you already have.",
     "descriptionPlaceholder": "What will you cover? What should people bring?",
     "created": "StudyRoom created."
   },
@@ -592,7 +597,8 @@
     "ROOM_ALREADY_RATED": "You have already rated this StudyRoom.",
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Only Students enrolled in this Subject who haven't passed it can join.",
     "JOINED_STUDYROOM_OVERLAP": "This overlaps a StudyRoom you already joined or are hosting ({{subject}}, {{startsAt}} – {{endsAt}}).",
-    "ACHIEVEMENT_NOT_EARNED": "You haven't earned one of these achievements yet."
+    "ACHIEVEMENT_NOT_EARNED": "You haven't earned one of these achievements yet.",
+    "MEET_LINK_UNAVAILABLE": "The Google Meet link couldn't be created right now. Paste your own link to create the StudyRoom."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

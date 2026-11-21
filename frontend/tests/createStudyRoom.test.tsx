@@ -24,7 +24,12 @@ async function openForm() {
   return form();
 }
 
+function chooseOwnLink(dialog: HTMLElement) {
+  fireEvent.click(within(dialog).getByRole('radio', { name: /Use my own link/ }));
+}
+
 function fillLink(dialog: HTMLElement, link: string) {
+  chooseOwnLink(dialog);
   fireEvent.change(within(dialog).getByLabelText('Google Meet link'), { target: { value: link } });
 }
 
@@ -89,9 +94,41 @@ describe('create study room', () => {
     renderPage();
     const dialog = await openForm();
 
+    chooseOwnLink(dialog);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Create StudyRoom' }));
 
     const link = within(dialog).getByLabelText('Google Meet link');
     await waitFor(() => expect(link.getAttribute('aria-invalid')).toBe('true'));
+  });
+
+  // generate a Google Meet link (#269)
+
+  it('asks for the Meet link to be created by default, sending no link', async () => {
+    vi.mocked(createStudyRoom).mockResolvedValue({
+      id: 2, subjectId: 7, subjectName: 'Test Maths', tutorNumber: 45123, tutorName: 'Test Tutor',
+      startsAt: '2026-10-20T18:00:00', endsAt: '2026-10-20T19:00:00', description: null, capacity: 8,
+      link: 'https://meet.google.com/xyz-wxyz-xyz', status: 'SCHEDULED', participantCount: 0,
+    });
+    renderPage();
+    const dialog = await openForm();
+
+    expect(within(dialog).getByRole('radio', { name: /Create a Meet link for me/ })).toHaveProperty('checked', true);
+    expect(within(dialog).queryByLabelText('Google Meet link')).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Create StudyRoom' }));
+
+    await waitFor(() => expect(createStudyRoom).toHaveBeenCalledWith(expect.objectContaining({ subjectId: 7, link: null })));
+    expect(await screen.findByText('StudyRoom created.')).toBeTruthy();
+  });
+
+  it('switches to its own link with the error when Google can not create one', async () => {
+    vi.mocked(createStudyRoom).mockRejectedValue({ code: 'MEET_LINK_UNAVAILABLE' });
+    renderPage();
+    const dialog = await openForm();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Create StudyRoom' }));
+
+    expect(await within(dialog).findByText("The Google Meet link couldn't be created right now. Paste your own link to create the StudyRoom.")).toBeTruthy();
+    expect(within(dialog).getByRole('radio', { name: /Use my own link/ })).toHaveProperty('checked', true);
+    expect(within(dialog).getByLabelText('Google Meet link')).toBeTruthy();
   });
 });
