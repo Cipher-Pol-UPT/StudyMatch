@@ -192,8 +192,10 @@ const COMPOSER_MAX_HEIGHT = 160;
 export function ChatComposer({ label, placeholder, value, onChange, onSend, sendLabel, max, error }: ChatComposerProps) {
   const id = useId();
   const input = useRef<HTMLTextAreaElement>(null);
-  const over = value.length > max;
-  const canSend = value.trim() !== '' && !over;
+  // counted without the spaces around it, like the backend does before its limit
+  const length = value.trim().length;
+  const over = length > max;
+  const canSend = length > 0 && !over;
 
   useLayoutEffect(() => {
     const box = input.current;
@@ -223,11 +225,11 @@ export function ChatComposer({ label, placeholder, value, onChange, onSend, send
           <ArrowUp aria-hidden />
         </button>
       </div>
-      {(error || value.length > max - 200) && (
+      {(error || length > max - 200) && (
         <div className="sm-composer__foot">
           {error && <span className="sm-composer__error" id={`${id}-error`} role="alert">{error}</span>}
-          {value.length > max - 200 && (
-            <span className={`sm-composer__count${over ? ' sm-composer__count--over' : ''}`}>{value.length} / {max}</span>
+          {length > max - 200 && (
+            <span className={`sm-composer__count${over ? ' sm-composer__count--over' : ''}`}>{length} / {max}</span>
           )}
         </div>
       )}

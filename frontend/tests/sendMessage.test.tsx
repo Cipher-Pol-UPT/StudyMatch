@@ -130,6 +130,18 @@ describe('send a message', () => {
     expect(sends).toHaveLength(0);
   });
 
+  it('leaves the spaces around the text out of the count, like the backend', async () => {
+    const sends = backend();
+    open();
+    const field = await box();
+
+    type(field, `  ${'a'.repeat(2000)}\n`);
+    enter(field);
+
+    expect(screen.queryByText('2003 / 2000')).toBeNull();
+    await waitFor(() => expect(sends).toEqual([{ number: ana.number, text: 'a'.repeat(2000) }]));
+  });
+
   it('keeps a failed message with Retry, which sends it again', async () => {
     let fail = true;
     const sends = backend(async text => fail ? Promise.reject(new TypeError('Failed to fetch')) : reply(sent(text), 201));
@@ -187,5 +199,24 @@ describe('send a message', () => {
     fireEvent.click(await within(await screen.findByRole('dialog')).findByRole('button', { name: /Test Ana/ }));
 
     expect(((await box()) as HTMLTextAreaElement).value).toBe('Half a thought');
+  });
+
+  it('a send that fails after logout leaves no error for the next person', async () => {
+    let fail: (error: Error) => void = () => undefined;
+    backend(() => new Promise((_, reject) => { fail = reject; }));
+    open();
+    const field = await box();
+    type(field, 'Bye');
+    enter(field);
+    await screen.findByText('Sending…');
+
+    cleanup();
+    forgetConversations();
+    fail(new TypeError('Failed to fetch'));
+    await new Promise(resolve => setTimeout(resolve, 50));
+    open();
+
+    await box();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });
