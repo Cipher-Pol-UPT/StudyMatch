@@ -74,37 +74,41 @@ class GroupGeneratorTest {
   }
 
   @Test
-  @DisplayName("The plan has the groups generate forms, and the search fits in the time limit")
-  void planMatchesTheGeneratedGroups() {
-    // Arrange - two classes kept apart: the pools share the time, a pool of one group gets none
+  @DisplayName("The estimate has the groups generate forms, and the search fits in the time limit")
+  void estimateMatchesTheGeneratedGroups() {
+    // Arrange - two classes kept apart, each sized on its own
     Random random = new Random(5);
     List<Candidate> candidates = new ArrayList<>(mixedClass(random, "A"));
     candidates.addAll(mixedClass(random, "B"));
 
     // Act
-    GroupGenerator.Plan plan = generator.plan(candidates, 3, 4, 5, true);
+    GroupGenerator.Plan plan = generator.estimate(List.of(41, 41), 3, 4, 5);
     List<List<Integer>> groups = generator.generate(candidates, List.of(), 3, 4, 5, true, new Random(6));
 
     // Assert
     assertEquals(groups.size(), plan.groups());
-    assertTrue(plan.search().isPositive());
-    assertTrue(plan.search().compareTo(Duration.ofMillis(100)) <= 0);
+    assertEquals(Duration.ofMillis(100), plan.search());
   }
 
   @Test
-  @DisplayName("A class that makes one group has nothing to search")
+  @DisplayName("A class that makes one group has nothing to search, the others share the time")
   void oneGroupHasNoSearch() {
-    // Arrange
-    List<Candidate> candidates = new ArrayList<>();
-    for (int i = 0; i < 4; i++) {
-      candidates.add(new Candidate(null, null, null, 1, "A"));
-    }
-
     // Act
-    GroupGenerator.Plan plan = generator.plan(candidates, 2, 4, 4, false);
+    GroupGenerator.Plan plan = generator.estimate(List.of(4, 12), 2, 4, 4);
 
     // Assert
-    assertEquals(1, plan.groups());
+    assertEquals(4, plan.groups());
+    assertEquals(Duration.ofMillis(75), plan.search());
+  }
+
+  @Test
+  @DisplayName("A class that can't be split estimates no groups and no search")
+  void noSplitEstimatesNothing() {
+    // Act
+    GroupGenerator.Plan plan = generator.estimate(List.of(8, 2), 3, 4, 5);
+
+    // Assert
+    assertEquals(0, plan.groups());
     assertEquals(Duration.ZERO, plan.search());
   }
 
