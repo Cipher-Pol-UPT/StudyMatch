@@ -30,6 +30,7 @@
       "assignments": "Avaliações",
       "groups": "Grupos de trabalho",
       "grades": "Classificações",
+      "chats": "Conversas",
       "tutorApplications": "Candidaturas a tutor"
     },
     "descriptions": {
@@ -51,6 +52,7 @@
       "assignments": "Criar e gerir avaliações das unidades curriculares.",
       "groups": "Consultar, gerar, editar, importar e exportar grupos de trabalho.",
       "grades": "Registar classificações nas suas unidades curriculares.",
+      "chats": "Envie mensagens aos seus estudantes e colegas.",
       "tutorApplications": "Consultar e decidir candidaturas a tutor nas suas unidades curriculares."
     }
   },
@@ -493,6 +495,7 @@
     "quickActions": "Acesso rápido",
     "actions": {
       "rooms": "Um espaço partilhado para se concentrar, trocar ideias e progredir em conjunto.",
+      "chats": "Envie mensagens aos seus colegas e professores.",
       "subjects": "Explore as suas unidades curriculares e aprofunde cada uma.",
       "groups": "Consulte os seus grupos e conheça a sua equipa.",
       "assignments": "Veja o que está para entregar e acompanhe as suas entregas."
@@ -835,6 +838,7 @@
   "nav": {
     "home": "Início",
     "rooms": "Salas de estudo",
+    "chats": "Conversas",
     "subjects": "Unidades curriculares",
     "groups": "Grupos de estudo",
     "assignments": "Trabalhos",
@@ -1030,5 +1034,24 @@
     "noGroups": "Não há grupos publicados com classificações nesta seleção.",
     "noData": "Sem dados para esta seleção",
     "noDataHint": "Experimente uma seleção mais ampla, por exemplo todas as turmas ou todas as unidades curriculares."
+  },
+  "chats": {
+    "title": "Conversas",
+    "newMessage": "Nova mensagem",
+    "newMessageDescription": "Procure Estudantes e Professores por nome ou número.",
+    "searchPeople": "Procurar pessoas",
+    "searchPlaceholder": "Nome ou número",
+    "people": "Pessoas",
+    "noOneFound": "Ninguém encontrado",
+    "narrowDown": "A mostrar {{shown}} de {{total}}. Escreva um nome ou número para restringir a pesquisa.",
+    "contactLine": "{{role}} · {{number}}",
+    "noChats": "Ainda não tem conversas",
+    "noChatsBody": "Envie uma mensagem a um colega ou professor. A conversa aparece aqui depois da primeira mensagem.",
+    "pickChat": "Escolha uma conversa",
+    "pickChatBody": "Escolha uma conversa à esquerda ou comece uma nova.",
+    "conversation": "Conversa",
+    "with": "Conversa com {{name}}",
+    "back": "Voltar às conversas",
+    "sayHi": "{{line}}. Ainda não conversaram, diga olá a {{name}}."
   }
 }
