@@ -2,6 +2,8 @@ package com.studymatch.services;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -24,6 +26,11 @@ public class LessonService {
   // every stored lesson counts for attendance, so only lessons that already happened should be stored
   public long countLessons(ClassSection classSection) {
     return lessonRepository.countByClassSection(classSection);
+  }
+
+  // analytics: every lesson of these classes in one query
+  public List<Lesson> listLessons(Collection<ClassSection> classSections) {
+    return lessonRepository.findByClassSectionIn(classSections);
   }
 
   // seconds dropped so 9:00 and 9:00:30 are the same lesson, and a future one would count as held

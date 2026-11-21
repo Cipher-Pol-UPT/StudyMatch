@@ -2,6 +2,7 @@ package com.studymatch.services;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -144,6 +145,11 @@ public class EnrolmentService {
   public boolean hasPassed(Long studentNumber, Subject subject) {
     return enrolmentRepository.existsByStudent_NumberAndSubjectEdition_SubjectAndStatus(studentNumber, subject,
         EnrolmentStatus.PASSED);
+  }
+
+  // analytics: every enrolment of the year
+  public List<Enrolment> listEnrolments(AcademicYear academicYear) {
+    return enrolmentRepository.findBySubjectEdition_AcademicYear(academicYear);
   }
 
   public Double getAttendanceRate(Student student) {
@@ -302,9 +308,26 @@ public class EnrolmentService {
 
   // finished subjects only, weighted by ECTS, so a 10 ECTS subject counts twice as much as a 5 ECTS one
   public Double getAverageGrade(Student student) {
+    return weightedAverage(finishedEnrolments(student));
+  }
+
+  // analytics: the average of many students in one query, keyed by number; students with nothing finished are left out
+  public Map<Long, Double> getAverageGrades(Collection<Student> students) {
+    Map<Long, Double> averages = new HashMap<>();
+    if (students.isEmpty()) {
+      return averages;
+    }
+    enrolmentRepository.findByStudentInAndFinalGradeIsNotNull(students).stream()
+        .collect(Collectors.groupingBy(enrolment -> enrolment.getStudent().getNumber()))
+        .forEach((number, finished) -> averages.put(number, weightedAverage(finished)));
+    return averages;
+  }
+
+  // weighted by ECTS, null when there's nothing to weigh
+  private static Double weightedAverage(List<Enrolment> finished) {
     double weightedSum = 0;
     int totalEcts = 0;
-    for (Enrolment enrolment : finishedEnrolments(student)) {
+    for (Enrolment enrolment : finished) {
       int ects = enrolment.getSubjectEdition().getSubject().getEcts();
       weightedSum += ects * enrolment.getFinalGrade();
       totalEcts += ects;

@@ -1,5 +1,6 @@
 package com.studymatch.services;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,6 +22,11 @@ public class AbsenceService {
   }
 
   // only the current class, lessons are counted from it too, so after a class change attendance can't go below 0
+  // analytics: the unjustified absences of these enrolments in one query
+  public List<Absence> listUnjustifiedAbsences(Collection<Enrolment> enrolments) {
+    return absenceRepository.findByEnrolmentInAndJustifiedFalse(enrolments);
+  }
+
   public long countUnjustifiedAbsences(Enrolment enrolment) {
     return absenceRepository.countByEnrolmentAndJustifiedFalseAndLesson_ClassSection(enrolment,
         enrolment.getClassSection());

@@ -1,5 +1,6 @@
 package com.studymatch.models;
 
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,9 @@ public class PersonalityProfile {
   private enum Trait {
     OPENNESS, CONSCIENTIOUSNESS, EXTRAVERSION, AGREEABLENESS, NEUROTICISM
   }
+
+  // the five traits in OCEAN order, as analytics lists them
+  public static final List<String> TRAITS = Arrays.stream(Trait.values()).map(Enum::name).toList();
 
   private record Item(Trait trait, boolean reversed) {
   }
@@ -127,6 +131,18 @@ public class PersonalityProfile {
 
   public double getNeuroticism() {
     return neuroticism;
+  }
+
+  // analytics: the highest of the five, a tie goes to the first in OCEAN order
+  public String strongestTrait() {
+    double[] scores = { openness, conscientiousness, extraversion, agreeableness, neuroticism };
+    int strongest = 0;
+    for (int i = 1; i < scores.length; i++) {
+      if (scores[i] > scores[strongest]) {
+        strongest = i;
+      }
+    }
+    return Trait.values()[strongest].name();
   }
 
 }
