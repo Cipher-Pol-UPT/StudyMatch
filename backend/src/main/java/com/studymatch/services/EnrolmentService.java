@@ -25,6 +25,7 @@ import com.studymatch.dtos.EnrolmentRecordDTO;
 import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.EnrolmentResultDTO.Result;
 import com.studymatch.dtos.PersonalityProfileDTO;
+import com.studymatch.dtos.TutorRankingDTO;
 import com.studymatch.dtos.UnfinishedEnrolmentDTO;
 import com.studymatch.enums.EnrolmentStatus;
 import com.studymatch.exceptions.ErrorCode;
@@ -274,6 +275,41 @@ public class EnrolmentService {
 
   public List<Enrolment> getEnrolments(Student student) {
     return enrolmentRepository.findByStudent(student);
+  }
+
+  // apply for tutoring (#41): the subjects the student already passed, one enrolment per subject
+  public List<Enrolment> getPassedEnrolments(Student student) {
+    return enrolmentRepository.findByStudent(student).stream()
+        .filter(enrolment -> enrolment.getStatus() == EnrolmentStatus.PASSED)
+        .toList();
+  }
+
+  // apply for tutoring (#41): the passed enrolment for a subject, NOT_ELIGIBLE if the student hasn't passed it
+  public Enrolment getPassedEnrolment(Student student, Long subjectId) {
+    return getPassedEnrolments(student).stream()
+        .filter(enrolment -> enrolment.getSubjectEdition().getSubject().getId().equals(subjectId))
+        .findFirst()
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_ELIGIBLE_FOR_TUTORING));
+  }
+
+  // apply for tutoring (#41): the finished grades of an edition, best first
+  private List<Integer> finishedGrades(SubjectEdition edition) {
+    return enrolmentRepository.findBySubjectEditionId(edition.getId()).stream()
+        .filter(Enrolment::isFinished)
+        .map(Enrolment::getFinalGrade)
+        .sorted(Comparator.reverseOrder())
+        .toList();
+  }
+
+  // position (1 is the best), how many students are ranked, and whether the grade is in the top 5%
+  // (rounded up, minimum one student, ties at the cut-off all eligible)
+  public TutorRankingDTO getTutorRanking(Enrolment enrolment) {
+    List<Integer> grades = finishedGrades(enrolment.getSubjectEdition());
+    int grade = enrolment.getFinalGrade();
+    int position = (int) grades.stream().filter(other -> other > grade).count() + 1;
+    int cutoffCount = Math.max(1, (int) Math.ceil(grades.size() * 0.05));
+    boolean eligible = grade >= grades.get(cutoffCount - 1);
+    return new TutorRankingDTO(position, grades.size(), eligible);
   }
 
   // only students of this edition can be picked, the number goes back so the message can say which one
