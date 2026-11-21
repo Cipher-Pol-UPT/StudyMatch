@@ -1,0 +1,60 @@
+package com.studymatch.controllers;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.studymatch.dtos.MessageDTO;
+import com.studymatch.dtos.SendMessageRequestDTO;
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.ErrorCodes;
+import com.studymatch.models.User;
+import com.studymatch.services.MessageService;
+import com.studymatch.services.UserService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/chats/")
+@Tag(name = "Chats")
+public class MessageController {
+
+  private final MessageService messageService;
+  private final UserService userService;
+
+  public MessageController(MessageService messageService, UserService userService) {
+    this.messageService = messageService;
+    this.userService = userService;
+  }
+
+  // send a message
+  @PostMapping("{chatId}/messages")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Send a text message to a chat you're in, pushed to its members")
+  @ErrorCodes({ ErrorCode.NOT_FOUND })
+  public ResponseEntity<MessageDTO> send(@PathVariable Long chatId,
+      @Valid @RequestBody SendMessageRequestDTO sendRequest, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.status(HttpStatus.CREATED).body(messageService.send(chatId, user, sendRequest.text()));
+  }
+
+  @PostMapping("direct/{number}/messages")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Send a DM, the first one creates the chat")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.DIRECT_CHAT_ALREADY_EXISTS })
+  public ResponseEntity<MessageDTO> sendDirect(@PathVariable Long number,
+      @Valid @RequestBody SendMessageRequestDTO sendRequest, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(messageService.sendDirect(number, user, sendRequest.text()));
+  }
+
+}
