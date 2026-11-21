@@ -5,19 +5,16 @@ import { useOutletContext, useParams } from 'react-router-dom';
 import { isBackendError } from '../../api/errors';
 import { getGradeSheet } from '../../api/grades';
 import { discardGroups, generateGroups, publishGroups } from '../../api/groups';
+import { GeneratingGroups } from '../../components/groups/GeneratingGroups';
 import { GroupCard } from '../../components/groups/GroupCard';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
-import { Banner, Button, Dialog, EmptyState, ProgressBar, useToast } from '../../studymatch-ui';
+import { Banner, Button, Dialog, EmptyState, useToast } from '../../studymatch-ui';
 import type { GroupPreviewData, GroupStatus } from '../../types/groups';
 import type { SubjectEditionData } from '../../types/studentDirectory';
 import './assignments.css';
 
 type Busy = 'generating' | 'publishing' | 'discarding';
-
-// a small class generates in a blink, so the bar stays long enough to be seen
-export const MIN_GENERATING_MS = 700;
-const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // generate groups: the draft only lives on this page until viewing groups (#58) can load it back
 export function TeacherGroupsPage() {
@@ -46,8 +43,7 @@ export function TeacherGroupsPage() {
     setBusy('generating');
     setError(undefined);
     try {
-      const [generated] = await Promise.all([generateGroups(edition.id, id, replacePublished), pause(MIN_GENERATING_MS)]);
-      setGroups(generated);
+      setGroups(await generateGroups(edition.id, id, replacePublished));
       setStatus('DRAFT');
     } catch (caught) {
       // published groups: warn first, students have seen them
@@ -111,10 +107,7 @@ export function TeacherGroupsPage() {
       </div>
       {error && <Banner tone="danger">{error}</Banner>}
       {busy === 'generating' ? (
-        <div className="groups__progress">
-          <ProgressBar indeterminate showLabel label={t('groups.generating')} />
-          <p className="sm-caption">{t('groups.generatingBody')}</p>
-        </div>
+        <GeneratingGroups />
       ) : !groups ? (
         <EmptyState icon={Users} title={t('groups.generate')} body={t('groups.generateBody')}
           action={<Button icon={Sparkles} disabled={busy !== undefined} onClick={() => generate()}>{t('groups.generate')}</Button>} />

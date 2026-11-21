@@ -1031,7 +1031,13 @@
     "generate": "Generate groups",
     "generateBody": "The algorithm proposes a draft you can check before students see it.",
     "generating": "Generating groups…",
-    "generatingBody": "Matching the students by personality, attendance and grades.",
+    "generatingTime": "Usually about 10 seconds",
+    "steps": {
+      "personality": "Reading personalities",
+      "record": "Weighing attendance and grades",
+      "languages": "Finding a shared language",
+      "balance": "Balancing the groups"
+    },
     "regenerate": "Regenerate",
     "discard": "Discard draft",
     "publish": "Confirm and publish",

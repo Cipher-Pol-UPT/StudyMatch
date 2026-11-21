@@ -1031,7 +1031,13 @@
     "generate": "Gerar grupos",
     "generateBody": "O algoritmo propõe um rascunho que pode verificar antes de os estudantes o verem.",
     "generating": "A gerar grupos…",
-    "generatingBody": "A combinar os estudantes por personalidade, assiduidade e classificações.",
+    "generatingTime": "Normalmente cerca de 10 segundos",
+    "steps": {
+      "personality": "A ler as personalidades",
+      "record": "A pesar assiduidade e classificações",
+      "languages": "A procurar uma língua em comum",
+      "balance": "A equilibrar os grupos"
+    },
     "regenerate": "Gerar de novo",
     "discard": "Descartar rascunho",
     "publish": "Confirmar e publicar",
