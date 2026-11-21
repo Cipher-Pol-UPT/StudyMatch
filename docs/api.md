@@ -115,7 +115,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | Method | Path | Who | What it does |
 | --- | --- | --- | --- |
 | GET | `/chats/direct/{number}` | Student, Teacher | your DM with that person, `chatId` is null until the first message creates it. Anyone the contact search wouldn't offer is 404 |
-| POST | `/chats/{id}/messages` | member of the chat | send a text message (1 to 2000 characters), pushed to the members |
+| POST | `/chats/{id}/messages` | member of the chat | send a text message (1 to 2000 characters in UTF-16 units, an emoji is usually 2), pushed to the members |
 | POST | `/chats/direct/{number}/messages` | Student, Teacher | send a DM, the first one creates the chat. Both sending the first one at the same moment gives the second `DIRECT_CHAT_ALREADY_EXISTS`, and sending again works |
 
 The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and Teachers, where the browser subscribes to `/topic/chats/{id}` for a chat it's in and `/user/queue/chats` for its chat list. The CONNECT frame needs the `X-XSRF-TOKEN` header. How it works is in [architecture.md](architecture.md#live-updates).

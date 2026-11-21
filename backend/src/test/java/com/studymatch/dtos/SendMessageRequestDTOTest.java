@@ -96,6 +96,17 @@ class SendMessageRequestDTOTest {
   }
 
   @Test
+  @DisplayName("An emoji counts as 2, like the text box's maxlength: 1000 fit, 1001 don't")
+  void emojiCountAsTwo() {
+    // Arrange
+    String emoji = Character.toString(0x1F600);
+
+    // Act + Assert
+    assertTrue(validate(emoji.repeat(1000)).isEmpty());
+    assertEquals(Size.class, onlyViolation(validate(emoji.repeat(1001))));
+  }
+
+  @Test
   @DisplayName("A missing message stays missing instead of crashing")
   void nullTextStaysNull() {
     // Act + Assert
