@@ -56,8 +56,8 @@ public class MessageService {
     return send(chatService.getOrCreateDirectChat(user, contact), user, text);
   }
 
-  // only the author edits, only the text. the open chat swaps it, the chat list isn't told since an edit notifies
-  // no one (GR10). the same text again changes nothing, so no "(edited)" on a message nobody changed
+  // only the author edits, only the text. the open chat swaps it, the chat list swaps the preview if it's the latest
+  // without moving the chat, an edit notifies no one (GR10). the same text again changes nothing, so no "(edited)"
   @Transactional
   public MessageDTO edit(Long chatId, Long messageId, User user, String text) {
     Chat chat = chatService.getChatFor(chatId, user);
@@ -72,6 +72,9 @@ public class MessageService {
     message.edit(text);
     MessageDTO edited = MessageDTO.from(message);
     eventPublisher.publishEvent(new ChatEvent(chat.getId(), ChatEventType.MESSAGE_EDITED, edited));
+    for (User member : chat.getMembers()) {
+      eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.MESSAGE_EDITED, edited));
+    }
     return edited;
   }
 
