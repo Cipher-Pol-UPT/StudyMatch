@@ -7,11 +7,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.MessageDTO;
+import com.studymatch.dtos.MessagePageDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
 import com.studymatch.events.UserChatEvent;
@@ -23,6 +25,8 @@ import com.studymatch.repositories.MessageRepository.ChatActivity;
 
 @Service
 public class MessageService {
+
+  private static final int MESSAGES_PER_PAGE = 50;
 
   private final MessageRepository messageRepository;
   private final ChatService chatService;
@@ -48,6 +52,19 @@ public class MessageService {
   public MessageDTO sendDirect(Long number, User user, String text) {
     User contact = userService.getChatContact(number, user);
     return send(chatService.getOrCreateDirectChat(user, contact), user, text);
+  }
+
+  // an open chat, 50 at a time going back. one extra is fetched to know if there's anything older
+  @Transactional(readOnly = true)
+  public MessagePageDTO getMessages(Long chatId, User user, Long before) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    Limit limit = Limit.of(MESSAGES_PER_PAGE + 1);
+    List<Message> newestFirst = before == null
+        ? messageRepository.findByChatOrderByIdDesc(chat, limit)
+        : messageRepository.findByChatAndIdLessThanOrderByIdDesc(chat, before, limit);
+    boolean hasMore = newestFirst.size() > MESSAGES_PER_PAGE;
+    List<MessageDTO> page = newestFirst.stream().limit(MESSAGES_PER_PAGE).map(MessageDTO::from).toList();
+    return new MessagePageDTO(page.reversed(), hasMore);
   }
 
   // the chat list, the latest message first. here and not in ChatService because every number in a row comes from

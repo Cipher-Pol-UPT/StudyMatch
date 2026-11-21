@@ -3,6 +3,8 @@ package com.studymatch.repositories;
 import java.util.Collection;
 import java.util.List;
 
+import org.springframework.data.domain.Limit;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -40,5 +42,13 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         and not exists (select s from ChatSettings s
           where s.chat = u.chat and s.user.number = :number and s.lastReadAt >= u.sentAt)""")
   long countUnread(Collection<Chat> chats, Long number);
+
+  // an open chat's newest messages, newest first
+  @EntityGraph(attributePaths = "author")
+  List<Message> findByChatOrderByIdDesc(Chat chat, Limit limit);
+
+  // scrolling up: the ones before the oldest on screen, by id so new messages don't shift the pages
+  @EntityGraph(attributePaths = "author")
+  List<Message> findByChatAndIdLessThanOrderByIdDesc(Chat chat, Long before, Limit limit);
 
 }

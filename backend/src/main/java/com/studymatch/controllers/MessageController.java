@@ -4,13 +4,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.studymatch.dtos.MessageDTO;
+import com.studymatch.dtos.MessagePageDTO;
 import com.studymatch.dtos.SendMessageRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
@@ -33,6 +36,18 @@ public class MessageController {
   public MessageController(MessageService messageService, UserService userService) {
     this.messageService = messageService;
     this.userService = userService;
+  }
+
+  // open a chat, then scroll up with the oldest id on screen as before. marking it read is a separate PUT
+  @GetMapping("{chatId}/messages")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "50 messages of a chat you're in, oldest first: the newest ones, or the ones before a message "
+      + "id when scrolling up. hasMore is false once the first message is in")
+  @ErrorCodes({ ErrorCode.NOT_FOUND })
+  public ResponseEntity<MessagePageDTO> getMessages(@PathVariable Long chatId,
+      @RequestParam(required = false) Long before, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(messageService.getMessages(chatId, user, before));
   }
 
   // send a message
