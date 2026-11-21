@@ -1,6 +1,6 @@
 import { useId,useState,type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { FieldError } from '../../api/errors';
+import type { ErrorCode, FieldError } from '../../api/errors';
 import { Button } from '../components/button/Button';
 import { PasswordField } from '../components/field/PasswordField';
 import { TextField } from '../components/field/TextField';
@@ -12,13 +12,15 @@ export interface FormFieldsProps {
   title?: ReactNode; fields: InputField[]; submitLabel: string;
   onSubmit: (values: Record<string, string>) => Promise<void>;
   fieldErrors?: FieldError[]; onCancel?: () => void;
+  // backend codes shown under a field instead of the banner
+  codeFields?: Partial<Record<ErrorCode, string>>;
 }
 
-export function FormFields({ title, fields, submitLabel, onSubmit, fieldErrors, onCancel }: FormFieldsProps) {
+export function FormFields({ title, fields, submitLabel, onSubmit, fieldErrors, onCancel, codeFields }: FormFieldsProps) {
   const { t } = useTranslation();
   const id = useId();
   const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(fields.map(f => [f.name, f.value ?? ''])));
-  const feedback = useFormFeedback(fieldErrors);
+  const feedback = useFormFeedback(fieldErrors, codeFields);
   return <form className="sm-auth__form" noValidate onSubmit={event => {
     event.preventDefault(); void feedback.submit(() => onSubmit(values));
   }}>
