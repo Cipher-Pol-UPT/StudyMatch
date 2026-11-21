@@ -165,4 +165,6 @@ A message is text (up to 2000 characters, counted in UTF-16 units like a text bo
 
 The chat list puts the chat with the latest message first. A message is unread for a member when someone else sent it after the member last opened the chat (their `lastReadAt`), so a chat they never opened counts every message from the others, and their own messages never count. A DM is listed under the other person's name and photo.
 
+An open chat loads 50 messages at a time, the newest first and older ones as the member scrolls up. Each older page starts before the oldest message on screen (by id, not by page number), so messages that arrive in the meantime don't shift it. Opening the chat sets the member's `lastReadAt` to now, and so does every message that arrives while it's on screen.
+
 Each member picks a notification level per chat: All (the default), Only @mentions or None. A chat has at most one unread notification per member, updated with the number of new messages and marked as read when the chat is opened (GR11).
