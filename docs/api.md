@@ -89,6 +89,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | Method | Path | Who | What it does |
 | --- | --- | --- | --- |
 | GET | `/tutors/me/subjects` | Student | the subjects you tutor |
+| GET | `/tutors/me/applicable-subjects` | Student | the subjects you passed, with your grade, position and whether you can apply to tutor them |
+| POST | `/tutor-applications/` | Student in the subject's top 5% | apply to tutor a subject, creating a Pending application |
 | POST | `/study-rooms/` | Student who tutors the subject | create a StudyRoom, with the tutor's Meet link or, without one, a link the server creates on Google |
 | GET | `/study-rooms/` | Student | the open StudyRooms (not cancelled, not completed), filtered by subject, tutor, topic or date |
 | GET | `/study-rooms/{id}` | Student | one StudyRoom's description, the tutor's rating in that subject, and whether you can join |
