@@ -20,7 +20,7 @@ The diagram shows the entities and how they relate. This page covers what it can
 | Assignment | Something graded in an edition: project, exam and so on, with a date and a weight. Group work also has a `GroupingRule` (min, optimal and max group size, same class or not, and pairs of students to keep apart). |
 | Grade | One student's grade (0 to 20, two decimals) on one assignment. |
 | Lesson, Absence | A lesson of a class at a given start time. Only absences are stored, each one justified or not. |
-| Personality profile | Four scores from the yearly personality test. |
+| Personality profile | Five scores from the yearly personality test. |
 | Special statute | Worker-student, athlete and so on, with an end date. A student has one at most, with no history. |
 | Tutor application, Tutor role | A student asks to tutor a subject they passed; the teacher approves it and the student gets the tutor role for that subject. |
 | StudyRoom, Participation, Rating | An online session a tutor hosts for one subject, the students who join it (and whether they attended), and their 1 to 5 star ratings. |
