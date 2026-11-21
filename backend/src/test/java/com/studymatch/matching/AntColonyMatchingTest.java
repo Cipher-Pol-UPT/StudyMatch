@@ -93,15 +93,15 @@ class AntColonyMatchingTest {
         () -> parallel.solve(problem, MatchingBudget.cpuTime(Duration.ofSeconds(1)), new Random(1)));
   }
 
-  @ParameterizedTest(name = "tabu {0}, rotations {1}, local fading {2}")
-  @CsvSource({ "10, 0, 0", "0, 0.5, 0", "0, 0, 0.1", "10, 0.5, 0.1" })
-  @DisplayName("Tabu search, rotations and local pheromone fading all give valid groups")
-  void localSearchVariantsAreValid(int tenure, double rotations, double localFade) {
-    // Arrange - 10% separated, so the separation checks of each variant get used
+  @ParameterizedTest(name = "temperature {0}")
+  @CsvSource({ "0", "0.2" })
+  @DisplayName("With or without the annealing-style local search the groups are valid")
+  void localSearchWithAndWithoutTemperature(double temperature) {
+    // Arrange - 10% separated, so the separation checks get used
     MatchingProblem problem = MatchingTestData.randomProblem(40, 0.1, 6, 3, 4, 5);
     AntColonyMatching.Settings defaults = AntColonyMatching.DEFAULTS;
-    AntColonyMatching variant = new AntColonyMatching(defaults.withLocalEvaporation(localFade).withLocalSearch(
-        defaults.localSearch().withTabu(tenure, 20).withRotationShare(rotations).withSteps(2_000)));
+    AntColonyMatching variant = new AntColonyMatching(defaults.withLocalSearch(
+        defaults.localSearch().withTemperature(temperature).withSteps(2_000)));
 
     // Act
     Grouping grouping = variant.solve(problem, MatchingBudget.evaluations(20_000), new Random(6));

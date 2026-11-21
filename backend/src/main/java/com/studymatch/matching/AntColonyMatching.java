@@ -11,47 +11,32 @@ public final class AntColonyMatching implements MatchingAlgorithm {
   // ants: per round; powers: how much the pheromone and the cost increase weigh when an ant picks a group;
   // evaporation, minPheromone: MAX-MIN pheromone; globalBestEvery: every this many rounds the best so far leaves the
   // pheromone instead of the round's best; stagnationRounds: rounds without a new best before the pheromone resets;
-  // fairnessWeight: how much an ant looks at the group averages while building; localEvaporation: Ant Colony
-  // System fade (0 is off); localSearch: how each grouping is polished
+  // fairnessWeight: how much an ant looks at the group averages while building; localSearch: how a grouping is
+  // polished
   public record Settings(int ants, double pheromonePower, double heuristicPower, double evaporation,
-      double minPheromone, int globalBestEvery, int stagnationRounds, double fairnessWeight, double localEvaporation,
+      double minPheromone, int globalBestEvery, int stagnationRounds, double fairnessWeight,
       LocalSearch.Settings localSearch) {
 
     public Settings withAnts(int value) {
       return new Settings(value, pheromonePower, heuristicPower, evaporation, minPheromone, globalBestEvery,
-          stagnationRounds, fairnessWeight, localEvaporation, localSearch);
+          stagnationRounds, fairnessWeight, localSearch);
     }
 
     public Settings withPheromonePower(double value) {
       return new Settings(ants, value, heuristicPower, evaporation, minPheromone, globalBestEvery, stagnationRounds,
-          fairnessWeight, localEvaporation, localSearch);
-    }
-
-    public Settings withSchedule(int globalBest, int stagnation) {
-      return new Settings(ants, pheromonePower, heuristicPower, evaporation, minPheromone, globalBest, stagnation,
-          fairnessWeight, localEvaporation, localSearch);
-    }
-
-    public Settings withFairnessWeight(double value) {
-      return new Settings(ants, pheromonePower, heuristicPower, evaporation, minPheromone, globalBestEvery,
-          stagnationRounds, value, localEvaporation, localSearch);
-    }
-
-    public Settings withLocalEvaporation(double value) {
-      return new Settings(ants, pheromonePower, heuristicPower, evaporation, minPheromone, globalBestEvery,
-          stagnationRounds, fairnessWeight, value, localSearch);
+          fairnessWeight, localSearch);
     }
 
     Settings withLocalSearch(LocalSearch.Settings value) {
       return new Settings(ants, pheromonePower, heuristicPower, evaporation, minPheromone, globalBestEvery,
-          stagnationRounds, fairnessWeight, localEvaporation, value);
+          stagnationRounds, fairnessWeight, value);
     }
 
   }
 
-  // the hybrid from the fourth tuning round: level with annealing on average, better worst case on typical classes
-  public static final Settings DEFAULTS = new Settings(10, 1, 1, 0.2, 0.01, 10, 50, 4, 0,
-      new LocalSearch.Settings(40_000, 0, 0.5, 0.2, 0, 0, 20));
+  // from MatchingTuning, with an annealing-style local search; see docs/group-matching.md
+  public static final Settings DEFAULTS = new Settings(10, 1, 1, 0.2, 0.01, 10, 50, 4,
+      new LocalSearch.Settings(40_000, 0.5, 0.2));
 
   // rounds in a row where every ant hit a dead end before giving up
   static final int MAX_EMPTY_ROUNDS = 20;
@@ -83,7 +68,7 @@ public final class AntColonyMatching implements MatchingAlgorithm {
       throw new IllegalStateException("parallel ants are measured on the clock, not on processor time");
     }
     Pheromone pheromone = new Pheromone(problem.size(), settings.minPheromone());
-    Ant ant = new Ant(problem, pheromone, settings, settings.localEvaporation() > 0 && !parallel);
+    Ant ant = new Ant(problem, pheromone, settings);
     Progress progress = new Progress();
     int emptyRounds = 0;
 
@@ -168,7 +153,7 @@ public final class AntColonyMatching implements MatchingAlgorithm {
       if (outcome == null) {
         continue;
       }
-      // the ant's own cost plus every step it tried
+      // the ant's own cost plus every swap it tried
       charge(budget, 1 + outcome.evaluations());
       if (best == null || outcome.polished().total() < best.polished().total()) {
         best = outcome;

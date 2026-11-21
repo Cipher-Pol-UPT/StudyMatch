@@ -37,15 +37,6 @@ final class Pheromone {
     return sum / members.size();
   }
 
-  // Ant Colony System: the pairs an ant just used fade towards the floor, so the next ants try other ones
-  void fade(int student, List<Integer> members, double share) {
-    for (int member : members) {
-      double faded = (1 - share) * levels[student][member] + share * floor;
-      levels[student][member] = faded;
-      levels[member][student] = faded;
-    }
-  }
-
   // everything evaporates a bit, then the pairs the grouping put together get more, kept between floor and ceiling
   void reinforce(Grouping grouping, double cost, double evaporation) {
     double deposit = 1 / (1 + cost);

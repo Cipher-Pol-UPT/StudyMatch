@@ -20,13 +20,14 @@ class GeneticMatchingTest {
 
   private static final long BUDGET = 2_000;
 
-  @ParameterizedTest(name = "{0} students, seed {1}, {2} local search steps")
-  @CsvSource({ "20, 1, 0", "61, 2, 0", "20, 3, 30", "61, 4, 30" })
+  private final GeneticMatching genetic = new GeneticMatching();
+
+  @ParameterizedTest(name = "{0} students, seed {1}")
+  @CsvSource({ "20, 1", "61, 2", "20, 3", "61, 4" })
   @DisplayName("Every student is placed once, within the sizes and away from who they're separated from")
-  void resultIsValid(int students, long seed, int localSearchSteps) {
-    // Arrange - 5% of the pairs separated; 0 steps is the plain genetic algorithm, more is memetic
+  void resultIsValid(int students, long seed) {
+    // Arrange - 5% of the pairs separated
     MatchingProblem problem = MatchingTestData.randomProblem(students, 0.05, seed, 3, 4, 5);
-    GeneticMatching genetic = new GeneticMatching(localSearchSteps);
 
     // Act
     Grouping grouping = genetic.solve(problem, MatchingBudget.evaluations(BUDGET), new Random(seed));
@@ -40,11 +41,10 @@ class GeneticMatchingTest {
   void sameSeedSameGroups() {
     // Arrange
     MatchingProblem problem = MatchingTestData.randomProblem(30, 0.05, 7, 3, 4, 5);
-    GeneticMatching memetic = new GeneticMatching(30);
 
     // Act
-    Grouping first = memetic.solve(problem, MatchingBudget.evaluations(BUDGET), new Random(42));
-    Grouping second = memetic.solve(problem, MatchingBudget.evaluations(BUDGET), new Random(42));
+    Grouping first = genetic.solve(problem, MatchingBudget.evaluations(BUDGET), new Random(42));
+    Grouping second = genetic.solve(problem, MatchingBudget.evaluations(BUDGET), new Random(42));
 
     // Assert
     for (int student = 0; student < problem.size(); student++) {

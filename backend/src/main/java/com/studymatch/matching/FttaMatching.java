@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.IntStream;
 
 // FTTA's three training phases on random keys: each player is a number per student, sorting them gives the groups
 public final class FttaMatching implements MatchingAlgorithm {
@@ -15,8 +14,6 @@ public final class FttaMatching implements MatchingAlgorithm {
   // individual training: the share of a player's numbers nudged, and by how much
   static final double TWEAK_SHARE = 0.1;
   static final double TWEAK_SIZE = 0.05;
-  // the sorting doesn't know about separations, so breaking one costs this much
-  static final double SEPARATION_PENALTY = 100;
 
   private final GreedyMatching greedy = new GreedyMatching();
 
@@ -24,11 +21,7 @@ public final class FttaMatching implements MatchingAlgorithm {
   public Grouping solve(MatchingProblem problem, MatchingBudget budget, Random random) {
     Squad squad = new Squad(problem, budget);
     for (int player = 0; player < PLAYERS; player++) {
-      double[] keys = new double[problem.size()];
-      for (int student = 0; student < keys.length; student++) {
-        keys[student] = random.nextDouble();
-      }
-      if (!squad.join(keys)) {
+      if (!squad.join(RandomKeys.random(problem.size(), random))) {
         break;
       }
     }
@@ -42,9 +35,8 @@ public final class FttaMatching implements MatchingAlgorithm {
       individualTraining(squad, random);
     }
 
-    Grouping best = new Grouping(squad.decode(squad.player(squad.star())), problem.getGroupCount());
-    SeparationRepair.repair(problem, best, random);
-    return MatchingCost.isValid(problem, best) ? best : greedy.solve(problem, budget, random);
+    Grouping best = RandomKeys.finish(problem, squad.player(squad.star()), random);
+    return best != null ? best : greedy.solve(problem, budget, random);
   }
 
   // everyone learns from the star: a random part of the way towards the best player
@@ -158,16 +150,8 @@ public final class FttaMatching implements MatchingAlgorithm {
       return star;
     }
 
-    // sort the students by their number, then fill the groups in that order
-    int[] decode(double[] keys) {
-      int[] order = IntStream.range(0, keys.length).boxed()
-          .sorted(Comparator.comparingDouble(student -> keys[student])).mapToInt(Integer::intValue).toArray();
-      return problem.fill(order);
-    }
-
     private double evaluate(double[] keys) {
-      Grouping grouping = new Grouping(decode(keys), problem.getGroupCount());
-      return MatchingCost.cost(problem, grouping) + SEPARATION_PENALTY * SeparationRepair.broken(problem, grouping);
+      return RandomKeys.score(problem, keys);
     }
 
   }

@@ -4,11 +4,8 @@ import java.util.Comparator;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-// for the algorithms that move vectors of numbers (PSO, black hole): a number per student, sorted, fills the groups
+// for the algorithms that move vectors of numbers (FTTA): a number per student, sorted, fills the groups
 final class RandomKeys {
-
-  // the filling doesn't know about separations, so breaking one costs this much
-  static final double SEPARATION_PENALTY = 100;
 
   private RandomKeys() {
   }
@@ -28,8 +25,7 @@ final class RandomKeys {
   }
 
   static double score(MatchingProblem problem, double[] keys) {
-    Grouping grouping = decode(problem, keys);
-    return MatchingCost.cost(problem, grouping) + SEPARATION_PENALTY * SeparationRepair.broken(problem, grouping);
+    return SeparationRepair.penalizedCost(problem, decode(problem, keys));
   }
 
   // the grouping of the best keys, with separations fixed; null if they can't be

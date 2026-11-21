@@ -3,8 +3,8 @@ package com.studymatch.matching;
 import java.util.List;
 import java.util.Random;
 
-// one change to a grouping that a search can try and take back: a swap, a move or a rotation
-sealed interface Step permits Step.Swap, Step.Move, Step.Rotation {
+// one change to a grouping that a search can try and take back: a swap or a move
+sealed interface Step permits Step.Swap, Step.Move {
 
   // within the sizes and nobody ends up with someone they're separated from
   boolean allowed(MatchingProblem problem, TrackedCost tracked);
@@ -36,17 +36,6 @@ sealed interface Step permits Step.Swap, Step.Move, Step.Rotation {
     List<Integer> group = source.members(source.groupOf(student));
     int leaving = group.get(random.nextInt(group.size()));
     return leaving == student ? null : new Swap(mate, leaving);
-  }
-
-  // a random step that's allowed, applied; NaN when none was found in a few tries
-  static double applyRandom(MatchingProblem problem, TrackedCost tracked, Random random) {
-    for (int attempt = 0; attempt < 20; attempt++) {
-      Step step = random(problem, tracked, random);
-      if (step.allowed(problem, tracked)) {
-        return step.apply(tracked);
-      }
-    }
-    return Double.NaN;
   }
 
   // two students in different groups trade places; sizes don't change
@@ -89,34 +78,6 @@ sealed interface Step permits Step.Swap, Step.Move, Step.Rotation {
     @Override
     public void undo(TrackedCost tracked) {
       tracked.move(student, from);
-    }
-
-  }
-
-  // three students in three groups: first into second's group, second into third's, third into first's
-  record Rotation(int first, int second, int third) implements Step {
-
-    @Override
-    public boolean allowed(MatchingProblem problem, TrackedCost tracked) {
-      int firstGroup = tracked.groupOf(first);
-      int secondGroup = tracked.groupOf(second);
-      int thirdGroup = tracked.groupOf(third);
-      return firstGroup != secondGroup && thirdGroup != firstGroup && thirdGroup != secondGroup
-          && tracked.canJoin(first, secondGroup, second) && tracked.canJoin(second, thirdGroup, third)
-          && tracked.canJoin(third, firstGroup, first);
-    }
-
-    // two swaps in a row end in the rotation
-    @Override
-    public double apply(TrackedCost tracked) {
-      tracked.swap(first, second);
-      return tracked.swap(second, third);
-    }
-
-    @Override
-    public void undo(TrackedCost tracked) {
-      tracked.swap(second, third);
-      tracked.swap(first, second);
     }
 
   }

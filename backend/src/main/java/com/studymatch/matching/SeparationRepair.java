@@ -7,7 +7,14 @@ import java.util.Random;
 // for the algorithms that fill groups by order (FTTA, genetic): the filling doesn't know about separations
 final class SeparationRepair {
 
+  // the filling doesn't know about separations, so breaking one costs this much while searching
+  static final double PENALTY = 100;
+
   private SeparationRepair() {
+  }
+
+  static double penalizedCost(MatchingProblem problem, Grouping grouping) {
+    return MatchingCost.cost(problem, grouping) + PENALTY * broken(problem, grouping);
   }
 
   static long broken(MatchingProblem problem, Grouping grouping) {

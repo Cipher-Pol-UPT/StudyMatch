@@ -63,25 +63,16 @@ public final class TrackedCost {
     return List.copyOf(members.get(group));
   }
 
-  // the group's own penalties, without the fairness terms that compare it to the others
-  public double penalty(int group) {
-    return penalties[group];
-  }
-
-  public int groupCount() {
-    return penalties.length;
-  }
-
   // a member of a group picked with odds by its penalty, so the groups paying the most get worked on first
   public int memberOfCostlyGroup(Random random) {
     double sum = 0;
     for (double penalty : penalties) {
       sum += penalty;
     }
-    int chosen = random.nextInt(groupCount());
+    int chosen = random.nextInt(penalties.length);
     if (sum > 0) {
       double spin = random.nextDouble() * sum;
-      for (int group = 0; group < groupCount() && spin >= 0; group++) {
+      for (int group = 0; group < penalties.length && spin >= 0; group++) {
         spin -= penalties[group];
         chosen = group;
       }

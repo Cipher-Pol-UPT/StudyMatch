@@ -11,14 +11,11 @@ final class Ant {
   private final MatchingProblem problem;
   private final Pheromone pheromone;
   private final AntColonyMatching.Settings settings;
-  // the Ant Colony System fade, only when ants build one by one: in parallel they'd all write the same pheromone
-  private final boolean fade;
 
-  Ant(MatchingProblem problem, Pheromone pheromone, AntColonyMatching.Settings settings, boolean fade) {
+  Ant(MatchingProblem problem, Pheromone pheromone, AntColonyMatching.Settings settings) {
     this.problem = problem;
     this.pheromone = pheromone;
     this.settings = settings;
-    this.fade = fade;
   }
 
   // null when a student ends up with nowhere to go
@@ -44,9 +41,6 @@ final class Ant {
         return null;
       }
       int chosen = pick(weights, total, random);
-      if (fade) {
-        pheromone.fade(student, drafts.get(chosen).students(), settings.localEvaporation());
-      }
       drafts.get(chosen).add(student);
       groupOf[student] = chosen;
     }
