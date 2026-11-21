@@ -17,6 +17,8 @@ import com.studymatch.dtos.MessagePageDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
 import com.studymatch.events.UserChatEvent;
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Chat;
 import com.studymatch.models.Message;
 import com.studymatch.models.User;
@@ -52,6 +54,25 @@ public class MessageService {
   public MessageDTO sendDirect(Long number, User user, String text) {
     User contact = userService.getChatContact(number, user);
     return send(chatService.getOrCreateDirectChat(user, contact), user, text);
+  }
+
+  // only the author edits, only the text. the open chat swaps it, the chat list isn't told since an edit notifies
+  // no one (GR10). the same text again changes nothing, so no "(edited)" on a message nobody changed
+  @Transactional
+  public MessageDTO edit(Long chatId, Long messageId, User user, String text) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    Message message = messageRepository.findByIdAndChat(messageId, chat)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    if (!message.getAuthor().getNumber().equals(user.getNumber())) {
+      throw new StudyMatchException(ErrorCode.NOT_MESSAGE_AUTHOR);
+    }
+    if (message.getText().equals(text)) {
+      return MessageDTO.from(message);
+    }
+    message.edit(text);
+    MessageDTO edited = MessageDTO.from(message);
+    eventPublisher.publishEvent(new ChatEvent(chat.getId(), ChatEventType.MESSAGE_EDITED, edited));
+    return edited;
   }
 
   // an open chat, 50 at a time going back. one extra is fetched to know if there's anything older

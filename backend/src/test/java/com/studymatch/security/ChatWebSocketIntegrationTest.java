@@ -48,6 +48,7 @@ import com.studymatch.events.ChatEvent;
 import com.studymatch.events.UserChatEvent;
 import com.studymatch.models.Degree;
 import com.studymatch.models.DirectChat;
+import com.studymatch.models.Message;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
@@ -396,6 +397,35 @@ class ChatWebSocketIntegrationTest {
     assertNotNull(read);
     assertEquals("CHAT_READ", read.get("type"));
     assertEquals(chat.getId().intValue(), read.get("payload"));
+  }
+
+  @Test
+  @DisplayName("An edit reaches the open chat with the new text, the chat list isn't told (GR10)")
+  void editedMessageIsPushed() throws Exception {
+    // Arrange
+    Message message = messageRepository.save(new Message(chat, ana, "see you at 10"));
+    StompSession session = connect(rui);
+    BlockingQueue<Map<String, Object>> chatTopic = subscribe(session, "/topic/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> chatList = subscribe(session, "/user/queue/chats");
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), chatTopic));
+    assertNotNull(publishUntilReceived(new UserChatEvent(rui, ChatEventType.CHAT_UPDATED, Map.of()), chatList));
+    chatTopic.clear();
+    chatList.clear();
+
+    // Act
+    int status = send("PUT", login(ana.getInstitutionalEmail()),
+        "/chats/" + chat.getId() + "/messages/" + message.getId(), "{\"text\":\"see you at 11\"}");
+
+    // Assert
+    assertEquals(200, status);
+    Map<String, Object> edited = chatTopic.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(edited);
+    assertEquals("MESSAGE_EDITED", edited.get("type"));
+    Map<?, ?> payload = (Map<?, ?>) edited.get("payload");
+    assertEquals(message.getId().intValue(), payload.get("id"));
+    assertEquals("see you at 11", payload.get("text"));
+    assertNotNull(payload.get("editedAt"));
+    assertNull(chatList.poll(500, TimeUnit.MILLISECONDS));
   }
 
   @Test

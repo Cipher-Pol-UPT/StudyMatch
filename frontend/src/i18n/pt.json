@@ -620,7 +620,8 @@
     "SUBJECT_NOT_TAUGHT_THIS_YEAR": "Esta unidade curricular não é lecionada este ano letivo.",
     "ACHIEVEMENT_NOT_EARNED": "Ainda não obteve uma destas conquistas.",
     "MEET_LINK_UNAVAILABLE": "Não foi possível criar a ligação do Google Meet neste momento. Cole a sua própria ligação para criar a StudyRoom.",
-    "DIRECT_CHAT_ALREADY_EXISTS": "Esta conversa acabou de ser iniciada pela outra pessoa. Envie a sua mensagem novamente."
+    "DIRECT_CHAT_ALREADY_EXISTS": "Esta conversa acabou de ser iniciada pela outra pessoa. Envie a sua mensagem novamente.",
+    "NOT_MESSAGE_AUTHOR": "Só quem enviou esta mensagem a pode alterar."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",

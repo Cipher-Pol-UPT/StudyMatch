@@ -2,6 +2,7 @@ package com.studymatch.repositories;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -50,5 +51,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
   // scrolling up: the ones before the oldest on screen, by id so new messages don't shift the pages
   @EntityGraph(attributePaths = "author")
   List<Message> findByChatAndIdLessThanOrderByIdDesc(Chat chat, Long before, Limit limit);
+
+  // a message of that chat, an id from another chat counts as missing
+  @EntityGraph(attributePaths = "author")
+  Optional<Message> findByIdAndChat(Long id, Chat chat);
 
 }
