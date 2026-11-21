@@ -33,6 +33,7 @@ import com.studymatch.models.Student;
 import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.models.Teacher;
+import com.studymatch.models.TutorApplication;
 import com.studymatch.repositories.AcademicYearRepository;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
@@ -41,6 +42,7 @@ import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.SubjectEditionRepository;
 import com.studymatch.repositories.SubjectRepository;
 import com.studymatch.repositories.TeacherRepository;
+import com.studymatch.repositories.TutorApplicationRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -70,6 +72,8 @@ class ApplyForTutoringIntegrationTest {
   private SubjectEditionRepository subjectEditionRepository;
   @Autowired
   private EnrolmentRepository enrolmentRepository;
+  @Autowired
+  private TutorApplicationRepository tutorApplicationRepository;
 
   private Teacher teacher;
   private Subject maths;
@@ -165,6 +169,24 @@ class ApplyForTutoringIntegrationTest {
     apply(maths.getId(), topSession)
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("TUTOR_APPLICATION_ALREADY_PENDING"));
+  }
+
+  @Test
+  @DisplayName("A rejected application doesn't block a new one, and the list still works after reapplying")
+  void rejectedDoesNotBlock() throws Exception {
+    // Arrange - the student was rejected before
+    TutorApplication rejected = new TutorApplication(topStudent, maths, "test motivation");
+    rejected.reject(teacher, "not good enough");
+    tutorApplicationRepository.saveAndFlush(rejected);
+
+    // Act - a rejected application doesn't block a new one
+    apply(maths.getId(), topSession).andExpect(status().isCreated());
+
+    // the list still works with two applications (one rejected, one pending)
+    mockMvc.perform(get("/tutors/me/applicable-subjects").with(csrf()).session(topSession))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].subjectId").value(maths.getId()))
+        .andExpect(jsonPath("$[0].hasPendingApplication").value(true));
   }
 
   @Test

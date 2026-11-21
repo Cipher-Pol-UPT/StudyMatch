@@ -24,6 +24,7 @@ import com.studymatch.dtos.TutorRankingDTO;
 import com.studymatch.enums.TutorApplicationStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
@@ -118,9 +119,14 @@ class TutorApplicationServiceTest {
     // Arrange
     Enrolment maths = passedEnrolment();
     Subject subject = maths.getSubjectEdition().getSubject();
+    AcademicYear year = maths.getSubjectEdition().getAcademicYear();
     when(enrolmentService.getPassedEnrolments(student)).thenReturn(List.of(maths));
     when(enrolmentService.getTutorRanking(maths)).thenReturn(new TutorRankingDTO(2, 40, true));
-    when(subjectEditionService.findCurrentEdition(subject)).thenReturn(Optional.of(maths.getSubjectEdition()));
+    when(tutorApplicationRepository.findByStudentNumberAndStatus(STUDENT_NUMBER, TutorApplicationStatus.PENDING))
+        .thenReturn(List.of());
+    when(tutorRoleService.getTutoredSubjects(STUDENT_NUMBER)).thenReturn(List.of());
+    when(subjectEditionService.findCurrentYear()).thenReturn(Optional.of(year));
+    when(subjectEditionService.hasEdition(subject, year)).thenReturn(true);
 
     // Act
     List<TutorEligibleSubjectDTO> result = tutorApplicationService.listApplicableSubjects(student);
@@ -182,11 +188,10 @@ class TutorApplicationServiceTest {
   void pendingApplicationCannotApply() {
     // Arrange
     Enrolment maths = passedEnrolment();
-    TutorApplication pending = new TutorApplication(student, maths.getSubjectEdition().getSubject(), "test motivation");
     when(enrolmentService.getPassedEnrolment(student, SUBJECT_ID)).thenReturn(maths);
     when(enrolmentService.getTutorRanking(maths)).thenReturn(new TutorRankingDTO(1, 10, true));
-    when(tutorApplicationRepository.findByStudentNumberAndSubjectId(STUDENT_NUMBER, SUBJECT_ID))
-        .thenReturn(Optional.of(pending));
+    when(tutorApplicationRepository.existsByStudentNumberAndSubjectIdAndStatus(STUDENT_NUMBER, SUBJECT_ID,
+        TutorApplicationStatus.PENDING)).thenReturn(true);
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
@@ -194,6 +199,29 @@ class TutorApplicationServiceTest {
 
     // Assert
     assertEquals(ErrorCode.TUTOR_APPLICATION_ALREADY_PENDING, e.getCode());
+  }
+
+  @Test
+  @DisplayName("A rejected application doesn't block a new one")
+  void rejectedApplicationDoesNotBlock() {
+    // Arrange - the student was rejected before, so no pending application exists
+    Enrolment maths = passedEnrolment();
+    Subject subject = maths.getSubjectEdition().getSubject();
+    when(enrolmentService.getPassedEnrolment(student, SUBJECT_ID)).thenReturn(maths);
+    when(enrolmentService.getTutorRanking(maths)).thenReturn(new TutorRankingDTO(1, 10, true));
+    when(tutorApplicationRepository.existsByStudentNumberAndSubjectIdAndStatus(STUDENT_NUMBER, SUBJECT_ID,
+        TutorApplicationStatus.PENDING)).thenReturn(false);
+    when(subjectEditionService.findCurrentEdition(subject)).thenReturn(Optional.of(maths.getSubjectEdition()));
+    when(tutorApplicationRepository.save(any(TutorApplication.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    // Act
+    TutorApplicationDTO result = tutorApplicationService.apply(student,
+        new ApplyTutorRequestDTO(SUBJECT_ID, "test motivation"));
+
+    // Assert
+    assertEquals(TutorApplicationStatus.PENDING, result.status());
+    verify(tutorApplicationRepository).save(any(TutorApplication.class));
   }
 
   @Test

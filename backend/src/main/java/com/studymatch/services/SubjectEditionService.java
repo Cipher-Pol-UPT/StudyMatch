@@ -62,8 +62,18 @@ public class SubjectEditionService {
 
   // apply for tutoring (#41): empty when the subject isn't taught in the current academic year
   public Optional<SubjectEdition> findCurrentEdition(Subject subject) {
-    return academicYearService.findCurrent()
+    return findCurrentYear()
         .flatMap(year -> subjectEditionRepository.findBySubjectAndAcademicYear(subject, year));
+  }
+
+  // apply for tutoring (#41): the newest year, fetched once so a list doesn't look it up per subject
+  public Optional<AcademicYear> findCurrentYear() {
+    return academicYearService.findCurrent();
+  }
+
+  // apply for tutoring (#41): whether the subject has an edition for a specific year
+  public boolean hasEdition(Subject subject, AcademicYear year) {
+    return subjectEditionRepository.existsBySubjectAndAcademicYear(subject, year);
   }
 
   // past editions keep their teachers. With no teachers the model refuses it (AT_LEAST_ONE_TEACHER_REQUIRED)

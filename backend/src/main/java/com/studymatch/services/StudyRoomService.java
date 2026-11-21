@@ -38,18 +38,16 @@ public class StudyRoomService {
   private final TutorRoleService tutorRoleService;
   private final RatingService ratingService;
   private final EnrolmentService enrolmentService;
-  private final ParticipationService participationService;
   private final ApplicationEventPublisher eventPublisher;
   private final MeetLinkGenerator meetLinkGenerator;
 
   public StudyRoomService(StudyRoomRepository studyRoomRepository, TutorRoleService tutorRoleService,
-      RatingService ratingService, EnrolmentService enrolmentService, ParticipationService participationService,
-      ApplicationEventPublisher eventPublisher, MeetLinkGenerator meetLinkGenerator) {
+      RatingService ratingService, EnrolmentService enrolmentService, ApplicationEventPublisher eventPublisher,
+      MeetLinkGenerator meetLinkGenerator) {
     this.studyRoomRepository = studyRoomRepository;
     this.tutorRoleService = tutorRoleService;
     this.ratingService = ratingService;
     this.enrolmentService = enrolmentService;
-    this.participationService = participationService;
     this.eventPublisher = eventPublisher;
     this.meetLinkGenerator = meetLinkGenerator;
   }
@@ -217,11 +215,10 @@ public class StudyRoomService {
   }
 
   @Transactional
-  public StudyRoomDTO leave(Long studentNumber, Long roomId) {
+  public StudyRoomDTO leave(Student student, Long roomId) {
     StudyRoom room = studyRoomRepository.findById(roomId)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
     // the model checks it's still open, not started, and the student is a participant
-    Student student = participationService.getParticipation(roomId, studentNumber).getStudent();
     room.leave(student);
     // notifying the tutor comes with notifications (#144)
     return StudyRoomDTO.from(studyRoomRepository.save(room));
