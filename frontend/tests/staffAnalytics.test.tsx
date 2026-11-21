@@ -26,11 +26,11 @@ const analytics: AnalyticsData = {
 };
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
-// answers GET /analytics/ with whatever the test gives for the query
+// answers GET /groups/analytics with whatever the test gives for the query
 function backend(answer: (query: URLSearchParams) => AnalyticsData = () => analytics) {
   const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
     const url = new URL(String(input), 'https://test.invalid');
-    if (url.pathname === '/api/analytics/') return reply(answer(url.searchParams));
+    if (url.pathname === '/api/groups/analytics') return reply(answer(url.searchParams));
     throw new Error(`Unexpected request: ${init?.method ?? 'GET'} ${url.pathname}`);
   });
   vi.stubGlobal('fetch', fetchMock);
@@ -106,7 +106,7 @@ describe('view analytics (staff)', () => {
 
     fireEvent.change(screen.getByLabelText('Subject'), { target: { value: '11' } });
 
-    await waitFor(() => expect(fetchMock.mock.calls.some(([input]) => String(input).endsWith('/analytics/?subjectEditionId=11'))).toBe(true));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([input]) => String(input).endsWith('/groups/analytics?subjectEditionId=11'))).toBe(true));
     expect(groupNames()).toContain('Test Project · group 1');
     const classes = within(screen.getByLabelText('Class')).getAllByRole('option').map(option => option.textContent);
     expect(classes).toEqual(['All classes', 'T1', 'T2']);
@@ -119,7 +119,7 @@ describe('view analytics (staff)', () => {
 
     fireEvent.change(await screen.findByLabelText('Subject'), { target: { value: '' } });
 
-    await waitFor(() => expect(fetchMock.mock.calls.at(-1)?.[0]).toMatch(/\/analytics\/$/));
+    await waitFor(() => expect(fetchMock.mock.calls.at(-1)?.[0]).toMatch(/\/groups\/analytics$/));
   });
 
   it('suggests a broader selection when nobody is in it', async () => {
