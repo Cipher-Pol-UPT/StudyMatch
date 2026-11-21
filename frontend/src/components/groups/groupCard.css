@@ -1,0 +1,4 @@
+.group-card { display: grid; gap: 12px; }
+.group-card__members { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.group-card__members li { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.group-card__why { display: flex; align-items: center; gap: 8px; margin: 0; }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -314,6 +315,50 @@ class GenerateGroupsIntegrationTest {
     publish(project(3, 4, 5))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("NO_DRAFT_GROUPS"));
+  }
+
+  private ResultActions plan(Assignment assignment) throws Exception {
+    return mockMvc.perform(get(groupsUrl(assignment) + "/generation").session(loginAs(TEACHER)));
+  }
+
+  @Test
+  @DisplayName("Before generating: 8 students in 2 groups of 4, the blocked one left out, searching the whole 200 ms")
+  void planBeforeGenerating() throws Exception {
+    plan(project(3, 4, 5))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.students").value(8))
+        .andExpect(jsonPath("$.groups").value(2))
+        .andExpect(jsonPath("$.optimalSize").value(4))
+        .andExpect(jsonPath("$.searchMillis").value(200));
+  }
+
+  @Test
+  @DisplayName("Everyone in one group: nothing to search, 0 ms")
+  void planOneGroup() throws Exception {
+    plan(project(5, 8, 9))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.groups").value(1))
+        .andExpect(jsonPath("$.searchMillis").value(0));
+  }
+
+  @Test
+  @DisplayName("A class that can't be split plans no groups, generating says why")
+  void planWithoutValidSplit() throws Exception {
+    plan(project(5, 5, 5))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.groups").value(0))
+        .andExpect(jsonPath("$.searchMillis").value(0));
+  }
+
+  @Test
+  @DisplayName("Planning an exam is 400 ASSIGNMENT_NOT_GROUP_WORK")
+  void planExam() throws Exception {
+    Assignment exam = assignmentRepository.save(new Assignment(edition, "Exam", AssignmentType.EXAM,
+        LocalDate.of(2095, 1, 20), new BigDecimal("0.60"), null));
+
+    plan(exam)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("ASSIGNMENT_NOT_GROUP_WORK"));
   }
 
   @Test

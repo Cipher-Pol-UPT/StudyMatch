@@ -1,6 +1,7 @@
 package com.studymatch.services;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -9,10 +10,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.dtos.GroupGenerationDTO;
 import com.studymatch.dtos.GroupPreviewDTO;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
@@ -60,16 +63,11 @@ public class GroupService {
     if (!replacePublished && groupRepository.existsByAssignmentAndStatus(assignment, GroupStatus.PUBLISHED)) {
       throw new StudyMatchException(ErrorCode.GROUPS_ALREADY_PUBLISHED);
     }
-    // blocked accounts aren't placed in new groups (GR5)
-    List<Enrolment> enrolments = enrolmentService.listEnrolments(subjectEditionId).stream()
-        .filter(enrolment -> !enrolment.getStudent().isBlocked())
-        .sorted(Comparator.comparing(enrolment -> enrolment.getStudent().getNumber()))
-        .toList();
+    List<Enrolment> enrolments = groupable(subjectEditionId);
     if (enrolments.size() < rule.getMinSize()) {
       throw new StudyMatchException(ErrorCode.NOT_ENOUGH_STUDENTS_FOR_GROUPS);
     }
-    Long categoryId = assignment.getSubjectEdition().getSubject().getCategory().getId();
-    List<Candidate> candidates = enrolments.stream().map(enrolment -> toCandidate(enrolment, categoryId)).toList();
+    List<Candidate> candidates = candidates(assignment, enrolments);
     List<List<Integer>> groups = generate(candidates, separations(rule, enrolments), rule);
 
     groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.DRAFT);
@@ -83,6 +81,25 @@ public class GroupService {
       previews.add(preview(index + 1, groups.get(index), enrolments));
     }
     return previews;
+  }
+
+  // generate groups, before generating: about how many groups and how long the search takes, for the page's loader
+  @Transactional(readOnly = true)
+  public GroupGenerationDTO planGroups(Long subjectEditionId, Long assignmentId) {
+    Assignment assignment = assignmentService.getAssignment(subjectEditionId, assignmentId);
+    GroupingRule rule = assignment.getGroupingRule();
+    if (rule == null) {
+      throw new StudyMatchException(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK);
+    }
+    List<Enrolment> enrolments = groupable(subjectEditionId);
+    // only the class sizes: the evidence each student's grouping needs is generate's to load
+    List<Integer> classSizes = rule.isSameClass()
+        ? enrolments.stream().collect(Collectors.groupingBy(enrolment -> enrolment.getClassSection().getCode(),
+            Collectors.summingInt(enrolment -> 1))).values().stream().toList()
+        : List.of(enrolments.size());
+    GroupGenerator.Plan plan = enrolments.isEmpty() ? new GroupGenerator.Plan(0, Duration.ZERO)
+        : groupGenerator.estimate(classSizes, rule.getMinSize(), rule.getOptimalSize(), rule.getMaxSize());
+    return new GroupGenerationDTO(enrolments.size(), plan.groups(), rule.getOptimalSize(), plan.search().toMillis());
   }
 
   // generate groups, confirm: the drafts replace whatever was published before
@@ -115,6 +132,19 @@ public class GroupService {
     } catch (UnmetSeparationsException e) {
       throw new StudyMatchException(ErrorCode.SEPARATIONS_CANNOT_BE_MET);
     }
+  }
+
+  // blocked accounts aren't placed in new groups (GR5)
+  private List<Enrolment> groupable(Long subjectEditionId) {
+    return enrolmentService.listEnrolments(subjectEditionId).stream()
+        .filter(enrolment -> !enrolment.getStudent().isBlocked())
+        .sorted(Comparator.comparing(enrolment -> enrolment.getStudent().getNumber()))
+        .toList();
+  }
+
+  private List<Candidate> candidates(Assignment assignment, List<Enrolment> enrolments) {
+    Long categoryId = assignment.getSubjectEdition().getSubject().getCategory().getId();
+    return enrolments.stream().map(enrolment -> toCandidate(enrolment, categoryId)).toList();
   }
 
   private Candidate toCandidate(Enrolment enrolment, Long categoryId) {
