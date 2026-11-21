@@ -175,21 +175,17 @@ class CreateStudyRoomRequestDTOTest {
   }
 
   @Test
-  @DisplayName("The link is required")
-  void missingLinkIsInvalid() {
+  @DisplayName("No link is valid, the server creates the Meet link (#268)")
+  void missingLinkIsValid() {
     // Act + Assert
-    assertOnlyViolation(withLink(null), "link");
+    assertTrue(validator.validate(withLink(null)).isEmpty());
   }
 
   @Test
-  @DisplayName("A blank link is invalid")
+  @DisplayName("A blank link is invalid, leaving it out is how to ask for a generated one")
   void blankLinkIsInvalid() {
-    // Act - blank also fails the Meet pattern
-    Set<ConstraintViolation<CreateStudyRoomRequestDTO>> violations = validator.validate(withLink(" "));
-
-    // Assert
-    assertEquals(2, violations.size());
-    assertTrue(violations.stream().allMatch(v -> v.getPropertyPath().toString().equals("link")));
+    // Act + Assert - only the Meet pattern catches it now
+    assertOnlyViolation(withLink(" "), "link");
   }
 
   private void assertOnlyViolation(CreateStudyRoomRequestDTO request, String field) {

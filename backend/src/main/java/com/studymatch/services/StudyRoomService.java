@@ -28,6 +28,7 @@ import com.studymatch.models.StudyRoom;
 import com.studymatch.models.Subject;
 import com.studymatch.models.TutorRole;
 import com.studymatch.repositories.StudyRoomRepository;
+import com.studymatch.utils.MeetLinkGenerator;
 import com.studymatch.utils.SearchPatterns;
 
 @Service
@@ -39,16 +40,18 @@ public class StudyRoomService {
   private final EnrolmentService enrolmentService;
   private final ParticipationService participationService;
   private final ApplicationEventPublisher eventPublisher;
+  private final MeetLinkGenerator meetLinkGenerator;
 
   public StudyRoomService(StudyRoomRepository studyRoomRepository, TutorRoleService tutorRoleService,
       RatingService ratingService, EnrolmentService enrolmentService, ParticipationService participationService,
-      ApplicationEventPublisher eventPublisher) {
+      ApplicationEventPublisher eventPublisher, MeetLinkGenerator meetLinkGenerator) {
     this.studyRoomRepository = studyRoomRepository;
     this.tutorRoleService = tutorRoleService;
     this.ratingService = ratingService;
     this.enrolmentService = enrolmentService;
     this.participationService = participationService;
     this.eventPublisher = eventPublisher;
+    this.meetLinkGenerator = meetLinkGenerator;
   }
 
   @Transactional
@@ -68,6 +71,11 @@ public class StudyRoomService {
           "subject", conflict.getTutorRole().getSubject().getName(),
           "startsAt", conflict.getStartsAt().toString(),
           "endsAt", conflict.getEndsAt().toString()));
+    }
+
+    // last, so Google is only asked for a room that will be saved
+    if (request.link() == null) {
+      room.useGeneratedLink(meetLinkGenerator.createLink());
     }
 
     return StudyRoomDTO.from(studyRoomRepository.save(room));
