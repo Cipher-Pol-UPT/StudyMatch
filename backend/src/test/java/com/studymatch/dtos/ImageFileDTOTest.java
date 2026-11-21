@@ -2,6 +2,7 @@ package com.studymatch.dtos;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,40 @@ class ImageFileDTOTest {
     // Assert
     assertEquals("image/jpeg", image.contentType());
     assertArrayEquals(new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF }, image.bytes());
+  }
+
+  @Test
+  @DisplayName("Two images with the same type and bytes are equal, even as different arrays")
+  void equalByContent() {
+    // Arrange
+    ImageFileDTO image = new ImageFileDTO("image/png", new byte[] { 1, 2, 3 });
+    ImageFileDTO same = new ImageFileDTO("image/png", new byte[] { 1, 2, 3 });
+
+    // Act + Assert
+    assertEquals(image, same);
+    assertEquals(image.hashCode(), same.hashCode());
+  }
+
+  @Test
+  @DisplayName("Other bytes, another type or something that isn't an image: not equal")
+  void notEqual() {
+    // Arrange
+    ImageFileDTO image = new ImageFileDTO("image/png", new byte[] { 1, 2, 3 });
+
+    // Act + Assert
+    assertNotEquals(image, new ImageFileDTO("image/png", new byte[] { 1, 2, 4 }));
+    assertNotEquals(image, new ImageFileDTO("image/jpeg", new byte[] { 1, 2, 3 }));
+    assertNotEquals(image, "image/png");
+  }
+
+  @Test
+  @DisplayName("toString shows the size, not the bytes")
+  void toStringShowsSize() {
+    // Arrange
+    ImageFileDTO image = new ImageFileDTO("image/png", new byte[1024]);
+
+    // Act + Assert
+    assertEquals("ImageFileDTO[contentType=image/png, bytes=1024]", image.toString());
   }
 
 }
