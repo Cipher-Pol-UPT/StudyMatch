@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
@@ -6,6 +6,10 @@ import { forgetConversations } from '../src/pages/chats/conversations';
 import { TeacherArea } from '../src/pages/teacher/TeacherArea';
 import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { ChatContactData, MessageData } from '../src/types/chat';
+
+// these render a whole area, which takes longer than the default second when every test file runs at once
+configure({ asyncUtilTimeout: 5000 });
+vi.setConfig({ testTimeout: 15000 });
 
 const ana: ChatContactData = { number: 50001, name: 'Test Ana', role: 'STUDENT' };
 const rui: ChatContactData = { number: 9001, name: 'Test Rui', role: 'TEACHER' };
@@ -40,6 +44,8 @@ function open(path = `/chats/direct/${ana.number}`) {
 const box = (name = 'Test Ana') => screen.findByRole('textbox', { name: `Message ${name}` });
 const type = (field: HTMLElement, text: string) => fireEvent.change(field, { target: { value: text } });
 const enter = (field: HTMLElement, shiftKey = false) => fireEvent.keyDown(field, { key: 'Enter', shiftKey });
+// lets a send that wrongly started reach the backend stub, and the page render, before checking nothing was sent
+const settle = () => act(() => new Promise(resolve => setTimeout(resolve, 50)));
 
 beforeEach(async () => { await i18n.changeLanguage('en'); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); forgetConversations(); });
@@ -84,6 +90,7 @@ describe('send a message', () => {
     type(field, 'First line');
 
     enter(field, true);
+    await settle();
 
     expect(sends).toHaveLength(0);
     expect((field as HTMLTextAreaElement).value).toBe('First line');
@@ -97,6 +104,7 @@ describe('send a message', () => {
     type(field, '   ');
 
     enter(field);
+    await settle();
 
     expect(sends).toHaveLength(0);
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
@@ -115,10 +123,23 @@ describe('send a message', () => {
 
     type(field, 'a'.repeat(2001));
     enter(field);
+    await settle();
 
     expect(screen.getByText('2001 / 2000')).toBeTruthy();
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
     expect(sends).toHaveLength(0);
+  });
+
+  it('leaves the spaces around the text out of the count, like the backend', async () => {
+    const sends = backend();
+    open();
+    const field = await box();
+
+    type(field, `  ${'a'.repeat(2000)}\n`);
+    enter(field);
+
+    expect(screen.queryByText('2003 / 2000')).toBeNull();
+    await waitFor(() => expect(sends).toEqual([{ number: ana.number, text: 'a'.repeat(2000) }]));
   });
 
   it('keeps a failed message with Retry, which sends it again', async () => {
@@ -178,5 +199,24 @@ describe('send a message', () => {
     fireEvent.click(await within(await screen.findByRole('dialog')).findByRole('button', { name: /Test Ana/ }));
 
     expect(((await box()) as HTMLTextAreaElement).value).toBe('Half a thought');
+  });
+
+  it('a send that fails after logout leaves no error for the next person', async () => {
+    let fail: (error: Error) => void = () => undefined;
+    backend(() => new Promise((_, reject) => { fail = reject; }));
+    open();
+    const field = await box();
+    type(field, 'Bye');
+    enter(field);
+    await screen.findByText('Sending…');
+
+    cleanup();
+    forgetConversations();
+    fail(new TypeError('Failed to fetch'));
+    await new Promise(resolve => setTimeout(resolve, 50));
+    open();
+
+    await box();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

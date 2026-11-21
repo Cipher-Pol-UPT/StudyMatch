@@ -40,4 +40,7 @@ public abstract class Chat {
   // who gets the chat list updates
   public abstract List<User> getMembers();
 
+  // what the chat list calls it, a DM is named after the other person so it depends on who's looking
+  public abstract String getNameFor(User viewer);
+
 }
