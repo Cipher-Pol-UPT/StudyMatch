@@ -4,7 +4,7 @@
 
 ![StudyMatch class diagram](SM_ClassDiagram.svg)
 
-The diagram shows the entities and how they relate. This page covers what it can't: how the numbers on a student's profile are worked out, what happens when there's no data yet, and the rules the use cases depend on. The use cases themselves are the GitHub issues, and the business rules they share are numbered GR1 to GR7. Where a rule belongs to a use case that isn't built yet, the issue number is next to it.
+The diagram shows the entities and how they relate. This page covers what it can't: how the numbers on a student's profile are worked out, what happens when there's no data yet, and the rules the use cases depend on. The use cases themselves are the GitHub issues, and the business rules they share are numbered GR1 to GR11. Where a rule belongs to a use case that isn't built yet, the issue number is next to it.
 
 ## The concepts
 
@@ -26,6 +26,7 @@ The diagram shows the entities and how they relate. This page covers what it can
 | StudyRoom, Participation, Rating | An online session a tutor hosts for one subject, the students who join it (and whether they attended), and their 1 to 5 star ratings. |
 | Earned achievement | An achievement a tutor earned, with the date and a verification code for the certificate. |
 | Group | A group of students for one group assignment. |
+| Chat, Message, Chat settings | A DM between two users (more kinds of chat come with their issues), the messages in it, and each member's own settings for it: when they last read it and their notification level. |
 
 ## The student profile
 
@@ -91,11 +92,19 @@ Students can only be enrolled in editions of the current year (`SUBJECT_EDITION_
 
 A student is enrolled in one class of an edition. Enrolling skips anyone already in that edition or who has already passed the subject. A student who failed can enrol again in a later edition, and the failed attempt stays in their history. We don't check the degree, because students can take optional subjects from other degrees.
 
+Staff can move an enrolled student to another class of the same edition (the student record's enrolments carry the edition id for that). A class of another edition gives `CLASS_SECTION_NOT_IN_SUBJECT_EDITION`, and like enrolling, only editions of the current year can change (`SUBJECT_EDITION_NOT_CURRENT`). The enrolment itself moves, so its grades and final grade stay. Its absences stay stored too, but attendance only counts the lessons and absences of the class the student is in now, so after the move it starts again from the new class's lessons. Correcting a lesson of the old class doesn't touch the absences of someone who left it.
+
 ## Tutors and StudyRooms
 
 A student can apply to tutor a subject they passed if their final grade is in the top 5% of the edition they took it in (#41). The cut-off is rounded up with at least one student, and everyone tied at the cut-off is eligible. There's no minimum grade. The teacher of the subject's current edition approves or rejects the application (#81).
 
-A tutor can create StudyRooms for the subjects they tutor (built). A room can't start in the past or end before it starts, and a tutor can't have two rooms at overlapping times.
+A tutor can create StudyRooms for the subjects they tutor (built). A room can't start in the past or end before it starts, and a tutor can't have two rooms at overlapping times. The tutor pastes their own Google Meet link, or leaves it out and the server creates one (#268): an open Meet space on the StudyMatch Google account, so the students join without knocking even though nobody from that account is in the call. The link isn't tied to a date, the room's date and time are the StudyRoom's. Google is only asked once the room passed every check, and gets 5 seconds to connect and 5 to answer. If it can't make the link (not set up, unreachable, too slow or refused) the room isn't created and the tutor gets `MEET_LINK_UNAVAILABLE`, so they can paste their own.
+
+A student opens the StudyRooms calendar (`GET /study-rooms/`), which shows every room that isn't cancelled or completed — subject, tutor, date, time and places left, sorted by start — and filters it by subject, tutor, topic or date. A room stays on the calendar until it's cancelled or its 48-hour confirmation window closes, the same moment its status becomes Completed. Picking one (`GET /study-rooms/{id}`) shows its full description, the tutor's average rating in that subject (the same number the profile badge shows), and whether the student can join it: not the tutor, not already joined, still open and not started, and enrolled in the subject's current edition without having passed it. The meeting link is only sent to the tutor and the students who already joined, in the calendar and in the detail. Tutors see the rooms they host in the same calendar and open their participants from there (`GET /study-rooms/{id}/participants`).
+
+A student who joined a StudyRoom can leave it (`POST /study-rooms/{id}/leave`) before it starts, which frees their place and makes a full room Scheduled again. Only a participant can leave (`NOT_A_PARTICIPANT` otherwise), and once the room has started it's too late (`STUDYROOM_ALREADY_STARTED`).
+
+A student joins a StudyRoom (`POST /study-rooms/{id}/join`) before it starts, as long as they're enrolled in the subject's current edition and haven't passed it (`NOT_ELIGIBLE_FOR_STUDYROOM` otherwise). They can't be in two rooms at the same time (`JOINED_STUDYROOM_OVERLAP` names the conflicting room), and the model refuses their own room (`TUTOR_CANNOT_JOIN_OWN_STUDYROOM`), a full one (`STUDYROOM_FULL`) and joining twice (`ALREADY_JOINED_STUDYROOM`).
 
 Once a room has ended, its tutor ticks who actually came (`POST /study-rooms/{id}/attendance` with their student numbers, the list comes from `GET /study-rooms/{id}/participants`). Everyone else counts as absent, and the room becomes Completed, so it can only be confirmed once. Ticking someone who never joined gives `ATTENDEE_NOT_A_PARTICIPANT`. The tutor has 48 hours after the end. After that the room is Completed with nobody attended, and confirming gives `STUDYROOM_CLOSED`. Nothing runs at the 48-hour mark: the status is worked out when the room is read, the same way Full is. Only the people who attended can rate the tutor. Confirming also checks the tutor's achievements (see below). Telling the attendees they can rate waits for the notifications (#144).
 
@@ -112,7 +121,9 @@ Tutors earn achievements automatically. Only StudyRooms with at least two confir
 | Top Rated | an average of 4.5 or more in a subject, from at least 5 different students |
 | Mentor | 15 different students tutored |
 
-Each one has a verification code, so the PDF certificate (#32) can be checked.
+Each one has a verification code, so the PDF certificate can be checked. Only the student who earned it ever gets the code, through `GET /achievements/me`, which lists all four achievements in a fixed order with the date and code on the ones they earned. The public profile shows the earned achievements but never their codes.
+
+A student exports one achievement as a certificate (A4 landscape), or several as a record on one page (A4 portrait) with its own code. The PDF has a QR code and the link written out to `/verify/{code}` on the frontend, a public page that asks `GET /achievements/certificates/{code}`, no login needed. The first time an achievement goes on a certificate, the tutor's figures are saved with it (counted rooms, students tutored, and their best rated subject with its average), and later certificates show those same figures, so a printed certificate and its verify page always agree.
 
 ## Blocked accounts
 
@@ -127,3 +138,15 @@ Unblocking (`PUT /users/{number}/unblock`) makes the account active again and cl
 ## Groups
 
 Groups are generated per group assignment (#57). Blocked accounts aren't placed in new groups but keep their old ones (GR5), every group shares at least one language (GR4), and students with a special statute are placed last, filling the groups that need members (GR7). The teacher reviews the draft groups and can edit them before publishing.
+
+## Chats
+
+There are three kinds of chat: DMs, group chats a user creates (#226), and one chat per assignment group (#236). How messages reach the browser live is in [architecture.md](architecture.md#live-updates).
+
+Only Students and Teachers take part in chats; Staff and Admin don't. A DM is between exactly two users, one per pair, so whoever starts it, it's the same chat. A group chat has 2 to 20 members. An assignment group chat's members are always the group's current members, and only Students. Members see the whole history, including what was sent before they joined, and someone who stops being a member loses access to the chat and its history straight away. Asking for a chat you're not in gives `NOT_FOUND`, the same as a chat that doesn't exist, so nobody can find out which chats exist (GR8).
+
+Any user can block any other user. A blocked user can't send DMs to the user who blocked them, and can't add them to a group chat. The DM is hidden for the user who blocked while the block lasts. Group chats they already share aren't affected (GR9).
+
+A message is text (up to 2000 characters) with up to 5 attachments, or one GIF, or one sticker, and never empty. Attachments are PNG, JPEG, GIF, WebP, PDF, Office documents (docx, xlsx, pptx) or plain text, up to 10 MB each, checked by their file signature. Only the author edits a message, only its text, and an edited message shows "(edited)". Only the author deletes a message, and deleting removes it, its attachments and its reactions for good, with no notice to anyone (GR10).
+
+Each member picks a notification level per chat: All (the default), Only @mentions or None. A chat has at most one unread notification per member, updated with the number of new messages and marked as read when the chat is opened (GR11).

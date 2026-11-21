@@ -1,6 +1,7 @@
 import { CalendarPlus,Video } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isBackendError } from '../../../api/errors';
 import type { FormFeedbackProps } from '../../../types/forms';
 import { Button } from '../../components/button/Button';
 import { Select } from '../../components/field/Select';
@@ -9,13 +10,14 @@ import { TextField } from '../../components/field/TextField';
 import { NumberStepper } from '../../components/inputs/NumberStepper';
 import { Banner } from '../../components/overlay/Banner';
 import { Dialog } from '../../components/overlay/Dialog';
+import { RadioGroup } from '../../components/selection/Radio';
 import { useFormFeedback } from '../../utils/useFormFeedback';
 import { StudyRoomCard,type StudyRoomCardProps } from './StudyRoomCard';
 import { CAPACITY_RANGE,type StudyRoom,type StudyRoomActions,type StudyRoomPerson } from './model';
 
 // times are local "2026-11-15T18:00", null when the date or the time is missing
 export interface StudyRoomDraft {
-  subjectId: number | null; startsAt: string | null; endsAt: string | null; capacity: number; link: string; description: string;
+  subjectId: number | null; startsAt: string | null; endsAt: string | null; capacity: number; link: string | null; description: string;
 }
 export interface CreateStudyRoomFormProps extends FormFeedbackProps {
   subjects: { id: number; name: string }[]; onSubmit: (draft: StudyRoomDraft) => Promise<void>; onCancel?: () => void; now?: Date;
@@ -30,13 +32,22 @@ export function CreateStudyRoomForm({ subjects, onSubmit, onCancel, now = new Da
   const [from, setFrom] = useState('18:00');
   const [to, setTo] = useState('19:00');
   const [capacity, setCapacity] = useState(8);
+  const [linkMode, setLinkMode] = useState<'auto' | 'own'>('auto');
   const [link, setLink] = useState('');
   const [description, setDescription] = useState('');
   const at = (time: string) => date && time ? `${date}T${time}` : null;
   return <form className="sm-room-form" noValidate onSubmit={event => {
     event.preventDefault();
-    void feedback.submit(() => onSubmit({ subjectId: subjectId ? Number(subjectId) : null, startsAt: at(from), endsAt: at(to),
-      capacity, link: link.trim(), description: description.trim() }));
+    void feedback.submit(async () => {
+      try {
+        await onSubmit({ subjectId: subjectId ? Number(subjectId) : null, startsAt: at(from), endsAt: at(to),
+          capacity, link: linkMode === 'auto' ? null : link.trim(), description: description.trim() });
+      } catch (error) {
+        // Google couldn't make it, so the tutor can paste one straight away
+        if (isBackendError(error) && error.code === 'MEET_LINK_UNAVAILABLE') setLinkMode('own');
+        throw error;
+      }
+    });
   }}>
     {feedback.message && <Banner tone="danger">{feedback.message}</Banner>}
     <Select label={t('fields.subject')} value={subjectId} hint={t('rooms.subjectHint')} disabled={feedback.busy}
@@ -53,8 +64,12 @@ export function CreateStudyRoomForm({ subjects, onSubmit, onCancel, now = new Da
       <NumberStepper label={t('rooms.places')} hint={t('rooms.placesHint', CAPACITY_RANGE)} value={capacity} onValueChange={setCapacity}
         min={CAPACITY_RANGE.min} max={CAPACITY_RANGE.max} disabled={feedback.busy} />
     </div>
-    <TextField label={t('rooms.meetLink')} icon={Video} type="url" placeholder="https://meet.google.com/abc-defg-hij" value={link}
-      disabled={feedback.busy} error={feedback.fieldError('link')} onChange={event => setLink(event.target.value)} />
+    <RadioGroup label={t('rooms.meetChoice')} variant="cards" orientation="horizontal" value={linkMode} disabled={feedback.busy}
+      onValueChange={value => setLinkMode(value as 'auto' | 'own')} options={[
+        { value: 'auto', label: t('rooms.meetAuto'), description: t('rooms.meetAutoHint') },
+        { value: 'own', label: t('rooms.meetOwn'), description: t('rooms.meetOwnHint') }]} />
+    {linkMode === 'own' && <TextField label={t('rooms.meetLink')} icon={Video} type="url" placeholder="https://meet.google.com/abc-defg-hij" value={link}
+      disabled={feedback.busy} error={feedback.fieldError('link')} onChange={event => setLink(event.target.value)} />}
     <Textarea label={t('fields.description')} optional showCount maxLength={500} placeholder={t('rooms.descriptionPlaceholder')} value={description}
       disabled={feedback.busy} error={feedback.fieldError('description')} onChange={event => setDescription(event.target.value)} />
     <div className="sm-room-form__actions">

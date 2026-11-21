@@ -4,6 +4,9 @@ import App from '../src/App';
 import i18n from '../src/i18n';
 import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { CurrentUser } from '../src/types/currentUser';
+import { connectChatSocket } from '../src/api/chatSocket';
+
+vi.mock('../src/api/chatSocket', () => ({ connectChatSocket: vi.fn(), disconnectChatSocket: vi.fn(async () => {}) }));
 
 const student: CurrentUser = {
   number: 50001,
@@ -29,6 +32,7 @@ beforeEach(async () => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.clearAllMocks();
 });
 
 describe('app start', () => {
@@ -67,6 +71,7 @@ describe('app start', () => {
     renderApp();
 
     expect(await screen.findByText('Personality test')).toBeTruthy();
+    expect(connectChatSocket).not.toHaveBeenCalled();
   });
 });
 

@@ -1,8 +1,10 @@
 package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -21,20 +23,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.CreateStudyRoomRequestDTO;
 import com.studymatch.dtos.ParticipantDTO;
 import com.studymatch.dtos.StudyRoomDTO;
+import com.studymatch.dtos.StudyRoomDetailDTO;
 import com.studymatch.enums.StudyRoomStatus;
 import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.ModelTestData;
+import com.studymatch.models.Participation;
 import com.studymatch.models.Student;
 import com.studymatch.models.StudyRoom;
 import com.studymatch.models.TutorRole;
 import com.studymatch.repositories.StudyRoomRepository;
+import com.studymatch.utils.MeetLinkGenerator;
 
 class StudyRoomServiceTest {
 
@@ -42,10 +49,15 @@ class StudyRoomServiceTest {
   private static final Long SUBJECT_ID = 10L;
   private static final Long ROOM_ID = 20L;
   private static final String LINK = "https://meet.google.com/abc-defg-hij";
+  private static final String GENERATED_LINK = "https://meet.google.com/xyz-wxyz-xyz";
 
   private StudyRoomRepository studyRoomRepository;
   private TutorRoleService tutorRoleService;
+  private RatingService ratingService;
+  private EnrolmentService enrolmentService;
+  private ParticipationService participationService;
   private ApplicationEventPublisher eventPublisher;
+  private MeetLinkGenerator meetLinkGenerator;
   private StudyRoomService studyRoomService;
 
   private TutorRole tutorRole;
@@ -54,8 +66,13 @@ class StudyRoomServiceTest {
   void setUp() {
     studyRoomRepository = mock(StudyRoomRepository.class);
     tutorRoleService = mock(TutorRoleService.class);
+    ratingService = mock(RatingService.class);
+    enrolmentService = mock(EnrolmentService.class);
+    participationService = mock(ParticipationService.class);
     eventPublisher = mock(ApplicationEventPublisher.class);
-    studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService, eventPublisher);
+    meetLinkGenerator = mock(MeetLinkGenerator.class);
+    studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService, ratingService, enrolmentService,
+        participationService, eventPublisher, meetLinkGenerator);
 
     Student tutor = ModelTestData.student("Test Tutor");
     ReflectionTestUtils.setField(tutor, "number", TUTOR_NUMBER);
@@ -136,6 +153,272 @@ class StudyRoomServiceTest {
 
     // Assert
     verify(studyRoomRepository).save(any(StudyRoom.class));
+  }
+
+  // generate a Google Meet link (#268)
+
+  @Test
+  @DisplayName("A pasted link is saved as it is and Google is never asked")
+  void pastedLinkSkipsGoogle() {
+    // Arrange
+    when(tutorRoleService.getByStudentAndSubject(TUTOR_NUMBER, SUBJECT_ID)).thenReturn(tutorRole);
+    when(studyRoomRepository.save(any(StudyRoom.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    // Act
+    StudyRoomDTO room = studyRoomService.create(TUTOR_NUMBER, request(tomorrowAt(14), tomorrowAt(16)));
+
+    // Assert
+    assertEquals(LINK, room.link());
+    verifyNoInteractions(meetLinkGenerator);
+  }
+
+  @Test
+  @DisplayName("Without a link the room gets the one Google made")
+  void noLinkGetsGeneratedOne() {
+    // Arrange
+    when(tutorRoleService.getByStudentAndSubject(TUTOR_NUMBER, SUBJECT_ID)).thenReturn(tutorRole);
+    when(studyRoomRepository.save(any(StudyRoom.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(meetLinkGenerator.createLink()).thenReturn(GENERATED_LINK);
+
+    // Act
+    StudyRoomDTO room = studyRoomService.create(TUTOR_NUMBER, requestWithoutLink(tomorrowAt(14), tomorrowAt(16)));
+
+    // Assert
+    assertEquals(GENERATED_LINK, room.link());
+  }
+
+  @Test
+  @DisplayName("When Google can't make the link, MEET_LINK_UNAVAILABLE and nothing is saved")
+  void googleFailsSavesNothing() {
+    // Arrange
+    when(tutorRoleService.getByStudentAndSubject(TUTOR_NUMBER, SUBJECT_ID)).thenReturn(tutorRole);
+    when(meetLinkGenerator.createLink())
+        .thenThrow(new StudyMatchException(ErrorCode.MEET_LINK_UNAVAILABLE));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.create(TUTOR_NUMBER, requestWithoutLink(tomorrowAt(14), tomorrowAt(16))));
+
+    // Assert
+    assertEquals(ErrorCode.MEET_LINK_UNAVAILABLE, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A room that fails its checks never asks Google for a link")
+  void invalidRoomSkipsGoogle() {
+    // Arrange
+    StudyRoom existing = new StudyRoom(tutorRole, tomorrowAt(15), tomorrowAt(17), 5, "existing room", LINK);
+    ReflectionTestUtils.setField(existing, "id", 7L);
+    when(tutorRoleService.getByStudentAndSubject(TUTOR_NUMBER, SUBJECT_ID)).thenReturn(tutorRole);
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(14), tomorrowAt(16)))
+        .thenReturn(List.of(existing));
+
+    // Act
+    assertThrows(StudyMatchException.class,
+        () -> studyRoomService.create(TUTOR_NUMBER, requestWithoutLink(tomorrowAt(14), tomorrowAt(16))));
+
+    // Assert - otherwise a refused room would leave an event in the calendar
+    verifyNoInteractions(meetLinkGenerator);
+  }
+
+  // view StudyRooms (#43)
+
+  @Test
+  @DisplayName("The list maps the open rooms and shows the link to the host")
+  void listsRooms() {
+    // Arrange
+    StudyRoom room = openRoom();
+    when(studyRoomRepository.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of(room));
+
+    // Act - the host browses the calendar
+    List<StudyRoomDTO> rooms = studyRoomService.listRooms(TUTOR_NUMBER, null, null, null, null);
+
+    // Assert
+    assertEquals(1, rooms.size());
+    assertEquals("Test Subject", rooms.get(0).subjectName());
+    assertEquals(5, rooms.get(0).availablePlaces());
+    assertEquals(LINK, rooms.get(0).link());
+    verify(studyRoomRepository).findAll(any(Specification.class), any(Sort.class));
+  }
+
+  @Test
+  @DisplayName("The list hides the link from a student who isn't the tutor and hasn't joined")
+  void listHidesLink() {
+    // Arrange
+    StudyRoom room = openRoom(student("Ana Test", 2L));
+    when(studyRoomRepository.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of(room));
+
+    // Act - a student who isn't the host and hasn't joined
+    List<StudyRoomDTO> rooms = studyRoomService.listRooms(3L, null, null, null, null);
+
+    // Assert
+    assertNull(rooms.get(0).link());
+  }
+
+  @Test
+  @DisplayName("The host opens their room: hosted, not joined, and no join option")
+  void hostCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoom();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, TUTOR_NUMBER);
+
+    // Assert
+    assertTrue(detail.hosted());
+    assertFalse(detail.joined());
+    assertFalse(detail.canJoin());
+    assertEquals(LINK, detail.link());
+  }
+
+  @Test
+  @DisplayName("A student who already joined can't join again")
+  void joinedStudentCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoom(student("Ana Test", 2L));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 2L);
+
+    // Assert
+    assertFalse(detail.hosted());
+    assertTrue(detail.joined());
+    assertFalse(detail.canJoin());
+    assertEquals(LINK, detail.link());
+  }
+
+  @Test
+  @DisplayName("A student enrolled in the subject's current edition who hasn't passed can join")
+  void openRoomCanBeJoined() {
+    // Arrange
+    StudyRoom room = openRoom(student("Ana Test", 2L));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(3L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(3L, tutorRole.getSubject())).thenReturn(false);
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 3L);
+
+    // Assert
+    assertFalse(detail.hosted());
+    assertFalse(detail.joined());
+    assertTrue(detail.canJoin());
+    assertNull(detail.link());
+  }
+
+  @Test
+  @DisplayName("A student not enrolled in the subject's current edition can't join")
+  void notEnrolledCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoom();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act - isEnrolledInCurrentEdition is false by default
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 3L);
+
+    // Assert
+    assertFalse(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("A student who already passed the subject can't join")
+  void passedStudentCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoom();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(3L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(3L, tutorRole.getSubject())).thenReturn(true);
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 3L);
+
+    // Assert
+    assertFalse(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("A full room can't be joined")
+  void fullRoomCannotBeJoined() {
+    // Arrange
+    StudyRoom room = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 2, "test room", LINK);
+    room.join(student("Ana Test", 2L));
+    room.join(student("Bruno Test", 3L));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 4L);
+
+    // Assert
+    assertFalse(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("A room that already started can't be joined")
+  void startedRoomCannotBeJoined() {
+    // Arrange
+    StudyRoom room = openRoom();
+    ReflectionTestUtils.setField(room, "startsAt", LocalDateTime.now().minusMinutes(1));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 2L);
+
+    // Assert
+    assertFalse(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("A cancelled room can't be joined")
+  void cancelledRoomCannotBeJoined() {
+    // Arrange
+    StudyRoom room = openRoom();
+    room.cancel("test reason");
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, 2L);
+
+    // Assert
+    assertFalse(detail.canJoin());
+  }
+
+  @Test
+  @DisplayName("The detail carries the tutor's rating in that subject")
+  void detailHasTutorRating() {
+    // Arrange
+    StudyRoom room = openRoom();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(ratingService.getAverageStars(tutorRole)).thenReturn(4.5);
+    when(ratingService.countRatings(tutorRole)).thenReturn(9L);
+
+    // Act
+    StudyRoomDetailDTO detail = studyRoomService.getRoom(ROOM_ID, TUTOR_NUMBER);
+
+    // Assert
+    assertEquals(4.5, detail.tutorAverageRating());
+    assertEquals(9L, detail.tutorRatingCount());
+  }
+
+  @Test
+  @DisplayName("A room that doesn't exist gives NOT_FOUND")
+  void missingRoomDetail() {
+    // Act - findById is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> studyRoomService.getRoom(ROOM_ID, 2L));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // a room tomorrow, open for the given students to join
+  private StudyRoom openRoom(Student... participants) {
+    StudyRoom room = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
+    for (Student participant : participants) {
+      room.join(participant);
+    }
+    return room;
   }
 
   // blocked tutor
@@ -260,6 +543,188 @@ class StudyRoomServiceTest {
         participants);
   }
 
+  // join (#45)
+
+  @Test
+  @DisplayName("An eligible student joins and the room is saved with one more participant")
+  void studentJoins() {
+    // Arrange
+    Student participant = student("Ana Test", 2L);
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findLockedById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(2L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(2L, tutorRole.getSubject())).thenReturn(false);
+    when(studyRoomRepository.findJoinedOverlapping(2L, ROOM_ID, room.getStartsAt(), room.getEndsAt()))
+        .thenReturn(List.of());
+    when(studyRoomRepository.findOverlapping(2L, room.getStartsAt(), room.getEndsAt())).thenReturn(List.of());
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.join(participant, ROOM_ID);
+
+    // Assert
+    assertEquals(1, result.participantCount());
+    assertEquals(StudyRoomStatus.SCHEDULED, result.status());
+    verify(studyRoomRepository).save(room);
+  }
+
+  @Test
+  @DisplayName("A student not enrolled in the subject's current edition can't join")
+  void notEligibleCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findLockedById(ROOM_ID)).thenReturn(Optional.of(room));
+    // isEnrolledInCurrentEdition is false by default
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.join(student("Ana Test", 2L), ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_ELIGIBLE_FOR_STUDYROOM, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A student who passed the subject can't join")
+  void passedCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findLockedById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(2L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(2L, tutorRole.getSubject())).thenReturn(true);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.join(student("Ana Test", 2L), ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_ELIGIBLE_FOR_STUDYROOM, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A student who already joined an overlapping room can't join")
+  void overlapCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    StudyRoom conflict = new StudyRoom(tutorRole, tomorrowAt(15), tomorrowAt(17), 5, "existing room", LINK);
+    ReflectionTestUtils.setField(conflict, "id", 7L);
+    when(studyRoomRepository.findLockedById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(2L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(2L, tutorRole.getSubject())).thenReturn(false);
+    when(studyRoomRepository.findJoinedOverlapping(2L, ROOM_ID, room.getStartsAt(), room.getEndsAt()))
+        .thenReturn(List.of(conflict));
+    when(studyRoomRepository.findOverlapping(2L, room.getStartsAt(), room.getEndsAt())).thenReturn(List.of());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.join(student("Ana Test", 2L), ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.JOINED_STUDYROOM_OVERLAP, e.getCode());
+    assertEquals(7L, e.getParams().get("id"));
+    assertEquals("Test Subject", e.getParams().get("subject"));
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A tutor hosting an overlapping room can't join someone else's")
+  void hostedRoomOverlapCannotJoin() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    StudyRoom hosted = new StudyRoom(tutorRole, tomorrowAt(15), tomorrowAt(17), 5, "hosted room", LINK);
+    ReflectionTestUtils.setField(hosted, "id", 8L);
+    when(studyRoomRepository.findLockedById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(enrolmentService.isEnrolledInCurrentEdition(2L, tutorRole.getSubject())).thenReturn(true);
+    when(enrolmentService.hasPassed(2L, tutorRole.getSubject())).thenReturn(false);
+    when(studyRoomRepository.findJoinedOverlapping(2L, ROOM_ID, room.getStartsAt(), room.getEndsAt()))
+        .thenReturn(List.of());
+    when(studyRoomRepository.findOverlapping(2L, room.getStartsAt(), room.getEndsAt()))
+        .thenReturn(List.of(hosted));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.join(student("Ana Test", 2L), ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.JOINED_STUDYROOM_OVERLAP, e.getCode());
+    assertEquals(8L, e.getParams().get("id"));
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A room that doesn't exist gives NOT_FOUND")
+  void missingRoomForJoin() {
+    // Act - findLockedById is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.join(student("Ana Test", 2L), ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // leave (#47)
+
+  @Test
+  @DisplayName("A participant leaves and the room is saved with one fewer participant")
+  void participantLeaves() {
+    // Arrange
+    Student participant = student("Ana Test", 2L);
+    StudyRoom room = openRoomWith(participant);
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    Participation participation = mock(Participation.class);
+    when(participation.getStudent()).thenReturn(participant);
+    when(participationService.getParticipation(ROOM_ID, 2L)).thenReturn(participation);
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.leave(2L, ROOM_ID);
+
+    // Assert
+    assertEquals(0, result.participantCount());
+    assertEquals(StudyRoomStatus.SCHEDULED, result.status());
+    verify(studyRoomRepository).save(room);
+  }
+
+  @Test
+  @DisplayName("A student who never joined can't leave")
+  void notAParticipantCannotLeave() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(participationService.getParticipation(ROOM_ID, 2L))
+        .thenThrow(new StudyMatchException(ErrorCode.NOT_A_PARTICIPANT));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.leave(2L, ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_A_PARTICIPANT, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A room that doesn't exist gives NOT_FOUND")
+  void missingRoomForLeave() {
+    // Act - findById is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.leave(2L, ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // a room tomorrow, open for the given students to join
+  private StudyRoom openRoomWith(Student... participants) {
+    StudyRoom room = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
+    for (Student participant : participants) {
+      room.join(participant);
+    }
+    return room;
+  }
+
   // a room the students joined while it was upcoming, which then ended an hour ago
   private StudyRoom endedRoomWith(Student... students) {
     StudyRoom room = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
@@ -284,6 +749,10 @@ class StudyRoomServiceTest {
 
   private static CreateStudyRoomRequestDTO request(LocalDateTime startsAt, LocalDateTime endsAt) {
     return new CreateStudyRoomRequestDTO(SUBJECT_ID, startsAt, endsAt, "test room", 5, LINK);
+  }
+
+  private static CreateStudyRoomRequestDTO requestWithoutLink(LocalDateTime startsAt, LocalDateTime endsAt) {
+    return new CreateStudyRoomRequestDTO(SUBJECT_ID, startsAt, endsAt, "test room", 5, null);
   }
 
 }

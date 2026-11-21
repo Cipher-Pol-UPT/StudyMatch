@@ -126,6 +126,11 @@ public class StudyRoom {
     return Collections.unmodifiableSet(participations);
   }
 
+  // create StudyRoom: the generated Meet link, only asked for once the room passed its checks
+  public void useGeneratedLink(String link) {
+    this.link = link;
+  }
+
   public void update(LocalDateTime startsAt, LocalDateTime endsAt, int capacity, String description, String link) {
     requireOpenAndNotStarted();
     validateTimes(startsAt, endsAt);

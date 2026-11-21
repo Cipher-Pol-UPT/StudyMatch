@@ -72,6 +72,10 @@ export const ERROR_CODES = [
   "ACADEMIC_YEAR_NOT_NEXT",
   "ATTENDEE_NOT_A_PARTICIPANT",
   "ROOM_ALREADY_RATED",
+  "NOT_ELIGIBLE_FOR_STUDYROOM",
+  "JOINED_STUDYROOM_OVERLAP",
+  "ACHIEVEMENT_NOT_EARNED",
+  "MEET_LINK_UNAVAILABLE",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;

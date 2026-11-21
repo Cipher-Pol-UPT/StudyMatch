@@ -105,6 +105,12 @@
     "categoryLevels": "Category levels",
     "enrolments": "Enrolments",
     "noEnrolments": "No enrolments yet.",
+    "changeClass": "Change class",
+    "changeClassOf": "Change class in {{subject}}",
+    "changeClassDescription": "{{subject}}, now in {{classSection}}. The enrolment, grades and absences stay.",
+    "newClass": "New class",
+    "chooseClass": "Choose a class",
+    "classChanged": "Class changed to {{classSection}}.",
     "chooseSubject": "Choose a subject edition to view its enrolled students.",
     "noSubjects": "No subject editions assigned",
     "noSubjectsBody": "The editions you teach will appear here when staff assign them to you.",
@@ -235,6 +241,10 @@
     "newCategory": "New category",
     "registerCategory": "Register category",
     "categoryRegistered": "Category {{name}} registered.",
+    "rename": "Rename",
+    "renameCategory": "Rename category",
+    "renameCategoryOf": "Rename {{name}}",
+    "categoryRenamed": "Category renamed to {{name}}.",
     "noCategories": "No categories yet",
     "noCategoriesBody": "Register the first one so it can be chosen for subjects."
   },
@@ -255,6 +265,11 @@
     "places": "Places",
     "placesHint": "{{min}}–{{max}} participants",
     "meetLink": "Google Meet link",
+    "meetChoice": "Meeting link",
+    "meetAuto": "Create a Meet link for me",
+    "meetAutoHint": "StudyMatch creates it on Google for the StudyRoom's date and time.",
+    "meetOwn": "Use my own link",
+    "meetOwnHint": "Paste a Google Meet link you already have.",
     "descriptionPlaceholder": "What will you cover? What should people bring?",
     "created": "StudyRoom created."
   },
@@ -436,7 +451,14 @@
     "countedRooms": "Only StudyRooms with at least 2 confirmed attendees count.",
     "seeAll": "See all",
     "export": "Export certificate",
-    "certificate": "Achievement certificate",
+    "exportDescription": "One achievement gives a certificate, several give one record with all of them. Each has a QR code anyone can scan to check it.",
+    "chooseAchievements": "Achievements",
+    "chooseOne": "Choose at least one achievement.",
+    "pdfLanguage": "Language of the PDF",
+    "english": "English",
+    "portuguese": "Portuguese",
+    "download": "Download PDF",
+    "downloaded": "Certificate downloaded.",
     "earnedOn": "Earned on {{date}}",
     "rarity": {
       "common": "Common",
@@ -444,6 +466,21 @@
       "epic": "Epic",
       "legendary": "Legendary"
     }
+  },
+  "verify": {
+    "title": "Certificate verification",
+    "valid": "Valid certificate",
+    "validRecord": "Valid record of achievements",
+    "issuedOn": "Issued by StudyMatch on {{date}}",
+    "studentLine": "Student no. {{number}}",
+    "roomsHeld_one": "{{count}} StudyRoom held",
+    "roomsHeld": "{{count}} StudyRooms held",
+    "studentsTutored_one": "{{count}} student tutored",
+    "studentsTutored": "{{count}} students tutored",
+    "averageRating": "{{rating}} average in {{subject}}",
+    "notFound": "We couldn't find this certificate",
+    "notFoundHint": "Check the link, or the code written under the QR code on the certificate.",
+    "goToStudyMatch": "Go to StudyMatch"
   },
   "home": {
     "greeting": "Hello, {{name}}.",
@@ -530,7 +567,7 @@
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Select at least one teacher.",
     "CLASS_SECTION_ALREADY_EXISTS": "This class section already exists.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "The class section does not belong to this subject edition.",
-    "SUBJECT_EDITION_NOT_CURRENT": "Students can only be enrolled in subject editions of the current academic year.",
+    "SUBJECT_EDITION_NOT_CURRENT": "Only subject editions of the current academic year can be changed.",
     "GROUP_WORK_NOT_ALLOWED_FOR_EXAMS": "Group work is not allowed for exams.",
     "INVALID_GROUP_SIZES": "The group sizes are invalid.",
     "SEPARATION_SAME_STUDENT": "Select two different students.",
@@ -561,7 +598,11 @@
     "STUDENT_HAS_NO_STATUTE": "This student doesn't have a special statute.",
     "ACADEMIC_YEAR_NOT_NEXT": "That isn't the next academic year anymore. Reload the page and check again.",
     "ATTENDEE_NOT_A_PARTICIPANT": "Student {{number}} didn't join this StudyRoom.",
-    "ROOM_ALREADY_RATED": "You have already rated this StudyRoom."
+    "ROOM_ALREADY_RATED": "You have already rated this StudyRoom.",
+    "NOT_ELIGIBLE_FOR_STUDYROOM": "Only Students enrolled in this Subject who haven't passed it can join.",
+    "JOINED_STUDYROOM_OVERLAP": "This overlaps a StudyRoom you already joined or are hosting ({{subject}}, {{startsAt}} – {{endsAt}}).",
+    "ACHIEVEMENT_NOT_EARNED": "You haven't earned one of these achievements yet.",
+    "MEET_LINK_UNAVAILABLE": "The Google Meet link couldn't be created right now. Paste your own link to create the StudyRoom."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",
@@ -862,5 +903,90 @@
       "INVALID_NUMBER": "Not a valid student number",
       "DUPLICATE": "Appears more than once"
     }
+  },
+  "assignments": {
+    "name": "Name",
+    "type": "Type",
+    "date": "Date",
+    "weight": "Weight (%)",
+    "types": {
+      "PROJECT": "Project",
+      "EXAM": "Exam",
+      "PRACTICAL_EXAM": "Practical exam"
+    },
+    "weightLeft": "{{remaining}}% left",
+    "weightOver": "Only {{remaining}}% is left in this subject.",
+    "groupWork": "Group work",
+    "groupWorkHint": "Students are put in groups by personality.",
+    "alwaysIndividual": "Exams and practical exams are always individual.",
+    "groups": "Groups",
+    "groupsRule": "2 ≤ minimum ≤ optimal ≤ maximum. Every group shares a language.",
+    "minSize": "Minimum",
+    "optimalSize": "Optimal",
+    "maxSize": "Maximum",
+    "sameClass": "Keep groups within the same class",
+    "keepApart": "Keep apart",
+    "addPair": "Add a pair",
+    "removePair": "Remove this pair",
+    "firstStudent": "Student",
+    "secondStudent": "Keep apart from",
+    "chooseStudent": "Choose a student",
+    "create": "Create assignment",
+    "new": "New assignment",
+    "weightColumn": "Weight",
+    "weightsTotal": "Weights total {{total}}%",
+    "none": "No assignments yet",
+    "noneBody": "Create the first one. The weights should add up to 100%.",
+    "created": "{{name}} was created."
+  },
+  "subjectTabs": {
+    "label": "Subject pages",
+    "choose": {
+      "students": "Choose a subject edition to view its enrolled students.",
+      "assignments": "Choose a subject edition to see and create its assignments.",
+      "grades": "Choose a subject edition to grade its students."
+    },
+    "open": {
+      "students": "View students",
+      "assignments": "Open assignments",
+      "grades": "Open grades"
+    }
+  },
+  "grades": {
+    "student": "Student",
+    "status": "Status",
+    "grade": "Grade",
+    "range": "0 to 20",
+    "final": "Final",
+    "cellLabel": "{{name}}'s grade in {{assignment}}",
+    "incompleteTitle": "Weights total {{total}}%",
+    "incompleteBody": "Grades are saved, but final grades are calculated only when the assignments add up to 100%.",
+    "noAssignments": "No assignments to grade yet",
+    "noAssignmentsBody": "Create them in the Assignments tab first.",
+    "noStudents": "No students enrolled",
+    "noStudentsBody": "Students enrolled in this edition show up here.",
+    "changeTitle": "Change {{name}}'s grade?",
+    "changeBody": "{{assignment}} · from {{from}} to {{to}}. The final grade is recalculated.",
+    "change": "Change grade"
+  },
+  "attendance": {
+    "intro": "Choose the lesson, then mark who missed it.",
+    "chooseLesson": "Choose the lesson",
+    "chooseLessonBody": "Pick the date and start time to see the class.",
+    "noEditionsBody": "Attendance can only be registered for editions of the current academic year.",
+    "sheet": "Attendance",
+    "student": "Student",
+    "absent": "Absent",
+    "justified": "Justified",
+    "absentLabel": "{{name}} was absent",
+    "justifiedLabel": "{{name}}'s absence is justified",
+    "statute": "Not applicable · Special Statute",
+    "noStudents": "No students in this class",
+    "noStudentsBody": "Students enrolled in this class show up here.",
+    "recordedTitle": "This lesson already has a record",
+    "recordedBody": "{{lesson}}. You're correcting it; saving replaces the absences.",
+    "save": "Save attendance · {{count}} absent",
+    "saved_one": "Attendance saved: {{count}} absent.",
+    "saved_other": "Attendance saved: {{count}} absent."
   }
 }

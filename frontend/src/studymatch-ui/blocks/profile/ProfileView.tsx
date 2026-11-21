@@ -267,7 +267,7 @@ export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit
         )}
       </div>
 
-      <AchievementDialog id={achievement} earnedAt={opened?.earnedAt} progress={opened?.progress} onClose={() => setAchievement(null)} onExportCertificate={isSelf ? onExportCertificate : undefined} locale={locale} />
+      <AchievementDialog id={achievement} earnedAt={opened?.earnedAt} progress={opened?.progress} onClose={() => setAchievement(null)} onExportCertificate={isSelf && onExportCertificate ? (id) => { setAchievement(null); onExportCertificate(id); } : undefined} locale={locale} />
       <Dialog open={!!tutor} onClose={() => setTutor(null)} title={tutor ? i18n.t('ui.tutor_subject', {subject:tutor.subject}) : ''} icon={Star} iconTone="warning" size="sm">
         {tutor && (
           <div style={{ display: 'grid', gap: 10 }}>
