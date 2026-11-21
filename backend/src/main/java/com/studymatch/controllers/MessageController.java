@@ -63,8 +63,8 @@ public class MessageController {
 
   @PostMapping("direct/{number}/messages")
   @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
-  @Operation(summary = "Send a DM, the first one creates the chat")
-  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.DIRECT_CHAT_ALREADY_EXISTS })
+  @Operation(summary = "Send a DM, the first one creates the chat. Someone you blocked needs unblocking first")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.DIRECT_CHAT_ALREADY_EXISTS, ErrorCode.UNBLOCK_TO_MESSAGE })
   public ResponseEntity<MessageDTO> sendDirect(@PathVariable Long number,
       @Valid @RequestBody SendMessageRequestDTO sendRequest, Authentication authentication) {
     User user = userService.getByInstitutionalEmail(authentication.getName());

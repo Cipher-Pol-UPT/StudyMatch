@@ -86,6 +86,8 @@ export const ERROR_CODES = [
   "ACHIEVEMENT_NOT_EARNED",
   "MEET_LINK_UNAVAILABLE",
   "DIRECT_CHAT_ALREADY_EXISTS",
+  "CANNOT_BLOCK_YOURSELF",
+  "UNBLOCK_TO_MESSAGE",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;
