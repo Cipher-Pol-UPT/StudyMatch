@@ -30,6 +30,7 @@
       "assignments": "Assignments",
       "groups": "Assignment groups",
       "grades": "Grades",
+      "chats": "Chats",
       "tutorApplications": "Tutor applications"
     },
     "descriptions": {
@@ -51,6 +52,7 @@
       "assignments": "Create and manage subject assignments.",
       "groups": "View, generate, edit, import and export assignment groups.",
       "grades": "Record student grades for your subjects.",
+      "chats": "Message your students and colleagues.",
       "tutorApplications": "Review and decide tutor applications for your subjects."
     }
   },
@@ -493,6 +495,7 @@
     "quickActions": "Quick actions",
     "actions": {
       "rooms": "A shared space to focus, exchange ideas and make progress together.",
+      "chats": "Message your classmates and teachers.",
       "subjects": "Explore your enrolled classes and dive into each subject.",
       "groups": "Check your matches and meet your study group.",
       "assignments": "See what is due and keep track of your deliveries."
@@ -834,6 +837,7 @@
   "nav": {
     "home": "Home",
     "rooms": "StudyRooms",
+    "chats": "Chats",
     "subjects": "Subjects",
     "groups": "Study groups",
     "assignments": "Assignments",
@@ -1029,5 +1033,24 @@
     "noGroups": "No published groups with grades in this selection.",
     "noData": "No data for this selection",
     "noDataHint": "Try a broader selection, for example all classes or all subjects."
+  },
+  "chats": {
+    "title": "Chats",
+    "newMessage": "New message",
+    "newMessageDescription": "Search Students and Teachers by name or number.",
+    "searchPeople": "Search people",
+    "searchPlaceholder": "Name or number",
+    "people": "People",
+    "noOneFound": "No one found",
+    "narrowDown": "Showing {{shown}} of {{total}}. Type a name or number to narrow it down.",
+    "contactLine": "{{role}} · {{number}}",
+    "noChats": "No chats yet",
+    "noChatsBody": "Message a classmate or a teacher. A conversation shows up here after its first message.",
+    "pickChat": "Pick a chat",
+    "pickChatBody": "Choose a conversation on the left, or start a new one.",
+    "conversation": "Conversation",
+    "with": "Conversation with {{name}}",
+    "back": "Back to chats",
+    "sayHi": "{{line}}. You haven't talked yet, say hi to {{name}}."
   }
 }

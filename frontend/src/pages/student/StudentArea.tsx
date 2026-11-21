@@ -5,6 +5,7 @@ import { useSignOut } from '../../components/navigation/useSignOut';
 import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry, type NavItem, type NavSection } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { AchievementsPage } from '../achievements/AchievementsPage';
+import { ChatsPage } from '../chats/ChatsPage';
 import { HomePage } from '../home/HomePage';
 import { AccountPasswordPage } from '../password/AccountPasswordPage';
 import { ProfilePage } from '../profile/ProfilePage';
@@ -27,7 +28,8 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
   const { pathname } = useLocation();
   const { profile, failed, showSavedProfile } = useMyProfile();
   const pages = [...SECTIONS, ...ACCOUNT];
-  const current = pages.find((p) => p.path === pathname);
+  // a section's own pages count too, like an open chat under /chats
+  const current = pages.find((p) => pathname === p.path || pathname.startsWith(`${p.path}/`));
   const toItem = (s: Section): NavItem => ({ label: t(`nav.${s.key}`), icon: s.icon, href: s.path, active: pathname.startsWith(s.path) });
   const comingSoon = SECTIONS.filter((s) => !s.ready);
   const nav: NavSection[] = [
@@ -49,6 +51,8 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
         <Route path="/" element={<HomePage currentUser={currentUser} profile={profile} failed={failed} />} />
         <Route path={PROFILE_PATH} element={<ProfilePage onSaved={showSavedProfile} />} />
         <Route path="/study-rooms" element={<StudyRoomsPage currentUser={currentUser} />} />
+        <Route path="/chats" element={<ChatsPage />} />
+        <Route path="/chats/direct/:number" element={<ChatsPage />} />
         <Route path={CHANGE_PASSWORD_PATH} element={<AccountPasswordPage />} />
         <Route path="/achievements" element={<AchievementsPage profile={profile} failed={failed} />} />
         {pages.filter((p) => ![PROFILE_PATH, '/study-rooms', CHANGE_PASSWORD_PATH].includes(p.path)).map((p) => (
