@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { GeneratingGroups } from '../src/components/groups/GeneratingGroups';
 import i18n from '../src/i18n';
 import { TeacherArea } from '../src/pages/teacher/TeacherArea';
 import { StudyMatchProvider } from '../src/studymatch-ui';
@@ -168,5 +169,43 @@ describe('generate groups (teacher)', () => {
 
     expect(await screen.findByText(i18n.t('errors.NO_VALID_GROUP_SPLIT'))).toBeTruthy();
     expect(screen.queryByText('Group 1')).toBeNull();
+  });
+});
+
+describe('the loader while groups are generated', () => {
+  const current = () => screen.getByRole('listitem', { current: 'step' }).textContent;
+  const progress = () => Number(screen.getByRole('progressbar').getAttribute('aria-valuenow'));
+
+  it('walks through what the matching weighs over about ten seconds', () => {
+    vi.useFakeTimers();
+    try {
+      render(<GeneratingGroups />);
+      expect(current()).toContain('Reading personalities');
+
+      act(() => { vi.advanceTimersByTime(5000); });
+      expect(current()).toContain('Finding a shared language');
+
+      act(() => { vi.advanceTimersByTime(4800); });
+      expect(current()).toContain('Balancing the groups');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("slows down near the end and never fills while the groups aren't there", () => {
+    vi.useFakeTimers();
+    try {
+      render(<GeneratingGroups />);
+      act(() => { vi.advanceTimersByTime(10_000); });
+      const atTen = progress();
+
+      act(() => { vi.advanceTimersByTime(30_000); });
+
+      expect(atTen).toBeGreaterThan(80);
+      expect(progress()).toBeGreaterThan(atTen);
+      expect(progress()).toBeLessThanOrEqual(95);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
