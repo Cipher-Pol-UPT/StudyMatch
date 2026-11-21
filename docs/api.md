@@ -95,7 +95,14 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/study-rooms/{id}/join` | Student enrolled in the subject | join an open StudyRoom, becoming a participant |
 | POST | `/study-rooms/{id}/leave` | Student who joined | leave a StudyRoom before it starts, freeing the place |
 | GET | `/students/{number}/ratings` | Anyone logged in | a tutor's ratings and comments, newest first, without who wrote them |
+
+## Achievements
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
 | GET | `/achievements/me` | Student | all four achievements, with the date and verification code of the ones you've earned |
+| POST | `/achievements/certificate` | Student | the PDF certificate of the achievements chosen (one achievement, or a record with several), in English or Portuguese |
+| GET | `/achievements/certificates/{code}` | Anyone, no login | what a certificate's QR code checks: who earned which achievements and when |
 
 ## Chats
 
@@ -103,4 +110,4 @@ Chats don't have REST endpoints yet. The live part is the WebSocket at `/ws` (ST
 
 ## Coming next
 
-The other use cases (groups, tutor applications, achievement certificates, analytics, notifications, chats) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (groups, tutor applications, analytics, notifications, chats) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

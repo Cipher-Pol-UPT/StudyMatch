@@ -74,6 +74,7 @@ export const ERROR_CODES = [
   "ROOM_ALREADY_RATED",
   "NOT_ELIGIBLE_FOR_STUDYROOM",
   "JOINED_STUDYROOM_OVERLAP",
+  "ACHIEVEMENT_NOT_EARNED",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;

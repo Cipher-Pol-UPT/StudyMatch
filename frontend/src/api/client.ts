@@ -22,8 +22,11 @@ export async function upload<T>(path: string, form: FormData): Promise<T> {
   return response.json();
 }
 
-export async function download(path: string): Promise<Blob> {
-  const response = await send('GET', path);
+// with a body it's a POST, for files the backend builds from what was sent
+export async function download(path: string, body?: unknown): Promise<Blob> {
+  const response = body === undefined
+    ? await send('GET', path)
+    : await send('POST', path, { contentType: 'application/json', body: JSON.stringify(body) });
   return response.blob();
 }
 

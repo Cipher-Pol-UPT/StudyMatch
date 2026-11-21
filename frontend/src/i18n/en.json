@@ -436,7 +436,14 @@
     "countedRooms": "Only StudyRooms with at least 2 confirmed attendees count.",
     "seeAll": "See all",
     "export": "Export certificate",
-    "certificate": "Achievement certificate",
+    "exportDescription": "One achievement gives a certificate, several give one record with all of them. Each has a QR code anyone can scan to check it.",
+    "chooseAchievements": "Achievements",
+    "chooseOne": "Choose at least one achievement.",
+    "pdfLanguage": "Language of the PDF",
+    "english": "English",
+    "portuguese": "Portuguese",
+    "download": "Download PDF",
+    "downloaded": "Certificate downloaded.",
     "earnedOn": "Earned on {{date}}",
     "rarity": {
       "common": "Common",
@@ -444,6 +451,21 @@
       "epic": "Epic",
       "legendary": "Legendary"
     }
+  },
+  "verify": {
+    "title": "Certificate verification",
+    "valid": "Valid certificate",
+    "validRecord": "Valid record of achievements",
+    "issuedOn": "Issued by StudyMatch on {{date}}",
+    "studentLine": "Student no. {{number}}",
+    "roomsHeld_one": "{{count}} StudyRoom held",
+    "roomsHeld": "{{count}} StudyRooms held",
+    "studentsTutored_one": "{{count}} student tutored",
+    "studentsTutored": "{{count}} students tutored",
+    "averageRating": "{{rating}} average in {{subject}}",
+    "notFound": "We couldn't find this certificate",
+    "notFoundHint": "Check the link, or the code written under the QR code on the certificate.",
+    "goToStudyMatch": "Go to StudyMatch"
   },
   "home": {
     "greeting": "Hello, {{name}}.",
@@ -563,7 +585,8 @@
     "ATTENDEE_NOT_A_PARTICIPANT": "Student {{number}} didn't join this StudyRoom.",
     "ROOM_ALREADY_RATED": "You have already rated this StudyRoom.",
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Only Students enrolled in this Subject who haven't passed it can join.",
-    "JOINED_STUDYROOM_OVERLAP": "This overlaps a StudyRoom you already joined or are hosting ({{subject}}, {{startsAt}} – {{endsAt}})."
+    "JOINED_STUDYROOM_OVERLAP": "This overlaps a StudyRoom you already joined or are hosting ({{subject}}, {{startsAt}} – {{endsAt}}).",
+    "ACHIEVEMENT_NOT_EARNED": "You haven't earned one of these achievements yet."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

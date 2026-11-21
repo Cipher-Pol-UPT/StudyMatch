@@ -40,6 +40,10 @@ public class SecurityConfig {
       "/users/forgot-password",
       "/users/reset-password");
 
+  // GET only, what a certificate's QR code opens, for anyone who scans it
+  public static final List<String> PUBLIC_GET_ENDPOINTS = List.of(
+      "/achievements/certificates/{code}");
+
   // the docs page and its JSON, no data behind them
   private static final String[] API_DOCS = { "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**" };
 
@@ -53,6 +57,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
             .requestMatchers(HttpMethod.GET, API_DOCS).permitAll()
+            .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS.toArray(String[]::new)).permitAll()
             .requestMatchers("/ws").hasAnyRole("STUDENT", "TEACHER")
             .anyRequest().authenticated())
         .formLogin(AbstractHttpConfigurer::disable)

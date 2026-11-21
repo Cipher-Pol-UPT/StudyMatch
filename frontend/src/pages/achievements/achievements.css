@@ -4,3 +4,9 @@
 .achievements-page h2 { margin: 0 0 var(--sm-s4); font-size: 1.25rem; font-weight: 500; letter-spacing: -0.02em; }
 .achievements-page__none { margin: 0; color: var(--sm-text-2); }
 .achievements-page__note { margin: calc(-1 * var(--sm-s2)) 0 var(--sm-s4); font-size: 14px; color: var(--sm-text-2); }
+
+.export-certificate { display: grid; gap: var(--sm-s5); }
+.export-certificate__options { display: grid; gap: var(--sm-s3); margin: 0; padding: 0; border: 0; min-width: 0; }
+.export-certificate__options legend { margin-bottom: var(--sm-s3); padding: 0; font-size: 14px; font-weight: 500; }
+.export-certificate__hint { margin: calc(-1 * var(--sm-s3)) 0 0; font-size: 14px; color: var(--sm-text-2); }
+.export-certificate__actions { display: flex; justify-content: flex-end; gap: var(--sm-s3); }

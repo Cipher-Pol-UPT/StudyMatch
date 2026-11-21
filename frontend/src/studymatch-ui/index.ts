@@ -88,8 +88,8 @@ export { NOTE_COLORS,NOTE_HEX,tiltFor } from './components/sticky-note/StickyNot
 
 // Achievements
 export {
-AchievementBadge,AchievementCard,AchievementCertificate,AchievementDialog,AchievementGrid,AchievementTile,AchievementUnlocked,
-type AchievementBadgeProps,type AchievementCardProps,type AchievementCertificateProps,type AchievementDialogProps,
+AchievementBadge,AchievementCard,AchievementDialog,AchievementGrid,AchievementTile,AchievementUnlocked,
+type AchievementBadgeProps,type AchievementCardProps,type AchievementDialogProps,
 type AchievementGridProps,type AchievementTileProps,type AchievementUnlockedProps
 } from './achievements/Achievement';
 export { AchievementArt,type AchievementArtProps } from './achievements/AchievementArt';
