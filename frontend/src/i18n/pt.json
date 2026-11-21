@@ -611,6 +611,10 @@
     "ROOM_ALREADY_RATED": "Já avaliou esta StudyRoom.",
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Só os estudantes inscritos nesta unidade curricular que ainda não a concluíram podem inscrever-se.",
     "JOINED_STUDYROOM_OVERLAP": "Sobrepõe-se a uma sala de estudo em que já está inscrito ou que orienta ({{subject}}, {{startsAt}} – {{endsAt}}).",
+    "NOT_ELIGIBLE_FOR_TUTORING": "Só os estudantes cuja nota final está entre os 5% melhores da sua edição podem ser tutores desta unidade curricular.",
+    "TUTOR_APPLICATION_ALREADY_PENDING": "Já tem uma candidatura pendente para esta unidade curricular.",
+    "TUTOR_ROLE_ALREADY_EXISTS": "Já é tutor desta unidade curricular.",
+    "SUBJECT_NOT_TAUGHT_THIS_YEAR": "Esta unidade curricular não é lecionada este ano letivo.",
     "ACHIEVEMENT_NOT_EARNED": "Ainda não obteve uma destas conquistas.",
     "MEET_LINK_UNAVAILABLE": "Não foi possível criar a ligação do Google Meet neste momento. Cole a sua própria ligação para criar a StudyRoom.",
     "DIRECT_CHAT_ALREADY_EXISTS": "Esta conversa acabou de ser iniciada pela outra pessoa. Envie a sua mensagem novamente."

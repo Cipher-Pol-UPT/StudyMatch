@@ -36,7 +36,6 @@ import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.ModelTestData;
-import com.studymatch.models.Participation;
 import com.studymatch.models.Student;
 import com.studymatch.models.StudyRoom;
 import com.studymatch.models.TutorRole;
@@ -55,7 +54,6 @@ class StudyRoomServiceTest {
   private TutorRoleService tutorRoleService;
   private RatingService ratingService;
   private EnrolmentService enrolmentService;
-  private ParticipationService participationService;
   private ApplicationEventPublisher eventPublisher;
   private MeetLinkGenerator meetLinkGenerator;
   private StudyRoomService studyRoomService;
@@ -68,11 +66,10 @@ class StudyRoomServiceTest {
     tutorRoleService = mock(TutorRoleService.class);
     ratingService = mock(RatingService.class);
     enrolmentService = mock(EnrolmentService.class);
-    participationService = mock(ParticipationService.class);
     eventPublisher = mock(ApplicationEventPublisher.class);
     meetLinkGenerator = mock(MeetLinkGenerator.class);
     studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService, ratingService, enrolmentService,
-        participationService, eventPublisher, meetLinkGenerator);
+        eventPublisher, meetLinkGenerator);
 
     Student tutor = ModelTestData.student("Test Tutor");
     ReflectionTestUtils.setField(tutor, "number", TUTOR_NUMBER);
@@ -673,13 +670,10 @@ class StudyRoomServiceTest {
     Student participant = student("Ana Test", 2L);
     StudyRoom room = openRoomWith(participant);
     when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
-    Participation participation = mock(Participation.class);
-    when(participation.getStudent()).thenReturn(participant);
-    when(participationService.getParticipation(ROOM_ID, 2L)).thenReturn(participation);
     when(studyRoomRepository.save(room)).thenReturn(room);
 
     // Act
-    StudyRoomDTO result = studyRoomService.leave(2L, ROOM_ID);
+    StudyRoomDTO result = studyRoomService.leave(participant, ROOM_ID);
 
     // Assert
     assertEquals(0, result.participantCount());
@@ -693,12 +687,10 @@ class StudyRoomServiceTest {
     // Arrange
     StudyRoom room = openRoomWith();
     when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
-    when(participationService.getParticipation(ROOM_ID, 2L))
-        .thenThrow(new StudyMatchException(ErrorCode.NOT_A_PARTICIPANT));
 
-    // Act
+    // Act - the model throws NOT_A_PARTICIPANT because the student isn't a participant
     StudyMatchException e = assertThrows(StudyMatchException.class,
-        () -> studyRoomService.leave(2L, ROOM_ID));
+        () -> studyRoomService.leave(student("Ana Test", 2L), ROOM_ID));
 
     // Assert
     assertEquals(ErrorCode.NOT_A_PARTICIPANT, e.getCode());
@@ -710,7 +702,7 @@ class StudyRoomServiceTest {
   void missingRoomForLeave() {
     // Act - findById is empty by default
     StudyMatchException e = assertThrows(StudyMatchException.class,
-        () -> studyRoomService.leave(2L, ROOM_ID));
+        () -> studyRoomService.leave(student("Ana Test", 2L), ROOM_ID));
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());

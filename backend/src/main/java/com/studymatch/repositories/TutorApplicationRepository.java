@@ -11,4 +11,8 @@ public interface TutorApplicationRepository extends JpaRepository<TutorApplicati
 
   List<TutorApplication> findByStudentNumberAndStatus(Long studentNumber, TutorApplicationStatus status);
 
+  // apply for tutoring (#41): only a Pending one blocks a new application, a Rejected or cancelled one doesn't
+  boolean existsByStudentNumberAndSubjectIdAndStatus(Long studentNumber, Long subjectId,
+      TutorApplicationStatus status);
+
 }
