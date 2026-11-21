@@ -42,6 +42,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/students/me/profile` | Student | your own profile |
 | PUT | `/students/me/profile` | Student | edit your banner, photo, about me, skills, interests and languages |
 | GET | `/students/{number}/profile` | logged in | a student's profile, with the private part only for them, Staff and their teachers |
+| GET | `/students/{number}/pfp` | logged in | just the profile photo, as an image for `<img src>` (cached for 5 minutes), 404 without one |
 | POST | `/students/personality-test` | Student | send the 20 Mini-IPIP answers, once per academic year |
 
 ## Degrees, categories, subjects and academic years
@@ -115,6 +116,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 | Method | Path | Who | What it does |
 | --- | --- | --- | --- |
+| GET | `/chats/` | Student, Teacher | your chats, the one with the latest message first, each with its name, the other person in a DM, the last message and how many you haven't read |
+| GET | `/chats/unread-count` | Student, Teacher | how many messages you haven't read across every chat, for the side menu |
 | GET | `/chats/direct/{number}` | Student, Teacher | your DM with that person, `chatId` is null until the first message creates it. Anyone the contact search wouldn't offer is 404 |
 | POST | `/chats/{id}/messages` | member of the chat | send a text message (1 to 2000 characters in UTF-16 units, an emoji is usually 2), pushed to the members |
 | POST | `/chats/direct/{number}/messages` | Student, Teacher | send a DM, the first one creates the chat. Both sending the first one at the same moment gives the second `DIRECT_CHAT_ALREADY_EXISTS`, and sending again works |

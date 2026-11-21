@@ -1,5 +1,7 @@
 package com.studymatch.services;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -28,6 +30,12 @@ public class ChatService {
     return chatRepository.findById(chatId)
         .filter(chat -> chat.hasMember(user))
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  // every chat the user is in, group chats join this list when they exist (#226, #236)
+  @Transactional(readOnly = true)
+  public List<Chat> getChatsOf(User user) {
+    return new ArrayList<>(chatRepository.findDirectChatsOf(user.getNumber()));
   }
 
   // empty until the first message creates it (GR8)

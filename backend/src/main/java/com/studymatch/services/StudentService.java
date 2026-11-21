@@ -24,6 +24,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.studymatch.dtos.EditStudentRequestDTO;
 import com.studymatch.dtos.EnrolmentRecordDTO;
 import com.studymatch.dtos.FieldErrorDTO;
+import com.studymatch.dtos.ImageFileDTO;
 import com.studymatch.dtos.ImportPreviewRowDTO;
 import com.studymatch.dtos.ImportResultRowDTO;
 import com.studymatch.dtos.ImportStudentsRequestDTO;
@@ -204,6 +205,16 @@ public class StudentService {
     Student student = getByNumber(studentNumber);
     PrivateProfileDTO privateProfile = canSeePrivateProfile(student, viewer) ? getPrivateProfile(student) : null;
     return toProfile(student, privateProfile);
+  }
+
+  // the photo on its own, for the chat list and anywhere else that only needs the picture
+  @Transactional(readOnly = true)
+  public ImageFileDTO getPfp(Long studentNumber) {
+    String pfp = getByNumber(studentNumber).getPfp();
+    if (pfp == null) {
+      throw new StudyMatchException(ErrorCode.NOT_FOUND);
+    }
+    return ImageFileDTO.fromDataUrl(pfp);
   }
 
   @Transactional
