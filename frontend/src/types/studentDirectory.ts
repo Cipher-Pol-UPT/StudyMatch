@@ -9,8 +9,9 @@ export interface StudentSummaryData {
   averageGrade: number | null; personalityProfile: PersonalityProfileData | null; accountStatus: AccountStatus;
 }
 export interface CategoryLevelData { categoryId: number; category: string; level: number }
+// the edition id is for changing class
 export interface EnrolmentRecordData {
-  subjectCode: string; subjectName: string; ects: number; academicYear: number;
+  subjectEditionId: number; subjectCode: string; subjectName: string; ects: number; academicYear: number;
   classSection: string; status: EnrolmentStatus; finalGrade: number | null;
 }
 export interface StudentRecordData {
