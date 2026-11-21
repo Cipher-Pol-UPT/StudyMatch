@@ -55,7 +55,7 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
         <Route path="/chats/direct/:number" element={<ChatsPage />} />
         <Route path={CHANGE_PASSWORD_PATH} element={<AccountPasswordPage />} />
         <Route path="/achievements" element={<AchievementsPage profile={profile} failed={failed} />} />
-        {pages.filter((p) => ![PROFILE_PATH, '/study-rooms', CHANGE_PASSWORD_PATH].includes(p.path)).map((p) => (
+        {pages.filter((p) => ![PROFILE_PATH, '/study-rooms', '/chats', CHANGE_PASSWORD_PATH].includes(p.path)).map((p) => (
           <Route key={p.path} path={p.path} element={<EmptyState icon={p.icon} title={t(`nav.${p.key}`)} body={t('placeholder.comingSoon')} />} />
         ))}
         <Route path="*" element={<Navigate to="/" replace />} />
