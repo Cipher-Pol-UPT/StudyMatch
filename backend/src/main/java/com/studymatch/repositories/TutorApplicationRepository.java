@@ -15,4 +15,8 @@ public interface TutorApplicationRepository extends JpaRepository<TutorApplicati
   boolean existsByStudentNumberAndSubjectIdAndStatus(Long studentNumber, Long subjectId,
       TutorApplicationStatus status);
 
+  // approve tutor application (#81): the applications a teacher has to decide, oldest first
+  List<TutorApplication> findBySubjectIdAndStatusOrderBySubmittedAtAsc(Long subjectId,
+      TutorApplicationStatus status);
+
 }
