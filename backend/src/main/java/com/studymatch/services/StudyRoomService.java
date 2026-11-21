@@ -86,17 +86,16 @@ public class StudyRoomService {
     StudyRoom room = getHostedRoom(tutorNumber, roomId);
 
     // the model checks it's still open and not started, the times and the capacity first,
-    // so a past or backwards room is reported before any overlap (the same as create)
-    room.update(request.startsAt(), request.endsAt(), request.capacity(), request.description(), request.link());
+    // so a past or backwards room is reported before any overlap (the same as create).
+    // a null link keeps the current one for now, so the entity never holds a null before the checks pass
+    room.update(request.startsAt(), request.endsAt(), request.capacity(), request.description(),
+        request.link() != null ? request.link() : room.getLink());
 
-    // a null link means "make a new one", generated right away because the room is already managed:
-    // the overlap query below would flush the null link and trip the entity's @NotBlank
-    if (request.link() == null) {
-      room.useGeneratedLink(meetLinkGenerator.createLink());
-    }
-
-    List<StudyRoom> overlapping = studyRoomRepository.findOverlappingExcluding(tutorNumber, roomId,
-        request.startsAt(), request.endsAt());
+    // the room's own old slot must not count as an overlap, so drop it from the tutor's overlapping rooms
+    List<StudyRoom> overlapping = studyRoomRepository.findOverlapping(tutorNumber, request.startsAt(),
+        request.endsAt()).stream()
+        .filter(other -> !other.getId().equals(roomId))
+        .toList();
     if (!overlapping.isEmpty()) {
       StudyRoom conflict = overlapping.get(0);
       throw new StudyMatchException(ErrorCode.STUDYROOM_OVERLAP, Map.of(
@@ -106,6 +105,10 @@ public class StudyRoomService {
           "endsAt", conflict.getEndsAt().toString()));
     }
 
+    // last, so Google is only asked for a room that will be saved
+    if (request.link() == null) {
+      room.useGeneratedLink(meetLinkGenerator.createLink());
+    }
     // notifying the participants comes with notifications (#144)
     return StudyRoomDTO.from(studyRoomRepository.save(room));
   }

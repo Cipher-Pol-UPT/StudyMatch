@@ -37,17 +37,6 @@ public interface StudyRoomRepository extends JpaRepository<StudyRoom, Long>, Jpa
       order by r.startsAt""")
   List<StudyRoom> findOverlapping(Long tutorNumber, LocalDateTime startsAt, LocalDateTime endsAt);
 
-  // edit StudyRoom (#51): the tutor's other rooms that share part of the [startsAt, endsAt) interval
-  @Query("""
-      select r from StudyRoom r
-      where r.tutorRole.student.number = :tutorNumber
-        and r.id <> :roomId
-        and r.status <> com.studymatch.enums.StudyRoomStatus.CANCELLED
-        and r.startsAt < :endsAt and r.endsAt > :startsAt
-      order by r.startsAt""")
-  List<StudyRoom> findOverlappingExcluding(Long tutorNumber, Long roomId, LocalDateTime startsAt,
-      LocalDateTime endsAt);
-
   // join StudyRoom (#45): the student's other joined rooms that share part of the [startsAt, endsAt) interval
   @Query("""
       select p.studyRoom from Participation p

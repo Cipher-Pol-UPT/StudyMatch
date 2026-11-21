@@ -717,8 +717,7 @@ class StudyRoomServiceTest {
     // Arrange
     StudyRoom room = openRoomWith();
     when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
-    when(studyRoomRepository.findOverlappingExcluding(TUTOR_NUMBER, ROOM_ID, tomorrowAt(15), tomorrowAt(17)))
-        .thenReturn(List.of());
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(15), tomorrowAt(17))).thenReturn(List.of());
     when(studyRoomRepository.save(room)).thenReturn(room);
 
     // Act
@@ -757,7 +756,7 @@ class StudyRoomServiceTest {
     StudyRoom existing = new StudyRoom(tutorRole, tomorrowAt(16), tomorrowAt(18), 5, "existing room", LINK);
     ReflectionTestUtils.setField(existing, "id", 8L);
     when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
-    when(studyRoomRepository.findOverlappingExcluding(TUTOR_NUMBER, ROOM_ID, tomorrowAt(15), tomorrowAt(17)))
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(15), tomorrowAt(17)))
         .thenReturn(List.of(existing));
 
     // Act
@@ -768,6 +767,48 @@ class StudyRoomServiceTest {
     // Assert
     assertEquals(ErrorCode.STUDYROOM_OVERLAP, e.getCode());
     assertEquals(8L, e.getParams().get("id"));
+  }
+
+  @Test
+  @DisplayName("An overlapping edit doesn't ask Google for a new link")
+  void overlapDoesNotGenerateLink() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    StudyRoom existing = new StudyRoom(tutorRole, tomorrowAt(16), tomorrowAt(18), 5, "existing room", LINK);
+    ReflectionTestUtils.setField(existing, "id", 8L);
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(15), tomorrowAt(17)))
+        .thenReturn(List.of(existing));
+
+    // Act - a null link is only replaced once every check passed
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+            updateRequest(tomorrowAt(15), tomorrowAt(17), 6, null)));
+
+    // Assert
+    assertEquals(ErrorCode.STUDYROOM_OVERLAP, e.getCode());
+    verify(meetLinkGenerator, never()).createLink();
+  }
+
+  @Test
+  @DisplayName("Moving a room to a time that overlaps only its own old slot isn't an overlap")
+  void overlappingOwnSlotIsNotAnOverlap() {
+    // Arrange - the only "overlap" is the room's own old 14-16 slot, which shares its id
+    StudyRoom room = openRoomWith();
+    StudyRoom ownOldSlot = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
+    ReflectionTestUtils.setField(ownOldSlot, "id", ROOM_ID);
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(15), tomorrowAt(17)))
+        .thenReturn(List.of(ownOldSlot));
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+        updateRequest(tomorrowAt(15), tomorrowAt(17), 5, LINK));
+
+    // Assert
+    assertEquals(tomorrowAt(15), result.startsAt());
+    verify(studyRoomRepository).save(room);
   }
 
   @Test
@@ -788,13 +829,48 @@ class StudyRoomServiceTest {
   }
 
   @Test
+  @DisplayName("A room that already started can't be edited")
+  void updateAfterStartIsRejected() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    ReflectionTestUtils.setField(room, "startsAt", LocalDateTime.now().minusMinutes(1));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+            updateRequest(tomorrowAt(15), tomorrowAt(17), 6, LINK)));
+
+    // Assert
+    assertEquals(ErrorCode.STUDYROOM_ALREADY_STARTED, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A cancelled room can't be edited")
+  void updateCancelledRoomIsRejected() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    room.cancel("test reason");
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+            updateRequest(tomorrowAt(15), tomorrowAt(17), 6, LINK)));
+
+    // Assert
+    assertEquals(ErrorCode.STUDYROOM_CLOSED, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
   @DisplayName("Without a link the room is edited with the Meet link the server made")
   void updatesWithGeneratedLink() {
     // Arrange
     StudyRoom room = openRoomWith();
     when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
-    when(studyRoomRepository.findOverlappingExcluding(TUTOR_NUMBER, ROOM_ID, tomorrowAt(15), tomorrowAt(17)))
-        .thenReturn(List.of());
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(15), tomorrowAt(17))).thenReturn(List.of());
     when(meetLinkGenerator.createLink()).thenReturn(GENERATED_LINK);
     when(studyRoomRepository.save(room)).thenReturn(room);
 

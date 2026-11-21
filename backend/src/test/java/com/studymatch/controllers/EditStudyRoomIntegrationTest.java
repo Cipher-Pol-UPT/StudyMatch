@@ -22,6 +22,7 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
@@ -245,6 +246,44 @@ class EditStudyRoomIntegrationTest {
     update(room.getId(), body(tomorrowAt(16), tomorrowAt(14), 5, LINK))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("STUDYROOM_ENDS_BEFORE_START"));
+  }
+
+  @Test
+  @DisplayName("A room that already started can't be edited")
+  void afterStartIsRejected() throws Exception {
+    // Arrange - the room started a minute ago
+    ReflectionTestUtils.setField(room, "startsAt", LocalDateTime.now().minusMinutes(1));
+    studyRoomRepository.saveAndFlush(room);
+
+    // Act + Assert
+    update(room.getId(), body(tomorrowAt(15), tomorrowAt(17), 6, LINK))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("STUDYROOM_ALREADY_STARTED"));
+  }
+
+  @Test
+  @DisplayName("A cancelled room can't be edited")
+  void cancelledRoomIsRejected() throws Exception {
+    // Arrange
+    room.cancel("test reason");
+    studyRoomRepository.saveAndFlush(room);
+
+    // Act + Assert
+    update(room.getId(), body(tomorrowAt(15), tomorrowAt(17), 6, LINK))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("STUDYROOM_CLOSED"));
+  }
+
+  @Test
+  @DisplayName("Moving a room to a time that overlaps only its own old slot isn't an overlap")
+  void overlappingOwnSlotIsNotAnOverlap() throws Exception {
+    // Act - 14-16 moves to 15-17, which overlaps only its own old slot
+    update(room.getId(), body(tomorrowAt(15), tomorrowAt(17), 5, LINK))
+        .andExpect(status().isOk());
+
+    // Assert - the room really moved
+    StudyRoom saved = studyRoomRepository.findById(room.getId()).orElseThrow();
+    assertEquals(tomorrowAt(15), saved.getStartsAt());
   }
 
   @Test
