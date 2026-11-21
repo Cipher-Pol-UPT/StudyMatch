@@ -29,7 +29,7 @@ The number of groups is fixed before the search: as many groups at the optimal s
 5. Students without a test form their own pool if there are enough of them; otherwise they're placed like the students without a tier.
 6. If a pool still can't be split, the whole section becomes one pool.
 
-`GroupGenerator` runs the algorithm on each pool with only that pool's separations (a separated pair in different pools is already apart). The time limit, 3 seconds for the whole class (`studymatch.matching-seconds`), is shared out by pool size.
+`GroupGenerator` runs the algorithm on each pool with only that pool's separations (a separated pair in different pools is already apart). The time limit, 3 seconds for the whole class (`studymatch.matching-seconds`), is shared out by pool size. A pool of one group has nothing to search and comes back straight away. For the teacher's loader, `GroupGenerator.estimate` works out the groups and the search time before generating (`GET .../groups/generation`) from the size of each class alone, so it loads nobody's evidence. The attendance tiers can split a class into more pools, so the count can be off by one and the time is the most the search takes; the loader fills as soon as the groups come back anyway.
 
 Layers 2 and 3 (groups with similar average grades, and complementary personalities in every group) are the cost below. Grades aren't turned into labels like "high" or "developing": what counts as a good grade depends on the subject, so the cost only compares z-scores within the edition. For the issue's "students near a tier edge" we only have the merge in step 3; there's no separate band around the edges.
 

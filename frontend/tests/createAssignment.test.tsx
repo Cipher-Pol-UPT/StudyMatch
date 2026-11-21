@@ -12,7 +12,7 @@ const enrolled: EditionStudentData[] = [
   { number: 50001, name: 'Ana Silva', classSection: 'A', personalityProfile: null, categoryLevel: null, attendance: null },
   { number: 50002, name: 'Rui Costa', classSection: 'A', personalityProfile: null, categoryLevel: null, attendance: null },
 ];
-const project: GradeColumn = { id: 1, name: 'Project 1', type: 'PROJECT', weight: 70 };
+const project: GradeColumn = { id: 1, name: 'Project 1', type: 'PROJECT', weight: 70, groupWork: false };
 const sheet = (assignments: GradeColumn[]): GradeSheetData => ({ assignments, students: [], weightsComplete: false });
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
@@ -53,7 +53,7 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('create an assignment (teacher)', () => {
   it('creates an individual exam, with group work locked, and lists it', async () => {
-    const exam: GradeColumn = { id: 2, name: 'Final exam', type: 'EXAM', weight: 30 };
+    const exam: GradeColumn = { id: 2, name: 'Final exam', type: 'EXAM', weight: 30, groupWork: false };
     const created = backend([sheet([project]), sheet([project, exam])], () => reply({ ...exam, date: '2099-12-18', grouping: null }, 201));
     const dialog = await openForm();
     fireEvent.click(dialog.getByRole('radio', { name: i18n.t('assignments.types.EXAM') }));
