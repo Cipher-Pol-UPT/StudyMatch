@@ -74,9 +74,7 @@ public class StudyRoomService {
 
     // last, so Google is only asked for a room that will be saved
     if (request.link() == null) {
-      room.useGeneratedLink(meetLinkGenerator.createLink(
-          tutorRole.getSubject().getName() + " - StudyRoom " + request.startsAt().toLocalDate(),
-          request.startsAt(), request.endsAt()));
+      room.useGeneratedLink(meetLinkGenerator.createLink());
     }
 
     return StudyRoomDTO.from(studyRoomRepository.save(room));

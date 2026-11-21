@@ -2,8 +2,6 @@ package com.studymatch.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -204,7 +202,7 @@ class StudyRoomIntegrationTest {
   @DisplayName("Without a link the StudyRoom is created with the Meet link the server made")
   void createsWithGeneratedLink() throws Exception {
     // Arrange
-    when(meetLinkGenerator.createLink(any(), eq(tomorrowAt(14)), eq(tomorrowAt(16))))
+    when(meetLinkGenerator.createLink())
         .thenReturn("https://meet.google.com/xyz-wxyz-xyz");
 
     // Act + Assert
@@ -217,7 +215,7 @@ class StudyRoomIntegrationTest {
   @DisplayName("When Google can't make the link the tutor gets MEET_LINK_UNAVAILABLE and no StudyRoom is created")
   void googleUnavailable() throws Exception {
     // Arrange
-    when(meetLinkGenerator.createLink(any(), any(), any()))
+    when(meetLinkGenerator.createLink())
         .thenThrow(new StudyMatchException(ErrorCode.MEET_LINK_UNAVAILABLE));
 
     // Act + Assert

@@ -173,13 +173,12 @@ class StudyRoomServiceTest {
   }
 
   @Test
-  @DisplayName("Without a link the room gets the one Google made, titled with the subject and the date")
+  @DisplayName("Without a link the room gets the one Google made")
   void noLinkGetsGeneratedOne() {
     // Arrange
     when(tutorRoleService.getByStudentAndSubject(TUTOR_NUMBER, SUBJECT_ID)).thenReturn(tutorRole);
     when(studyRoomRepository.save(any(StudyRoom.class))).thenAnswer(invocation -> invocation.getArgument(0));
-    when(meetLinkGenerator.createLink("Test Subject - StudyRoom " + tomorrowAt(14).toLocalDate(), tomorrowAt(14),
-        tomorrowAt(16))).thenReturn(GENERATED_LINK);
+    when(meetLinkGenerator.createLink()).thenReturn(GENERATED_LINK);
 
     // Act
     StudyRoomDTO room = studyRoomService.create(TUTOR_NUMBER, requestWithoutLink(tomorrowAt(14), tomorrowAt(16)));
@@ -193,7 +192,7 @@ class StudyRoomServiceTest {
   void googleFailsSavesNothing() {
     // Arrange
     when(tutorRoleService.getByStudentAndSubject(TUTOR_NUMBER, SUBJECT_ID)).thenReturn(tutorRole);
-    when(meetLinkGenerator.createLink(any(), any(), any()))
+    when(meetLinkGenerator.createLink())
         .thenThrow(new StudyMatchException(ErrorCode.MEET_LINK_UNAVAILABLE));
 
     // Act
