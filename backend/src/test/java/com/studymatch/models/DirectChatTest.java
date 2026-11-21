@@ -88,4 +88,15 @@ class DirectChatTest {
     assertSame(ana, chat.getOtherUser(rui));
   }
 
+  @Test
+  @DisplayName("A DM is named after the other person, so each side sees a different name")
+  void nameIsTheOtherPerson() {
+    // Arrange
+    DirectChat chat = new DirectChat(ana, rui);
+
+    // Act + Assert
+    assertEquals("Rui", chat.getNameFor(ana));
+    assertEquals("Ana", chat.getNameFor(rui));
+  }
+
 }
