@@ -18,6 +18,7 @@ import java.util.ResourceBundle;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -87,7 +88,7 @@ public class CertificatePdfWriter {
   private final String verifyBase;
 
   public CertificatePdfWriter(@Value("${studymatch.frontend-url}") String frontendUrl) {
-    this.verifyBase = frontendUrl.replaceAll("/+$", "") + "/verify/";
+    this.verifyBase = StringUtils.trimTrailingCharacter(frontendUrl, '/') + "/verify/";
   }
 
   // one achievement, A4 landscape
