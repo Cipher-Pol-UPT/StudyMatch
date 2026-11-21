@@ -16,6 +16,7 @@ import com.studymatch.dtos.MessageDTO;
 import com.studymatch.dtos.MessagePageDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
+import com.studymatch.events.MemberChatEvent;
 import com.studymatch.events.UserChatEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -107,13 +108,27 @@ public class MessageService {
       saved.hideFrom(direct.getOtherUser(user));
     }
     MessageDTO message = MessageDTO.from(messageRepository.save(saved));
-    eventPublisher.publishEvent(new ChatEvent(chat.getId(), ChatEventType.MESSAGE_CREATED, message));
+    publishToChat(saved, ChatEventType.MESSAGE_CREATED, message);
     for (User member : chat.getMembers()) {
       if (!saved.isHiddenFrom(member)) {
         eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_UPDATED, message));
       }
     }
     return message;
+  }
+
+  // a hidden message skips the topic, a blocker's tab opened before the block still listens there (GR9)
+  private void publishToChat(Message message, ChatEventType type, Object payload) {
+    Chat chat = message.getChat();
+    if (message.getHiddenFrom() == null) {
+      eventPublisher.publishEvent(new ChatEvent(chat.getId(), type, payload));
+      return;
+    }
+    for (User member : chat.getMembers()) {
+      if (!message.isHiddenFrom(member)) {
+        eventPublisher.publishEvent(new MemberChatEvent(member, chat.getId(), type, payload));
+      }
+    }
   }
 
 }

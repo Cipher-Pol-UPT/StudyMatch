@@ -45,6 +45,7 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
+import com.studymatch.events.MemberChatEvent;
 import com.studymatch.events.UserChatEvent;
 import com.studymatch.models.Degree;
 import com.studymatch.models.DirectChat;
@@ -445,6 +446,32 @@ class ChatWebSocketIntegrationTest {
     assertNotNull(updated);
     assertEquals("CHAT_UPDATED", updated.get("type"));
     assertNull(toRui.poll(1, TimeUnit.SECONDS));
+  }
+
+  @Test
+  @DisplayName("A blocker's tab subscribed before the block doesn't get the blocked user's DM, only the sender does (GR9)")
+  void blockedMessageSkipsTheTopic() throws Exception {
+    // Arrange - Rui opens the DM, then blocks Ana. a first event on each proves both subscriptions are registered
+    BlockingQueue<Map<String, Object>> ruiTopic = subscribe(connect(rui), "/topic/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> anaChat = subscribe(connect(ana), "/user/queue/chats/" + chat.getId());
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiTopic));
+    assertNotNull(publishUntilReceived(
+        new MemberChatEvent(ana, chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), anaChat));
+    ruiTopic.clear();
+    anaChat.clear();
+    userBlockRepository.save(new UserBlock(rui, ana));
+
+    // Act
+    int status = send("POST", login(ana.getInstitutionalEmail()), "/chats/" + chat.getId() + "/messages",
+        "{\"text\":\"hi Rui\"}");
+
+    // Assert
+    assertEquals(201, status);
+    Map<String, Object> created = anaChat.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(created);
+    assertEquals("MESSAGE_CREATED", created.get("type"));
+    assertEquals("hi Rui", ((Map<?, ?>) created.get("payload")).get("text"));
+    assertNull(ruiTopic.poll(1, TimeUnit.SECONDS));
   }
 
   @Test
