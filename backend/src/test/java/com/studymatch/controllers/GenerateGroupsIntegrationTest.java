@@ -199,8 +199,8 @@ class GenerateGroupsIntegrationTest {
   }
 
   @Test
-  @DisplayName("Grades, attendance and statutes are used, and the preview shows each student's third by level")
-  void evidenceAndLevelBands() throws Exception {
+  @DisplayName("With grades, attendance, a statute and a separation from a blocked student, everyone is still placed")
+  void groupsWithEvidence() throws Exception {
     // Arrange - three finished the category before (18, 12, 6), one only finished another category (15)
     finishEarlierSubject(edition.getSubject().getCategory(), "ITGROUPS0", Map.of(0, 18, 1, 12, 2, 6));
     finishEarlierSubject(categoryRepository.save(new Category("IT Groups Other")), "ITGROUPSX", Map.of(3, 15));
@@ -217,18 +217,10 @@ class GenerateGroupsIntegrationTest {
     assignmentRepository.save(assignment);
 
     // Act + Assert
+    // grades only steer the matching, the preview never shows them
     generate(assignment)
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$[*].members[?(@.number == " + students.get(0).getNumber() + ")].level")
-            .value(Matchers.contains("HIGH")))
-        .andExpect(jsonPath("$[*].members[?(@.number == " + students.get(3).getNumber() + ")].level")
-            .value(Matchers.contains("HIGH")))
-        .andExpect(jsonPath("$[*].members[?(@.number == " + students.get(1).getNumber() + ")].level")
-            .value(Matchers.contains("AVERAGE")))
-        .andExpect(jsonPath("$[*].members[?(@.number == " + students.get(2).getNumber() + ")].level")
-            .value(Matchers.contains("DEVELOPING")))
-        .andExpect(jsonPath("$[*].members[?(@.number == " + students.get(7).getNumber() + ")].level")
-            .value(Matchers.contains(Matchers.nullValue())));
+        .andExpect(jsonPath("$[0].members[0].level").doesNotExist());
     assertEquals(8, groups(assignment, GroupStatus.DRAFT).stream().mapToInt(group -> group.getMembers().size())
         .sum());
   }

@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.studymatch.dtos.GroupPreviewDTO;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
-import com.studymatch.enums.LevelBand;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.matching.Candidate;
@@ -73,13 +72,12 @@ public class GroupService {
     groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.DRAFT);
     // the old drafts have to be gone before the new ones take their numbers
     groupRepository.flush();
-    LevelBand[] bands = levelBands(candidates);
     List<GroupPreviewDTO> previews = new ArrayList<>();
     for (int index = 0; index < groups.size(); index++) {
       Group group = new Group(assignment, index + 1);
       groups.get(index).forEach(student -> group.addMember(enrolments.get(student).getStudent()));
       groupRepository.save(group);
-      previews.add(preview(index + 1, groups.get(index), enrolments, bands));
+      previews.add(preview(index + 1, groups.get(index), enrolments));
     }
     return previews;
   }
@@ -153,37 +151,14 @@ public class GroupService {
     return pairs;
   }
 
-  // thirds of the students with grades, by rank (GR3)
-  private static LevelBand[] levelBands(List<Candidate> candidates) {
-    LevelBand[] bands = new LevelBand[candidates.size()];
-    List<Integer> graded = new ArrayList<>();
-    for (int i = 0; i < candidates.size(); i++) {
-      if (candidates.get(i).level() != null) {
-        graded.add(i);
-      }
-    }
-    graded.sort(Comparator.comparing((Integer i) -> candidates.get(i).level()).reversed());
-    for (int rank = 0; rank < graded.size(); rank++) {
-      LevelBand band = LevelBand.DEVELOPING;
-      if (rank * 3 < graded.size()) {
-        band = LevelBand.HIGH;
-      } else if (rank * 3 < graded.size() * 2) {
-        band = LevelBand.AVERAGE;
-      }
-      bands[graded.get(rank)] = band;
-    }
-    return bands;
-  }
-
-  private static GroupPreviewDTO preview(int number, List<Integer> students, List<Enrolment> enrolments,
-      LevelBand[] bands) {
+  private static GroupPreviewDTO preview(int number, List<Integer> students, List<Enrolment> enrolments) {
     Set<Language> shared = EnumSet.allOf(Language.class);
     List<GroupPreviewDTO.Member> members = new ArrayList<>();
     for (int student : students) {
       Enrolment enrolment = enrolments.get(student);
       shared.retainAll(enrolment.getStudent().getLanguages());
       members.add(new GroupPreviewDTO.Member(enrolment.getStudent().getNumber(), enrolment.getStudent().getName(),
-          enrolment.getClassSection().getCode(), bands[student]));
+          enrolment.getClassSection().getCode()));
     }
     members.sort(Comparator.comparing(GroupPreviewDTO.Member::name).thenComparing(GroupPreviewDTO.Member::number));
     return new GroupPreviewDTO(number, members.size(), List.copyOf(shared), members);

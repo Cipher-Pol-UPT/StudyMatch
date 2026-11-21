@@ -174,7 +174,7 @@ class MatchingCostTest {
     assertEquals(0.5, cost, DELTA);
   }
 
-  // grades (GR3)
+  // grades
 
   @Test
   @DisplayName("A group where everyone has the same level costs 1.25")

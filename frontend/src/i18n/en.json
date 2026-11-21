@@ -402,11 +402,6 @@
     "DRAFT": "Draft",
     "PUBLISHED": "Published"
   },
-  "levelBands": {
-    "HIGH": "High",
-    "AVERAGE": "Average",
-    "DEVELOPING": "Developing"
-  },
   "enrolmentStatuses": {
     "IN_PROGRESS": "In progress",
     "PASSED": "Passed",

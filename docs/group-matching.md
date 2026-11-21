@@ -31,7 +31,7 @@ The number of groups is fixed before the search: as many groups at the optimal s
 
 `GroupGenerator` runs the algorithm on each pool with only that pool's separations (a separated pair in different pools is already apart). The time limit, 3 seconds for the whole class (`studymatch.matching-seconds`), is shared out by pool size.
 
-Layers 2 and 3 (a mix of levels and complementary personalities in every group) are the cost below. For the issue's "students near a tier edge" we only have the merge in step 3; there's no separate band around the edges.
+Layers 2 and 3 (groups with similar average grades, and complementary personalities in every group) are the cost below. Grades aren't turned into labels like "high" or "developing": what counts as a good grade depends on the subject, so the cost only compares z-scores within the edition. For the issue's "students near a tier edge" we only have the merge in step 3; there's no separate band around the edges.
 
 ## The cost
 
