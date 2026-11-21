@@ -15,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class GeneticMatchingTest {
 
@@ -50,6 +51,35 @@ class GeneticMatchingTest {
     for (int student = 0; student < problem.size(); student++) {
       assertEquals(first.groupOf(student), second.groupOf(student));
     }
+  }
+
+  @Test
+  @DisplayName("Without any budget it still gives valid groups, from greedy")
+  void noBudgetFallsBackToGreedy() {
+    // Arrange
+    MatchingProblem problem = MatchingTestData.randomProblem(20, 0.05, 1, 3, 4, 5);
+
+    // Act
+    Grouping grouping = genetic.solve(problem, MatchingBudget.evaluations(0), new Random(1));
+
+    // Assert
+    assertTrue(MatchingCost.isValid(problem, grouping));
+  }
+
+  @ParameterizedTest(name = "seed {0}")
+  @ValueSource(longs = { 1, 2, 14, 19 })
+  @DisplayName("When the repair can't fix the best order the groups still come out valid")
+  void tightSeparationsStayValid(long seed) {
+    // Arrange - groups of 2, and 0 and 1 can only go with 2 or 4; with one evaluation the only order is the first
+    // shuffle, and seeds 14 and 19 put 0 and 1 together in a way the repair can't undo, so it falls back to greedy
+    MatchingProblem problem = MatchingTestData.fixedSizeProblem(6, 2, List.of(new int[] { 0, 1 },
+        new int[] { 0, 3 }, new int[] { 0, 5 }, new int[] { 1, 3 }, new int[] { 1, 5 }));
+
+    // Act
+    Grouping grouping = genetic.solve(problem, MatchingBudget.evaluations(1), new Random(seed));
+
+    // Assert
+    assertTrue(MatchingCost.isValid(problem, grouping));
   }
 
   @Test

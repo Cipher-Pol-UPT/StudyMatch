@@ -2,6 +2,7 @@ package com.studymatch.matching;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -99,6 +100,24 @@ class MatchingProblemTest {
 
     // Act + Assert
     assertThrows(IllegalArgumentException.class, () -> new MatchingProblem(members, List.of(), 4, 4, 5));
+  }
+
+  @Test
+  @DisplayName("Members are equal by the content of their traits, and differ when any field does")
+  void memberEqualityByContent() {
+    // Arrange - two separate arrays with the same traits
+    Member member = new Member(new double[] { 1, 2, 3, 4, 5 }, 0.5, 1, 2);
+    Member same = new Member(new double[] { 1, 2, 3, 4, 5 }, 0.5, 1, 2);
+
+    // Act + Assert
+    assertEquals(member, same);
+    assertEquals(member.hashCode(), same.hashCode());
+    assertTrue(member.toString().contains("[1.0, 2.0, 3.0, 4.0, 5.0]"));
+    assertNotEquals(member, new Member(new double[] { 1, 2, 3, 4, 6 }, 0.5, 1, 2));
+    assertNotEquals(member, new Member(new double[] { 1, 2, 3, 4, 5 }, 0.6, 1, 2));
+    assertNotEquals(member, new Member(new double[] { 1, 2, 3, 4, 5 }, 0.5, 3, 2));
+    assertNotEquals(member, new Member(new double[] { 1, 2, 3, 4, 5 }, 0.5, 1, 3));
+    assertNotEquals(member, "not a member");
   }
 
 }

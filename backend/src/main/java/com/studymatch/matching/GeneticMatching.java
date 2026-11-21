@@ -15,24 +15,23 @@ public final class GeneticMatching implements MatchingAlgorithm {
   static final int ELITE = 2;
   static final double MUTATION_RATE = 0.2;
 
-  // an order of the students and its score
-  private record Individual(int[] order, double score) {
+  // an order of the students and its score; a class, not a record, since it's never compared
+  private static final class Individual {
 
-    // records compare arrays by reference, so compare the order by content
-    @Override
-    public boolean equals(Object other) {
-      return other instanceof Individual individual && Arrays.equals(order, individual.order)
-          && Double.compare(score, individual.score) == 0;
+    private final int[] order;
+    private final double score;
+
+    Individual(int[] order, double score) {
+      this.order = order;
+      this.score = score;
     }
 
-    @Override
-    public int hashCode() {
-      return 31 * Double.hashCode(score) + Arrays.hashCode(order);
+    int[] order() {
+      return order;
     }
 
-    @Override
-    public String toString() {
-      return "Individual[order=" + Arrays.toString(order) + ", score=" + score + "]";
+    double score() {
+      return score;
     }
 
   }

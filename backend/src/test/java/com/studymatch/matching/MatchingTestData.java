@@ -50,6 +50,16 @@ public final class MatchingTestData {
     return new MatchingProblem(members, separations, minSize, optimalSize, maxSize);
   }
 
+  // random students in groups of exactly one size, with hand-picked separations
+  public static MatchingProblem fixedSizeProblem(int students, int size, List<int[]> separations) {
+    Random random = new Random(1);
+    List<Member> members = new ArrayList<>();
+    for (int i = 0; i < students; i++) {
+      members.add(randomMember(random));
+    }
+    return new MatchingProblem(members, separations, size, size, size);
+  }
+
   private static Member randomMember(Random random) {
     double[] traits = new double[TRAITS];
     for (int trait = 0; trait < TRAITS; trait++) {

@@ -93,6 +93,24 @@ class AntColonyMatchingTest {
         () -> parallel.solve(problem, MatchingBudget.cpuTime(Duration.ofSeconds(1)), new Random(1)));
   }
 
+  @Test
+  @DisplayName("When the pheromone resets after every round without a better grouping the groups are valid")
+  void stagnationResetStaysValid() {
+    // Arrange - fewer ants, a stronger pheromone, a short local search and a stagnation limit of one round
+    MatchingProblem problem = MatchingTestData.randomProblem(20, 0.05, 2, 3, 4, 5);
+    AntColonyMatching.Settings tuned = AntColonyMatching.DEFAULTS.withAnts(3).withPheromonePower(2);
+    AntColonyMatching.Settings settings = new AntColonyMatching.Settings(tuned.ants(), tuned.pheromonePower(),
+        tuned.heuristicPower(), tuned.evaporation(), tuned.minPheromone(), tuned.globalBestEvery(), 1,
+        tuned.fairnessWeight(), tuned.localSearch().withSteps(100));
+
+    // Act
+    Grouping grouping = new AntColonyMatching(settings).solve(problem, MatchingBudget.evaluations(5_000),
+        new Random(2));
+
+    // Assert
+    assertTrue(MatchingCost.isValid(problem, grouping));
+  }
+
   @ParameterizedTest(name = "temperature {0}")
   @CsvSource({ "0", "0.2" })
   @DisplayName("With or without the annealing-style local search the groups are valid")
