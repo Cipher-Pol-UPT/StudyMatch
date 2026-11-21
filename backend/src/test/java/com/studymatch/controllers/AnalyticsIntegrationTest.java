@@ -213,7 +213,9 @@ class AnalyticsIntegrationTest {
             "CONSCIENTIOUSNESS", "EXTRAVERSION", "AGREEABLENESS", "NEUROTICISM")))
         .andExpect(jsonPath("$.personalityDistribution[*].students").value(Matchers.contains(1, 0, 1, 0, 0)))
         .andExpect(jsonPath("$.groupBalance.length()").value(1))
+        .andExpect(jsonPath("$.groupBalance[0].assignmentId").value(project.getId()))
         .andExpect(jsonPath("$.groupBalance[0].assignment").value("Test Project"))
+        .andExpect(jsonPath("$.groupBalance[0].subjectCode").value("ITANALYT1"))
         .andExpect(jsonPath("$.groupBalance[0].members").value(2))
         .andExpect(jsonPath("$.groupBalance[0].averageGrade").value(16.0))
         .andExpect(jsonPath("$.firstYearOnly").value(false));
@@ -266,6 +268,25 @@ class AnalyticsIntegrationTest {
     analytics("subjectEditionId", String.valueOf(maths.getId()))
         .andExpect(jsonPath("$.totalStudents").value(1))
         .andExpect(jsonPath("$.groupBalance.length()").value(0));
+  }
+
+  @Test
+  @DisplayName("Two subjects with an assignment of the same name stay apart in group balance")
+  void sameAssignmentNameInTwoSubjects() throws Exception {
+    // Arrange - Maths has a "Test Project" too, ana is in its only group
+    Assignment mathsProject = assignmentRepository.save(new Assignment(maths, "Test Project", AssignmentType.PROJECT,
+        LocalDate.of(YEAR + 1, 1, 15), new BigDecimal("0.5"), new GroupingRule(2, 2, 3, false)));
+    Group mathsGroup = new Group(mathsProject, 1);
+    published.getMembers().stream().filter(member -> member.getCurricularYear() == 2).forEach(mathsGroup::addMember);
+    mathsGroup.publish();
+    groupRepository.saveAndFlush(mathsGroup);
+
+    // Act + Assert - Programming (ITANALYT1) first, then Maths, each with its own assignment id
+    analytics("academicYear", String.valueOf(YEAR))
+        .andExpect(jsonPath("$.groupBalance.length()").value(2))
+        .andExpect(jsonPath("$.groupBalance[*].subjectCode").value(Matchers.contains("ITANALYT1", "ITANALYT2")))
+        .andExpect(jsonPath("$.groupBalance[*].assignmentId").value(Matchers.contains(
+            project.getId().intValue(), mathsProject.getId().intValue())));
   }
 
   @Test
