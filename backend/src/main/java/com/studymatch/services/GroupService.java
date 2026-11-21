@@ -13,6 +13,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.dtos.GroupGenerationDTO;
 import com.studymatch.dtos.GroupPreviewDTO;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
@@ -60,16 +61,11 @@ public class GroupService {
     if (!replacePublished && groupRepository.existsByAssignmentAndStatus(assignment, GroupStatus.PUBLISHED)) {
       throw new StudyMatchException(ErrorCode.GROUPS_ALREADY_PUBLISHED);
     }
-    // blocked accounts aren't placed in new groups (GR5)
-    List<Enrolment> enrolments = enrolmentService.listEnrolments(subjectEditionId).stream()
-        .filter(enrolment -> !enrolment.getStudent().isBlocked())
-        .sorted(Comparator.comparing(enrolment -> enrolment.getStudent().getNumber()))
-        .toList();
+    List<Enrolment> enrolments = groupable(subjectEditionId);
     if (enrolments.size() < rule.getMinSize()) {
       throw new StudyMatchException(ErrorCode.NOT_ENOUGH_STUDENTS_FOR_GROUPS);
     }
-    Long categoryId = assignment.getSubjectEdition().getSubject().getCategory().getId();
-    List<Candidate> candidates = enrolments.stream().map(enrolment -> toCandidate(enrolment, categoryId)).toList();
+    List<Candidate> candidates = candidates(assignment, enrolments);
     List<List<Integer>> groups = generate(candidates, separations(rule, enrolments), rule);
 
     groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.DRAFT);
@@ -83,6 +79,31 @@ public class GroupService {
       previews.add(preview(index + 1, groups.get(index), enrolments));
     }
     return previews;
+  }
+
+  // generate groups, before generating: how many groups and how long the search takes, for the page's loader
+  @Transactional(readOnly = true)
+  public GroupGenerationDTO planGroups(Long subjectEditionId, Long assignmentId) {
+    Assignment assignment = assignmentService.getAssignment(subjectEditionId, assignmentId);
+    GroupingRule rule = assignment.getGroupingRule();
+    if (rule == null) {
+      throw new StudyMatchException(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK);
+    }
+    List<Enrolment> enrolments = groupable(subjectEditionId);
+    int groups = 0;
+    long searchMillis = 0;
+    // a class that can't be split plans nothing: generating says why
+    if (enrolments.size() >= rule.getMinSize()) {
+      try {
+        GroupGenerator.Plan plan = groupGenerator.plan(candidates(assignment, enrolments), rule.getMinSize(),
+            rule.getOptimalSize(), rule.getMaxSize(), rule.isSameClass());
+        groups = plan.groups();
+        searchMillis = plan.search().toMillis();
+      } catch (NoValidSplitException e) {
+        groups = 0;
+      }
+    }
+    return new GroupGenerationDTO(enrolments.size(), groups, rule.getOptimalSize(), searchMillis);
   }
 
   // generate groups, confirm: the drafts replace whatever was published before
@@ -115,6 +136,19 @@ public class GroupService {
     } catch (UnmetSeparationsException e) {
       throw new StudyMatchException(ErrorCode.SEPARATIONS_CANNOT_BE_MET);
     }
+  }
+
+  // blocked accounts aren't placed in new groups (GR5)
+  private List<Enrolment> groupable(Long subjectEditionId) {
+    return enrolmentService.listEnrolments(subjectEditionId).stream()
+        .filter(enrolment -> !enrolment.getStudent().isBlocked())
+        .sorted(Comparator.comparing(enrolment -> enrolment.getStudent().getNumber()))
+        .toList();
+  }
+
+  private List<Candidate> candidates(Assignment assignment, List<Enrolment> enrolments) {
+    Long categoryId = assignment.getSubjectEdition().getSubject().getCategory().getId();
+    return enrolments.stream().map(enrolment -> toCandidate(enrolment, categoryId)).toList();
   }
 
   private Candidate toCandidate(Enrolment enrolment, Long categoryId) {
