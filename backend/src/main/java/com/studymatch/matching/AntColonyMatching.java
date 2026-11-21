@@ -77,7 +77,7 @@ public final class AntColonyMatching implements MatchingAlgorithm {
           : sequentialRound(problem, ant, budget, random);
       if (champion == null) {
         if (++emptyRounds >= MAX_EMPTY_ROUNDS) {
-          throw new IllegalStateException("the separations leave no valid grouping");
+          throw new UnmetSeparationsException();
         }
         continue;
       }

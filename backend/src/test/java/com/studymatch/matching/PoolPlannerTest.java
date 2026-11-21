@@ -207,7 +207,7 @@ class PoolPlannerTest {
     add(candidates, 2, 95.0, "B");
 
     // Act + Assert
-    assertThrows(IllegalArgumentException.class, () -> plan(candidates, true));
+    assertThrows(NoValidSplitException.class, () -> plan(candidates, true));
   }
 
   // groups of 3 to 5, 4 at best

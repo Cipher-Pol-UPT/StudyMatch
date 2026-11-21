@@ -33,7 +33,7 @@ public final class PoolPlanner {
     List<List<Integer>> pools = new ArrayList<>();
     for (List<Integer> section : planner.sections(sameClass)) {
       if (!planner.splits(section.size())) {
-        throw new IllegalArgumentException("no valid split for " + section.size() + " students");
+        throw new NoValidSplitException(section.size());
       }
       pools.addAll(planner.planSection(section));
     }

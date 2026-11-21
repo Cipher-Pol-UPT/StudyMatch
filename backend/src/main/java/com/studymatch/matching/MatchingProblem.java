@@ -74,7 +74,7 @@ public final class MatchingProblem {
       int maxSize) {
     int groups = groupCount(members.size(), minSize, optimalSize, maxSize);
     if (groups < 1) {
-      throw new IllegalArgumentException("no valid split for " + members.size() + " students");
+      throw new NoValidSplitException(members.size());
     }
     this.members = List.copyOf(members);
     this.separations = List.copyOf(separations);

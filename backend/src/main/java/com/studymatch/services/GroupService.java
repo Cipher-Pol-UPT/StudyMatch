@@ -20,6 +20,8 @@ import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.matching.Candidate;
 import com.studymatch.matching.GroupGenerator;
+import com.studymatch.matching.NoValidSplitException;
+import com.studymatch.matching.UnmetSeparationsException;
 import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Assignment;
 import com.studymatch.models.Enrolment;
@@ -108,9 +110,9 @@ public class GroupService {
     try {
       return groupGenerator.generate(candidates, separations, rule.getMinSize(), rule.getOptimalSize(),
           rule.getMaxSize(), rule.isSameClass(), random);
-    } catch (IllegalArgumentException e) {
+    } catch (NoValidSplitException e) {
       throw new StudyMatchException(ErrorCode.NO_VALID_GROUP_SPLIT);
-    } catch (IllegalStateException e) {
+    } catch (UnmetSeparationsException e) {
       throw new StudyMatchException(ErrorCode.SEPARATIONS_CANNOT_BE_MET);
     }
   }

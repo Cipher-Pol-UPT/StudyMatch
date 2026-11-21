@@ -69,7 +69,7 @@ class GroupGeneratorTest {
     List<int[]> separations = List.of(new int[] { 0, 1 }, new int[] { 0, 2 }, new int[] { 0, 3 });
 
     // Act + Assert
-    assertThrows(IllegalStateException.class,
+    assertThrows(UnmetSeparationsException.class,
         () -> generator.generate(candidates, separations, 2, 2, 2, false, new Random(1)));
   }
 
