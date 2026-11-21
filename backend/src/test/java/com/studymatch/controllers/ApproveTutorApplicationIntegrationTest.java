@@ -162,11 +162,10 @@ class ApproveTutorApplicationIntegrationTest {
   }
 
   @Test
-  @DisplayName("Rejecting without a reason still works")
+  @DisplayName("Rejecting without a body still works")
   void rejectsWithoutReason() throws Exception {
-    mockMvc.perform(post("/tutor-applications/" + application.getId() + "/reject").with(csrf()).session(teacherSession)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content("{}"))
+    // no body at all, so the request is null and the reason stays null
+    mockMvc.perform(post("/tutor-applications/" + application.getId() + "/reject").with(csrf()).session(teacherSession))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("REJECTED"));
   }
