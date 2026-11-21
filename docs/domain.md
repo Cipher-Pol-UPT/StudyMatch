@@ -139,6 +139,12 @@ Unblocking (`PUT /users/{number}/unblock`) makes the account active again and cl
 
 Groups are generated per group assignment (#57). Blocked accounts aren't placed in new groups but keep their old ones (GR5), every group shares at least one language (GR4), and students with a special statute are placed last, filling the groups that need members (GR7). The teacher reviews the draft groups and can edit them before publishing.
 
+## Analytics
+
+Staff sees analytics for one academic year, the current one unless another is asked for, and can narrow it to a subject edition, one of its classes, or a published group. A group only counts its members in the group's own subject. A filter that matches nobody gives empty analytics (zero students, no attendance), not an error, so the page can suggest a broader selection.
+
+Everything is aggregated. Average attendance and attendance per month use the same rule as the profile (current class only, justified absences count as attended), and students with an active special statute are left out of attendance, the same as GR7. Their statute type never appears. The personality chart counts students by their strongest Big Five trait, a tie going to the first in OCEAN order, and students who haven't taken the test aren't counted. Group balance shows each published group's size and its members' average grade (the ECTS-weighted average of what they finished), so groups that are far apart stand out; drafts aren't shown because the teacher can still change them. `firstYearOnly` is true when everyone selected is in their first year, who have no grade history yet.
+
 ## Chats
 
 There are three kinds of chat: DMs, group chats a user creates (#226), and one chat per assignment group (#236). How messages reach the browser live is in [architecture.md](architecture.md#live-updates).
