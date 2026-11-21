@@ -18,6 +18,7 @@ import com.studymatch.dtos.CreateStudyRoomRequestDTO;
 import com.studymatch.dtos.ParticipantDTO;
 import com.studymatch.dtos.StudyRoomDTO;
 import com.studymatch.dtos.StudyRoomDetailDTO;
+import com.studymatch.dtos.UpdateStudyRoomRequestDTO;
 import com.studymatch.enums.Achievement;
 import com.studymatch.enums.StudyRoomStatus;
 import com.studymatch.events.TutorActivityEvent;
@@ -76,6 +77,39 @@ public class StudyRoomService {
       room.useGeneratedLink(meetLinkGenerator.createLink());
     }
 
+    return StudyRoomDTO.from(studyRoomRepository.save(room));
+  }
+
+  // edit StudyRoom (#51): a tutor changes their room's details, the subject can't change
+  @Transactional
+  public StudyRoomDTO update(Long tutorNumber, Long roomId, UpdateStudyRoomRequestDTO request) {
+    StudyRoom room = getHostedRoom(tutorNumber, roomId);
+
+    // the model checks it's still open and not started, the times and the capacity first,
+    // so a past or backwards room is reported before any overlap (the same as create).
+    // a null link keeps the current one for now, so the entity never holds a null before the checks pass
+    room.update(request.startsAt(), request.endsAt(), request.capacity(), request.description(),
+        request.link() != null ? request.link() : room.getLink());
+
+    // the room's own old slot must not count as an overlap, so drop it from the tutor's overlapping rooms
+    List<StudyRoom> overlapping = studyRoomRepository.findOverlapping(tutorNumber, request.startsAt(),
+        request.endsAt()).stream()
+        .filter(other -> !other.getId().equals(roomId))
+        .toList();
+    if (!overlapping.isEmpty()) {
+      StudyRoom conflict = overlapping.get(0);
+      throw new StudyMatchException(ErrorCode.STUDYROOM_OVERLAP, Map.of(
+          "id", conflict.getId(),
+          "subject", conflict.getTutorRole().getSubject().getName(),
+          "startsAt", conflict.getStartsAt().toString(),
+          "endsAt", conflict.getEndsAt().toString()));
+    }
+
+    // last, so Google is only asked for a room that will be saved
+    if (request.link() == null) {
+      room.useGeneratedLink(meetLinkGenerator.createLink());
+    }
+    // notifying the participants comes with notifications (#144)
     return StudyRoomDTO.from(studyRoomRepository.save(room));
   }
 

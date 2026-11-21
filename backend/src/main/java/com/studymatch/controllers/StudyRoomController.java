@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,6 +24,7 @@ import com.studymatch.dtos.RateTutorRequestDTO;
 import com.studymatch.dtos.RatingDTO;
 import com.studymatch.dtos.StudyRoomDTO;
 import com.studymatch.dtos.StudyRoomDetailDTO;
+import com.studymatch.dtos.UpdateStudyRoomRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.Student;
@@ -61,6 +63,19 @@ public class StudyRoomController {
       Authentication authentication) {
     User tutor = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.status(HttpStatus.CREATED).body(studyRoomService.create(tutor.getNumber(), request));
+  }
+
+  @PutMapping("{id}")
+  @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "Edit a StudyRoom you host before it starts. The subject can't change, "
+      + "cancel and create a new room instead")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ACCESS_DENIED, ErrorCode.STUDYROOM_CLOSED,
+      ErrorCode.STUDYROOM_ALREADY_STARTED, ErrorCode.STUDYROOM_IN_PAST, ErrorCode.STUDYROOM_ENDS_BEFORE_START,
+      ErrorCode.STUDYROOM_OVERLAP, ErrorCode.CAPACITY_BELOW_PARTICIPANTS, ErrorCode.MEET_LINK_UNAVAILABLE })
+  public ResponseEntity<StudyRoomDTO> update(@PathVariable Long id,
+      @Valid @RequestBody UpdateStudyRoomRequestDTO request, Authentication authentication) {
+    User tutor = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(studyRoomService.update(tutor.getNumber(), id, request));
   }
 
   @GetMapping
