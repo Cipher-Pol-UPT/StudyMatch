@@ -18,6 +18,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/users/logout` | logged in | end the session (204) |
 | GET | `/users/me` | logged in | who's logged in, and whether they still have to change their password or take the personality test |
 | PUT | `/users/change-password` | logged in | change your own password |
+| GET | `/users/chat-contacts?search=&page=` | Student, Teacher | who you can message: Students and Teachers that aren't blocked, by name, institutional email or number, 20 per page, without yourself |
 | POST | `/users/` | Admin | create a Staff or Teacher account |
 | GET | `/users/` | Admin | search accounts of every role by name, institutional email or number, 20 per page, optionally by status |
 | GET | `/users/{number}/block-impact` | Admin | what blocking would cancel, and a teacher's editions this year that need another teacher |
@@ -111,7 +112,11 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 ## Chats
 
-Chats don't have REST endpoints yet. The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and Teachers, where the browser subscribes to `/topic/chats/{id}` for a chat it's in and `/user/queue/chats` for its chat list. The CONNECT frame needs the `X-XSRF-TOKEN` header. How it works is in [architecture.md](architecture.md#live-updates).
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/chats/direct/{number}` | Student, Teacher | your DM with that person, `chatId` is null until the first message creates it. Anyone the contact search wouldn't offer is 404 |
+
+The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and Teachers, where the browser subscribes to `/topic/chats/{id}` for a chat it's in and `/user/queue/chats` for its chat list. The CONNECT frame needs the `X-XSRF-TOKEN` header. How it works is in [architecture.md](architecture.md#live-updates).
 
 ## Analytics
 
@@ -121,4 +126,4 @@ Chats don't have REST endpoints yet. The live part is the WebSocket at `/ws` (ST
 
 ## Coming next
 
-The other use cases (editing and viewing groups, tutor applications, notifications, chats) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (editing and viewing groups, tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

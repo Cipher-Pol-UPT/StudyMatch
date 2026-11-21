@@ -3,6 +3,7 @@ package com.studymatch.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -78,6 +79,36 @@ class ChatServiceTest {
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Both users find the same DM, the smaller number is always asked first")
+  void directChatFromEitherSide() {
+    // Arrange
+    Student rui = (Student) chat.getSecondUser();
+    when(chatRepository.findDirectChat(1001L, 1002L)).thenReturn(Optional.of(chat));
+
+    // Act
+    var fromAna = chatService.findDirectChat(ana, rui);
+    var fromRui = chatService.findDirectChat(rui, ana);
+
+    // Assert
+    assertSame(chat, fromAna.orElseThrow());
+    assertSame(chat, fromRui.orElseThrow());
+  }
+
+  @Test
+  @DisplayName("No DM yet comes back empty")
+  void noDirectChatYet() {
+    // Arrange
+    Student eva = student("Eva", 1003L);
+    when(chatRepository.findDirectChat(1001L, 1003L)).thenReturn(Optional.empty());
+
+    // Act
+    var result = chatService.findDirectChat(eva, ana);
+
+    // Assert
+    assertTrue(result.isEmpty());
   }
 
 }
