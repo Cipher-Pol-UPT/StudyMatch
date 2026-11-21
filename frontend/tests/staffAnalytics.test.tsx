@@ -64,6 +64,21 @@ describe('view analytics (staff)', () => {
     expect(within(screen.getByRole('figure', { name: 'Group balance' })).getAllByText('±1.0').length).toBeGreaterThan(1);
   });
 
+  it("compares each group with its own assignment's groups, not with other assignments", async () => {
+    backend(() => ({ ...analytics, groupBalance: [
+      ...analytics.groupBalance,
+      { groupId: 9, assignment: 'Test Report', number: 1, members: 3, averageGrade: 18 },
+      { groupId: 10, assignment: 'Test Report', number: 2, members: 3, averageGrade: 18 },
+    ] }));
+    open();
+
+    // the project's groups are 1 away from their 13, the report's are level at 18
+    const chart = within(await screen.findByRole('figure', { name: 'Group balance' }));
+    expect(chart.getAllByText('±1.0').length).toBeGreaterThan(1);
+    expect(chart.getAllByText('±0.0').length).toBeGreaterThan(1);
+    expect(chart.getAllByText('Test Report G1').length).toBeGreaterThan(0);
+  });
+
   it('asks again for the chosen subject, and only offers its classes and groups', async () => {
     const fetchMock = backend();
     open();
