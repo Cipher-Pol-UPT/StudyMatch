@@ -8,6 +8,7 @@ import { StudyMatchProvider } from '../src/studymatch-ui';
 vi.mock('../src/api/categories', () => ({
   getCategories: vi.fn(),
   registerCategory: vi.fn(),
+  renameCategory: vi.fn(),
 }));
 
 const categories = [{ id: 2, name: 'Test Programming' }, { id: 1, name: 'Test Maths' }];
@@ -23,7 +24,8 @@ async function submitName(name: string) {
   fireEvent.click(within(dialog()).getByRole('button', { name: 'Register category' }));
 }
 
-const names = () => screen.getAllByRole('row').slice(1).map(row => row.textContent);
+// the name cell only, the row also has the Rename button
+const names = () => screen.getAllByRole('row').slice(1).map(row => row.querySelector('td')?.textContent);
 
 afterEach(() => {
   cleanup();
@@ -84,6 +86,9 @@ describe('register category', () => {
     await submitName('Test Maths');
 
     expect(await within(dialog()).findByText('A category with this name already exists.')).toBeTruthy();
+    // under the name field, not in a banner
+    expect(within(dialog()).getByLabelText('Name').getAttribute('aria-invalid')).toBe('true');
+    expect(dialog().querySelector('.sm-banner')).toBeNull();
     expect(names()).toEqual(['Test Maths', 'Test Programming']);
   });
 
