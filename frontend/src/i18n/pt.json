@@ -615,6 +615,8 @@
     "ACHIEVEMENT_NOT_EARNED": "Ainda não obteve uma destas conquistas.",
     "MEET_LINK_UNAVAILABLE": "Não foi possível criar a ligação do Google Meet neste momento. Cole a sua própria ligação para criar a StudyRoom.",
     "DIRECT_CHAT_ALREADY_EXISTS": "Esta conversa acabou de ser iniciada pela outra pessoa. Envie a sua mensagem novamente.",
+    "CANNOT_BLOCK_YOURSELF": "Não se pode bloquear a si próprio.",
+    "UNBLOCK_TO_MESSAGE": "Bloqueou esta pessoa. Desbloqueie-a para enviar uma mensagem.",
     "NOT_MESSAGE_AUTHOR": "Só quem enviou esta mensagem a pode alterar."
   },
   "validation": {

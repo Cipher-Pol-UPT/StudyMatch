@@ -161,13 +161,16 @@ describe('chat event hooks', () => {
       { initialProps: { onEvent: first } });
     rerender({ onEvent: second });
     push(client.subscriptions[0], { type: 'MESSAGE_DELETED', payload: 1 });
+    push(client.subscriptions[1], { type: 'MESSAGE_CREATED', payload: 2 });
     unmount();
 
-    expect(client.subscriptions).toHaveLength(1);
-    expect(client.subscriptions[0].destination).toBe('/topic/chats/5');
+    expect(client.subscriptions.map(subscription => subscription.destination))
+      .toEqual(['/topic/chats/5', '/user/queue/chats/5']);
     expect(first).not.toHaveBeenCalled();
     expect(second).toHaveBeenCalledWith({ type: 'MESSAGE_DELETED', payload: 1 });
+    expect(second).toHaveBeenCalledWith({ type: 'MESSAGE_CREATED', payload: 2 });
     expect(client.subscriptions[0].unsubscribe).toHaveBeenCalledOnce();
+    expect(client.subscriptions[1].unsubscribe).toHaveBeenCalledOnce();
   });
 
   it('listens to the user chat list', () => {
