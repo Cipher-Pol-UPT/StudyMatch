@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.studymatch.dtos.ChatContactDTO;
 import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.CreateGroupChatRequestDTO;
+import com.studymatch.dtos.ImageFileDTO;
 import com.studymatch.dtos.TypingDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
@@ -160,6 +161,15 @@ public class ChatService {
           ChatSummaryDTO.from(chat, member, null, 0)));
     }
     return chat;
+  }
+
+  // members only like the chat itself (GR8). a DM has no picture of its own, it uses the contact's photo
+  @Transactional(readOnly = true)
+  public ImageFileDTO getPicture(Long chatId, User user) {
+    if (getChatFor(chatId, user) instanceof CustomChat custom && custom.getPicture() != null) {
+      return ImageFileDTO.fromDataUrl(custom.getPicture());
+    }
+    throw new StudyMatchException(ErrorCode.NOT_FOUND);
   }
 
   // the first message creates the DM (GR8), both sending the first one at once trips the unique pair

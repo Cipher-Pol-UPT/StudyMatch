@@ -1,9 +1,12 @@
 package com.studymatch.controllers;
 
 import java.security.Principal;
+import java.time.Duration;
 import java.util.List;
 
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -21,6 +24,7 @@ import com.studymatch.dtos.ChatContactDTO;
 import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.CreateGroupChatRequestDTO;
 import com.studymatch.dtos.DirectChatDTO;
+import com.studymatch.dtos.ImageFileDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.exceptions.StudyMatchException;
@@ -106,6 +110,20 @@ public class ChatController {
     User user = userService.getByInstitutionalEmail(authentication.getName());
     CustomChat chat = chatService.createGroupChat(user, createRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(ChatSummaryDTO.from(chat, user, null, 0));
+  }
+
+  // private cache like the profile photo, the summary's picture flag says when to ask
+  @GetMapping("{chatId}/picture")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "A group chat's picture as an image, for <img src>. NOT_FOUND if it has none or you're not in it")
+  @ErrorCodes(ErrorCode.NOT_FOUND)
+  public ResponseEntity<byte[]> getPicture(@PathVariable Long chatId, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    ImageFileDTO picture = chatService.getPicture(chatId, user);
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType(picture.contentType()))
+        .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePrivate())
+        .body(picture.bytes());
   }
 
   // a websocket frame to /app/chats/{chatId}/typing, not a REST call, so it isn't in swagger
