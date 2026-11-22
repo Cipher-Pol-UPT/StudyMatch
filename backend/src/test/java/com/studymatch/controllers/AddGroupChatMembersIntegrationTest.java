@@ -276,7 +276,25 @@ class AddGroupChatMembersIntegrationTest {
         .andExpect(status().isForbidden());
   }
 
+  @Test
+  @DisplayName("Adding members without logging in is 401")
+  void addNotLoggedIn() throws Exception {
+    // Act + Assert
+    mockMvc.perform(post("/chats/" + group.getId() + "/members").with(csrf())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"memberNumbers\":[" + zeca.getNumber() + "]}"))
+        .andExpect(status().isUnauthorized());
+  }
+
   // the member list
+
+  @Test
+  @DisplayName("The member list without logging in is 401")
+  void membersNotLoggedIn() throws Exception {
+    // Act + Assert
+    mockMvc.perform(get("/chats/" + group.getId() + "/members"))
+        .andExpect(status().isUnauthorized());
+  }
 
   @Test
   @DisplayName("A member sees who's in the group chat, the owner first")
