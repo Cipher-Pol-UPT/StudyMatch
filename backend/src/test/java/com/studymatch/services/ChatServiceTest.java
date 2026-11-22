@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -368,6 +369,21 @@ class ChatServiceTest {
 
     // Assert
     assertTrue(created.hasMember(eva));
+  }
+
+  @Test
+  @DisplayName("Too many numbers are refused before anyone is looked up, so a huge list never reaches the query")
+  void tooManyRefusedBeforeLookup() {
+    // Arrange - 20 others makes 21 with the creator
+    List<Long> numbers = LongStream.range(2001, 2021).boxed().toList();
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> chatService.createGroupChat(ana, new CreateGroupChatRequestDTO("Study group", null, numbers)));
+
+    // Assert
+    assertEquals(ErrorCode.TOO_MANY_GROUP_CHAT_MEMBERS, e.getCode());
+    verify(userService, never()).getChatContacts(any(), any());
   }
 
   @Test
