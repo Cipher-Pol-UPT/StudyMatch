@@ -9,6 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDateTime;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -160,6 +163,27 @@ class ViewChatsIntegrationTest {
         .andExpect(jsonPath("$.length()").value(2))
         .andExpect(jsonPath("$[0].chatId").value(withRui.getId()))
         .andExpect(jsonPath("$[1].chatId").value(withEva.getId()));
+  }
+
+  @Test
+  @DisplayName("Two last messages in the same instant: the later one by id comes first, not the newer chat")
+  void sameInstantTieByMessageId() throws Exception {
+    // Arrange - the DM with Eva is the older chat but gets the later message, both sent at the same time
+    LocalDateTime sameInstant = LocalDateTime.now().withNano(0);
+    DirectChat withEva = chatRepository.save(new DirectChat(ana, eva));
+    DirectChat withRui = chatRepository.save(new DirectChat(ana, rui));
+    Message toRui = new Message(withRui, rui, "first by id");
+    ReflectionTestUtils.setField(toRui, "sentAt", sameInstant);
+    messageRepository.save(toRui);
+    Message toEva = new Message(withEva, eva, "second by id");
+    ReflectionTestUtils.setField(toEva, "sentAt", sameInstant);
+    messageRepository.save(toEva);
+
+    // Act + Assert
+    mockMvc.perform(get("/chats/").session(anaSession))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].chatId").value(withEva.getId()))
+        .andExpect(jsonPath("$[1].chatId").value(withRui.getId()));
   }
 
   @Test
