@@ -187,7 +187,7 @@ class AnalyticsIntegrationTest {
 
   // params as name, value, name, value...
   private ResultActions analytics(String... params) throws Exception {
-    var request = get("/analytics/").session(loginAs(STAFF));
+    var request = get("/groups/analytics").session(loginAs(STAFF));
     for (int i = 0; i < params.length; i += 2) {
       request.param(params[i], params[i + 1]);
     }
@@ -336,7 +336,7 @@ class AnalyticsIntegrationTest {
     entityManager.clear();
     Statistics statistics = entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics();
     statistics.clear();
-    mockMvc.perform(get("/analytics/").session(session).param("academicYear", String.valueOf(YEAR)))
+    mockMvc.perform(get("/groups/analytics").session(session).param("academicYear", String.valueOf(YEAR)))
         .andExpect(status().isOk());
     return statistics.getPrepareStatementCount();
   }
@@ -386,7 +386,7 @@ class AnalyticsIntegrationTest {
   @Test
   @DisplayName("Only Staff sees analytics, a teacher gets ACCESS_DENIED")
   void teacherIsDenied() throws Exception {
-    mockMvc.perform(get("/analytics/").session(loginAs(TEACHER)))
+    mockMvc.perform(get("/groups/analytics").session(loginAs(TEACHER)))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
   }

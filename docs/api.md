@@ -140,7 +140,7 @@ The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and 
 
 | Method | Path | Who | What it does |
 | --- | --- | --- | --- |
-| GET | `/analytics/?academicYear=&subjectEditionId=&classSection=&groupId=` | Staff | a year's indicators (students, active subjects, average attendance), attendance per month, students by strongest Big Five trait and the published groups' balance, with what each filter offers. Every filter is optional, the year defaults to the current one |
+| GET | `/groups/analytics?academicYear=&subjectEditionId=&classSection=&groupId=` | Staff | a year's indicators (students, active subjects, average attendance), attendance per month, students by strongest Big Five trait and the published groups' balance, with what each filter offers. Every filter is optional, the year defaults to the current one |
 
 ## Coming next
 
