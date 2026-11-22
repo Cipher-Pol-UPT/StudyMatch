@@ -36,7 +36,7 @@ class ChatServiceTest {
   @BeforeEach
   void setUp() {
     chatRepository = mock(ChatRepository.class);
-    chatService = new ChatService(chatRepository);
+    chatService = new ChatService(chatRepository, mock(UserBlockService.class));
 
     ana = student("Ana", 1001L);
     chat = new DirectChat(ana, student("Rui", 1002L));

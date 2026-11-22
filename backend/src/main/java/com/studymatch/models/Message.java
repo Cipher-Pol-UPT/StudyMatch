@@ -40,6 +40,10 @@ public class Message {
   // null until edited, then the message shows "(edited)" (GR10)
   private LocalDateTime editedAt;
 
+  // the blocker, when a blocked user sent it in their DM. stays hidden from them even after unblocking (GR9)
+  @ManyToOne
+  private User hiddenFrom;
+
   protected Message() {
   }
 
@@ -81,6 +85,19 @@ public class Message {
   public void edit(String text) {
     this.text = text;
     this.editedAt = LocalDateTime.now();
+  }
+
+  public User getHiddenFrom() {
+    return hiddenFrom;
+  }
+
+  public void hideFrom(User blocker) {
+    this.hiddenFrom = blocker;
+  }
+
+  // by number, the user may come from another request than the message
+  public boolean isHiddenFrom(User user) {
+    return hiddenFrom != null && hiddenFrom.getNumber().equals(user.getNumber());
   }
 
 }
