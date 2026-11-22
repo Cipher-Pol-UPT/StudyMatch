@@ -121,7 +121,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 | Method | Path | Who | What it does |
 | --- | --- | --- | --- |
-| GET | `/chats/` | Student, Teacher | your chats, the one with the latest message first, each with its name, the other person in a DM, the last message and how many you haven't read |
+| GET | `/chats/` | Student, Teacher | your chats, the one with the latest message first, each with its name, the other person in a DM, whether a group chat has a picture, the last message and how many you haven't read. A group chat nobody has written in yet has no last message and sits by when it was created |
 | GET | `/chats/unread-count` | Student, Teacher | how many messages you haven't read across every chat, for the side menu |
 | GET | `/chats/online` | Student, Teacher | the numbers of the people you share a chat with who have the app open, for the chat list's first load |
 | GET | `/chats/{id}/messages?before=` | member of the chat | open a chat: its 50 newest messages oldest first, or with `before` (the oldest message id on screen) the 50 before it. `hasMore` is false once the first message is in |
@@ -131,6 +131,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | PUT | `/chats/{id}/messages/{messageId}` | the message's author | change its text (same rule as sending), it gets `editedAt` and the open chat gets the new text. The same text again changes nothing. Someone else's message is `NOT_MESSAGE_AUTHOR` |
 | DELETE | `/chats/{id}/messages/{messageId}` | the message's author | delete it for good, nothing is kept and the unread counts go down with it. Deleting the only message of a DM takes the chat off both lists. Someone else's message is `NOT_MESSAGE_AUTHOR` |
 | POST | `/chats/direct/{number}/messages` | Student, Teacher | send a DM, the first one creates the chat. Both sending the first one at the same moment gives the second `DIRECT_CHAT_ALREADY_EXISTS`, and sending again works. To someone you blocked it's `UNBLOCK_TO_MESSAGE`; to someone who blocked you it looks sent but they never get it |
+| POST | `/chats/groups` | Student, Teacher | create a group chat you own with a name (up to 50 characters), an optional picture and 2 to 19 other Students and Teachers, who are in straight away. It comes back as a chat list row (201) and is pushed to every member's list. Fewer people is `NOT_ENOUGH_GROUP_CHAT_MEMBERS`, more is `TOO_MANY_GROUP_CHAT_MEMBERS`, anyone the contact search wouldn't offer is 404, and anyone who blocked you is `CANNOT_ADD_TO_GROUP_CHAT` with their numbers |
+| GET | `/chats/{id}/picture` | member of the chat | the group chat's picture as an image for `<img src>`, cached privately for 5 minutes. No picture, or a DM, is 404 |
 | GET | `/blocks/` | Student, Teacher | the people you blocked, by name |
 | PUT | `/blocks/{number}` | Student, Teacher | block a Student or Teacher's DMs (204, again changes nothing). They aren't told. Yourself is `CANNOT_BLOCK_YOURSELF` |
 | DELETE | `/blocks/{number}` | Student, Teacher | unblock (204, someone not blocked changes nothing). The DM comes back without what they sent while blocked |
