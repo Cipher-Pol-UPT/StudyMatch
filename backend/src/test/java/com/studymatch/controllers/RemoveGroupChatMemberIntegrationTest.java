@@ -193,6 +193,23 @@ class RemoveGroupChatMemberIntegrationTest {
   }
 
   @Test
+  @DisplayName("Down to the owner, they can still add one person, the 3 is only for creating")
+  void smallChatCanGrowAgain() throws Exception {
+    // Arrange - down to ana
+    remove(anaSession, group.getId(), rui.getNumber()).andExpect(status().isOk());
+    remove(anaSession, group.getId(), eva.getNumber()).andExpect(status().isOk());
+    entityManager.flush();
+    Student zeca = saveStudent("it.removemember.zeca@example.com", "Zeca Remove Test");
+
+    // Act + Assert
+    mockMvc.perform(post("/chats/" + group.getId() + "/members").with(csrf()).session(anaSession)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"memberNumbers\":[" + zeca.getNumber() + "]}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2));
+  }
+
+  @Test
   @DisplayName("Removing someone who isn't in it changes nothing")
   void strangerChangesNothing() throws Exception {
     // Arrange

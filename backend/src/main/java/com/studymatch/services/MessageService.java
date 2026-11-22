@@ -133,6 +133,7 @@ public class MessageService {
     return chats.stream()
         .filter(chat -> chat instanceof CustomChat || activities.containsKey(chat.getId()))
         .sorted(Comparator.comparing((Chat chat) -> lastActivity(chat, activities.get(chat.getId())))
+            .thenComparing(chat -> lastMessageId(activities.get(chat.getId())))
             .thenComparing(Chat::getId)
             .reversed())
         .map(chat -> toSummary(chat, activities.get(chat.getId()), user))
@@ -171,6 +172,12 @@ public class MessageService {
   // an empty group chat counts from when it was made
   private static LocalDateTime lastActivity(Chat chat, ChatActivity activity) {
     return activity == null ? chat.getCreatedAt() : activity.getLastMessage().getSentAt();
+  }
+
+  // two last messages in the same instant still have different ids, like findActivity picks them.
+  // an empty group chat has none, the chat id breaks that tie
+  private static long lastMessageId(ChatActivity activity) {
+    return activity == null ? 0 : activity.getLastMessage().getId();
   }
 
   private static ChatSummaryDTO toSummary(Chat chat, ChatActivity activity, User user) {

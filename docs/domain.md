@@ -26,7 +26,7 @@ The diagram shows the entities and how they relate. This page covers what it can
 | StudyRoom, Participation, Rating | An online session a tutor hosts for one subject, the students who join it (and whether they attended), and their 1 to 5 star ratings. |
 | Earned achievement | An achievement a tutor earned, with the date and a verification code for the certificate. |
 | Group | A group of students for one group assignment. |
-| Chat, Message, Chat settings | A DM between two users (more kinds of chat come with their issues), the messages in it, and each member's own settings for it: when they last read it and their notification level. |
+| Chat, Message, Chat settings | A DM between two users or a group chat someone made, with its owner and members in the order they joined (assignment group chats come with #236), the messages in it, and each member's own settings for it: when they last read it and their notification level. |
 
 ## The student profile
 
