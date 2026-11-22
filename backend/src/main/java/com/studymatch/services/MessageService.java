@@ -204,10 +204,11 @@ public class MessageService {
     return message;
   }
 
-  // a hidden message skips the topic, a blocker's tab opened before the block still listens there (GR9)
+  // a hidden message skips the topic, a blocker's tab opened before the block still listens there (GR9).
+  // a group chat always skips it, a removed member's open tab still listens there too (GR8)
   private void publishToChat(Message message, ChatEventType type, Object payload) {
     Chat chat = message.getChat();
-    if (message.getHiddenFrom() == null) {
+    if (chat instanceof DirectChat && message.getHiddenFrom() == null) {
       eventPublisher.publishEvent(new ChatEvent(chat.getId(), type, payload));
       return;
     }

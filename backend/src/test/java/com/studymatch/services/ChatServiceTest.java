@@ -26,6 +26,7 @@ import com.studymatch.dtos.AddMembersRequestDTO;
 import com.studymatch.dtos.CreateGroupChatRequestDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
+import com.studymatch.events.MemberChatEvent;
 import com.studymatch.events.UserChatEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -379,6 +380,20 @@ class ChatServiceTest {
     CustomChat group = new CustomChat("Study group", null, ana, List.of(chat.getSecondUser(), eva));
     when(chatRepository.findById(6L)).thenReturn(Optional.of(group));
     return group;
+  }
+
+  @Test
+  @DisplayName("Typing in a group chat goes to each member, not to the topic a removed member's tab may still hear")
+  void groupTypingGoesToEachMember() {
+    // Arrange
+    groupChat(student("Eva", 1003L));
+
+    // Act
+    chatService.announceTyping(6L, ana);
+
+    // Assert
+    verify(eventPublisher, times(3)).publishEvent(any(MemberChatEvent.class));
+    verify(eventPublisher, never()).publishEvent(any(ChatEvent.class));
   }
 
   @Test

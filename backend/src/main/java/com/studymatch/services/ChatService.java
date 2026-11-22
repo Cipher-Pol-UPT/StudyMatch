@@ -22,6 +22,7 @@ import com.studymatch.dtos.ImageFileDTO;
 import com.studymatch.dtos.TypingDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
+import com.studymatch.events.MemberChatEvent;
 import com.studymatch.events.UserChatEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -110,8 +111,15 @@ public class ChatService {
     if (chat instanceof DirectChat direct && userBlockService.hasBlocked(direct.getOtherUser(user), user)) {
       return;
     }
-    eventPublisher.publishEvent(new ChatEvent(chat.getId(), ChatEventType.TYPING,
-        new TypingDTO(chat.getId(), ChatContactDTO.from(user))));
+    TypingDTO typing = new TypingDTO(chat.getId(), ChatContactDTO.from(user));
+    // a group chat goes to each member like its messages, a removed member's open tab still listens to the topic
+    if (chat instanceof CustomChat) {
+      for (User member : chat.getMembers()) {
+        eventPublisher.publishEvent(new MemberChatEvent(member, chat.getId(), ChatEventType.TYPING, typing));
+      }
+      return;
+    }
+    eventPublisher.publishEvent(new ChatEvent(chat.getId(), ChatEventType.TYPING, typing));
   }
 
   // their first tab puts them online for everyone they share a chat with. read only, but the pushes need a commit
