@@ -8,6 +8,14 @@ import { StudyMatchProvider } from '../src/studymatch-ui';
 vi.mock('../src/api/studyRooms', () => ({
   getMyTutorSubjects: vi.fn(),
   createStudyRoom: vi.fn(),
+  getStudyRooms: vi.fn(() => Promise.resolve([])),
+  getStudyRoom: vi.fn(() => Promise.resolve({})),
+  joinStudyRoom: vi.fn(),
+  leaveStudyRoom: vi.fn(),
+}));
+
+vi.mock('../src/api/subjects', () => ({
+  getSubjects: vi.fn(() => Promise.resolve([])),
 }));
 
 const user = { number: 45123, name: 'Test Tutor' };
@@ -69,7 +77,7 @@ describe('create study room', () => {
       subjectId: 9, startsAt: '2026-10-20T18:00', endsAt: '2026-10-20T19:00', capacity: 8,
       link: 'https://meet.google.com/abc-defg-hij', description: 'Test session',
     });
-    expect(screen.getByRole('button', { name: /^View Test Physics,/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^View Test session,/ })).toBeTruthy();
     expect(await screen.findByText('StudyRoom created.')).toBeTruthy();
   });
 
