@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -61,10 +62,22 @@ public class MessageController {
     return ResponseEntity.status(HttpStatus.CREATED).body(messageService.send(chatId, user, sendRequest.text()));
   }
 
+  // edit your own message, same text rule as sending
+  @PutMapping("{chatId}/messages/{messageId}")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Change the text of a message you sent, it shows \"(edited)\" and the open chat gets the new "
+      + "text. Nobody is notified again")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NOT_MESSAGE_AUTHOR })
+  public ResponseEntity<MessageDTO> edit(@PathVariable Long chatId, @PathVariable Long messageId,
+      @Valid @RequestBody SendMessageRequestDTO editRequest, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(messageService.edit(chatId, messageId, user, editRequest.text()));
+  }
+
   @PostMapping("direct/{number}/messages")
   @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
-  @Operation(summary = "Send a DM, the first one creates the chat")
-  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.DIRECT_CHAT_ALREADY_EXISTS })
+  @Operation(summary = "Send a DM, the first one creates the chat. Someone you blocked needs unblocking first")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.DIRECT_CHAT_ALREADY_EXISTS, ErrorCode.UNBLOCK_TO_MESSAGE })
   public ResponseEntity<MessageDTO> sendDirect(@PathVariable Long number,
       @Valid @RequestBody SendMessageRequestDTO sendRequest, Authentication authentication) {
     User user = userService.getByInstitutionalEmail(authentication.getName());

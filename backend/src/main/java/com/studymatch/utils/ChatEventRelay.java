@@ -6,6 +6,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.studymatch.dtos.ChatEventDTO;
 import com.studymatch.events.ChatEvent;
+import com.studymatch.events.MemberChatEvent;
 import com.studymatch.events.UserChatEvent;
 
 // pushes only after the commit, so a rolled back change is never seen
@@ -28,6 +29,13 @@ public class ChatEventRelay {
   public void pushToUser(UserChatEvent event) {
     messagingTemplate.convertAndSendToUser(event.recipient().getInstitutionalEmail(), "/queue/chats",
         new ChatEventDTO(event.type(), event.payload()));
+  }
+
+  // same as the chat's topic, but only that user's tabs get it (GR9)
+  @TransactionalEventListener
+  public void pushToMember(MemberChatEvent event) {
+    messagingTemplate.convertAndSendToUser(event.recipient().getInstitutionalEmail(),
+        "/queue/chats/" + event.chatId(), new ChatEventDTO(event.type(), event.payload()));
   }
 
 }

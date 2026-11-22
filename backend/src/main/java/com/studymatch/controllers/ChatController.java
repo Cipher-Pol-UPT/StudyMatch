@@ -19,6 +19,7 @@ import com.studymatch.models.Chat;
 import com.studymatch.models.User;
 import com.studymatch.services.ChatService;
 import com.studymatch.services.MessageService;
+import com.studymatch.services.UserBlockService;
 import com.studymatch.services.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,11 +34,14 @@ public class ChatController {
   private final ChatService chatService;
   private final MessageService messageService;
   private final UserService userService;
+  private final UserBlockService userBlockService;
 
-  public ChatController(ChatService chatService, MessageService messageService, UserService userService) {
+  public ChatController(ChatService chatService, MessageService messageService, UserService userService,
+      UserBlockService userBlockService) {
     this.chatService = chatService;
     this.messageService = messageService;
     this.userService = userService;
+    this.userBlockService = userBlockService;
   }
 
   @GetMapping
@@ -60,13 +64,16 @@ public class ChatController {
   // start a DM: open the one you have, or an empty conversation until the first message
   @GetMapping("direct/{number}")
   @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
-  @Operation(summary = "Your DM with a Student or Teacher, chatId is null if you haven't messaged yet")
+  @Operation(summary = "Your DM with a Student or Teacher, chatId is null if you haven't messaged yet or blocked them")
   @ErrorCodes({ ErrorCode.NOT_FOUND })
   public ResponseEntity<DirectChatDTO> getDirectChat(@PathVariable Long number, Authentication authentication) {
     User user = userService.getByInstitutionalEmail(authentication.getName());
     User contact = userService.getChatContact(number, user);
+    if (userBlockService.hasBlocked(user, contact)) {
+      return ResponseEntity.ok(new DirectChatDTO(null, ChatContactDTO.from(contact), true));
+    }
     Long chatId = chatService.findDirectChat(user, contact).map(Chat::getId).orElse(null);
-    return ResponseEntity.ok(new DirectChatDTO(chatId, ChatContactDTO.from(contact)));
+    return ResponseEntity.ok(new DirectChatDTO(chatId, ChatContactDTO.from(contact), false));
   }
 
 }
