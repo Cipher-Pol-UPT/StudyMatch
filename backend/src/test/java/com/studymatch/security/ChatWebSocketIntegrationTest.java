@@ -235,7 +235,8 @@ class ChatWebSocketIntegrationTest {
   }
 
   // once a queue's probe came back, an empty payload is a probe sent before that landing late, it'd be in the
-  // queue after the test clears it. no real event has an empty payload
+  // queue after the test clears it. no real event has an empty payload.
+  // so probe each queue once: a second publishUntilReceived with Map.of() on it gets dropped and fails
   private BlockingQueue<Map<String, Object>> subscribe(StompSession session, String destination) {
     BlockingQueue<Map<String, Object>> received = new LinkedBlockingQueue<>();
     session.subscribe(destination, new StompFrameHandler() {
