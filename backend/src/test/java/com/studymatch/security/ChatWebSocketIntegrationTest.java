@@ -45,6 +45,7 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
+import com.studymatch.events.MemberChatEvent;
 import com.studymatch.events.UserChatEvent;
 import com.studymatch.models.Degree;
 import com.studymatch.models.DirectChat;
@@ -52,12 +53,14 @@ import com.studymatch.models.Message;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
+import com.studymatch.models.UserBlock;
 import com.studymatch.repositories.ChatRepository;
 import com.studymatch.repositories.ChatSettingsRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.MessageRepository;
 import com.studymatch.repositories.StaffRepository;
 import com.studymatch.repositories.StudentRepository;
+import com.studymatch.repositories.UserBlockRepository;
 
 // a real server and a real STOMP client, connecting like the browser will
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -90,6 +93,9 @@ class ChatWebSocketIntegrationTest {
 
   @Autowired
   private ChatSettingsRepository chatSettingsRepository;
+
+  @Autowired
+  private UserBlockRepository userBlockRepository;
 
   @Autowired
   private ApplicationEventPublisher eventPublisher;
@@ -133,6 +139,9 @@ class ChatWebSocketIntegrationTest {
         .filter(settings -> settings.getChat().getId().equals(chat.getId()))
         .toList());
     chatRepository.delete(chat);
+    userBlockRepository.deleteAll(userBlockRepository.findAll().stream()
+        .filter(block -> block.getBlocker().getNumber().equals(rui.getNumber()))
+        .toList());
     studentRepository.deleteAll(List.of(ana, rui, eva));
     staffRepository.delete(staff);
     degreeRepository.delete(degree);
@@ -430,6 +439,114 @@ class ChatWebSocketIntegrationTest {
     assertEquals("MESSAGE_EDITED", preview.get("type"));
     assertEquals("see you at 11", ((Map<?, ?>) preview.get("payload")).get("text"));
     assertNull(chatList.poll(500, TimeUnit.MILLISECONDS));
+  }
+
+  @Test
+  @DisplayName("An edit of a message hidden from the blocker reaches only the sender, not the blocker's tab or list (GR9)")
+  void hiddenEditSkipsTheBlocker() throws Exception {
+    // Arrange - Rui has the DM open before blocking Ana, her message after the block is hidden from him
+    StompSession ruiSession = connect(rui);
+    BlockingQueue<Map<String, Object>> ruiTopic = subscribe(ruiSession, "/topic/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> ruiList = subscribe(ruiSession, "/user/queue/chats");
+    StompSession anaSession = connect(ana);
+    BlockingQueue<Map<String, Object>> anaChat = subscribe(anaSession, "/user/queue/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> anaList = subscribe(anaSession, "/user/queue/chats");
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiTopic));
+    assertNotNull(publishUntilReceived(new UserChatEvent(rui, ChatEventType.CHAT_UPDATED, Map.of()), ruiList));
+    assertNotNull(publishUntilReceived(
+        new MemberChatEvent(ana, chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), anaChat));
+    assertNotNull(publishUntilReceived(new UserChatEvent(ana, ChatEventType.CHAT_UPDATED, Map.of()), anaList));
+    ruiTopic.clear();
+    ruiList.clear();
+    anaChat.clear();
+    anaList.clear();
+    userBlockRepository.save(new UserBlock(rui, ana));
+    Message hidden = new Message(chat, ana, "see you at 10");
+    hidden.hideFrom(rui);
+    hidden = messageRepository.save(hidden);
+
+    // Act
+    int status = send("PUT", login(ana.getInstitutionalEmail()),
+        "/chats/" + chat.getId() + "/messages/" + hidden.getId(), "{\"text\":\"see you at 11\"}");
+
+    // Assert
+    assertEquals(200, status);
+    Map<String, Object> edited = anaChat.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(edited);
+    assertEquals("MESSAGE_EDITED", edited.get("type"));
+    assertEquals("see you at 11", ((Map<?, ?>) edited.get("payload")).get("text"));
+    Map<String, Object> preview = anaList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(preview);
+    assertEquals("MESSAGE_EDITED", preview.get("type"));
+    assertNull(ruiTopic.poll(1, TimeUnit.SECONDS));
+    assertNull(ruiList.poll(500, TimeUnit.MILLISECONDS));
+  }
+
+  @Test
+  @DisplayName("Someone who blocked the other member can't subscribe to their DM while the block lasts (GR9)")
+  void blockerSubscribeIsRefused() throws Exception {
+    // Arrange
+    userBlockRepository.save(new UserBlock(rui, ana));
+    BlockingQueue<String> errors = new LinkedBlockingQueue<>();
+    StompSession session = connect(login(rui.getInstitutionalEmail()), true, errors);
+
+    // Act
+    BlockingQueue<Map<String, Object>> received = subscribe(session, "/topic/chats/" + chat.getId());
+    publishCommitted(new ChatEvent(chat.getId(), ChatEventType.MESSAGE_CREATED, Map.of("text", "hi")));
+
+    // Assert
+    assertNotNull(errors.poll(WAIT_SECONDS, TimeUnit.SECONDS));
+    assertNull(received.poll(500, TimeUnit.MILLISECONDS));
+  }
+
+  @Test
+  @DisplayName("A blocked user's DM updates their own chat list but never the blocker's (GR9)")
+  void blockedMessageSkipsTheBlocker() throws Exception {
+    // Arrange - a first event on each proves both subscriptions are registered
+    userBlockRepository.save(new UserBlock(rui, ana));
+    BlockingQueue<Map<String, Object>> toAna = subscribe(connect(ana), "/user/queue/chats");
+    BlockingQueue<Map<String, Object>> toRui = subscribe(connect(rui), "/user/queue/chats");
+    assertNotNull(publishUntilReceived(new UserChatEvent(ana, ChatEventType.CHAT_UPDATED, Map.of()), toAna));
+    assertNotNull(publishUntilReceived(new UserChatEvent(rui, ChatEventType.CHAT_UPDATED, Map.of()), toRui));
+    toAna.clear();
+    toRui.clear();
+
+    // Act
+    int status = send("POST", login(ana.getInstitutionalEmail()), "/chats/" + chat.getId() + "/messages",
+        "{\"text\":\"hi Rui\"}");
+
+    // Assert
+    assertEquals(201, status);
+    Map<String, Object> updated = toAna.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(updated);
+    assertEquals("CHAT_UPDATED", updated.get("type"));
+    assertNull(toRui.poll(1, TimeUnit.SECONDS));
+  }
+
+  @Test
+  @DisplayName("A blocker's tab subscribed before the block doesn't get the blocked user's DM, only the sender does (GR9)")
+  void blockedMessageSkipsTheTopic() throws Exception {
+    // Arrange - Rui opens the DM, then blocks Ana. a first event on each proves both subscriptions are registered
+    BlockingQueue<Map<String, Object>> ruiTopic = subscribe(connect(rui), "/topic/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> anaChat = subscribe(connect(ana), "/user/queue/chats/" + chat.getId());
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiTopic));
+    assertNotNull(publishUntilReceived(
+        new MemberChatEvent(ana, chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), anaChat));
+    ruiTopic.clear();
+    anaChat.clear();
+    userBlockRepository.save(new UserBlock(rui, ana));
+
+    // Act
+    int status = send("POST", login(ana.getInstitutionalEmail()), "/chats/" + chat.getId() + "/messages",
+        "{\"text\":\"hi Rui\"}");
+
+    // Assert
+    assertEquals(201, status);
+    Map<String, Object> created = anaChat.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(created);
+    assertEquals("MESSAGE_CREATED", created.get("type"));
+    assertEquals("hi Rui", ((Map<?, ?>) created.get("payload")).get("text"));
+    assertNull(ruiTopic.poll(1, TimeUnit.SECONDS));
   }
 
   @Test
