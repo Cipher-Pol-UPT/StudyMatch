@@ -30,6 +30,7 @@ import com.studymatch.dtos.AnalyticsDTO.MonthAttendance;
 import com.studymatch.dtos.AnalyticsDTO.TraitCount;
 import com.studymatch.dtos.GroupGenerationDTO;
 import com.studymatch.dtos.GroupPreviewDTO;
+import com.studymatch.dtos.MyGroupDTO;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
 import com.studymatch.exceptions.ErrorCode;
@@ -222,6 +223,18 @@ public class GroupService {
     }
     members.sort(Comparator.comparing(GroupPreviewDTO.Member::name).thenComparing(GroupPreviewDTO.Member::number));
     return new GroupPreviewDTO(number, members.size(), List.copyOf(shared), members);
+  }
+
+  // view my groups: drafts can still change, so students only see published groups, latest assignment first
+  @Transactional(readOnly = true)
+  public List<MyGroupDTO> listMyGroups(Long studentNumber) {
+    return groupRepository.findWithMember(studentNumber, GroupStatus.PUBLISHED).stream()
+        .sorted(Comparator.comparing((Group group) -> group.getAssignment().getDate()).reversed()
+            .thenComparing(group -> group.getAssignment().getSubjectEdition().getSubject().getName())
+            .thenComparing(group -> group.getAssignment().getName())
+            .thenComparing(Group::getNumber))
+        .map(MyGroupDTO::from)
+        .toList();
   }
 
   // analytics: drafts can still change, so only the published groups are measured
