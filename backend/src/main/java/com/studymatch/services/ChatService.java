@@ -146,7 +146,7 @@ public class ChatService {
 
   // the creator owns it and everyone picked is in straight away, no invitation (GR8). someone who blocked the
   // creator can't be put in a chat with them, the error names who but not why (GR9).
-  // CHAT_CREATED goes to the creator too, for their other tabs
+  // CHAT_ADDED goes to the creator too, for their other tabs
   @Transactional
   public CustomChat createGroupChat(User user, CreateGroupChatRequestDTO request) {
     List<User> others = userService.getChatContacts(new LinkedHashSet<>(request.memberNumbers()), user);
@@ -157,7 +157,7 @@ public class ChatService {
     }
     CustomChat chat = chatRepository.save(new CustomChat(request.name(), request.picture(), user, others));
     for (User member : chat.getMembers()) {
-      eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_CREATED,
+      eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_ADDED,
           ChatSummaryDTO.from(chat, member, null, 0)));
     }
     return chat;

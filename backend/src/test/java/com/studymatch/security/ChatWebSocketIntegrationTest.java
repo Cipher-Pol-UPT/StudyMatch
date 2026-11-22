@@ -434,7 +434,7 @@ class ChatWebSocketIntegrationTest {
     assertEquals(201, status);
     Map<String, Object> created = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
     assertNotNull(created);
-    assertEquals("CHAT_CREATED", created.get("type"));
+    assertEquals("CHAT_ADDED", created.get("type"));
     Map<?, ?> row = (Map<?, ?>) created.get("payload");
     assertEquals("Study group", row.get("name"));
     assertNull(row.get("lastMessage"));
