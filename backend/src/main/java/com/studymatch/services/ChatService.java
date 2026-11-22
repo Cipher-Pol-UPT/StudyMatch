@@ -183,7 +183,7 @@ public class ChatService {
   // people already in are skipped, so is the block check for them. gives back who was really added
   @Transactional
   public List<User> addMembers(Long chatId, User user, AddMembersRequestDTO request) {
-    CustomChat chat = getCustomChatFor(chatId, user);
+    CustomChat chat = getLockedCustomChatFor(chatId, user);
     // counted before the lookup like creating, people already in don't count
     Set<Long> numbers = new LinkedHashSet<>(request.memberNumbers());
     chat.getMembers().forEach(member -> numbers.remove(member.getNumber()));
@@ -199,7 +199,7 @@ public class ChatService {
   // instead (#232), someone who isn't in changes nothing. CHAT_REMOVED takes it off their list
   @Transactional
   public void removeMember(Long chatId, User user, Long number) {
-    CustomChat chat = getCustomChatFor(chatId, user);
+    CustomChat chat = getLockedCustomChatFor(chatId, user);
     if (!chat.isOwner(user)) {
       throw new StudyMatchException(ErrorCode.NOT_CHAT_OWNER);
     }
@@ -219,7 +219,7 @@ public class ChatService {
   // gives the chat back so MessageService can delete it if nobody's left (#232)
   @Transactional
   public CustomChat leave(Long chatId, User user) {
-    CustomChat chat = getCustomChatFor(chatId, user);
+    CustomChat chat = getLockedCustomChatFor(chatId, user);
     chat.leave(user);
     eventPublisher.publishEvent(new UserChatEvent(user, ChatEventType.CHAT_REMOVED, chat.getId()));
     return chat;
@@ -232,8 +232,12 @@ public class ChatService {
     chatRepository.delete(chat);
   }
 
-  // a chat whose members can change, a DM's never do
-  private CustomChat getCustomChatFor(Long chatId, User user) {
+  // a chat whose members can change, locked so two changes at once go one after the other. it's locked before
+  // getChatFor loads the members, or the second would wait and then use the list from before the first.
+  // only group chats someone made, a DM's members never change. #236: if the assignment chat ends up extending
+  // CustomChat it has to be refused here too, its members come from the group
+  private CustomChat getLockedCustomChatFor(Long chatId, User user) {
+    chatRepository.findLockedCustomChat(chatId);
     if (getChatFor(chatId, user) instanceof CustomChat chat) {
       return chat;
     }
