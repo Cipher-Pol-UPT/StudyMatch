@@ -3,7 +3,11 @@ package com.studymatch.services;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -130,6 +134,22 @@ public class UserService {
     Specification<User> byNumber = (contact, query, where) -> where.equal(contact.get("number"), number);
     return userRepository.findOne(chatContactOf(user).and(byNumber))
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  // the people picked for a group chat in the order picked, one query for all. anyone that rule leaves out is
+  // NOT_FOUND like above
+  @Transactional(readOnly = true)
+  public List<User> getChatContacts(Set<Long> numbers, User user) {
+    if (numbers.isEmpty()) {
+      return List.of();
+    }
+    Specification<User> byNumbers = (contact, query, where) -> contact.get("number").in(numbers);
+    Map<Long, User> found = userRepository.findAll(chatContactOf(user).and(byNumbers)).stream()
+        .collect(Collectors.toMap(User::getNumber, Function.identity()));
+    if (found.size() != numbers.size()) {
+      throw new StudyMatchException(ErrorCode.NOT_FOUND);
+    }
+    return numbers.stream().map(found::get).toList();
   }
 
   // what blocking would cancel, the queries just come back empty for roles that have none of it

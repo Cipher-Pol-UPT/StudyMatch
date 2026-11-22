@@ -89,6 +89,10 @@ export const ERROR_CODES = [
   "CANNOT_BLOCK_YOURSELF",
   "UNBLOCK_TO_MESSAGE",
   "NOT_MESSAGE_AUTHOR",
+  "NOT_ENOUGH_GROUP_CHAT_MEMBERS",
+  "TOO_MANY_GROUP_CHAT_MEMBERS",
+  "INVALID_GROUP_CHAT_PICTURE",
+  "CANNOT_ADD_TO_GROUP_CHAT",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;
