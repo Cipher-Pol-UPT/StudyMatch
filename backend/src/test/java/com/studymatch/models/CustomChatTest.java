@@ -224,6 +224,58 @@ class CustomChatTest {
   }
 
   @Test
+  @DisplayName("A removed member is no longer in it, even if the user came from another request")
+  void removedMemberIsOut() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+
+    // Act
+    chat.removeMember(student("Rui", 1002L));
+
+    // Assert
+    assertFalse(chat.hasMember(rui));
+    assertEquals(List.of(ana, eva), chat.getMembers());
+  }
+
+  @Test
+  @DisplayName("Removing someone who isn't in it changes nothing")
+  void removingAStrangerChangesNothing() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+
+    // Act
+    chat.removeMember(student("Zeca", 1004L));
+
+    // Assert
+    assertEquals(List.of(ana, rui, eva), chat.getMembers());
+  }
+
+  @Test
+  @DisplayName("Someone removed can be added again, and goes at the end")
+  void removedCanComeBack() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+    chat.removeMember(rui);
+
+    // Act
+    chat.addMembers(List.of(rui));
+
+    // Assert
+    assertEquals(List.of(ana, eva, rui), chat.getMembers());
+  }
+
+  @Test
+  @DisplayName("Only the owner is the owner, compared by number")
+  void ownerByNumber() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+
+    // Act + Assert
+    assertTrue(chat.isOwner(student("Ana", 1001L)));
+    assertFalse(chat.isOwner(rui));
+  }
+
+  @Test
   @DisplayName("Everyone sees the group chat's own name")
   void nameIsTheSameForEveryone() {
     // Arrange

@@ -81,6 +81,15 @@ public class CustomChat extends Chat {
     return added;
   }
 
+  // by number, someone who isn't in changes nothing. they can be added again later, at the end
+  public void removeMember(User member) {
+    members.removeIf(current -> current.getNumber().equals(member.getNumber()));
+  }
+
+  public boolean isOwner(User user) {
+    return owner.getNumber().equals(user.getNumber());
+  }
+
   public String getName() {
     return name;
   }
