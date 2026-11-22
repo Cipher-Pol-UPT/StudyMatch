@@ -12,6 +12,7 @@ import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.dtos.AddMembersRequestDTO;
 import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.MessageDTO;
 import com.studymatch.dtos.MessageDeletedDTO;
@@ -137,6 +138,25 @@ public class MessageService {
             .reversed())
         .map(chat -> toSummary(chat, activities.get(chat.getId()), user))
         .toList();
+  }
+
+  // the rules are in ChatService, this is here for the new members' row, which has the last message.
+  // nothing is hidden in a group chat and it starts read for them, so one row with 0 unread fits all of them
+  @Transactional
+  public void addMembers(Long chatId, User user, AddMembersRequestDTO request) {
+    List<User> added = chatService.addMembers(chatId, user, request);
+    if (added.isEmpty()) {
+      return;
+    }
+    Chat chat = chatService.getChatFor(chatId, user);
+    MessageDTO lastMessage = messageRepository.findActivity(List.of(chat), user.getNumber()).stream()
+        .findFirst()
+        .map(activity -> MessageDTO.from(activity.getLastMessage()))
+        .orElse(null);
+    for (User member : added) {
+      eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_ADDED,
+          ChatSummaryDTO.from(chat, member, lastMessage, 0)));
+    }
   }
 
   // an empty group chat counts from when it was made

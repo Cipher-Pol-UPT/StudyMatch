@@ -49,6 +49,7 @@ import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
 import com.studymatch.events.MemberChatEvent;
 import com.studymatch.events.UserChatEvent;
+import com.studymatch.models.CustomChat;
 import com.studymatch.models.Degree;
 import com.studymatch.models.DirectChat;
 import com.studymatch.models.Message;
@@ -234,7 +235,8 @@ class ChatWebSocketIntegrationTest {
   }
 
   // once a queue's probe came back, an empty payload is a probe sent before that landing late, it'd be in the
-  // queue after the test clears it. no real event has an empty payload
+  // queue after the test clears it. no real event has an empty payload.
+  // so probe each queue once: a second publishUntilReceived with Map.of() on it gets dropped and fails
   private BlockingQueue<Map<String, Object>> subscribe(StompSession session, String destination) {
     BlockingQueue<Map<String, Object>> received = new LinkedBlockingQueue<>();
     session.subscribe(destination, new StompFrameHandler() {
@@ -449,6 +451,41 @@ class ChatWebSocketIntegrationTest {
     Map<?, ?> row = (Map<?, ?>) created.get("payload");
     assertEquals("Study group", row.get("name"));
     assertNull(row.get("lastMessage"));
+  }
+
+  @Test
+  @DisplayName("Someone added to a group chat gets it in their chat list with its last message and nothing unread")
+  void addedMemberIsPushed() throws Exception {
+    // Arrange - ana, rui and zeca have a group chat with a message, eva is added to it
+    Student zeca = saveStudent("it.ws.zeca@example.com", "Zeca Test");
+    CustomChat group = chatRepository.save(new CustomChat("Study group", null, ana, List.of(rui, zeca)));
+    try {
+      messageRepository.save(new Message(group, ana, "before eva"));
+      BlockingQueue<Map<String, Object>> chatList = chatListOf(eva);
+
+      // Act
+      int status = send("POST", login(ana.getInstitutionalEmail()), "/chats/" + group.getId() + "/members",
+          "{\"memberNumbers\":[" + eva.getNumber() + "]}");
+
+      // Assert
+      assertEquals(200, status);
+      Map<String, Object> added = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(added);
+      assertEquals("CHAT_ADDED", added.get("type"));
+      Map<?, ?> row = (Map<?, ?>) added.get("payload");
+      assertEquals(group.getId().intValue(), row.get("chatId"));
+      assertEquals("before eva", ((Map<?, ?>) row.get("lastMessage")).get("text"));
+      assertEquals(0, row.get("unread"));
+    } finally {
+      messageRepository.deleteAll(messageRepository.findAll().stream()
+          .filter(message -> message.getChat().getId().equals(group.getId()))
+          .toList());
+      chatSettingsRepository.deleteAll(chatSettingsRepository.findAll().stream()
+          .filter(settings -> settings.getChat().getId().equals(group.getId()))
+          .toList());
+      chatRepository.delete(group);
+      studentRepository.delete(zeca);
+    }
   }
 
   @Test

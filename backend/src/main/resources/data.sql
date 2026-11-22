@@ -23,6 +23,12 @@
 -- registered later continue after them. Lessons are only seeded in the past, since
 -- attendance counts every lesson of the class.
 
+-- schema fixes Hibernate's update doesn't do: it never drops a constraint the mapping stopped having
+
+-- the unique (chat, user) on group chat members, from #226. someone leaving shifts the rest up a row at a time and
+-- trips it halfway (#228)
+ALTER TABLE IF EXISTS custom_chat_member DROP CONSTRAINT IF EXISTS uk6mbv7ca5nfft2nn86dslucu6l;
+
 -- degrees and categories
 
 INSERT INTO degree (name, curricular_years) VALUES

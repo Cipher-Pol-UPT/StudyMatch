@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.studymatch.dtos.AddMembersRequestDTO;
 import com.studymatch.dtos.ChatContactDTO;
 import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.CreateGroupChatRequestDTO;
@@ -110,6 +111,29 @@ public class ChatController {
     User user = userService.getByInstitutionalEmail(authentication.getName());
     CustomChat chat = chatService.createGroupChat(user, createRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(ChatSummaryDTO.from(chat, user, null, 0));
+  }
+
+  @GetMapping("{chatId}/members")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Who's in a chat you're in, a group chat's in the order they joined with the owner first")
+  @ErrorCodes(ErrorCode.NOT_FOUND)
+  public ResponseEntity<List<ChatContactDTO>> getMembers(@PathVariable Long chatId, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(chatService.getMembers(chatId, user));
+  }
+
+  // the members after adding, so the dialog can show them without asking again
+  @PostMapping("{chatId}/members")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Add Students and Teachers to a group chat you're in, they get it in their chat lists with "
+      + "the whole history. Anyone already in is skipped")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.CHAT_MEMBERS_FIXED, ErrorCode.TOO_MANY_GROUP_CHAT_MEMBERS,
+      ErrorCode.CANNOT_ADD_TO_GROUP_CHAT })
+  public ResponseEntity<List<ChatContactDTO>> addMembers(@PathVariable Long chatId,
+      @Valid @RequestBody AddMembersRequestDTO addRequest, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    messageService.addMembers(chatId, user, addRequest);
+    return ResponseEntity.ok(chatService.getMembers(chatId, user));
   }
 
   // private cache like the profile photo, the summary's picture flag says when to ask

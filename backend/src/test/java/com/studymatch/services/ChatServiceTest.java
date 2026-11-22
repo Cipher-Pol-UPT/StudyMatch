@@ -11,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -23,6 +24,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.studymatch.dtos.AddMembersRequestDTO;
 import com.studymatch.dtos.CreateGroupChatRequestDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
@@ -42,6 +44,7 @@ class ChatServiceTest {
   private ChatRepository chatRepository;
   private UserService userService;
   private UserBlockService userBlockService;
+  private ChatSettingsService chatSettingsService;
   private PresenceTracker presenceTracker;
   private ApplicationEventPublisher eventPublisher;
   private ChatService chatService;
@@ -56,7 +59,9 @@ class ChatServiceTest {
     userBlockService = mock(UserBlockService.class);
     presenceTracker = new PresenceTracker();
     eventPublisher = mock(ApplicationEventPublisher.class);
-    chatService = new ChatService(chatRepository, userService, userBlockService, presenceTracker, eventPublisher);
+    chatSettingsService = mock(ChatSettingsService.class);
+    chatService = new ChatService(chatRepository, userService, userBlockService, chatSettingsService, presenceTracker,
+        eventPublisher);
 
     ana = student("Ana", 1001L);
     chat = new DirectChat(ana, student("Rui", 1002L));
@@ -371,6 +376,80 @@ class ChatServiceTest {
     assertTrue(created.hasMember(eva));
   }
 
+  // ana, rui and eva, saved as chat 6
+  private CustomChat groupChat(Student eva) {
+    CustomChat group = new CustomChat("Study group", null, ana, List.of(chat.getSecondUser(), eva));
+    when(chatRepository.findById(6L)).thenReturn(Optional.of(group));
+    return group;
+  }
+
+  @Test
+  @DisplayName("A DM's members can't be changed: CHAT_MEMBERS_FIXED")
+  void directChatMembersFixed() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> chatService.addMembers(5L, ana, new AddMembersRequestDTO(List.of(1003L))));
+
+    // Assert
+    assertEquals(ErrorCode.CHAT_MEMBERS_FIXED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("The people added go in with the history already read, only they come back (GR8)")
+  void membersAdded() {
+    // Arrange
+    Student eva = student("Eva", 1003L);
+    Student zeca = student("Zeca", 1004L);
+    CustomChat group = groupChat(eva);
+    when(userService.getChatContacts(Set.of(1004L), ana)).thenReturn(List.of(zeca));
+
+    // Act
+    List<User> added = chatService.addMembers(6L, ana, new AddMembersRequestDTO(List.of(1004L)));
+
+    // Assert
+    assertEquals(List.of(zeca), added);
+    assertTrue(group.hasMember(zeca));
+    verify(chatSettingsService).startRead(group, List.of(zeca));
+  }
+
+  @Test
+  @DisplayName("Someone new who blocked the user can't be added, and nobody is (GR9)")
+  void blockerNotAdded() {
+    // Arrange - zeca (1004) blocked ana, lia (1005) didn't
+    Student eva = student("Eva", 1003L);
+    Student zeca = student("Zeca", 1004L);
+    Student lia = student("Lia", 1005L);
+    CustomChat group = groupChat(eva);
+    when(userService.getChatContacts(Set.of(1004L, 1005L), ana)).thenReturn(List.of(zeca, lia));
+    when(userBlockService.getBlockerNumbers(ana)).thenReturn(Set.of(1004L));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> chatService.addMembers(6L, ana, new AddMembersRequestDTO(List.of(1004L, 1005L))));
+
+    // Assert
+    assertEquals(ErrorCode.CANNOT_ADD_TO_GROUP_CHAT, e.getCode());
+    assertEquals(3, group.getMembers().size());
+    verify(chatSettingsService, never()).startRead(any(), any());
+  }
+
+  @Test
+  @DisplayName("Picking someone already in who blocked the user is skipped, not refused")
+  void currentMemberWhoBlockedIsSkipped() {
+    // Arrange - eva (1003) is in and blocked ana
+    Student eva = student("Eva", 1003L);
+    Student zeca = student("Zeca", 1004L);
+    groupChat(eva);
+    when(userService.getChatContacts(Set.of(1004L), ana)).thenReturn(List.of(zeca));
+    when(userBlockService.getBlockerNumbers(ana)).thenReturn(Set.of(1003L));
+
+    // Act
+    List<User> added = chatService.addMembers(6L, ana, new AddMembersRequestDTO(List.of(1003L, 1004L)));
+
+    // Assert
+    assertEquals(List.of(zeca), added);
+  }
+
   @Test
   @DisplayName("Too many numbers are refused before anyone is looked up, so a huge list never reaches the query")
   void tooManyRefusedBeforeLookup() {
@@ -380,6 +459,23 @@ class ChatServiceTest {
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
         () -> chatService.createGroupChat(ana, new CreateGroupChatRequestDTO("Study group", null, numbers)));
+
+    // Assert
+    assertEquals(ErrorCode.TOO_MANY_GROUP_CHAT_MEMBERS, e.getCode());
+    verify(userService, never()).getChatContacts(any(), any());
+  }
+
+  @Test
+  @DisplayName("Adding too many is refused before anyone is looked up, people already in don't count")
+  void addingTooManyRefusedBeforeLookup() {
+    // Arrange - 3 in, the 3 picked again plus 18 new makes 21
+    groupChat(student("Eva", 1003L));
+    List<Long> numbers = new ArrayList<>(List.of(1001L, 1002L, 1003L));
+    numbers.addAll(LongStream.range(2001, 2019).boxed().toList());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> chatService.addMembers(6L, ana, new AddMembersRequestDTO(numbers)));
 
     // Assert
     assertEquals(ErrorCode.TOO_MANY_GROUP_CHAT_MEMBERS, e.getCode());
