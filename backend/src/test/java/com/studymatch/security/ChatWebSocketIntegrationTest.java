@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Type;
 import java.net.CookieManager;
@@ -501,6 +502,53 @@ class ChatWebSocketIntegrationTest {
       assertEquals(group.getId().intValue(), removed.get("payload"));
     } finally {
       deleteGroupChat(group);
+    }
+  }
+
+  @Test
+  @DisplayName("Leaving a group chat tells the user's other tabs with CHAT_REMOVED")
+  void leaverIsTold() throws Exception {
+    // Arrange
+    CustomChat group = chatRepository.save(new CustomChat("Study group", null, ana, List.of(rui, eva)));
+    try {
+      BlockingQueue<Map<String, Object>> chatList = chatListOf(rui);
+
+      // Act
+      int status = send("POST", login(rui.getInstitutionalEmail()), "/chats/" + group.getId() + "/leave", "");
+
+      // Assert
+      assertEquals(204, status);
+      Map<String, Object> removed = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(removed);
+      assertEquals("CHAT_REMOVED", removed.get("type"));
+      assertEquals(group.getId().intValue(), removed.get("payload"));
+    } finally {
+      deleteGroupChat(group);
+    }
+  }
+
+  @Test
+  @DisplayName("The last one out deletes the chat and its messages, each leave committing on its own")
+  void lastOneOutDeletesCommitted() throws Exception {
+    // Arrange
+    CustomChat group = chatRepository.save(new CustomChat("Study group", null, ana, List.of(rui, eva)));
+    try {
+      messageRepository.save(new Message(group, ana, "hi all"));
+      assertEquals(204, send("POST", login(rui.getInstitutionalEmail()), "/chats/" + group.getId() + "/leave", ""));
+      assertEquals(204, send("POST", login(ana.getInstitutionalEmail()), "/chats/" + group.getId() + "/leave", ""));
+
+      // Act
+      int status = send("POST", login(eva.getInstitutionalEmail()), "/chats/" + group.getId() + "/leave", "");
+
+      // Assert
+      assertEquals(204, status);
+      assertTrue(chatRepository.findById(group.getId()).isEmpty());
+      assertTrue(messageRepository.findAll().stream()
+          .noneMatch(message -> message.getChat().getId().equals(group.getId())));
+    } finally {
+      if (chatRepository.existsById(group.getId())) {
+        deleteGroupChat(group);
+      }
     }
   }
 
