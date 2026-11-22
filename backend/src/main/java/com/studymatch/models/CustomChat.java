@@ -16,7 +16,6 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OrderColumn;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -42,11 +41,12 @@ public class CustomChat extends Chat {
   @NotNull
   private User owner;
 
-  // in the order they joined, the first one after the owner takes over if the owner leaves (#232)
+  // in the order they joined, the first one after the owner takes over if the owner leaves (#232).
+  // no unique (chat, user): someone leaving shifts the rest up a row at a time, and halfway one of them is in two
+  // rows. nobody's in twice because adding skips who's in, and changes are locked one at a time (data.sql drops it)
   @ManyToMany
   @JoinTable(name = "custom_chat_member", joinColumns = @JoinColumn(name = "chat_id"),
-      inverseJoinColumns = @JoinColumn(name = "user_number"),
-      uniqueConstraints = @UniqueConstraint(columnNames = { "chat_id", "user_number" }))
+      inverseJoinColumns = @JoinColumn(name = "user_number"))
   @OrderColumn(name = "position")
   private List<User> members = new ArrayList<>();
 

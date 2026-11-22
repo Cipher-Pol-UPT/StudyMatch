@@ -36,8 +36,6 @@ import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.MessageRepository;
 import com.studymatch.repositories.StudentRepository;
 
-import jakarta.persistence.EntityManager;
-
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -60,9 +58,6 @@ class RemoveGroupChatMemberIntegrationTest {
 
   @Autowired
   private MessageRepository messageRepository;
-
-  @Autowired
-  private EntityManager entityManager;
 
   @Autowired
   private PasswordEncoder passwordEncoder;
@@ -163,8 +158,6 @@ class RemoveGroupChatMemberIntegrationTest {
     // Arrange
     messageRepository.save(new Message(group, ana, "hi all"));
     remove(anaSession, group.getId(), rui.getNumber()).andExpect(status().isOk());
-    // two requests commit on their own, in one test transaction they'd go in a single flush as a reshuffle
-    entityManager.flush();
     MockHttpSession ruiSession = loginAs(rui.getInstitutionalEmail());
 
     // Act
@@ -198,7 +191,6 @@ class RemoveGroupChatMemberIntegrationTest {
     // Arrange - down to ana
     remove(anaSession, group.getId(), rui.getNumber()).andExpect(status().isOk());
     remove(anaSession, group.getId(), eva.getNumber()).andExpect(status().isOk());
-    entityManager.flush();
     Student zeca = saveStudent("it.removemember.zeca@example.com", "Zeca Remove Test");
 
     // Act + Assert
