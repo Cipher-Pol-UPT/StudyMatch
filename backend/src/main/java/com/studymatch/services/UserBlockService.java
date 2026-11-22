@@ -52,6 +52,11 @@ public class UserBlockService {
     return userBlockRepository.findBlockedNumbers(user.getNumber());
   }
 
+  @Transactional(readOnly = true)
+  public Set<Long> getBlockerNumbers(User user) {
+    return userBlockRepository.findBlockerNumbers(user.getNumber());
+  }
+
   // only people who have chats, the account status doesn't matter
   private User getBlockable(User user, Long number) {
     if (user.getNumber().equals(number)) {

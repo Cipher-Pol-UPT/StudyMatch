@@ -22,6 +22,10 @@ public interface UserBlockRepository extends JpaRepository<UserBlock, Long> {
   @Query("select b.blocked.number from UserBlock b where b.blocker.number = :number")
   Set<Long> findBlockedNumbers(Long number);
 
+  // the other way, who blocked this user, so neither side sees the other online
+  @Query("select b.blocker.number from UserBlock b where b.blocked.number = :number")
+  Set<Long> findBlockerNumbers(Long number);
+
   // double clicks and two tabs both insert, so the pair is skipped if it's already there
   @Modifying
   @Query(nativeQuery = true, value = """
