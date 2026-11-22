@@ -14,6 +14,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.dtos.AddMembersRequestDTO;
 import com.studymatch.dtos.ChatContactDTO;
 import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.CreateGroupChatRequestDTO;
@@ -37,14 +38,17 @@ public class ChatService {
   private final ChatRepository chatRepository;
   private final UserService userService;
   private final UserBlockService userBlockService;
+  private final ChatSettingsService chatSettingsService;
   private final PresenceTracker presenceTracker;
   private final ApplicationEventPublisher eventPublisher;
 
   public ChatService(ChatRepository chatRepository, UserService userService, UserBlockService userBlockService,
-      PresenceTracker presenceTracker, ApplicationEventPublisher eventPublisher) {
+      ChatSettingsService chatSettingsService, PresenceTracker presenceTracker,
+      ApplicationEventPublisher eventPublisher) {
     this.chatRepository = chatRepository;
     this.userService = userService;
     this.userBlockService = userBlockService;
+    this.chatSettingsService = chatSettingsService;
     this.presenceTracker = presenceTracker;
     this.eventPublisher = eventPublisher;
   }
@@ -61,6 +65,12 @@ public class ChatService {
 
   private boolean blockedDirectChat(Chat chat, User user) {
     return chat instanceof DirectChat direct && userBlockService.hasBlocked(user, direct.getOtherUser(user));
+  }
+
+  // who's in it, a group chat in joining order with the owner first. members only like the chat itself (GR8)
+  @Transactional(readOnly = true)
+  public List<ChatContactDTO> getMembers(Long chatId, User user) {
+    return getChatFor(chatId, user).getMembers().stream().map(ChatContactDTO::from).toList();
   }
 
   // every chat the user is in, without DMs with people they blocked. a block doesn't hide group chats (GR9).
@@ -144,23 +154,43 @@ public class ChatService {
     return chatRepository.findDirectChat(first, second);
   }
 
-  // the creator owns it and everyone picked is in straight away, no invitation (GR8). someone who blocked the
-  // creator can't be put in a chat with them, the error names who but not why (GR9).
+  // the creator owns it and everyone picked is in straight away, no invitation (GR8).
   // CHAT_ADDED goes to the creator too, for their other tabs
   @Transactional
   public CustomChat createGroupChat(User user, CreateGroupChatRequestDTO request) {
     List<User> others = userService.getChatContacts(new LinkedHashSet<>(request.memberNumbers()), user);
-    Set<Long> blockers = userBlockService.getBlockerNumbers(user);
-    List<Long> refused = others.stream().map(User::getNumber).filter(blockers::contains).toList();
-    if (!refused.isEmpty()) {
-      throw new StudyMatchException(ErrorCode.CANNOT_ADD_TO_GROUP_CHAT, Map.of("numbers", refused));
-    }
+    checkNotBlockedBy(others, user);
     CustomChat chat = chatRepository.save(new CustomChat(request.name(), request.picture(), user, others));
     for (User member : chat.getMembers()) {
       eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_ADDED,
           ChatSummaryDTO.from(chat, member, null, 0)));
     }
     return chat;
+  }
+
+  // any member adds people, they're in straight away with the whole history, and it starts read (GR8).
+  // people already in are skipped, so is the block check for them. gives back who was really added
+  @Transactional
+  public List<User> addMembers(Long chatId, User user, AddMembersRequestDTO request) {
+    if (!(getChatFor(chatId, user) instanceof CustomChat chat)) {
+      throw new StudyMatchException(ErrorCode.CHAT_MEMBERS_FIXED);
+    }
+    List<User> newcomers = userService.getChatContacts(new LinkedHashSet<>(request.memberNumbers()), user).stream()
+        .filter(person -> !chat.hasMember(person))
+        .toList();
+    checkNotBlockedBy(newcomers, user);
+    List<User> added = chat.addMembers(newcomers);
+    chatSettingsService.startRead(chat, added);
+    return added;
+  }
+
+  // nobody who blocked the user can be put in a chat by them, the error names who but not why (GR9)
+  private void checkNotBlockedBy(List<User> people, User user) {
+    Set<Long> blockers = userBlockService.getBlockerNumbers(user);
+    List<Long> refused = people.stream().map(User::getNumber).filter(blockers::contains).toList();
+    if (!refused.isEmpty()) {
+      throw new StudyMatchException(ErrorCode.CANNOT_ADD_TO_GROUP_CHAT, Map.of("numbers", refused));
+    }
   }
 
   // members only like the chat itself (GR8). a DM has no picture of its own, it uses the contact's photo
