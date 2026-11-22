@@ -21,13 +21,13 @@ export interface StudyRoomCardProps extends StudyRoomActions {
 }
 export function StudyRoomCard({ room, canJoin, canLeave, canEnter, joinBlockedCode, onJoin, onLeave, onEnter, onSelect }: StudyRoomCardProps) {
   const { t, i18n } = useTranslation();
-  return <Card title={room.topic} description={room.subject}>
-    <StudyRoomStatusPill room={room} /><p>{formatRoomDate(room.start, i18n.language)} — {formatRoomDate(room.end, i18n.language)}</p>
-    <p>{room.tutor.name}</p><p>{room.description}</p>
+  return <Card title={room.description ?? room.subjectName} description={room.subjectName}>
+    <StudyRoomStatusPill room={room} /><p>{formatRoomDate(room.startsAt, i18n.language)} — {formatRoomDate(room.endsAt, i18n.language)}</p>
+    <p>{room.tutorName}</p><p>{room.description}</p>
     {joinBlockedCode && <p role="status">{t(`errors.${joinBlockedCode}`)}</p>}
     {canJoin && onJoin && <Button disabled={!!joinBlockedCode} onClick={() => onJoin(room)}>{t('rooms.join')}</Button>}
     {canLeave && onLeave && <Button onClick={() => onLeave(room)}>{t('rooms.leave')}</Button>}
-    {canEnter && <MeetButton href={room.meetUrl} onEnter={() => onEnter?.(room)} />}
+    {canEnter && <MeetButton href={room.link ?? undefined} onEnter={() => onEnter?.(room)} />}
     {onSelect && <Button variant="secondary" onClick={() => onSelect(room)}>{t('rooms.details')}</Button>}
   </Card>;
 }
