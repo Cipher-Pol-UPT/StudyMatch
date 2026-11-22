@@ -14,7 +14,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -106,6 +108,7 @@ class ChatWebSocketIntegrationTest {
   private TransactionTemplate transactionTemplate;
 
   private WebSocketStompClient stompClient;
+  private final Set<BlockingQueue<Map<String, Object>>> ready = ConcurrentHashMap.newKeySet();
   private Degree degree;
   private Student ana;
   private Student rui;
@@ -232,7 +235,9 @@ class ChatWebSocketIntegrationTest {
     return connect(login(student.getInstitutionalEmail()), true, new LinkedBlockingQueue<>());
   }
 
-  private static BlockingQueue<Map<String, Object>> subscribe(StompSession session, String destination) {
+  // once a queue's probe came back, an empty payload is a probe sent before that landing late, it'd be in the
+  // queue after the test clears it. no real event has an empty payload
+  private BlockingQueue<Map<String, Object>> subscribe(StompSession session, String destination) {
     BlockingQueue<Map<String, Object>> received = new LinkedBlockingQueue<>();
     session.subscribe(destination, new StompFrameHandler() {
       @Override
@@ -243,7 +248,11 @@ class ChatWebSocketIntegrationTest {
       @Override
       @SuppressWarnings("unchecked")
       public void handleFrame(StompHeaders headers, Object payload) {
-        received.add((Map<String, Object>) payload);
+        Map<String, Object> frame = (Map<String, Object>) payload;
+        if (ready.contains(received) && Map.of().equals(frame.get("payload"))) {
+          return;
+        }
+        received.add(frame);
       }
     });
     return received;
@@ -253,13 +262,15 @@ class ChatWebSocketIntegrationTest {
     transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(event));
   }
 
-  // the subscription is registered a moment after SUBSCRIBE is sent, so it publishes until something arrives
+  // the subscription is registered a moment after SUBSCRIBE is sent, so it publishes until something arrives.
+  // on a slow runner an earlier one can still be on its way, subscribe drops it
   private Map<String, Object> publishUntilReceived(Object event, BlockingQueue<Map<String, Object>> received)
       throws InterruptedException {
     for (int attempt = 0; attempt < 20; attempt++) {
       publishCommitted(event);
       Map<String, Object> frame = received.poll(250, TimeUnit.MILLISECONDS);
       if (frame != null) {
+        ready.add(received);
         return frame;
       }
     }
