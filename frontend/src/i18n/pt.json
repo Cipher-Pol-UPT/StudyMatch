@@ -621,7 +621,8 @@
     "NOT_ENOUGH_GROUP_CHAT_MEMBERS": "Escolha pelo menos {{min}} pessoas para uma conversa de grupo.",
     "TOO_MANY_GROUP_CHAT_MEMBERS": "Uma conversa de grupo pode ter no máximo {{max}} membros, contando consigo.",
     "INVALID_GROUP_CHAT_PICTURE": "Utilize uma imagem JPG ou PNG com até 1 MB para a fotografia da conversa de grupo.",
-    "CANNOT_ADD_TO_GROUP_CHAT": "Algumas das pessoas que escolheu não podem ser adicionadas a esta conversa de grupo."
+    "CANNOT_ADD_TO_GROUP_CHAT": "Algumas das pessoas que escolheu não podem ser adicionadas a esta conversa de grupo.",
+    "CHAT_MEMBERS_FIXED": "Os membros desta conversa não podem ser alterados."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",

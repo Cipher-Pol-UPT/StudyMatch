@@ -72,6 +72,15 @@ public class CustomChat extends Chat {
     }
   }
 
+  // anyone already in is skipped, the rest go at the end so the list stays in joining order (GR8).
+  // gives back who was really added
+  public List<User> addMembers(List<User> people) {
+    List<User> added = people.stream().filter(person -> !hasMember(person)).toList();
+    checkSize(members.size() + added.size());
+    members.addAll(added);
+    return added;
+  }
+
   public String getName() {
     return name;
   }

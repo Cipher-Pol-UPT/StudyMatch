@@ -165,6 +165,65 @@ class CustomChatTest {
   }
 
   @Test
+  @DisplayName("Added people go after the current members, in the order they were picked")
+  void addedGoLast() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+    Student zeca = student("Zeca", 1004L);
+    Student lia = student("Lia", 1005L);
+
+    // Act
+    List<User> added = chat.addMembers(List.of(zeca, lia));
+
+    // Assert
+    assertEquals(List.of(zeca, lia), added);
+    assertEquals(List.of(ana, rui, eva, zeca, lia), chat.getMembers());
+  }
+
+  @Test
+  @DisplayName("Someone already in isn't added again, and isn't in what comes back")
+  void currentMembersSkipped() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+    Student zeca = student("Zeca", 1004L);
+
+    // Act
+    List<User> added = chat.addMembers(List.of(student("Rui", 1002L), zeca));
+
+    // Assert
+    assertEquals(List.of(zeca), added);
+    assertEquals(4, chat.getMembers().size());
+  }
+
+  @Test
+  @DisplayName("Adding up to 20 members is allowed (GR8)")
+  void addUpToTwenty() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+
+    // Act
+    chat.addMembers(others(CustomChat.MAX_MEMBERS - 3));
+
+    // Assert
+    assertEquals(CustomChat.MAX_MEMBERS, chat.getMembers().size());
+  }
+
+  @Test
+  @DisplayName("Adding past 20 members is refused and nobody is added (GR8)")
+  void addPastTwentyRefused() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+    List<User> tooMany = others(CustomChat.MAX_MEMBERS - 2);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> chat.addMembers(tooMany));
+
+    // Assert
+    assertEquals(ErrorCode.TOO_MANY_GROUP_CHAT_MEMBERS, e.getCode());
+    assertEquals(3, chat.getMembers().size());
+  }
+
+  @Test
   @DisplayName("Everyone sees the group chat's own name")
   void nameIsTheSameForEveryone() {
     // Arrange
