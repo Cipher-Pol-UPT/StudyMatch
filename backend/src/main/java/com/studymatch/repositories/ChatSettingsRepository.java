@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import com.studymatch.models.Chat;
 import com.studymatch.models.ChatSettings;
 
 public interface ChatSettingsRepository extends JpaRepository<ChatSettings, Long> {
@@ -20,6 +21,11 @@ public interface ChatSettingsRepository extends JpaRepository<ChatSettings, Long
       on conflict (chat_id, user_number)
       do update set last_read_at = greatest(chat_settings.last_read_at, excluded.last_read_at)""")
   void upsertLastReadAt(Long chatId, Long userNumber, LocalDateTime lastReadAt, String notificationLevel);
+
+  // everyone's settings of a chat that's being deleted
+  @Modifying
+  @Query("delete from ChatSettings s where s.chat = :chat")
+  void deleteByChat(Chat chat);
 
   // a fresh ChatSettings brings the default level, so it isn't repeated in the SQL
   default void saveLastReadAt(ChatSettings settings) {

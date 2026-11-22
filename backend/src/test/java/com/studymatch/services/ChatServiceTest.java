@@ -532,6 +532,45 @@ class ChatServiceTest {
   }
 
   @Test
+  @DisplayName("The owner leaving hands it to whoever's been there longest, their other tabs get CHAT_REMOVED")
+  void ownerLeaves() {
+    // Arrange
+    CustomChat group = groupChat(student("Eva", 1003L));
+
+    // Act
+    chatService.leave(6L, ana);
+
+    // Assert
+    assertFalse(group.hasMember(ana));
+    assertEquals(1002L, group.getOwner().getNumber());
+    verify(eventPublisher).publishEvent(new UserChatEvent(ana, ChatEventType.CHAT_REMOVED, group.getId()));
+  }
+
+  @Test
+  @DisplayName("Nobody leaves a DM: CHAT_MEMBERS_FIXED")
+  void directChatLeaveFixed() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> chatService.leave(5L, ana));
+
+    // Assert
+    assertEquals(ErrorCode.CHAT_MEMBERS_FIXED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Deleting a chat takes everyone's settings with it, then the chat")
+  void deleteTakesSettings() {
+    // Arrange
+    CustomChat group = groupChat(student("Eva", 1003L));
+
+    // Act
+    chatService.delete(group);
+
+    // Assert
+    verify(chatSettingsService).deleteAllOf(group);
+    verify(chatRepository).delete(group);
+  }
+
+  @Test
   @DisplayName("Picking the same person twice adds them once")
   void duplicatesCollapse() {
     // Arrange

@@ -158,6 +158,16 @@ public class MessageService {
     }
   }
 
+  // the rules are in ChatService, this is here because the last one out deletes the chat with its messages
+  @Transactional
+  public void leave(Long chatId, User user) {
+    CustomChat chat = chatService.leave(chatId, user);
+    if (chat.getMembers().isEmpty()) {
+      messageRepository.deleteByChat(chat);
+      chatService.delete(chat);
+    }
+  }
+
   // an empty group chat counts from when it was made
   private static LocalDateTime lastActivity(Chat chat, ChatActivity activity) {
     return activity == null ? chat.getCreatedAt() : activity.getLastMessage().getSentAt();

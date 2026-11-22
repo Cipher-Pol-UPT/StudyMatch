@@ -150,6 +150,17 @@ public class ChatController {
     return ResponseEntity.ok(chatService.getMembers(chatId, user));
   }
 
+  @PostMapping("{chatId}/leave")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Leave a group chat. The owner leaving makes whoever's been there longest the owner, "
+      + "the last one leaving deletes the chat and its messages")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.CHAT_MEMBERS_FIXED })
+  public ResponseEntity<Void> leave(@PathVariable Long chatId, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    messageService.leave(chatId, user);
+    return ResponseEntity.noContent().build();
+  }
+
   // private cache like the profile photo, the summary's picture flag says when to ask
   @GetMapping("{chatId}/picture")
   @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")

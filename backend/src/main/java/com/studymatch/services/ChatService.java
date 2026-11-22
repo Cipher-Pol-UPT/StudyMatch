@@ -210,6 +210,23 @@ public class ChatService {
         });
   }
 
+  // any member leaves, the owner hands it to whoever's been there longest. CHAT_REMOVED is for their other tabs.
+  // gives the chat back so MessageService can delete it if nobody's left (#232)
+  @Transactional
+  public CustomChat leave(Long chatId, User user) {
+    CustomChat chat = getCustomChatFor(chatId, user);
+    chat.leave(user);
+    eventPublisher.publishEvent(new UserChatEvent(user, ChatEventType.CHAT_REMOVED, chat.getId()));
+    return chat;
+  }
+
+  // the messages are gone already (MessageService), the settings go here and then the chat
+  @Transactional
+  public void delete(Chat chat) {
+    chatSettingsService.deleteAllOf(chat);
+    chatRepository.delete(chat);
+  }
+
   // a chat whose members can change, a DM's never do
   private CustomChat getCustomChatFor(Long chatId, User user) {
     if (getChatFor(chatId, user) instanceof CustomChat chat) {
