@@ -1,94 +1,128 @@
 import { BookOpen, CalendarDays, Check, ListChecks, Plus, Users } from 'lucide-react';
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createStudyRoom } from '../../api/studyRooms';
-import { Button, CreateStudyRoomForm, Dialog, EmptyState, useToast, type StudyRoomDraft, type StudyRoomPerson } from '../../studymatch-ui';
-import type { StudyRoomData } from '../../types/studyRooms';
-import { createDemoStudyRooms, dateKey, DEMO_SUBJECTS, demoStudent, monthStart, type DemoStudent, type DemoStudyRoom, type StudyRoomsView, type SubjectId } from './demoStudyRooms';
+import { isBackendError } from '../../api/errors';
+import { createStudyRoom, getStudyRoom, getStudyRooms, joinStudyRoom, leaveStudyRoom } from '../../api/studyRooms';
+import { getSubjects } from '../../api/subjects';
+import { Button, CreateStudyRoomForm, Dialog, EmptyState, Skeleton, useToast, type StudyRoomDraft } from '../../studymatch-ui';
+import type { CurrentUser } from '../../types/currentUser';
+import type { StudyRoomData, StudyRoomDetailData, SubjectData } from '../../types/studyRooms';
+import { dateKey, monthStart } from './calendar';
 import { StudyRoomCalendar, StudyRoomMiniCalendar } from './StudyRoomCalendar';
 import { StudyRoomPreview } from './StudyRoomPreview';
+import { subjectColor } from './subjectColor';
 import { useTutorSubjects } from './useTutorSubjects';
 import './studyRoom.css';
 
 interface StudyRoomsPageProps {
-  currentUser: DemoStudent;
+  currentUser: CurrentUser;
   initialDate?: Date;
 }
 
-// a created room in the demo list's shape, until #137 loads the rooms from the backend
-function toCalendarRoom(room: StudyRoomData, tutor: StudyRoomPerson, rating: number, ratingCount: number): DemoStudyRoom {
-  return {
-    id: `room-${room.id}`, subjectId: `${room.subjectId}`, subject: room.subjectName, topic: room.subjectName,
-    description: room.description ?? undefined, start: new Date(room.startsAt), end: new Date(room.endsAt), tutor,
-    capacity: room.capacity, participants: [], meetUrl: room.link, status: room.status, rating, ratingCount,
-  };
-}
+type StudyRoomsView = 'calendar' | 'inscriptions' | 'created';
 
 export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps) {
   const { t } = useTranslation();
   const [today] = useState(() => initialDate ?? new Date());
-  const [rooms, setRooms] = useState(() => createDemoStudyRooms(currentUser, today));
+  const [rooms, setRooms] = useState<StudyRoomData[]>([]);
+  const [subjects, setSubjects] = useState<SubjectData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState(() => monthStart(today));
   const [view, setView] = useState<StudyRoomsView>('calendar');
-  const [subjectId, setSubjectId] = useState<SubjectId | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [subjectId, setSubjectId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [detail, setDetail] = useState<StudyRoomDetailData | null>(null);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [notice, setNotice] = useState('');
-  const student = demoStudent(currentUser);
   const toast = useToast();
   const tutorSubjects = useTutorSubjects();
   const [creating, setCreating] = useState(false);
 
-  const joinedRooms = rooms.filter((room) => room.participants.some((person) => person.id === student.id));
-  const createdRooms = rooms.filter((room) => room.tutor.id === student.id);
-  const filteredRooms = rooms.filter((room) => subjectId === null || room.subjectId === subjectId);
-  const selectedRoom = filteredRooms.find((room) => room.id === selectedId);
-  const personalRooms = (view === 'created' ? createdRooms : joinedRooms).filter((room) => subjectId === null || room.subjectId === subjectId);
+  useEffect(() => {
+    let alive = true;
+    getStudyRooms()
+      .then((data) => alive && setRooms(data))
+      .catch(() => alive && setRooms([]))
+      .finally(() => alive && setLoading(false));
+    getSubjects()
+      .then((data) => alive && setSubjects(data))
+      .catch(() => alive && setSubjects([]));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-  const selectSubject = (id: SubjectId | null) => {
+  // the tutor's rating and canJoin live in the detail, fetched when a room is opened
+  useEffect(() => {
+    if (selectedId == null) return;
+    let alive = true;
+    getStudyRoom(selectedId)
+      .then((data) => alive && setDetail(data))
+      .catch(() => alive && setDetail(null));
+    return () => {
+      alive = false;
+    };
+  }, [selectedId]);
+
+  const studentNumber = currentUser.number;
+  // the list's link is null unless the student hosts the room or already joined it
+  const joinedRooms = rooms.filter((room) => room.tutorNumber !== studentNumber && room.link != null);
+  const createdRooms = rooms.filter((room) => room.tutorNumber === studentNumber);
+  const filteredRooms = rooms.filter((room) => subjectId == null || room.subjectId === subjectId);
+  const selectedRoom = filteredRooms.find((room) => room.id === selectedId);
+  const personalRooms = (view === 'created' ? createdRooms : joinedRooms)
+    .filter((room) => subjectId == null || room.subjectId === subjectId);
+
+  // clears the stale detail first, so the old room's rating never flashes while the new one loads
+  const openRoom = (roomId: number | null) => {
+    setDetail(null);
+    setSelectedId(roomId);
+  };
+
+  const selectSubject = (id: number | null) => {
     setSubjectId(id);
-    setSelectedId(null);
+    openRoom(null);
   };
 
   const changeMonth = (date: Date) => {
     setMonth(monthStart(date));
-    setSelectedId(null);
+    openRoom(null);
     setSelectedDay(null);
   };
 
   // the backend checks everything, if it refuses the error goes back to the form
   const createRoom = async (draft: StudyRoomDraft) => {
     const created = await createStudyRoom({ ...draft, description: draft.description || null });
-    const hosted = rooms.find((room) => room.tutor.id === student.id);
-    const room = toCalendarRoom(created, student, hosted?.rating ?? 0, hosted?.ratingCount ?? 0);
-    setRooms((previous) => [...previous, room].sort((a, b) => a.start.getTime() - b.start.getTime()));
+    setRooms((previous) => [...previous, created].sort((a, b) => a.startsAt.localeCompare(b.startsAt)));
     setCreating(false);
     setView('calendar');
-    changeMonth(room.start);
+    changeMonth(new Date(created.startsAt));
     toast.success(t('rooms.created'));
   };
 
-  const selectRoom = (room: DemoStudyRoom) => {
+  const selectRoom = (room: StudyRoomData) => {
     document.getElementById(`study-room-event-${room.id}`)?.focus();
-    setSelectedId(room.id);
-    setSelectedDay(room.start);
+    openRoom(room.id);
+    setSelectedDay(new Date(room.startsAt));
   };
 
-  const toggleMembership = (room: DemoStudyRoom) => {
-    if (room.tutor.id === student.id) return;
-    const joined = room.participants.some((person) => person.id === student.id);
-    if (!joined && room.participants.length >= room.capacity) return;
-    setRooms((previous) => previous.map((item) => item.id !== room.id ? item : {
-      ...item,
-      participants: joined ? item.participants.filter((person) => person.id !== student.id) : [...item.participants, student],
-    }));
-    setNotice(t(joined ? 'studyRooms.leftNotice' : 'studyRooms.joinedNotice', { topic: room.topic }));
+  const toggleMembership = async (room: StudyRoomData) => {
+    if (room.tutorNumber === studentNumber) return;
+    const joined = room.link != null;
+    try {
+      const updated = joined ? await leaveStudyRoom(room.id) : await joinStudyRoom(room.id);
+      setRooms((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
+      setDetail((previous) => previous?.id === updated.id ? { ...previous, ...updated, joined: !joined, hosted: false } : previous);
+      setNotice(t(joined ? 'studyRooms.leftNotice' : 'studyRooms.joinedNotice', { topic: updated.description ?? updated.subjectName }));
+    } catch (error) {
+      toast.danger(isBackendError(error) ? t(`errors.${error.code}`) : t('studyRooms.membershipFailed'));
+    }
   };
 
   return (
     <div className="study-rooms">
       <header className="study-rooms__heading">
-          <span className="study-rooms__eyebrow"><BookOpen size={15} aria-hidden />StudyMatch <span>{t('studyRooms.demo')}</span></span>
+          <span className="study-rooms__eyebrow"><BookOpen size={15} aria-hidden />StudyMatch</span>
           <h1>{t('studyRooms.heading')}</h1>
           <p>{t('studyRooms.intro')}</p>
           <span className="study-rooms__hint"><CalendarDays size={16} aria-hidden />{t('studyRooms.selectHint')}</span>
@@ -106,8 +140,16 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
         />
       </Dialog>
 
-      <Dialog open={view === 'calendar' && !!selectedRoom} onClose={() => setSelectedId(null)} title={t('studyRooms.selectedRoom')} className="study-rooms-dialog">
-        {selectedRoom && <StudyRoomPreview room={selectedRoom} studentId={student.id} onToggleMembership={toggleMembership} />}
+      <Dialog open={view === 'calendar' && !!selectedRoom} onClose={() => openRoom(null)} title={t('studyRooms.selectedRoom')} className="study-rooms-dialog">
+        {selectedRoom && (
+          <StudyRoomPreview
+            room={detail ?? selectedRoom}
+            studentNumber={studentNumber}
+            rating={detail?.tutorAverageRating}
+            ratingCount={detail?.tutorRatingCount}
+            onToggleMembership={toggleMembership}
+          />
+        )}
       </Dialog>
 
       <p className="sm-visually-hidden" role="status">{notice}</p>
@@ -117,10 +159,10 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
           <fieldset className="study-rooms__filters">
             <legend>{t('studyRooms.filters')}</legend>
             <p>{t('studyRooms.filterHint')}</p>
-            {DEMO_SUBJECTS.map((subject) => (
-              <button key={subject.id} type="button" className="study-rooms__subject" aria-pressed={subjectId === subject.id} onClick={() => selectSubject(subject.id)} style={{ '--subject-color': subject.color } as CSSProperties}>
+            {subjects.map((subject) => (
+              <button key={subject.id} type="button" className="study-rooms__subject" aria-pressed={subjectId === subject.id} onClick={() => selectSubject(subject.id)} style={{ '--subject-color': subjectColor(subject.id) } as CSSProperties}>
                 <i aria-hidden />
-                <span>{t(`studyRooms.subjects.${subject.id}`)}</span>
+                <span>{subject.name}</span>
                 <Check size={14} className="study-rooms__subject-check" aria-hidden />
               </button>
             ))}
@@ -136,7 +178,7 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
               { key: 'inscriptions', icon: ListChecks, label: 'studyRooms.inscriptions', count: joinedRooms.length },
               { key: 'created', icon: Users, label: 'studyRooms.created', count: createdRooms.length },
             ] as const).map(({ key, icon: Icon, label, count }) => (
-              <button key={key} type="button" aria-pressed={view === key} onClick={() => { setSelectedId(null); setView(key); }}>
+              <button key={key} type="button" aria-pressed={view === key} onClick={() => { openRoom(null); setView(key); }}>
                 <Icon size={17} aria-hidden /><span>{t(label)}</span><small>{count}</small>
               </button>
             ))}
@@ -150,14 +192,20 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
             onDaySelect={(day) => {
               setMonth(monthStart(day));
               setSelectedDay(day);
-              setSelectedId(filteredRooms.find((room) => dateKey(room.start) === dateKey(day))?.id ?? null);
+              openRoom(filteredRooms.find((room) => dateKey(new Date(room.startsAt)) === dateKey(day))?.id ?? null);
               setView('calendar');
             }}
           />
         </aside>
 
         <div className="study-rooms__content">
-          {view === 'calendar' ? (
+          {loading ? (
+            <div className="study-rooms__loading" aria-label={t('studyRooms.loading')}>
+              <Skeleton />
+              <Skeleton />
+              <Skeleton />
+            </div>
+          ) : view === 'calendar' ? (
             <StudyRoomCalendar month={month} onMonthChange={changeMonth} rooms={filteredRooms} selectedRoomId={selectedRoom?.id ?? null} today={today} onSelect={selectRoom} />
           ) : (
             <section aria-labelledby="study-rooms-list-title" className="study-rooms__personal">
@@ -170,7 +218,7 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
               </header>
               {personalRooms.length ? (
                 <div className="study-rooms__cards">
-                  {personalRooms.map((room) => <StudyRoomPreview key={room.id} room={room} studentId={student.id} onToggleMembership={toggleMembership} />)}
+                  {personalRooms.map((room) => <StudyRoomPreview key={room.id} room={room} studentNumber={studentNumber} onToggleMembership={toggleMembership} />)}
                 </div>
               ) : (
                 <EmptyState icon={view === 'created' ? Users : ListChecks} title={t('studyRooms.noRooms')} body={t('studyRooms.noPersonalRoomsBody')} action={<Button variant="tinted" onClick={() => { selectSubject(null); setView('calendar'); }}>{t('studyRooms.browseRooms')}</Button>} />

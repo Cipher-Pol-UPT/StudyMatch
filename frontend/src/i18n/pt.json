@@ -278,7 +278,6 @@
   "studyRooms": {
     "heading": "Salas de estudo",
     "intro": "Um espaço para se concentrar, tirar dúvidas e progredir em conjunto. Encontre uma sessão à sua medida.",
-    "demo": "Demo",
     "filters": "Filtros",
     "filterHint": "Escolha uma unidade curricular para ver as respetivas salas de estudo.",
     "allSubjects": "Mostrar todas as unidades curriculares",
@@ -312,13 +311,8 @@
     "noRoomsBody": "Experimente outro mês ou escolha Mostrar todas as unidades curriculares.",
     "noPersonalRoomsBody": "Escolha Mostrar todas as unidades curriculares ou procure uma sessão no calendário.",
     "browseRooms": "Explorar salas de estudo",
-    "subjects": {
-      "programming": "Laboratório de Programação",
-      "statistics": "Estatística",
-      "quality": "Qualidade de Software",
-      "ai": "Inteligência Artificial",
-      "management": "Gestão de Projetos"
-    }
+    "loading": "A carregar as salas de estudo…",
+    "membershipFailed": "Não foi possível atualizar a sala de estudo. Tenta novamente."
   },
   "personality": {
     "title": "Teste de personalidade",

@@ -278,7 +278,6 @@
   "studyRooms": {
     "heading": "StudyRooms",
     "intro": "A shared space to focus, ask questions and make progress together. Find a session that works for you.",
-    "demo": "Demo",
     "filters": "Filters",
     "filterHint": "Choose a subject to see its study rooms.",
     "allSubjects": "Show all subjects",
@@ -312,13 +311,8 @@
     "noRoomsBody": "Try another month or choose Show all subjects.",
     "noPersonalRoomsBody": "Choose Show all subjects or browse the calendar to find a session.",
     "browseRooms": "Browse study rooms",
-    "subjects": {
-      "programming": "Programming Lab",
-      "statistics": "Statistics",
-      "quality": "Software Quality",
-      "ai": "Artificial Intelligence",
-      "management": "Project Management"
-    }
+    "loading": "Loading study rooms…",
+    "membershipFailed": "Couldn't update the study room. Try again."
   },
   "personality": {
     "title": "Personality test",
