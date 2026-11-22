@@ -41,8 +41,9 @@ describe('presentational components', () => {
   });
 
   it('uses supplied StudyRoom flags instead of inferring eligibility from status or dates', () => {
-    const room: StudyRoom = { id:'room',subject:'Subject',topic:'Topic',start:'2020-01-01T10:00:00',end:'2020-01-01T11:00:00',
-      tutor:{id:'tutor',name:'Tutor'},capacity:1,participants:[],status:'FULL' };
+    const room: StudyRoom = { id: 1, subjectId: 1, subjectName: 'Subject', tutorNumber: 1, tutorName: 'Tutor',
+      startsAt: '2020-01-01T10:00:00', endsAt: '2020-01-01T11:00:00', description: 'Topic', capacity: 1,
+      link: null, status: 'FULL', participantCount: 0, availablePlaces: 0 };
     const onJoin = vi.fn();
     const { rerender } = render(<StudyRoomCard room={room} onJoin={onJoin} canJoin={false} />);
     expect(screen.queryByRole('button', {name:'Join'})).toBeNull();

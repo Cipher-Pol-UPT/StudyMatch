@@ -94,6 +94,9 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/tutors/me/subjects` | Student | the subjects you tutor |
 | GET | `/tutors/me/applicable-subjects` | Student | the subjects you passed, with your grade, position and whether you can apply to tutor them |
 | POST | `/tutor-applications/` | Student in the subject's top 5% | apply to tutor a subject, creating a Pending application |
+| GET | `/tutor-applications/?subjectId=` | Teacher of the subject's current edition | the Pending applications, with the applicant's grade, rank and previous ratings |
+| POST | `/tutor-applications/{id}/approve` | Teacher of the subject's current edition | approve the application, making the student the subject's tutor |
+| POST | `/tutor-applications/{id}/reject` | Teacher of the subject's current edition | reject the application, with an optional reason |
 | POST | `/study-rooms/` | Student who tutors the subject | create a StudyRoom, with the tutor's Meet link or, without one, a link the server creates on Google |
 | PUT | `/study-rooms/{id}` | the room's tutor | edit a StudyRoom before it starts (the subject can't change), with the same time, overlap and capacity rules as creating |
 | GET | `/study-rooms/` | Student | the open StudyRooms (not cancelled, not completed), filtered by subject, tutor, topic or date |

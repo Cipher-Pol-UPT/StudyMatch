@@ -255,7 +255,8 @@ public class StudyRoomService {
     // the model checks it's still open, not started, and the student is a participant
     room.leave(student);
     // notifying the tutor comes with notifications (#144)
-    return StudyRoomDTO.from(studyRoomRepository.save(room));
+    // the link is null now: the student isn't in the room anymore
+    return StudyRoomDTO.from(studyRoomRepository.save(room), false);
   }
 
   // cancel StudyRoom (#53): a tutor cancels their room before it starts, with an optional reason

@@ -679,6 +679,8 @@ class StudyRoomServiceTest {
     // Assert
     assertEquals(0, result.participantCount());
     assertEquals(StudyRoomStatus.SCHEDULED, result.status());
+    // the student is out, so the meeting link is no longer theirs
+    assertNull(result.link());
     verify(studyRoomRepository).save(room);
   }
 
