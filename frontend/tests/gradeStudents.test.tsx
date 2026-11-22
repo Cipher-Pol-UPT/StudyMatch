@@ -8,8 +8,8 @@ import type { GradeColumn, GradeRow, GradeSheetData } from '../src/types/grades'
 import type { SubjectEditionData } from '../src/types/studentDirectory';
 
 const edition: SubjectEditionData = { id: 7, academicYear: 2026, subject: { id: 3, code: 'SQ', name: 'Software Quality', ects: 6, category: { id: 1, name: 'Software' }, degrees: [] }, teachers: [{ number: 9, name: 'Teacher' }], classSections: ['A'] };
-const project: GradeColumn = { id: 1, name: 'Project 1', type: 'PROJECT', weight: 60 };
-const exam: GradeColumn = { id: 2, name: 'Exam', type: 'EXAM', weight: 40 };
+const project: GradeColumn = { id: 1, name: 'Project 1', type: 'PROJECT', weight: 60, groupWork: false };
+const exam: GradeColumn = { id: 2, name: 'Exam', type: 'EXAM', weight: 40, groupWork: false };
 const ana: GradeRow = { number: 50001, name: 'Ana Silva', classSection: 'A', grades: { 1: 16 }, finalGrade: null, status: 'IN_PROGRESS' };
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 

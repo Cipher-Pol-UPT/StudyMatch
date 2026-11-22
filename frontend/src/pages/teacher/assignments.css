@@ -17,3 +17,6 @@
 
 .assignments__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
 .assignments__head .sm-title { margin: 0; }
+
+.groups__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.groups__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }

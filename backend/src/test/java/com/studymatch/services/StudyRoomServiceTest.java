@@ -31,6 +31,7 @@ import com.studymatch.dtos.CreateStudyRoomRequestDTO;
 import com.studymatch.dtos.ParticipantDTO;
 import com.studymatch.dtos.StudyRoomDTO;
 import com.studymatch.dtos.StudyRoomDetailDTO;
+import com.studymatch.dtos.UpdateStudyRoomRequestDTO;
 import com.studymatch.enums.StudyRoomStatus;
 import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
@@ -678,6 +679,8 @@ class StudyRoomServiceTest {
     // Assert
     assertEquals(0, result.participantCount());
     assertEquals(StudyRoomStatus.SCHEDULED, result.status());
+    // the student is out, so the meeting link is no longer theirs
+    assertNull(result.link());
     verify(studyRoomRepository).save(room);
   }
 
@@ -703,6 +706,254 @@ class StudyRoomServiceTest {
     // Act - findById is empty by default
     StudyMatchException e = assertThrows(StudyMatchException.class,
         () -> studyRoomService.leave(student("Ana Test", 2L), ROOM_ID));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // edit (#51)
+
+  @Test
+  @DisplayName("A tutor edits their room and the new details come back")
+  void updatesStudyRoom() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(15), tomorrowAt(17))).thenReturn(List.of());
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+        updateRequest(tomorrowAt(15), tomorrowAt(17), 6, LINK));
+
+    // Assert
+    assertEquals(tomorrowAt(15), result.startsAt());
+    assertEquals(tomorrowAt(17), result.endsAt());
+    assertEquals(6, result.capacity());
+    assertEquals(LINK, result.link());
+    verify(studyRoomRepository).save(room);
+  }
+
+  @Test
+  @DisplayName("A student who doesn't host the room gets ACCESS_DENIED")
+  void notHostCannotUpdate() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.update(2L, ROOM_ID, updateRequest(tomorrowAt(15), tomorrowAt(17), 6, LINK)));
+
+    // Assert
+    assertEquals(ErrorCode.ACCESS_DENIED, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("Editing to overlap another room of the tutor gets STUDYROOM_OVERLAP naming that room")
+  void overlapCannotUpdate() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    StudyRoom existing = new StudyRoom(tutorRole, tomorrowAt(16), tomorrowAt(18), 5, "existing room", LINK);
+    ReflectionTestUtils.setField(existing, "id", 8L);
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(15), tomorrowAt(17)))
+        .thenReturn(List.of(existing));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+            updateRequest(tomorrowAt(15), tomorrowAt(17), 6, LINK)));
+
+    // Assert
+    assertEquals(ErrorCode.STUDYROOM_OVERLAP, e.getCode());
+    assertEquals(8L, e.getParams().get("id"));
+  }
+
+  @Test
+  @DisplayName("An overlapping edit doesn't ask Google for a new link")
+  void overlapDoesNotGenerateLink() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    StudyRoom existing = new StudyRoom(tutorRole, tomorrowAt(16), tomorrowAt(18), 5, "existing room", LINK);
+    ReflectionTestUtils.setField(existing, "id", 8L);
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(15), tomorrowAt(17)))
+        .thenReturn(List.of(existing));
+
+    // Act - a null link is only replaced once every check passed
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+            updateRequest(tomorrowAt(15), tomorrowAt(17), 6, null)));
+
+    // Assert
+    assertEquals(ErrorCode.STUDYROOM_OVERLAP, e.getCode());
+    verify(meetLinkGenerator, never()).createLink();
+  }
+
+  @Test
+  @DisplayName("Moving a room to a time that overlaps only its own old slot isn't an overlap")
+  void overlappingOwnSlotIsNotAnOverlap() {
+    // Arrange - the only "overlap" is the room's own old 14-16 slot, which shares its id
+    StudyRoom room = openRoomWith();
+    StudyRoom ownOldSlot = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
+    ReflectionTestUtils.setField(ownOldSlot, "id", ROOM_ID);
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(15), tomorrowAt(17)))
+        .thenReturn(List.of(ownOldSlot));
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+        updateRequest(tomorrowAt(15), tomorrowAt(17), 5, LINK));
+
+    // Assert
+    assertEquals(tomorrowAt(15), result.startsAt());
+    verify(studyRoomRepository).save(room);
+  }
+
+  @Test
+  @DisplayName("Capacity can't go below the number of participants")
+  void capacityBelowParticipants() {
+    // Arrange
+    StudyRoom room = openRoomWith(student("Ana Test", 2L), student("Bruno Test", 3L));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act - the model rejects capacity 1 with 2 participants
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+            updateRequest(tomorrowAt(15), tomorrowAt(17), 1, LINK)));
+
+    // Assert
+    assertEquals(ErrorCode.CAPACITY_BELOW_PARTICIPANTS, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A room that already started can't be edited")
+  void updateAfterStartIsRejected() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    ReflectionTestUtils.setField(room, "startsAt", LocalDateTime.now().minusMinutes(1));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+            updateRequest(tomorrowAt(15), tomorrowAt(17), 6, LINK)));
+
+    // Assert
+    assertEquals(ErrorCode.STUDYROOM_ALREADY_STARTED, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A cancelled room can't be edited")
+  void updateCancelledRoomIsRejected() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    room.cancel("test reason");
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+            updateRequest(tomorrowAt(15), tomorrowAt(17), 6, LINK)));
+
+    // Assert
+    assertEquals(ErrorCode.STUDYROOM_CLOSED, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("Without a link the room is edited with the Meet link the server made")
+  void updatesWithGeneratedLink() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.findOverlapping(TUTOR_NUMBER, tomorrowAt(15), tomorrowAt(17))).thenReturn(List.of());
+    when(meetLinkGenerator.createLink()).thenReturn(GENERATED_LINK);
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+        updateRequest(tomorrowAt(15), tomorrowAt(17), 6, null));
+
+    // Assert
+    assertEquals(GENERATED_LINK, result.link());
+    verify(meetLinkGenerator).createLink();
+  }
+
+  @Test
+  @DisplayName("A room that doesn't exist gives NOT_FOUND")
+  void missingRoomForUpdate() {
+    // Act - findById is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.update(TUTOR_NUMBER, ROOM_ID,
+            updateRequest(tomorrowAt(15), tomorrowAt(17), 6, LINK)));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // cancel (#53)
+
+  @Test
+  @DisplayName("A tutor cancels their room and the reason is kept")
+  void cancelsStudyRoom() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.cancel(TUTOR_NUMBER, ROOM_ID, "tutor is sick");
+
+    // Assert
+    assertEquals(StudyRoomStatus.CANCELLED, result.status());
+    assertEquals("tutor is sick", room.getCancellationReason());
+    verify(studyRoomRepository).save(room);
+  }
+
+  @Test
+  @DisplayName("Cancelling without a reason still works")
+  void cancelsWithoutReason() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    StudyRoomDTO result = studyRoomService.cancel(TUTOR_NUMBER, ROOM_ID, null);
+
+    // Assert
+    assertEquals(StudyRoomStatus.CANCELLED, result.status());
+    assertNull(room.getCancellationReason());
+  }
+
+  @Test
+  @DisplayName("A student who doesn't host the room can't cancel it")
+  void notHostCannotCancel() {
+    // Arrange
+    StudyRoom room = openRoomWith();
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.cancel(2L, ROOM_ID, null));
+
+    // Assert
+    assertEquals(ErrorCode.ACCESS_DENIED, e.getCode());
+    verify(studyRoomRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("A room that doesn't exist gives NOT_FOUND")
+  void missingRoomForCancel() {
+    // Act - findById is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> studyRoomService.cancel(TUTOR_NUMBER, ROOM_ID, null));
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
@@ -745,6 +996,11 @@ class StudyRoomServiceTest {
 
   private static CreateStudyRoomRequestDTO requestWithoutLink(LocalDateTime startsAt, LocalDateTime endsAt) {
     return new CreateStudyRoomRequestDTO(SUBJECT_ID, startsAt, endsAt, "test room", 5, null);
+  }
+
+  private static UpdateStudyRoomRequestDTO updateRequest(LocalDateTime startsAt, LocalDateTime endsAt,
+      Integer capacity, String link) {
+    return new UpdateStudyRoomRequestDTO(startsAt, endsAt, "test room", capacity, link);
   }
 
 }

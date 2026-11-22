@@ -1,7 +1,9 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button, EmptyState, IconButton } from '../../studymatch-ui';
-import { dateKey, DEMO_SUBJECTS, monthDays, shiftMonth, type DemoStudyRoom } from './demoStudyRooms';
+import type { StudyRoomData } from '../../types/studyRooms';
+import { dateKey, monthDays, shiftMonth } from './calendar';
+import { subjectColor } from './subjectColor';
 
 interface MonthNavigationProps {
   month: Date;
@@ -9,10 +11,10 @@ interface MonthNavigationProps {
 }
 
 interface StudyRoomCalendarProps extends MonthNavigationProps {
-  rooms: DemoStudyRoom[];
-  selectedRoomId: string | null;
+  rooms: StudyRoomData[];
+  selectedRoomId: number | null;
   today: Date;
-  onSelect: (room: DemoStudyRoom) => void;
+  onSelect: (room: StudyRoomData) => void;
 }
 
 function MonthNavigation({ month, onMonthChange }: MonthNavigationProps) {
@@ -25,18 +27,23 @@ function MonthNavigation({ month, onMonthChange }: MonthNavigationProps) {
   );
 }
 
+const topicOf = (room: StudyRoomData) => room.description ?? room.subjectName;
+
 export function StudyRoomCalendar({ month, onMonthChange, rooms, selectedRoomId, today, onSelect }: StudyRoomCalendarProps) {
   const { t, i18n } = useTranslation();
   const days = monthDays(month);
   const monthLabel = new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(month);
   const dateFormat = new Intl.DateTimeFormat(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const timeFormat = new Intl.DateTimeFormat(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false });
-  const byDay = new Map<string, DemoStudyRoom[]>();
+  const byDay = new Map<string, StudyRoomData[]>();
   for (const room of rooms) {
-    const key = dateKey(room.start);
+    const key = dateKey(new Date(room.startsAt));
     byDay.set(key, [...(byDay.get(key) ?? []), room]);
   }
-  const inMonth = rooms.filter((room) => room.start.getMonth() === month.getMonth() && room.start.getFullYear() === month.getFullYear());
+  const inMonth = rooms.filter((room) => {
+    const start = new Date(room.startsAt);
+    return start.getMonth() === month.getMonth() && start.getFullYear() === month.getFullYear();
+  });
 
   return (
     <section className="study-rooms-calendar" aria-label={t('studyRooms.calendarLabel')}>
@@ -69,21 +76,24 @@ export function StudyRoomCalendar({ month, onMonthChange, rooms, selectedRoomId,
                       <span className="study-rooms-calendar__day" aria-hidden>{day.getDate()}</span>
                       <span className="sm-visually-hidden">{dateFormat.format(day)}</span>
                       <div className="study-rooms-calendar__events">
-                        {(byDay.get(key) ?? []).map((room) => (
-                          <button
-                            id={`study-room-event-${room.id}`}
-                            key={room.id}
-                            type="button"
-                            className="study-rooms-calendar__event"
-                            aria-label={t('studyRooms.openRoom', { topic: room.topic, date: dateFormat.format(day) })}
-                            aria-pressed={selectedRoomId === room.id}
-                            title={`${room.topic} · ${timeFormat.format(room.start)}`}
-                            onClick={() => onSelect(room)}
-                          >
-                            <i style={{ background: DEMO_SUBJECTS.find((subject) => subject.id === room.subjectId)?.color ?? 'var(--sm-violet)' }} aria-hidden />
-                            <span><b>{room.topic}</b><small>{timeFormat.format(room.start)}</small></span>
-                          </button>
-                        ))}
+                        {(byDay.get(key) ?? []).map((room) => {
+                          const start = new Date(room.startsAt);
+                          return (
+                            <button
+                              id={`study-room-event-${room.id}`}
+                              key={room.id}
+                              type="button"
+                              className="study-rooms-calendar__event"
+                              aria-label={t('studyRooms.openRoom', { topic: topicOf(room), date: dateFormat.format(day) })}
+                              aria-pressed={selectedRoomId === room.id}
+                              title={`${topicOf(room)} · ${timeFormat.format(start)}`}
+                              onClick={() => onSelect(room)}
+                            >
+                              <i style={{ background: subjectColor(room.subjectId) }} aria-hidden />
+                              <span><b>{topicOf(room)}</b><small>{timeFormat.format(start)}</small></span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </td>
                   );
@@ -99,7 +109,7 @@ export function StudyRoomCalendar({ month, onMonthChange, rooms, selectedRoomId,
 }
 
 interface StudyRoomMiniCalendarProps extends MonthNavigationProps {
-  rooms: DemoStudyRoom[];
+  rooms: StudyRoomData[];
   selectedDay: Date | null;
   onDaySelect: (day: Date) => void;
 }
@@ -109,7 +119,7 @@ export function StudyRoomMiniCalendar({ month, onMonthChange, rooms, selectedDay
   const days = monthDays(month);
   const monthLabel = new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(month);
   const dateFormat = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'full' });
-  const eventDays = new Set(rooms.map((room) => dateKey(room.start)));
+  const eventDays = new Set(rooms.map((room) => dateKey(new Date(room.startsAt))));
 
   return (
     <section className="study-rooms-mini" aria-label={t('studyRooms.monthPicker')}>

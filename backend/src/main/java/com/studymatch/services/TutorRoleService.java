@@ -57,6 +57,11 @@ public class TutorRoleService {
     return tutorRoleRepository.findByStudentNumberAndSubjectId(studentNumber, subjectId).isPresent();
   }
 
+  // approve tutor application (#81): persist the role an approved application creates
+  public TutorRole save(TutorRole tutorRole) {
+    return tutorRoleRepository.save(tutorRole);
+  }
+
   // achievements: the rating of each subject the student tutors
   public List<SubjectRating> getSubjectRatings(Student student) {
     return tutorRoleRepository.findByStudent(student).stream()

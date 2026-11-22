@@ -14,11 +14,12 @@ import com.studymatch.models.Grade;
 // one column per assignment, one row per student; weightsComplete false means no final grades yet
 public record GradeSheetDTO(List<Column> assignments, List<Row> students, boolean weightsComplete) {
 
-  public record Column(Long id, String name, AssignmentType type, int weight) {
+  // groupWork: it has a grouping rule, so its groups can be generated
+  public record Column(Long id, String name, AssignmentType type, int weight, boolean groupWork) {
 
     public static Column from(Assignment assignment) {
       return new Column(assignment.getId(), assignment.getName(), assignment.getType(),
-          assignment.getWeight().movePointRight(2).intValue());
+          assignment.getWeight().movePointRight(2).intValue(), assignment.getGroupingRule() != null);
     }
 
   }
