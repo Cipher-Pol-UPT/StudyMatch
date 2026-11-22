@@ -139,6 +139,7 @@ class ChatWebSocketIntegrationTest {
         .filter(settings -> settings.getChat().getId().equals(chat.getId()))
         .toList());
     chatRepository.delete(chat);
+    chatRepository.deleteAll(chatRepository.findCustomChatsOf(ana.getNumber()));
     userBlockRepository.deleteAll(userBlockRepository.findAll().stream()
         .filter(block -> block.getBlocker().getNumber().equals(rui.getNumber()))
         .toList());
@@ -417,6 +418,26 @@ class ChatWebSocketIntegrationTest {
     assertNotNull(updated);
     assertEquals("CHAT_UPDATED", updated.get("type"));
     assertEquals(chat.getId().intValue(), ((Map<?, ?>) updated.get("payload")).get("chatId"));
+  }
+
+  @Test
+  @DisplayName("A new group chat reaches each member's chat list as its row, before anyone writes")
+  void createdGroupChatIsPushed() throws Exception {
+    // Arrange
+    BlockingQueue<Map<String, Object>> chatList = chatListOf(rui);
+
+    // Act
+    int status = send("POST", login(ana.getInstitutionalEmail()), "/chats/groups",
+        "{\"name\":\"Study group\",\"memberNumbers\":[" + rui.getNumber() + "," + eva.getNumber() + "]}");
+
+    // Assert
+    assertEquals(201, status);
+    Map<String, Object> created = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(created);
+    assertEquals("CHAT_CREATED", created.get("type"));
+    Map<?, ?> row = (Map<?, ?>) created.get("payload");
+    assertEquals("Study group", row.get("name"));
+    assertNull(row.get("lastMessage"));
   }
 
   @Test
