@@ -63,7 +63,9 @@ public class CustomChat extends Chat {
     this.members.addAll(others);
   }
 
-  private static void checkSize(int size) {
+  // size counts everyone with the owner. the error's min is the others to pick (2), max is everyone (20), as the
+  // creating screen says them. public so the service checks it before looking anyone up
+  public static void checkSize(int size) {
     if (size < MIN_MEMBERS) {
       throw new StudyMatchException(ErrorCode.NOT_ENOUGH_GROUP_CHAT_MEMBERS, Map.of("min", MIN_MEMBERS - 1));
     }

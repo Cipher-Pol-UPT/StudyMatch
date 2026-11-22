@@ -158,7 +158,10 @@ public class ChatService {
   // CHAT_ADDED goes to the creator too, for their other tabs
   @Transactional
   public CustomChat createGroupChat(User user, CreateGroupChatRequestDTO request) {
-    List<User> others = userService.getChatContacts(new LinkedHashSet<>(request.memberNumbers()), user);
+    // counted before the lookup, thousands of numbers would go into one IN (...) and break it
+    Set<Long> numbers = new LinkedHashSet<>(request.memberNumbers());
+    CustomChat.checkSize(numbers.size() + 1);
+    List<User> others = userService.getChatContacts(numbers, user);
     checkNotBlockedBy(others, user);
     CustomChat chat = chatRepository.save(new CustomChat(request.name(), request.picture(), user, others));
     for (User member : chat.getMembers()) {
