@@ -41,6 +41,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/students/import` | Staff | create the previewed rows |
 | GET | `/students/me/profile` | Student | your own profile |
 | PUT | `/students/me/profile` | Student | edit your banner, photo, about me, skills, interests and languages |
+| GET | `/students/me/groups` | Student | the published groups you're in, latest assignment first, with the subject, the assignment and its date, and each member's name and institutional email; blocked members still show, marked `blocked` (GR5) |
 | GET | `/students/{number}/profile` | logged in | a student's profile, with the private part only for them, Staff and their teachers |
 | GET | `/students/{number}/pfp` | logged in | just the profile photo, as an image for `<img src>` (cached for 5 minutes), 404 without one |
 | POST | `/students/personality-test` | Student | send the 20 Mini-IPIP answers, once per academic year |
@@ -145,4 +146,4 @@ The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and 
 
 ## Coming next
 
-The other use cases (editing and viewing groups, tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (editing groups, a teacher viewing an assignment's groups, tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

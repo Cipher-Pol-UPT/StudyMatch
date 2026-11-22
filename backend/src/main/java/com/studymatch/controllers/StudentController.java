@@ -29,6 +29,7 @@ import com.studymatch.dtos.ImageFileDTO;
 import com.studymatch.dtos.ImportPreviewRowDTO;
 import com.studymatch.dtos.ImportResultRowDTO;
 import com.studymatch.dtos.ImportStudentsRequestDTO;
+import com.studymatch.dtos.MyGroupDTO;
 import com.studymatch.dtos.PageDTO;
 import com.studymatch.dtos.PersonalityProfileDTO;
 import com.studymatch.dtos.PersonalityTestRequestDTO;
@@ -45,6 +46,7 @@ import com.studymatch.enums.AccountStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.User;
+import com.studymatch.services.GroupService;
 import com.studymatch.services.RatingService;
 import com.studymatch.services.StudentService;
 import com.studymatch.services.UserService;
@@ -61,13 +63,15 @@ public class StudentController {
 
   private final StudentService studentService;
   private final RatingService ratingService;
+  private final GroupService groupService;
   private final UserService userService;
   private final StudentCsvReader csvReader;
 
-  public StudentController(StudentService studentService, RatingService ratingService, UserService userService,
-      StudentCsvReader csvReader) {
+  public StudentController(StudentService studentService, RatingService ratingService, GroupService groupService,
+      UserService userService, StudentCsvReader csvReader) {
     this.studentService = studentService;
     this.ratingService = ratingService;
+    this.groupService = groupService;
     this.userService = userService;
     this.csvReader = csvReader;
   }
@@ -221,6 +225,16 @@ public class StudentController {
   @Operation(summary = "The ratings a tutor got, newest first, without who wrote them. Empty if they never tutored")
   public ResponseEntity<List<RatingDTO>> getRatings(@PathVariable Long number) {
     return ResponseEntity.ok(ratingService.listRatings(number));
+  }
+
+  // view my groups
+  @GetMapping("me/groups")
+  @PreAuthorize("hasRole('STUDENT')")
+  @Operation(summary = "The published groups you're in, with each member's name and institutional email. "
+      + "Blocked members still show (GR5)")
+  public ResponseEntity<List<MyGroupDTO>> getMyGroups(Authentication authentication) {
+    User student = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(groupService.listMyGroups(student.getNumber()));
   }
 
   @PostMapping("personality-test")
