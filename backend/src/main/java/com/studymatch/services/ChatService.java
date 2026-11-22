@@ -56,14 +56,16 @@ public class ChatService {
     return chat instanceof DirectChat direct && userBlockService.hasBlocked(user, direct.getOtherUser(user));
   }
 
-  // every chat the user is in, without DMs with people they blocked (GR9).
-  // group chats join this list when they exist (#226, #236)
+  // every chat the user is in, without DMs with people they blocked. a block doesn't hide group chats (GR9).
+  // assignment group chats join this list when they exist (#236)
   @Transactional(readOnly = true)
   public List<Chat> getChatsOf(User user) {
     Set<Long> blocked = userBlockService.getBlockedNumbers(user);
-    return new ArrayList<>(chatRepository.findDirectChatsOf(user.getNumber()).stream()
+    List<Chat> chats = new ArrayList<>(chatRepository.findDirectChatsOf(user.getNumber()).stream()
         .filter(direct -> !blocked.contains(direct.getOtherUser(user).getNumber()))
         .toList());
+    chats.addAll(chatRepository.findCustomChatsOf(user.getNumber()));
+    return chats;
   }
 
   // everyone the user shares a chat with, once each, they're who sees them online.
