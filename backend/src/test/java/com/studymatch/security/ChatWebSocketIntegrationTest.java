@@ -187,7 +187,7 @@ class ChatWebSocketIntegrationTest {
     return URI.create("http://localhost:" + port + path);
   }
 
-  // a POST or PUT with the login's cookies and CSRF header, like client.ts sends it
+  // a POST, PUT or DELETE with the login's cookies and CSRF header, like client.ts sends it
   private int send(String method, Map<String, String> cookies, String path, String body) throws Exception {
     HttpRequest request = HttpRequest.newBuilder(url(path))
         .header("Cookie", cookies.entrySet().stream()
@@ -473,6 +473,35 @@ class ChatWebSocketIntegrationTest {
   }
 
   @Test
+  @DisplayName("A delete reaches the open chat and the chat list, so the unread count can drop (GR10)")
+  void deletedMessageIsPushed() throws Exception {
+    // Arrange
+    Message message = messageRepository.save(new Message(chat, ana, "see you at 10"));
+    StompSession session = connect(rui);
+    BlockingQueue<Map<String, Object>> chatTopic = subscribe(session, "/topic/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> chatList = subscribe(session, "/user/queue/chats");
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), chatTopic));
+    assertNotNull(publishUntilReceived(new UserChatEvent(rui, ChatEventType.CHAT_UPDATED, Map.of()), chatList));
+    chatTopic.clear();
+    chatList.clear();
+
+    // Act
+    int status = send("DELETE", login(ana.getInstitutionalEmail()),
+        "/chats/" + chat.getId() + "/messages/" + message.getId(), "");
+
+    // Assert
+    assertEquals(204, status);
+    for (BlockingQueue<Map<String, Object>> received : List.of(chatTopic, chatList)) {
+      Map<String, Object> deleted = received.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(deleted);
+      assertEquals("MESSAGE_DELETED", deleted.get("type"));
+      Map<?, ?> payload = (Map<?, ?>) deleted.get("payload");
+      assertEquals(chat.getId().intValue(), payload.get("chatId"));
+      assertEquals(message.getId().intValue(), payload.get("messageId"));
+    }
+  }
+
+  @Test
   @DisplayName("An edit of a message hidden from the blocker reaches only the sender, not the blocker's tab or list (GR9)")
   void hiddenEditSkipsTheBlocker() throws Exception {
     // Arrange - Rui has the DM open before blocking Ana, her message after the block is hidden from him
@@ -509,6 +538,47 @@ class ChatWebSocketIntegrationTest {
     Map<String, Object> preview = anaList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
     assertNotNull(preview);
     assertEquals("MESSAGE_EDITED", preview.get("type"));
+    assertNull(ruiTopic.poll(1, TimeUnit.SECONDS));
+    assertNull(ruiList.poll(500, TimeUnit.MILLISECONDS));
+  }
+
+  @Test
+  @DisplayName("Deleting a message hidden from the blocker tells only the sender, not the blocker's tab or list (GR9)")
+  void hiddenDeleteSkipsTheBlocker() throws Exception {
+    // Arrange - Rui has the DM open before blocking Ana, her message after the block is hidden from him
+    StompSession ruiSession = connect(rui);
+    BlockingQueue<Map<String, Object>> ruiTopic = subscribe(ruiSession, "/topic/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> ruiList = subscribe(ruiSession, "/user/queue/chats");
+    StompSession anaSession = connect(ana);
+    BlockingQueue<Map<String, Object>> anaChat = subscribe(anaSession, "/user/queue/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> anaList = subscribe(anaSession, "/user/queue/chats");
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiTopic));
+    assertNotNull(publishUntilReceived(new UserChatEvent(rui, ChatEventType.CHAT_UPDATED, Map.of()), ruiList));
+    assertNotNull(publishUntilReceived(
+        new MemberChatEvent(ana, chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), anaChat));
+    assertNotNull(publishUntilReceived(new UserChatEvent(ana, ChatEventType.CHAT_UPDATED, Map.of()), anaList));
+    ruiTopic.clear();
+    ruiList.clear();
+    anaChat.clear();
+    anaList.clear();
+    userBlockRepository.save(new UserBlock(rui, ana));
+    Message hidden = new Message(chat, ana, "see you at 10");
+    hidden.hideFrom(rui);
+    hidden = messageRepository.save(hidden);
+
+    // Act
+    int status = send("DELETE", login(ana.getInstitutionalEmail()),
+        "/chats/" + chat.getId() + "/messages/" + hidden.getId(), "");
+
+    // Assert
+    assertEquals(204, status);
+    Map<String, Object> deleted = anaChat.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(deleted);
+    assertEquals("MESSAGE_DELETED", deleted.get("type"));
+    assertEquals(hidden.getId().intValue(), ((Map<?, ?>) deleted.get("payload")).get("messageId"));
+    Map<String, Object> listed = anaList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(listed);
+    assertEquals("MESSAGE_DELETED", listed.get("type"));
     assertNull(ruiTopic.poll(1, TimeUnit.SECONDS));
     assertNull(ruiList.poll(500, TimeUnit.MILLISECONDS));
   }

@@ -129,6 +129,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/chats/direct/{number}` | Student, Teacher | your DM with that person, `chatId` is null until the first message creates it. With someone you blocked it's `blocked: true` and no `chatId`. Anyone the contact search wouldn't offer is 404 |
 | POST | `/chats/{id}/messages` | member of the chat | send a text message (1 to 2000 characters in UTF-16 units, an emoji is usually 2), pushed to the members |
 | PUT | `/chats/{id}/messages/{messageId}` | the message's author | change its text (same rule as sending), it gets `editedAt` and the open chat gets the new text. The same text again changes nothing. Someone else's message is `NOT_MESSAGE_AUTHOR` |
+| DELETE | `/chats/{id}/messages/{messageId}` | the message's author | delete it for good, nothing is kept and the unread counts go down with it. Deleting the only message of a DM takes the chat off both lists. Someone else's message is `NOT_MESSAGE_AUTHOR` |
 | POST | `/chats/direct/{number}/messages` | Student, Teacher | send a DM, the first one creates the chat. Both sending the first one at the same moment gives the second `DIRECT_CHAT_ALREADY_EXISTS`, and sending again works. To someone you blocked it's `UNBLOCK_TO_MESSAGE`; to someone who blocked you it looks sent but they never get it |
 | GET | `/blocks/` | Student, Teacher | the people you blocked, by name |
 | PUT | `/blocks/{number}` | Student, Teacher | block a Student or Teacher's DMs (204, again changes nothing). They aren't told. Yourself is `CANNOT_BLOCK_YOURSELF` |
@@ -140,7 +141,7 @@ The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and 
 
 | Method | Path | Who | What it does |
 | --- | --- | --- | --- |
-| GET | `/analytics/?academicYear=&subjectEditionId=&classSection=&groupId=` | Staff | a year's indicators (students, active subjects, average attendance), attendance per month, students by strongest Big Five trait and the published groups' balance, with what each filter offers. Every filter is optional, the year defaults to the current one |
+| GET | `/groups/analytics?academicYear=&subjectEditionId=&classSection=&groupId=` | Staff | a year's indicators (students, active subjects, average attendance), attendance per month, students by strongest Big Five trait and the published groups' balance, with what each filter offers. Every filter is optional, the year defaults to the current one |
 
 ## Coming next
 
