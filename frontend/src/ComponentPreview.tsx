@@ -7,8 +7,9 @@ import { Achievement } from './types/enums';
 
 export function ComponentPreview() {
   const { t, i18n } = useTranslation(); const [name, setName] = useState(''); const toast = useToast();
-  const room: StudyRoom = { id:'demo', subject:'StudyMatch', topic:t('rooms.title'),start:'2026-10-20T10:00:00',end:'2026-10-20T11:00:00',
-    tutor:{id:'demo-tutor',name:'Demo'},capacity:8,participants:[],status:'SCHEDULED' };
+  const room: StudyRoom = { id: 1, subjectId: 1, subjectName: 'StudyMatch', tutorNumber: 1, tutorName: 'Demo',
+    startsAt: '2026-10-20T10:00:00', endsAt: '2026-10-20T11:00:00', description: t('rooms.title'), capacity: 8,
+    link: null, status: 'SCHEDULED', participantCount: 0, availablePlaces: 8 };
   return <main className="component-preview">
     <header className="component-preview__header"><Logo /><a href="https://studymatch-ui.vercel.app/">{t('demo.docs')}</a>
       <label>{t('common.language')} <select aria-label={t('common.language')} value={i18n.resolvedLanguage}

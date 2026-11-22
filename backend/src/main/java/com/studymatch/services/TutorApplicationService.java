@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.ApplyTutorRequestDTO;
+import com.studymatch.dtos.PendingTutorApplicationDTO;
 import com.studymatch.dtos.TutorApplicationDTO;
 import com.studymatch.dtos.TutorEligibleSubjectDTO;
 import com.studymatch.dtos.TutorRankingDTO;
@@ -21,7 +22,10 @@ import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.Student;
 import com.studymatch.models.Subject;
+import com.studymatch.models.SubjectEdition;
+import com.studymatch.models.Teacher;
 import com.studymatch.models.TutorApplication;
+import com.studymatch.models.TutorRole;
 import com.studymatch.repositories.TutorApplicationRepository;
 
 @Service
@@ -31,14 +35,16 @@ public class TutorApplicationService {
   private final EnrolmentService enrolmentService;
   private final TutorRoleService tutorRoleService;
   private final SubjectEditionService subjectEditionService;
+  private final SubjectService subjectService;
 
   public TutorApplicationService(TutorApplicationRepository tutorApplicationRepository,
       EnrolmentService enrolmentService, TutorRoleService tutorRoleService,
-      SubjectEditionService subjectEditionService) {
+      SubjectEditionService subjectEditionService, SubjectService subjectService) {
     this.tutorApplicationRepository = tutorApplicationRepository;
     this.enrolmentService = enrolmentService;
     this.tutorRoleService = tutorRoleService;
     this.subjectEditionService = subjectEditionService;
+    this.subjectService = subjectService;
   }
 
   public int countPending(Long studentNumber) {
@@ -101,6 +107,60 @@ public class TutorApplicationService {
     // notifying the subject's teacher comes with notifications (#144)
     TutorApplication application = new TutorApplication(student, subject, request.motivation());
     return TutorApplicationDTO.from(tutorApplicationRepository.save(application));
+  }
+
+  // approve tutor application (#81): the pending applications for a subject, with the applicant's grade, rank and ratings
+  @Transactional(readOnly = true)
+  public List<PendingTutorApplicationDTO> listPendingApplications(Long teacherNumber, Long subjectId) {
+    checkCanDecide(subjectService.getSubject(subjectId), teacherNumber);
+    return tutorApplicationRepository
+        .findBySubjectIdAndStatusOrderBySubmittedAtAsc(subjectId, TutorApplicationStatus.PENDING).stream()
+        .map(application -> toPendingApplication(application, subjectId))
+        .toList();
+  }
+
+  // approve tutor application (#81): the student becomes the subject's tutor
+  @Transactional
+  public TutorApplicationDTO approve(Teacher teacher, Long applicationId) {
+    TutorApplication application = getApplication(applicationId);
+    checkCanDecide(application.getSubject(), teacher.getNumber());
+
+    TutorRole role = application.approve(teacher);
+    tutorRoleService.save(role);
+    // notifying the student comes with notifications (#144)
+    return TutorApplicationDTO.from(tutorApplicationRepository.save(application));
+  }
+
+  // approve tutor application (#81): reject with an optional reason
+  @Transactional
+  public TutorApplicationDTO reject(Teacher teacher, Long applicationId, String reason) {
+    TutorApplication application = getApplication(applicationId);
+    checkCanDecide(application.getSubject(), teacher.getNumber());
+
+    application.reject(teacher, reason);
+    // notifying the student, with the reason if given, comes with notifications (#144)
+    return TutorApplicationDTO.from(tutorApplicationRepository.save(application));
+  }
+
+  // only the teacher of the subject's current edition decides
+  private void checkCanDecide(Subject subject, Long teacherNumber) {
+    SubjectEdition edition = subjectEditionService.getCurrentEdition(subject);
+    subjectEditionService.checkTaughtBy(edition.getId(), teacherNumber);
+  }
+
+  private TutorApplication getApplication(Long applicationId) {
+    // locked so two teachers can't both decide the same application as PENDING
+    return tutorApplicationRepository.findLockedById(applicationId)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  private PendingTutorApplicationDTO toPendingApplication(TutorApplication application, Long subjectId) {
+    Student student = application.getStudent();
+    Enrolment enrolment = enrolmentService.getPassedEnrolment(student, subjectId);
+    TutorRankingDTO ranking = enrolmentService.getTutorRanking(enrolment);
+    return new PendingTutorApplicationDTO(application.getId(), student.getNumber(), student.getName(),
+        enrolment.getFinalGrade(), ranking.position(), application.getMotivation(),
+        tutorRoleService.getTutorBadges(student), application.getSubmittedAt());
   }
 
   private TutorEligibleSubjectDTO toEligibleSubject(Enrolment enrolment, Set<Long> pendingSubjects,
