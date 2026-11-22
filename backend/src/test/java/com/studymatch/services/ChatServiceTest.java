@@ -22,11 +22,13 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.studymatch.dtos.CreateGroupChatRequestDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
 import com.studymatch.events.UserChatEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.models.CustomChat;
 import com.studymatch.models.DirectChat;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
@@ -37,6 +39,7 @@ import com.studymatch.utils.PresenceTracker;
 class ChatServiceTest {
 
   private ChatRepository chatRepository;
+  private UserService userService;
   private UserBlockService userBlockService;
   private PresenceTracker presenceTracker;
   private ApplicationEventPublisher eventPublisher;
@@ -48,10 +51,11 @@ class ChatServiceTest {
   @BeforeEach
   void setUp() {
     chatRepository = mock(ChatRepository.class);
+    userService = mock(UserService.class);
     userBlockService = mock(UserBlockService.class);
     presenceTracker = new PresenceTracker();
     eventPublisher = mock(ApplicationEventPublisher.class);
-    chatService = new ChatService(chatRepository, userBlockService, presenceTracker, eventPublisher);
+    chatService = new ChatService(chatRepository, userService, userBlockService, presenceTracker, eventPublisher);
 
     ana = student("Ana", 1001L);
     chat = new DirectChat(ana, student("Rui", 1002L));
@@ -307,6 +311,80 @@ class ChatServiceTest {
 
     // Assert
     verify(eventPublisher).publishEvent(any(ChatEvent.class));
+  }
+
+  @Test
+  @DisplayName("A group chat is created with the creator as owner, and every member's list gets it")
+  void groupChatCreated() {
+    // Arrange
+    Student rui = (Student) chat.getSecondUser();
+    Student eva = student("Eva", 1003L);
+    when(userService.getChatContacts(Set.of(1002L, 1003L), ana)).thenReturn(List.of(rui, eva));
+    when(chatRepository.save(any(CustomChat.class))).thenAnswer(call -> call.getArgument(0));
+
+    // Act
+    CustomChat created = chatService.createGroupChat(ana, new CreateGroupChatRequestDTO("Study group", null,
+        List.of(1002L, 1003L)));
+
+    // Assert
+    assertSame(ana, created.getOwner());
+    assertEquals(List.of(ana, rui, eva), created.getMembers());
+    verify(eventPublisher, times(3)).publishEvent(any(UserChatEvent.class));
+  }
+
+  @Test
+  @DisplayName("Someone who blocked the creator can't be added, the error names them and nothing is saved (GR9)")
+  void blockerCannotBeAdded() {
+    // Arrange - eva (1003) blocked ana
+    Student rui = (Student) chat.getSecondUser();
+    Student eva = student("Eva", 1003L);
+    when(userService.getChatContacts(Set.of(1002L, 1003L), ana)).thenReturn(List.of(rui, eva));
+    when(userBlockService.getBlockerNumbers(ana)).thenReturn(Set.of(1003L));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> chatService.createGroupChat(ana,
+        new CreateGroupChatRequestDTO("Study group", null, List.of(1002L, 1003L))));
+
+    // Assert
+    assertEquals(ErrorCode.CANNOT_ADD_TO_GROUP_CHAT, e.getCode());
+    assertEquals(List.of(1003L), e.getParams().get("numbers"));
+    verify(chatRepository, never()).save(any());
+    verify(eventPublisher, never()).publishEvent(any(UserChatEvent.class));
+  }
+
+  @Test
+  @DisplayName("Someone the creator blocked can still be added, a block only hides DMs (GR9)")
+  void blockedByCreatorCanBeAdded() {
+    // Arrange - ana blocked eva (1003)
+    Student rui = (Student) chat.getSecondUser();
+    Student eva = student("Eva", 1003L);
+    when(userService.getChatContacts(Set.of(1002L, 1003L), ana)).thenReturn(List.of(rui, eva));
+    when(userBlockService.getBlockedNumbers(ana)).thenReturn(Set.of(1003L));
+    when(chatRepository.save(any(CustomChat.class))).thenAnswer(call -> call.getArgument(0));
+
+    // Act
+    CustomChat created = chatService.createGroupChat(ana, new CreateGroupChatRequestDTO("Study group", null,
+        List.of(1002L, 1003L)));
+
+    // Assert
+    assertTrue(created.hasMember(eva));
+  }
+
+  @Test
+  @DisplayName("Picking the same person twice adds them once")
+  void duplicatesCollapse() {
+    // Arrange
+    Student rui = (Student) chat.getSecondUser();
+    Student eva = student("Eva", 1003L);
+    when(userService.getChatContacts(Set.of(1002L, 1003L), ana)).thenReturn(List.of(rui, eva));
+    when(chatRepository.save(any(CustomChat.class))).thenAnswer(call -> call.getArgument(0));
+
+    // Act
+    CustomChat created = chatService.createGroupChat(ana, new CreateGroupChatRequestDTO("Study group", null,
+        List.of(1002L, 1003L, 1002L)));
+
+    // Assert
+    assertEquals(3, created.getMembers().size());
   }
 
 }

@@ -620,7 +620,8 @@
     "NOT_MESSAGE_AUTHOR": "Only the person who sent this message can change it.",
     "NOT_ENOUGH_GROUP_CHAT_MEMBERS": "Pick at least {{min}} people for a group chat.",
     "TOO_MANY_GROUP_CHAT_MEMBERS": "A group chat can have at most {{max}} members, counting you.",
-    "INVALID_GROUP_CHAT_PICTURE": "Use a JPG or PNG image up to 1 MB for the group chat's picture."
+    "INVALID_GROUP_CHAT_PICTURE": "Use a JPG or PNG image up to 1 MB for the group chat's picture.",
+    "CANNOT_ADD_TO_GROUP_CHAT": "Some of the people you picked can't be added to this group chat."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

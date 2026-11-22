@@ -3,6 +3,7 @@ package com.studymatch.controllers;
 import java.security.Principal;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -11,16 +12,20 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.studymatch.dtos.ChatContactDTO;
 import com.studymatch.dtos.ChatSummaryDTO;
+import com.studymatch.dtos.CreateGroupChatRequestDTO;
 import com.studymatch.dtos.DirectChatDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Chat;
+import com.studymatch.models.CustomChat;
 import com.studymatch.models.User;
 import com.studymatch.services.ChatService;
 import com.studymatch.services.MessageService;
@@ -28,6 +33,7 @@ import com.studymatch.services.UserBlockService;
 import com.studymatch.services.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
@@ -88,6 +94,18 @@ public class ChatController {
     }
     Long chatId = chatService.findDirectChat(user, contact).map(Chat::getId).orElse(null);
     return ResponseEntity.ok(new DirectChatDTO(chatId, ChatContactDTO.from(contact), false));
+  }
+
+  @PostMapping("groups")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Create a group chat you own with 2 to 19 other Students and Teachers, pushed to their chat lists")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NOT_ENOUGH_GROUP_CHAT_MEMBERS, ErrorCode.TOO_MANY_GROUP_CHAT_MEMBERS,
+      ErrorCode.INVALID_GROUP_CHAT_PICTURE, ErrorCode.CANNOT_ADD_TO_GROUP_CHAT })
+  public ResponseEntity<ChatSummaryDTO> createGroupChat(@Valid @RequestBody CreateGroupChatRequestDTO createRequest,
+      Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    CustomChat chat = chatService.createGroupChat(user, createRequest);
+    return ResponseEntity.status(HttpStatus.CREATED).body(ChatSummaryDTO.from(chat, user, null, 0));
   }
 
   // a websocket frame to /app/chats/{chatId}/typing, not a REST call, so it isn't in swagger
