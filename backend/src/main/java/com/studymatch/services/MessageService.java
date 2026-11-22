@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.MessageDTO;
+import com.studymatch.dtos.MessageDeletedDTO;
 import com.studymatch.dtos.MessagePageDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
@@ -70,11 +71,7 @@ public class MessageService {
   @Transactional
   public MessageDTO edit(Long chatId, Long messageId, User user, String text) {
     Chat chat = chatService.getChatFor(chatId, user);
-    Message message = messageRepository.findByIdAndChat(messageId, chat)
-        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
-    if (!message.getAuthor().getNumber().equals(user.getNumber())) {
-      throw new StudyMatchException(ErrorCode.NOT_MESSAGE_AUTHOR);
-    }
+    Message message = getOwnMessage(chat, messageId, user);
     if (message.getText().equals(text)) {
       return MessageDTO.from(message);
     }
@@ -87,6 +84,23 @@ public class MessageService {
       }
     }
     return edited;
+  }
+
+  // only the author, and it's gone for good (GR10). the open chat drops it, and every member's list reloads that
+  // chat since its preview and unread count can change. the only message of a DM takes the chat off both lists.
+  // a message hidden from a blocker isn't announced to them either, or they'd learn it existed (GR9)
+  @Transactional
+  public void delete(Long chatId, Long messageId, User user) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    Message message = getOwnMessage(chat, messageId, user);
+    messageRepository.delete(message);
+    MessageDeletedDTO deleted = new MessageDeletedDTO(chat.getId(), messageId);
+    publishToChat(message, ChatEventType.MESSAGE_DELETED, deleted);
+    for (User member : chat.getMembers()) {
+      if (!message.isHiddenFrom(member)) {
+        eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.MESSAGE_DELETED, deleted));
+      }
+    }
   }
 
   // an open chat, 50 at a time going back. one extra is fetched to know if there's anything older
@@ -138,6 +152,16 @@ public class MessageService {
       if (!saved.isHiddenFrom(member)) {
         eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_UPDATED, message));
       }
+    }
+    return message;
+  }
+
+  // a message of that chat you wrote. missing or from another chat is 404, someone else's is 403
+  private Message getOwnMessage(Chat chat, Long messageId, User user) {
+    Message message = messageRepository.findByIdAndChat(messageId, chat)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    if (!message.getAuthor().getNumber().equals(user.getNumber())) {
+      throw new StudyMatchException(ErrorCode.NOT_MESSAGE_AUTHOR);
     }
     return message;
   }
