@@ -178,9 +178,11 @@ public class ChatService {
     if (!(getChatFor(chatId, user) instanceof CustomChat chat)) {
       throw new StudyMatchException(ErrorCode.CHAT_MEMBERS_FIXED);
     }
-    List<User> newcomers = userService.getChatContacts(new LinkedHashSet<>(request.memberNumbers()), user).stream()
-        .filter(person -> !chat.hasMember(person))
-        .toList();
+    // counted before the lookup like creating, people already in don't count
+    Set<Long> numbers = new LinkedHashSet<>(request.memberNumbers());
+    chat.getMembers().forEach(member -> numbers.remove(member.getNumber()));
+    CustomChat.checkNotTooMany(chat.getMembers().size() + numbers.size());
+    List<User> newcomers = userService.getChatContacts(numbers, user);
     checkNotBlockedBy(newcomers, user);
     List<User> added = chat.addMembers(newcomers);
     chatSettingsService.startRead(chat, added);
