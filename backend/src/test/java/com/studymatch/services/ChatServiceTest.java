@@ -12,9 +12,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -454,7 +456,7 @@ class ChatServiceTest {
     Student eva = student("Eva", 1003L);
     Student zeca = student("Zeca", 1004L);
     groupChat(eva);
-    when(userService.getChatContacts(Set.of(1003L, 1004L), ana)).thenReturn(List.of(eva, zeca));
+    when(userService.getChatContacts(Set.of(1004L), ana)).thenReturn(List.of(zeca));
     when(userBlockService.getBlockerNumbers(ana)).thenReturn(Set.of(1003L));
 
     // Act
@@ -529,6 +531,38 @@ class ChatServiceTest {
 
     // Assert
     assertEquals(ErrorCode.CHAT_MEMBERS_FIXED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Too many numbers are refused before anyone is looked up, so a huge list never reaches the query")
+  void tooManyRefusedBeforeLookup() {
+    // Arrange - 20 others makes 21 with the creator
+    List<Long> numbers = LongStream.range(2001, 2021).boxed().toList();
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> chatService.createGroupChat(ana, new CreateGroupChatRequestDTO("Study group", null, numbers)));
+
+    // Assert
+    assertEquals(ErrorCode.TOO_MANY_GROUP_CHAT_MEMBERS, e.getCode());
+    verify(userService, never()).getChatContacts(any(), any());
+  }
+
+  @Test
+  @DisplayName("Adding too many is refused before anyone is looked up, people already in don't count")
+  void addingTooManyRefusedBeforeLookup() {
+    // Arrange - 3 in, the 3 picked again plus 18 new makes 21
+    groupChat(student("Eva", 1003L));
+    List<Long> numbers = new ArrayList<>(List.of(1001L, 1002L, 1003L));
+    numbers.addAll(LongStream.range(2001, 2019).boxed().toList());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> chatService.addMembers(6L, ana, new AddMembersRequestDTO(numbers)));
+
+    // Assert
+    assertEquals(ErrorCode.TOO_MANY_GROUP_CHAT_MEMBERS, e.getCode());
+    verify(userService, never()).getChatContacts(any(), any());
   }
 
   @Test

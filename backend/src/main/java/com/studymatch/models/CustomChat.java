@@ -63,10 +63,17 @@ public class CustomChat extends Chat {
     this.members.addAll(others);
   }
 
-  private static void checkSize(int size) {
+  // size counts everyone with the owner. the error's min is the others to pick (2), max is everyone (20), as the
+  // creating screen says them. public so the service checks it before looking anyone up
+  public static void checkSize(int size) {
     if (size < MIN_MEMBERS) {
       throw new StudyMatchException(ErrorCode.NOT_ENOUGH_GROUP_CHAT_MEMBERS, Map.of("min", MIN_MEMBERS - 1));
     }
+    checkNotTooMany(size);
+  }
+
+  // adding only has the top limit, the 3 is for creating. a chat people left or were removed from can be smaller
+  public static void checkNotTooMany(int size) {
     if (size > MAX_MEMBERS) {
       throw new StudyMatchException(ErrorCode.TOO_MANY_GROUP_CHAT_MEMBERS, Map.of("max", MAX_MEMBERS));
     }
@@ -76,7 +83,7 @@ public class CustomChat extends Chat {
   // gives back who was really added
   public List<User> addMembers(List<User> people) {
     List<User> added = people.stream().filter(person -> !hasMember(person)).toList();
-    checkSize(members.size() + added.size());
+    checkNotTooMany(members.size() + added.size());
     members.addAll(added);
     return added;
   }

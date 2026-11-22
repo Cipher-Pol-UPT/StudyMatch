@@ -69,3 +69,7 @@ Even so, no request failed, and 95% of them answered in under 0.2 s with 50 user
 ## The first load run didn't count
 
 Our first try at the load run used 20 requests per user instead of 200. Each user finished its 20 requests in about half a second, before most of the others had even started, so there were never more than 4 users at the same time and the numbers looked almost like the baseline. Checking how many users were active (the `allThreads` column in the `.jtl`) showed it. With 200 requests per user, every user is still running when the last one starts.
+
+## Costs we know about but haven't measured
+
+The chat list loads each group chat whole, picture included, only to say whether it has one. A picture can be about 1.3 MB of base64, the same as a profile photo on `Student`. Opening or closing the app also loads the members of each of the user's chats one query at a time, to tell them about the online status. Neither is a problem at our size. If they become one, the fix is a query that returns only whether the picture is there, and one that fetches all the members at once.

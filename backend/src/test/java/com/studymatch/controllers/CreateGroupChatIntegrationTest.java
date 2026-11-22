@@ -290,6 +290,16 @@ class CreateGroupChatIntegrationTest {
         .andExpect(status().isForbidden());
   }
 
+  @Test
+  @DisplayName("Creating a group chat without logging in is 401")
+  void createNotLoggedIn() throws Exception {
+    // Act + Assert
+    mockMvc.perform(post("/chats/groups").with(csrf())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(body("Study group", null, List.of(rui.getNumber(), eva.getNumber()))))
+        .andExpect(status().isUnauthorized());
+  }
+
   // the chat list
 
   @Test
@@ -367,6 +377,17 @@ class CreateGroupChatIntegrationTest {
         .andExpect(header().string("Cache-Control", "max-age=300, private"))
         .andReturn();
     assertEquals(8, result.getResponse().getContentAsByteArray().length);
+  }
+
+  @Test
+  @DisplayName("The picture without logging in is 401")
+  void pictureNotLoggedIn() throws Exception {
+    // Arrange
+    Long chatId = createdId(body("Study group", PNG, List.of(rui.getNumber(), eva.getNumber())));
+
+    // Act + Assert
+    mockMvc.perform(get("/chats/" + chatId + "/picture"))
+        .andExpect(status().isUnauthorized());
   }
 
   @Test

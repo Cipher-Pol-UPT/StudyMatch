@@ -39,8 +39,8 @@ import com.studymatch.services.UserBlockService;
 import com.studymatch.services.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
-import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/chats/")
