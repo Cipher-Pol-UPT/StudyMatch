@@ -3,6 +3,7 @@ package com.studymatch.services;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,6 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.ChatContactDTO;
+import com.studymatch.dtos.ChatSummaryDTO;
+import com.studymatch.dtos.CreateGroupChatRequestDTO;
+import com.studymatch.dtos.ImageFileDTO;
 import com.studymatch.dtos.TypingDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
@@ -21,6 +25,7 @@ import com.studymatch.events.UserChatEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Chat;
+import com.studymatch.models.CustomChat;
 import com.studymatch.models.DirectChat;
 import com.studymatch.models.User;
 import com.studymatch.repositories.ChatRepository;
@@ -30,13 +35,15 @@ import com.studymatch.utils.PresenceTracker;
 public class ChatService {
 
   private final ChatRepository chatRepository;
+  private final UserService userService;
   private final UserBlockService userBlockService;
   private final PresenceTracker presenceTracker;
   private final ApplicationEventPublisher eventPublisher;
 
-  public ChatService(ChatRepository chatRepository, UserBlockService userBlockService,
+  public ChatService(ChatRepository chatRepository, UserService userService, UserBlockService userBlockService,
       PresenceTracker presenceTracker, ApplicationEventPublisher eventPublisher) {
     this.chatRepository = chatRepository;
+    this.userService = userService;
     this.userBlockService = userBlockService;
     this.presenceTracker = presenceTracker;
     this.eventPublisher = eventPublisher;
@@ -56,14 +63,16 @@ public class ChatService {
     return chat instanceof DirectChat direct && userBlockService.hasBlocked(user, direct.getOtherUser(user));
   }
 
-  // every chat the user is in, without DMs with people they blocked (GR9).
-  // group chats join this list when they exist (#226, #236)
+  // every chat the user is in, without DMs with people they blocked. a block doesn't hide group chats (GR9).
+  // assignment group chats join this list when they exist (#236)
   @Transactional(readOnly = true)
   public List<Chat> getChatsOf(User user) {
     Set<Long> blocked = userBlockService.getBlockedNumbers(user);
-    return new ArrayList<>(chatRepository.findDirectChatsOf(user.getNumber()).stream()
+    List<Chat> chats = new ArrayList<>(chatRepository.findDirectChatsOf(user.getNumber()).stream()
         .filter(direct -> !blocked.contains(direct.getOtherUser(user).getNumber()))
         .toList());
+    chats.addAll(chatRepository.findCustomChatsOf(user.getNumber()));
+    return chats;
   }
 
   // everyone the user shares a chat with, once each, they're who sees them online.
@@ -133,6 +142,37 @@ public class ChatService {
     long first = Math.min(user.getNumber(), other.getNumber());
     long second = Math.max(user.getNumber(), other.getNumber());
     return chatRepository.findDirectChat(first, second);
+  }
+
+  // the creator owns it and everyone picked is in straight away, no invitation (GR8). someone who blocked the
+  // creator can't be put in a chat with them, the error names who but not why (GR9).
+  // CHAT_ADDED goes to the creator too, for their other tabs
+  @Transactional
+  public CustomChat createGroupChat(User user, CreateGroupChatRequestDTO request) {
+    // counted before the lookup, thousands of numbers would go into one IN (...) and break it
+    Set<Long> numbers = new LinkedHashSet<>(request.memberNumbers());
+    CustomChat.checkSize(numbers.size() + 1);
+    List<User> others = userService.getChatContacts(numbers, user);
+    Set<Long> blockers = userBlockService.getBlockerNumbers(user);
+    List<Long> refused = others.stream().map(User::getNumber).filter(blockers::contains).toList();
+    if (!refused.isEmpty()) {
+      throw new StudyMatchException(ErrorCode.CANNOT_ADD_TO_GROUP_CHAT, Map.of("numbers", refused));
+    }
+    CustomChat chat = chatRepository.save(new CustomChat(request.name(), request.picture(), user, others));
+    for (User member : chat.getMembers()) {
+      eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_ADDED,
+          ChatSummaryDTO.from(chat, member, null, 0)));
+    }
+    return chat;
+  }
+
+  // members only like the chat itself (GR8). a DM has no picture of its own, it uses the contact's photo
+  @Transactional(readOnly = true)
+  public ImageFileDTO getPicture(Long chatId, User user) {
+    if (getChatFor(chatId, user) instanceof CustomChat custom && custom.getPicture() != null) {
+      return ImageFileDTO.fromDataUrl(custom.getPicture());
+    }
+    throw new StudyMatchException(ErrorCode.NOT_FOUND);
   }
 
   // the first message creates the DM (GR8), both sending the first one at once trips the unique pair

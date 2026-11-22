@@ -1,5 +1,6 @@
 package com.studymatch.services;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import com.studymatch.events.UserChatEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Chat;
+import com.studymatch.models.CustomChat;
 import com.studymatch.models.DirectChat;
 import com.studymatch.models.Message;
 import com.studymatch.models.User;
@@ -116,20 +118,43 @@ public class MessageService {
     return new MessagePageDTO(page.reversed(), hasMore);
   }
 
-  // the chat list, the latest message first. here and not in ChatService because every number in a row comes from
-  // messages, and a chat always has one since the first message creates it (GR8)
+  // the chat list, the latest activity first. here and not in ChatService because the numbers in a row come from
+  // messages. a new group chat starts empty, a DM without a message the user can see stays out, an empty one
+  // would show them the other side wrote while hidden (GR9)
   @Transactional(readOnly = true)
   public List<ChatSummaryDTO> listChats(User user) {
-    Map<Long, Chat> chats = chatService.getChatsOf(user).stream()
-        .collect(Collectors.toMap(Chat::getId, Function.identity()));
+    List<Chat> chats = chatService.getChatsOf(user);
     if (chats.isEmpty()) {
       return List.of();
     }
-    return messageRepository.findActivity(chats.values(), user.getNumber()).stream()
-        .sorted(Comparator.comparing((ChatActivity activity) -> activity.getLastMessage().getId()).reversed())
-        .map(activity -> ChatSummaryDTO.from(chats.get(activity.getLastMessage().getChat().getId()), user,
-            MessageDTO.from(activity.getLastMessage()), activity.getUnread()))
+    Map<Long, ChatActivity> activities = messageRepository.findActivity(chats, user.getNumber()).stream()
+        .collect(Collectors.toMap(activity -> activity.getLastMessage().getChat().getId(), Function.identity()));
+    return chats.stream()
+        .filter(chat -> chat instanceof CustomChat || activities.containsKey(chat.getId()))
+        .sorted(Comparator.comparing((Chat chat) -> lastActivity(chat, activities.get(chat.getId())))
+            .thenComparing(chat -> lastMessageId(activities.get(chat.getId())))
+            .thenComparing(Chat::getId)
+            .reversed())
+        .map(chat -> toSummary(chat, activities.get(chat.getId()), user))
         .toList();
+  }
+
+  // an empty group chat counts from when it was made
+  private static LocalDateTime lastActivity(Chat chat, ChatActivity activity) {
+    return activity == null ? chat.getCreatedAt() : activity.getLastMessage().getSentAt();
+  }
+
+  // two last messages in the same instant still have different ids, like findActivity picks them.
+  // an empty group chat has none, the chat id breaks that tie
+  private static long lastMessageId(ChatActivity activity) {
+    return activity == null ? 0 : activity.getLastMessage().getId();
+  }
+
+  private static ChatSummaryDTO toSummary(Chat chat, ChatActivity activity, User user) {
+    if (activity == null) {
+      return ChatSummaryDTO.from(chat, user, null, 0);
+    }
+    return ChatSummaryDTO.from(chat, user, MessageDTO.from(activity.getLastMessage()), activity.getUnread());
   }
 
   // the side menu's badge, across every chat
