@@ -13,6 +13,7 @@ import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -133,6 +134,19 @@ public class ChatController {
       @Valid @RequestBody AddMembersRequestDTO addRequest, Authentication authentication) {
     User user = userService.getByInstitutionalEmail(authentication.getName());
     messageService.addMembers(chatId, user, addRequest);
+    return ResponseEntity.ok(chatService.getMembers(chatId, user));
+  }
+
+  @DeleteMapping("{chatId}/members/{number}")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Remove someone from a group chat you own, they lose it and its history straight away. "
+      + "Someone who isn't in it changes nothing")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.CHAT_MEMBERS_FIXED, ErrorCode.NOT_CHAT_OWNER,
+      ErrorCode.CANNOT_REMOVE_YOURSELF })
+  public ResponseEntity<List<ChatContactDTO>> removeMember(@PathVariable Long chatId, @PathVariable Long number,
+      Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    chatService.removeMember(chatId, user, number);
     return ResponseEntity.ok(chatService.getMembers(chatId, user));
   }
 

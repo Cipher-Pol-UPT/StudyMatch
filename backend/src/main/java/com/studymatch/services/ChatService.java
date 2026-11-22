@@ -180,9 +180,7 @@ public class ChatService {
   // people already in are skipped, so is the block check for them. gives back who was really added
   @Transactional
   public List<User> addMembers(Long chatId, User user, AddMembersRequestDTO request) {
-    if (!(getChatFor(chatId, user) instanceof CustomChat chat)) {
-      throw new StudyMatchException(ErrorCode.CHAT_MEMBERS_FIXED);
-    }
+    CustomChat chat = getCustomChatFor(chatId, user);
     List<User> newcomers = userService.getChatContacts(new LinkedHashSet<>(request.memberNumbers()), user).stream()
         .filter(person -> !chat.hasMember(person))
         .toList();
@@ -190,6 +188,34 @@ public class ChatService {
     List<User> added = chat.addMembers(newcomers);
     chatSettingsService.startRead(chat, added);
     return added;
+  }
+
+  // only the owner removes people, who lose the chat and its history straight away (GR8). the owner leaves
+  // instead (#232), someone who isn't in changes nothing. CHAT_REMOVED takes it off their list
+  @Transactional
+  public void removeMember(Long chatId, User user, Long number) {
+    CustomChat chat = getCustomChatFor(chatId, user);
+    if (!chat.isOwner(user)) {
+      throw new StudyMatchException(ErrorCode.NOT_CHAT_OWNER);
+    }
+    if (user.getNumber().equals(number)) {
+      throw new StudyMatchException(ErrorCode.CANNOT_REMOVE_YOURSELF);
+    }
+    chat.getMembers().stream()
+        .filter(member -> member.getNumber().equals(number))
+        .findFirst()
+        .ifPresent(member -> {
+          chat.removeMember(member);
+          eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_REMOVED, chat.getId()));
+        });
+  }
+
+  // a chat whose members can change, a DM's never do
+  private CustomChat getCustomChatFor(Long chatId, User user) {
+    if (getChatFor(chatId, user) instanceof CustomChat chat) {
+      return chat;
+    }
+    throw new StudyMatchException(ErrorCode.CHAT_MEMBERS_FIXED);
   }
 
   // nobody who blocked the user can be put in a chat by them, the error names who but not why (GR9)

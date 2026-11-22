@@ -1,6 +1,7 @@
 package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -461,6 +462,73 @@ class ChatServiceTest {
 
     // Assert
     assertEquals(List.of(zeca), added);
+  }
+
+  @Test
+  @DisplayName("The owner removes a member, who's out and gets CHAT_REMOVED (GR8)")
+  void ownerRemovesMember() {
+    // Arrange
+    CustomChat group = groupChat(student("Eva", 1003L));
+    User rui = chat.getSecondUser();
+
+    // Act
+    chatService.removeMember(6L, ana, 1002L);
+
+    // Assert
+    assertFalse(group.hasMember(rui));
+    verify(eventPublisher).publishEvent(new UserChatEvent(rui, ChatEventType.CHAT_REMOVED, group.getId()));
+  }
+
+  @Test
+  @DisplayName("Only the owner removes members: NOT_CHAT_OWNER")
+  void onlyOwnerRemoves() {
+    // Arrange
+    CustomChat group = groupChat(student("Eva", 1003L));
+    User rui = chat.getSecondUser();
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> chatService.removeMember(6L, rui, 1003L));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_CHAT_OWNER, e.getCode());
+    assertEquals(3, group.getMembers().size());
+  }
+
+  @Test
+  @DisplayName("The owner can't remove themselves, they leave instead: CANNOT_REMOVE_YOURSELF")
+  void ownerCannotRemoveThemselves() {
+    // Arrange
+    groupChat(student("Eva", 1003L));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> chatService.removeMember(6L, ana, 1001L));
+
+    // Assert
+    assertEquals(ErrorCode.CANNOT_REMOVE_YOURSELF, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Removing someone who isn't in it changes nothing and tells nobody")
+  void removingAStrangerTellsNobody() {
+    // Arrange
+    CustomChat group = groupChat(student("Eva", 1003L));
+
+    // Act
+    chatService.removeMember(6L, ana, 1004L);
+
+    // Assert
+    assertEquals(3, group.getMembers().size());
+    verify(eventPublisher, never()).publishEvent(any(UserChatEvent.class));
+  }
+
+  @Test
+  @DisplayName("Nobody is removed from a DM: CHAT_MEMBERS_FIXED")
+  void directChatRemoveFixed() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> chatService.removeMember(5L, ana, 1002L));
+
+    // Assert
+    assertEquals(ErrorCode.CHAT_MEMBERS_FIXED, e.getCode());
   }
 
   @Test
