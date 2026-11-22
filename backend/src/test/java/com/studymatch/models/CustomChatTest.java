@@ -265,6 +265,23 @@ class CustomChatTest {
   }
 
   @Test
+  @DisplayName("A chat down to its owner can take one person and stay below 3, the 3 is only for creating")
+  void smallChatTakesOneMore() {
+    // Arrange - down to ana
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+    chat.removeMember(rui);
+    chat.removeMember(eva);
+    Student zeca = student("Zeca", 1004L);
+
+    // Act
+    List<User> added = chat.addMembers(List.of(zeca));
+
+    // Assert
+    assertEquals(List.of(zeca), added);
+    assertEquals(2, chat.getMembers().size());
+  }
+
+  @Test
   @DisplayName("Only the owner is the owner, compared by number")
   void ownerByNumber() {
     // Arrange
