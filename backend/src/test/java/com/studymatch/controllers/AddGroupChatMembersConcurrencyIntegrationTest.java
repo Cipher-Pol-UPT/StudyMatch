@@ -2,6 +2,7 @@ package com.studymatch.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -156,6 +157,37 @@ class AddGroupChatMembersConcurrencyIntegrationTest {
     // Assert
     assertEquals(List.of(200, 200), results);
     assertEquals(5, memberCount(anaSession));
+  }
+
+  @Test
+  @DisplayName("The owner removing someone while another member adds someone: both go through (#230)")
+  void removeAndAddAtOnce() throws Exception {
+    // Arrange - both requests wait at the gate, then go together
+    MockHttpSession anaSession = loginAs(ana);
+    MockHttpSession evaSession = loginAs(eva);
+    CountDownLatch gate = new CountDownLatch(1);
+    ExecutorService threads = Executors.newFixedThreadPool(2);
+    Future<Integer> removed = threads.submit(() -> {
+      gate.await();
+      return mockMvc.perform(delete("/chats/" + group.getId() + "/members/" + rui.getNumber()).with(csrf())
+          .session(anaSession)).andReturn().getResponse().getStatus();
+    });
+    Future<Integer> added = threads.submit(() -> {
+      gate.await();
+      return mockMvc.perform(post("/chats/" + group.getId() + "/members").with(csrf()).session(evaSession)
+          .contentType(MediaType.APPLICATION_JSON)
+          .content("{\"memberNumbers\":[" + zeca.getNumber() + "]}"))
+          .andReturn().getResponse().getStatus();
+    });
+
+    // Act
+    gate.countDown();
+    List<Integer> results = List.of(removed.get(), added.get());
+    threads.shutdown();
+
+    // Assert - ana, eva and zeca
+    assertEquals(List.of(200, 200), results);
+    assertEquals(3, memberCount(anaSession));
   }
 
   @Test
