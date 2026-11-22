@@ -9,8 +9,8 @@ export interface ChatEvent<T = unknown> {
 // someone you can message, a row of the New message search
 export interface ChatContactData { number: number; name: string; role: Role }
 
-// your DM with someone: chatId is null until the first message creates it
-export interface DirectChatData { chatId: number | null; contact: ChatContactData }
+// your DM with someone: chatId is null until the first message creates it, or while you've blocked them
+export interface DirectChatData { chatId: number | null; contact: ChatContactData; blocked: boolean }
 
 // a message as the chat shows it; editedAt is null until it's edited
 export interface MessageData {

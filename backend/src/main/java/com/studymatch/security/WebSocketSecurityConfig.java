@@ -27,7 +27,8 @@ public class WebSocketSecurityConfig {
       MessageMatcherDelegatingAuthorizationManager.Builder messages) {
     return messages
         .nullDestMatcher().authenticated()
-        .simpSubscribeDestMatchers("/topic/chats/{chatId:\\d+}", "/user/queue/chats").authenticated()
+        .simpSubscribeDestMatchers("/topic/chats/{chatId:\\d+}", "/user/queue/chats",
+            "/user/queue/chats/{chatId:\\d+}").authenticated()
         .simpDestMatchers("/app/**").authenticated()
         .anyMessage().denyAll()
         .build();

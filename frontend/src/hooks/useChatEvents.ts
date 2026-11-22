@@ -5,6 +5,8 @@ import type { ChatEvent } from '../types/chat';
 // a chat's messages being sent, edited or deleted, while the component is on screen
 export function useChatEvents(chatId: number, onEvent: (event: ChatEvent) => void) {
   useSocketDestination(`/topic/chats/${chatId}`, onEvent);
+  // messages only you can see, like a DM to someone who blocked you
+  useSocketDestination(`/user/queue/chats/${chatId}`, onEvent);
 }
 
 // the user's chat list changing (a new chat, one they left...)

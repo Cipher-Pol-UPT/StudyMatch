@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +23,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.enums.ChatEventType;
+import com.studymatch.events.ChatEvent;
 import com.studymatch.events.UserChatEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -35,6 +37,7 @@ import com.studymatch.utils.PresenceTracker;
 class ChatServiceTest {
 
   private ChatRepository chatRepository;
+  private UserBlockService userBlockService;
   private PresenceTracker presenceTracker;
   private ApplicationEventPublisher eventPublisher;
   private ChatService chatService;
@@ -45,9 +48,10 @@ class ChatServiceTest {
   @BeforeEach
   void setUp() {
     chatRepository = mock(ChatRepository.class);
+    userBlockService = mock(UserBlockService.class);
     presenceTracker = new PresenceTracker();
     eventPublisher = mock(ApplicationEventPublisher.class);
-    chatService = new ChatService(chatRepository, presenceTracker, eventPublisher);
+    chatService = new ChatService(chatRepository, userBlockService, presenceTracker, eventPublisher);
 
     ana = student("Ana", 1001L);
     chat = new DirectChat(ana, student("Rui", 1002L));
@@ -232,6 +236,77 @@ class ChatServiceTest {
     // Assert
     verify(eventPublisher, times(1)).publishEvent(any(UserChatEvent.class));
     verify(eventPublisher).publishEvent(new UserChatEvent(chat.getOtherUser(ana), ChatEventType.USER_OFFLINE, 1001L));
+  }
+
+  @Test
+  @DisplayName("Someone who blocked the user isn't among their online contacts (GR9)")
+  void blockerHiddenFromTheBlocked() {
+    // Arrange - rui (1002) blocked ana, eva (1003) didn't
+    Student eva = student("Eva", 1003L);
+    when(chatRepository.findDirectChatsOf(1001L)).thenReturn(List.of(chat, new DirectChat(ana, eva)));
+    when(userBlockService.getBlockerNumbers(ana)).thenReturn(Set.of(1002L));
+    presenceTracker.connect(1002L, "rui-tab");
+    presenceTracker.connect(1003L, "eva-tab");
+
+    // Act
+    List<Long> online = chatService.getOnlineContacts(ana);
+
+    // Assert
+    assertEquals(List.of(1003L), online);
+  }
+
+  @Test
+  @DisplayName("Someone the user blocked isn't among their online contacts (GR9)")
+  void blockedHiddenFromTheBlocker() {
+    // Arrange - ana blocked eva (1003), not rui (1002)
+    Student eva = student("Eva", 1003L);
+    when(chatRepository.findDirectChatsOf(1001L)).thenReturn(List.of(chat, new DirectChat(ana, eva)));
+    when(userBlockService.getBlockedNumbers(ana)).thenReturn(Set.of(1003L));
+    presenceTracker.connect(1002L, "rui-tab");
+    presenceTracker.connect(1003L, "eva-tab");
+
+    // Act
+    List<Long> online = chatService.getOnlineContacts(ana);
+
+    // Assert
+    assertEquals(List.of(1002L), online);
+  }
+
+  @Test
+  @DisplayName("Going online isn't pushed to someone who blocked the user (GR9)")
+  void onlineNotPushedToTheBlocker() {
+    // Arrange
+    when(chatRepository.findDirectChatsOf(1001L)).thenReturn(List.of(chat));
+    when(userBlockService.getBlockerNumbers(ana)).thenReturn(Set.of(1002L));
+
+    // Act
+    chatService.userConnected(ana, "first-tab");
+
+    // Assert
+    verify(eventPublisher, never()).publishEvent(any(UserChatEvent.class));
+  }
+
+  @Test
+  @DisplayName("Typing in a DM whose other member blocked the user goes nowhere (GR9)")
+  void blockedTypingIsDropped() {
+    // Arrange
+    when(userBlockService.hasBlocked(chat.getOtherUser(ana), ana)).thenReturn(true);
+
+    // Act
+    chatService.announceTyping(5L, ana);
+
+    // Assert
+    verify(eventPublisher, never()).publishEvent(any(ChatEvent.class));
+  }
+
+  @Test
+  @DisplayName("Typing in a DM with nobody blocked reaches the chat")
+  void typingIsPublished() {
+    // Act
+    chatService.announceTyping(5L, ana);
+
+    // Assert
+    verify(eventPublisher).publishEvent(any(ChatEvent.class));
   }
 
 }
