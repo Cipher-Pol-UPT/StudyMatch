@@ -49,6 +49,7 @@ import com.studymatch.events.MemberChatEvent;
 import com.studymatch.events.UserChatEvent;
 import com.studymatch.models.Degree;
 import com.studymatch.models.DirectChat;
+import com.studymatch.models.Message;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
@@ -405,6 +406,80 @@ class ChatWebSocketIntegrationTest {
     assertNotNull(read);
     assertEquals("CHAT_READ", read.get("type"));
     assertEquals(chat.getId().intValue(), read.get("payload"));
+  }
+
+  @Test
+  @DisplayName("An edit reaches the open chat and the chat list with the new text, as an edit, not a new message (GR10)")
+  void editedMessageIsPushed() throws Exception {
+    // Arrange
+    Message message = messageRepository.save(new Message(chat, ana, "see you at 10"));
+    StompSession session = connect(rui);
+    BlockingQueue<Map<String, Object>> chatTopic = subscribe(session, "/topic/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> chatList = subscribe(session, "/user/queue/chats");
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), chatTopic));
+    assertNotNull(publishUntilReceived(new UserChatEvent(rui, ChatEventType.CHAT_UPDATED, Map.of()), chatList));
+    chatTopic.clear();
+    chatList.clear();
+
+    // Act
+    int status = send("PUT", login(ana.getInstitutionalEmail()),
+        "/chats/" + chat.getId() + "/messages/" + message.getId(), "{\"text\":\"see you at 11\"}");
+
+    // Assert
+    assertEquals(200, status);
+    Map<String, Object> edited = chatTopic.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(edited);
+    assertEquals("MESSAGE_EDITED", edited.get("type"));
+    Map<?, ?> payload = (Map<?, ?>) edited.get("payload");
+    assertEquals(message.getId().intValue(), payload.get("id"));
+    assertEquals("see you at 11", payload.get("text"));
+    assertNotNull(payload.get("editedAt"));
+    Map<String, Object> preview = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(preview);
+    assertEquals("MESSAGE_EDITED", preview.get("type"));
+    assertEquals("see you at 11", ((Map<?, ?>) preview.get("payload")).get("text"));
+    assertNull(chatList.poll(500, TimeUnit.MILLISECONDS));
+  }
+
+  @Test
+  @DisplayName("An edit of a message hidden from the blocker reaches only the sender, not the blocker's tab or list (GR9)")
+  void hiddenEditSkipsTheBlocker() throws Exception {
+    // Arrange - Rui has the DM open before blocking Ana, her message after the block is hidden from him
+    StompSession ruiSession = connect(rui);
+    BlockingQueue<Map<String, Object>> ruiTopic = subscribe(ruiSession, "/topic/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> ruiList = subscribe(ruiSession, "/user/queue/chats");
+    StompSession anaSession = connect(ana);
+    BlockingQueue<Map<String, Object>> anaChat = subscribe(anaSession, "/user/queue/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> anaList = subscribe(anaSession, "/user/queue/chats");
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiTopic));
+    assertNotNull(publishUntilReceived(new UserChatEvent(rui, ChatEventType.CHAT_UPDATED, Map.of()), ruiList));
+    assertNotNull(publishUntilReceived(
+        new MemberChatEvent(ana, chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), anaChat));
+    assertNotNull(publishUntilReceived(new UserChatEvent(ana, ChatEventType.CHAT_UPDATED, Map.of()), anaList));
+    ruiTopic.clear();
+    ruiList.clear();
+    anaChat.clear();
+    anaList.clear();
+    userBlockRepository.save(new UserBlock(rui, ana));
+    Message hidden = new Message(chat, ana, "see you at 10");
+    hidden.hideFrom(rui);
+    hidden = messageRepository.save(hidden);
+
+    // Act
+    int status = send("PUT", login(ana.getInstitutionalEmail()),
+        "/chats/" + chat.getId() + "/messages/" + hidden.getId(), "{\"text\":\"see you at 11\"}");
+
+    // Assert
+    assertEquals(200, status);
+    Map<String, Object> edited = anaChat.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(edited);
+    assertEquals("MESSAGE_EDITED", edited.get("type"));
+    assertEquals("see you at 11", ((Map<?, ?>) edited.get("payload")).get("text"));
+    Map<String, Object> preview = anaList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(preview);
+    assertEquals("MESSAGE_EDITED", preview.get("type"));
+    assertNull(ruiTopic.poll(1, TimeUnit.SECONDS));
+    assertNull(ruiList.poll(500, TimeUnit.MILLISECONDS));
   }
 
   @Test

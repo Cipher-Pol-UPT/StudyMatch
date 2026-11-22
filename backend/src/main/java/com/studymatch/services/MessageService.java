@@ -64,6 +64,31 @@ public class MessageService {
     return send(chatService.getOrCreateDirectChat(user, contact), user, text);
   }
 
+  // only the author edits, only the text. the open chat swaps it, the chat list swaps the preview if it's the latest
+  // without moving the chat, an edit notifies no one (GR10). the same text again changes nothing, so no "(edited)".
+  // a message hidden from a blocker stays hidden when edited, it goes the same way as when it was sent (GR9)
+  @Transactional
+  public MessageDTO edit(Long chatId, Long messageId, User user, String text) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    Message message = messageRepository.findByIdAndChat(messageId, chat)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    if (!message.getAuthor().getNumber().equals(user.getNumber())) {
+      throw new StudyMatchException(ErrorCode.NOT_MESSAGE_AUTHOR);
+    }
+    if (message.getText().equals(text)) {
+      return MessageDTO.from(message);
+    }
+    message.edit(text);
+    MessageDTO edited = MessageDTO.from(message);
+    publishToChat(message, ChatEventType.MESSAGE_EDITED, edited);
+    for (User member : chat.getMembers()) {
+      if (!message.isHiddenFrom(member)) {
+        eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.MESSAGE_EDITED, edited));
+      }
+    }
+    return edited;
+  }
+
   // an open chat, 50 at a time going back. one extra is fetched to know if there's anything older
   @Transactional(readOnly = true)
   public MessagePageDTO getMessages(Long chatId, User user, Long before) {

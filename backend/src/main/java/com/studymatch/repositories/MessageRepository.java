@@ -2,6 +2,7 @@ package com.studymatch.repositories;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -64,5 +65,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
       where m.chat = :chat and m.id < :before and (m.hiddenFrom is null or m.hiddenFrom.number <> :number)
       order by m.id desc""")
   List<Message> findVisibleBefore(Chat chat, Long before, Long number, Limit limit);
+
+  // a message of that chat, an id from another chat counts as missing
+  @EntityGraph(attributePaths = "author")
+  Optional<Message> findByIdAndChat(Long id, Chat chat);
 
 }

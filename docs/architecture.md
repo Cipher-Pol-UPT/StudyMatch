@@ -113,10 +113,10 @@ The WebSocket only pushes. Sending, editing and deleting a message are normal RE
 | Destination | Who gets it | Events |
 | --- | --- | --- |
 | `/topic/chats/{id}` | the members who have the chat open | `MESSAGE_CREATED`, `MESSAGE_EDITED`, `MESSAGE_DELETED` |
-| `/user/queue/chats` | only that user | `CHAT_UPDATED`, `CHAT_READ`, `CHAT_REMOVED` |
+| `/user/queue/chats` | only that user | `CHAT_UPDATED`, `CHAT_READ`, `CHAT_REMOVED`, `MESSAGE_EDITED` |
 | `/user/queue/chats/{id}` | only that user, with the chat open | the topic's events for a message hidden from another member |
 
-Every push looks like `{ "type": ..., "payload": ... }`. Sending a message pushes `MESSAGE_CREATED` to the chat's topic and `CHAT_UPDATED` to each member's queue, both with the message as the payload, so the open chat adds it and the chat list moves that chat to the top. Marking a chat as read pushes `CHAT_READ` with the chat's id to that user only, so their other tabs clear its badge. A DM to someone who blocked the sender is hidden from them (GR9), so it skips the topic, where a tab they opened before blocking still listens, and goes as a `MemberChatEvent` to the sender's `/user/queue/chats/{id}` instead. `/app` is for frames the browser sends to the server, which only typing will use (#222).
+Every push looks like `{ "type": ..., "payload": ... }`. Sending a message pushes `MESSAGE_CREATED` to the chat's topic and `CHAT_UPDATED` to each member's queue, both with the message as the payload, so the open chat adds it and the chat list moves that chat to the top. Editing pushes `MESSAGE_EDITED` with the edited message to the chat's topic and to each member's queue, so the open chat swaps the text and the chat list swaps the preview if it's the latest message. The chat doesn't move up and nobody is notified, since an edit notifies no one (GR10). Marking a chat as read pushes `CHAT_READ` with the chat's id to that user only, so their other tabs clear its badge. A DM to someone who blocked the sender is hidden from them (GR9), so it skips the topic, where a tab they opened before blocking still listens, and goes as a `MemberChatEvent` to the sender's `/user/queue/chats/{id}` instead. Editing a hidden message works the same way, and the member it's hidden from doesn't get it on their chat list either. `/app` is for frames the browser sends to the server, which only typing will use (#222).
 
 The checks happen in three places:
 

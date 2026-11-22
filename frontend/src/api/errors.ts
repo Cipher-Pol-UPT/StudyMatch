@@ -88,6 +88,7 @@ export const ERROR_CODES = [
   "DIRECT_CHAT_ALREADY_EXISTS",
   "CANNOT_BLOCK_YOURSELF",
   "UNBLOCK_TO_MESSAGE",
+  "NOT_MESSAGE_AUTHOR",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;

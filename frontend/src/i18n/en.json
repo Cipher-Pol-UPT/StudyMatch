@@ -616,7 +616,8 @@
     "MEET_LINK_UNAVAILABLE": "The Google Meet link couldn't be created right now. Paste your own link to create the StudyRoom.",
     "DIRECT_CHAT_ALREADY_EXISTS": "This conversation was just started from the other side. Send your message again.",
     "CANNOT_BLOCK_YOURSELF": "You can't block yourself.",
-    "UNBLOCK_TO_MESSAGE": "You blocked this person. Unblock them to send a message."
+    "UNBLOCK_TO_MESSAGE": "You blocked this person. Unblock them to send a message.",
+    "NOT_MESSAGE_AUTHOR": "Only the person who sent this message can change it."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",
