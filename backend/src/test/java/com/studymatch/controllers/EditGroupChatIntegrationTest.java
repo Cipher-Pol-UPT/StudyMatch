@@ -196,7 +196,8 @@ class EditGroupChatIntegrationTest {
 
     // Assert
     mockMvc.perform(get("/chats/").session(ruiSession))
-        .andExpect(jsonPath("$[0].picture").value(true));
+        .andExpect(jsonPath("$[0].picture").value(true))
+        .andExpect(jsonPath("$[0].pictureUpdatedAt").isNotEmpty());
     mockMvc.perform(get("/chats/" + group.getId() + "/picture").session(ruiSession))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.IMAGE_PNG));
@@ -212,6 +213,9 @@ class EditGroupChatIntegrationTest {
     changePicture(anaSession, group.getId(), "null").andExpect(status().isNoContent());
 
     // Assert
+    mockMvc.perform(get("/chats/").session(ruiSession))
+        .andExpect(jsonPath("$[0].picture").value(false))
+        .andExpect(jsonPath("$[0].pictureUpdatedAt").isEmpty());
     mockMvc.perform(get("/chats/" + group.getId() + "/picture").session(ruiSession))
         .andExpect(status().isNotFound());
   }

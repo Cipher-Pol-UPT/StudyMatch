@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -556,8 +557,12 @@ class ChatWebSocketIntegrationTest {
       Map<String, Object> edited = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
       assertNotNull(edited);
       assertEquals("CHAT_EDITED", edited.get("type"));
-      assertEquals(Map.of("chatId", group.getId().intValue(), "name", "Exam prep", "picture", false),
-          edited.get("payload"));
+      Map<String, Object> payload = new HashMap<>();
+      payload.put("chatId", group.getId().intValue());
+      payload.put("name", "Exam prep");
+      payload.put("picture", false);
+      payload.put("pictureUpdatedAt", null);
+      assertEquals(payload, edited.get("payload"));
     } finally {
       deleteGroupChat(group);
     }

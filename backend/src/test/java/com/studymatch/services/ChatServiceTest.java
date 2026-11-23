@@ -581,7 +581,7 @@ class ChatServiceTest {
 
     // Assert
     assertEquals("Exam prep", group.getName());
-    ChatEditedDTO edited = new ChatEditedDTO(group.getId(), "Exam prep", false);
+    ChatEditedDTO edited = new ChatEditedDTO(group.getId(), "Exam prep", false, null);
     for (User member : List.of(ana, rui, eva)) {
       verify(eventPublisher).publishEvent(new UserChatEvent(member, ChatEventType.CHAT_EDITED, edited));
     }
@@ -623,7 +623,7 @@ class ChatServiceTest {
     // Assert
     assertEquals(PICTURE, group.getPicture());
     verify(eventPublisher).publishEvent(new UserChatEvent(ana, ChatEventType.CHAT_EDITED,
-        new ChatEditedDTO(group.getId(), "Study group", true)));
+        new ChatEditedDTO(group.getId(), "Study group", true, group.getPictureUpdatedAt())));
   }
 
   @Test
@@ -639,7 +639,7 @@ class ChatServiceTest {
     // Assert
     assertNull(group.getPicture());
     verify(eventPublisher).publishEvent(new UserChatEvent(ana, ChatEventType.CHAT_EDITED,
-        new ChatEditedDTO(group.getId(), "Study group", false)));
+        new ChatEditedDTO(group.getId(), "Study group", false, null)));
   }
 
   @Test
