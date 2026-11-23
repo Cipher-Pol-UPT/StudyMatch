@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -40,7 +41,7 @@ import com.studymatch.repositories.MessageRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.services.MessageService;
 
-// replying to a message while it's deleted. real commits, so it cleans up after itself
+// replying to a message, or editing a reply to it, while it's deleted. real commits, so it cleans up after itself
 @SpringBootTest
 @ActiveProfiles("test")
 class ReplyMessageConcurrencyIntegrationTest {
@@ -104,6 +105,10 @@ class ReplyMessageConcurrencyIntegrationTest {
 
   private MessageDTO reply() {
     return messageService.send(chat.getId(), ana, new SendMessageRequestDTO("at one", original.getId()));
+  }
+
+  private MessageDTO edit(Long replyId) {
+    return messageService.edit(chat.getId(), replyId, ana, "at two");
   }
 
   private void deleteOriginal() {
@@ -178,6 +183,50 @@ class ReplyMessageConcurrencyIntegrationTest {
     Message saved = messageRepository.findById(replyId).orElseThrow();
     assertEquals("at two", saved.getText());
     assertNull(saved.getReplyTo());
+  }
+
+  @Test
+  @DisplayName("Deleting the original while a reply is edited waits for the edit, then clears the link")
+  void deleteWaitsForTheEdit() throws Exception {
+    // Arrange
+    Long replyId = reply().id();
+    Future<?>[] deleted = new Future<?>[1];
+
+    // Act - the edit is done but not committed when the delete starts
+    transaction.executeWithoutResult(status -> {
+      MessageDTO edited = edit(replyId);
+      assertEquals("lunch?", edited.replyTo().text());
+      deleted[0] = otherThread.submit(this::deleteOriginal);
+      assertWaiting(deleted[0]);
+    });
+    deleted[0].get(5, TimeUnit.SECONDS);
+
+    // Assert
+    Message saved = messageRepository.findById(replyId).orElseThrow();
+    assertEquals("at two", saved.getText());
+    assertNull(saved.getReplyTo());
+  }
+
+  @Test
+  @DisplayName("Editing a reply while its original is being deleted waits, and what's sent has no quote")
+  void editWaitsForTheDelete() throws Exception {
+    // Arrange
+    Long replyId = reply().id();
+    List<Future<MessageDTO>> edited = new ArrayList<>();
+
+    // Act - the delete reached the database but isn't committed when the edit starts
+    transaction.executeWithoutResult(status -> {
+      deleteOriginal();
+      messageRepository.flush();
+      edited.add(otherThread.submit(() -> edit(replyId)));
+      assertWaiting(edited.getFirst());
+    });
+
+    // Assert
+    MessageDTO sent = edited.getFirst().get(5, TimeUnit.SECONDS);
+    assertEquals("at two", sent.text());
+    assertTrue(sent.reply());
+    assertNull(sent.replyTo());
   }
 
 }
