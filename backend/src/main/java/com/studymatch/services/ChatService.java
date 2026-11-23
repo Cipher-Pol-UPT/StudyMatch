@@ -214,6 +214,7 @@ public class ChatService {
         .findFirst()
         .ifPresent(member -> {
           chat.removeMember(member);
+          chatSettingsService.deleteOf(chat, member);
           eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_REMOVED, chat.getId()));
         });
   }
@@ -224,15 +225,17 @@ public class ChatService {
   public CustomChat leave(Long chatId, User user) {
     CustomChat chat = getLockedCustomChatFor(chatId, user, ErrorCode.CHAT_MEMBERS_FIXED);
     chat.leave(user);
+    chatSettingsService.deleteOf(chat, user);
     eventPublisher.publishEvent(new UserChatEvent(user, ChatEventType.CHAT_REMOVED, chat.getId()));
     return chat;
   }
 
-  // the messages are gone already (MessageService), the settings go here and then the chat
+  // delete the messages first (MessageService.leave), the foreign key refuses it otherwise.
+  // by id, deleting those leaves the chat detached
   @Transactional
-  public void delete(Chat chat) {
+  public void deleteWithSettings(Chat chat) {
     chatSettingsService.deleteAllOf(chat);
-    chatRepository.delete(chat);
+    chatRepository.deleteById(chat.getId());
   }
 
   // any member renames a group chat, the name's checked like creating (#234). a DM has no name, so 404

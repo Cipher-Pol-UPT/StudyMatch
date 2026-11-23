@@ -485,6 +485,7 @@ class ChatServiceTest {
 
     // Assert
     assertFalse(group.hasMember(rui));
+    verify(chatSettingsService).deleteOf(group, rui);
     verify(eventPublisher).publishEvent(new UserChatEvent(rui, ChatEventType.CHAT_REMOVED, group.getId()));
   }
 
@@ -527,6 +528,7 @@ class ChatServiceTest {
 
     // Assert
     assertEquals(3, group.getMembers().size());
+    verify(chatSettingsService, never()).deleteOf(any(), any());
     verify(eventPublisher, never()).publishEvent(any(UserChatEvent.class));
   }
 
@@ -552,6 +554,7 @@ class ChatServiceTest {
     // Assert
     assertFalse(group.hasMember(ana));
     assertEquals(1002L, group.getOwner().getNumber());
+    verify(chatSettingsService).deleteOf(group, ana);
     verify(eventPublisher).publishEvent(new UserChatEvent(ana, ChatEventType.CHAT_REMOVED, group.getId()));
   }
 
@@ -687,13 +690,14 @@ class ChatServiceTest {
   void deleteTakesSettings() {
     // Arrange
     CustomChat group = groupChat(student("Eva", 1003L));
+    ReflectionTestUtils.setField(group, "id", 6L);
 
     // Act
-    chatService.delete(group);
+    chatService.deleteWithSettings(group);
 
     // Assert
     verify(chatSettingsService).deleteAllOf(group);
-    verify(chatRepository).delete(group);
+    verify(chatRepository).deleteById(6L);
   }
 
   @Test

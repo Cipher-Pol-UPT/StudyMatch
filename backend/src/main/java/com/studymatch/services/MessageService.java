@@ -165,7 +165,7 @@ public class MessageService {
     CustomChat chat = chatService.leave(chatId, user);
     if (chat.getMembers().isEmpty()) {
       messageRepository.deleteByChat(chat);
-      chatService.delete(chat);
+      chatService.deleteWithSettings(chat);
     }
   }
 

@@ -39,6 +39,12 @@ public class ChatSettingsService {
     chatSettingsRepository.deleteByChat(chat);
   }
 
+  // they left or were removed, if they're added back they start fresh, level included (GR11)
+  @Transactional
+  public void deleteOf(Chat chat, User user) {
+    chatSettingsRepository.deleteByChatAndUser(chat, user);
+  }
+
   // people added to a group chat start with the history read, it's there to scroll but doesn't count as unread.
   // no CHAT_READ, they don't have the chat yet
   @Transactional

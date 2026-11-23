@@ -1,6 +1,7 @@
 package com.studymatch.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,6 +26,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.enums.NotificationLevel;
+import com.studymatch.models.ChatSettings;
 import com.studymatch.models.CustomChat;
 import com.studymatch.models.Degree;
 import com.studymatch.models.DirectChat;
@@ -33,6 +36,7 @@ import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
 import com.studymatch.repositories.ChatRepository;
+import com.studymatch.repositories.ChatSettingsRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.MessageRepository;
 import com.studymatch.repositories.StaffRepository;
@@ -60,6 +64,9 @@ class RemoveGroupChatMemberIntegrationTest {
 
   @Autowired
   private MessageRepository messageRepository;
+
+  @Autowired
+  private ChatSettingsRepository chatSettingsRepository;
 
   @Autowired
   private StaffRepository staffRepository;
@@ -176,6 +183,35 @@ class RemoveGroupChatMemberIntegrationTest {
     mockMvc.perform(get("/chats/" + group.getId() + "/messages").session(ruiSession))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.messages[0].text").value("hi all"));
+  }
+
+  private List<ChatSettings> settingsOfRui() {
+    return chatSettingsRepository.findAll().stream()
+        .filter(settings -> settings.getChat().getId().equals(group.getId()))
+        .filter(settings -> settings.getUser().getNumber().equals(rui.getNumber()))
+        .toList();
+  }
+
+  @Test
+  @DisplayName("Someone removed and added again starts fresh, not muted like before (GR11)")
+  void removedStartsFresh() throws Exception {
+    // Arrange - rui opened it and muted it
+    ChatSettings muted = new ChatSettings(group, rui);
+    muted.setNotificationLevel(NotificationLevel.NONE);
+    chatSettingsRepository.saveAndFlush(muted);
+    remove(anaSession, group.getId(), rui.getNumber()).andExpect(status().isOk());
+    assertTrue(settingsOfRui().isEmpty());
+
+    // Act
+    mockMvc.perform(post("/chats/" + group.getId() + "/members").with(csrf()).session(anaSession)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"memberNumbers\":[" + rui.getNumber() + "]}"))
+        .andExpect(status().isOk());
+
+    // Assert
+    assertEquals(List.of(NotificationLevel.ALL), settingsOfRui().stream()
+        .map(ChatSettings::getNotificationLevel)
+        .toList());
   }
 
   @Test

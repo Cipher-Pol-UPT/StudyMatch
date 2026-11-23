@@ -27,6 +27,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.enums.NotificationLevel;
+import com.studymatch.models.ChatSettings;
 import com.studymatch.models.CustomChat;
 import com.studymatch.models.Degree;
 import com.studymatch.models.DirectChat;
@@ -157,14 +159,44 @@ class LeaveGroupChatIntegrationTest {
         .andExpect(status().isOk());
   }
 
+  private List<ChatSettings> settingsOfRui() {
+    return chatSettingsRepository.findAll().stream()
+        .filter(settings -> settings.getChat().getId().equals(group.getId()))
+        .filter(settings -> settings.getUser().getNumber().equals(rui.getNumber()))
+        .toList();
+  }
+
+  @Test
+  @DisplayName("Someone who left and is added again starts fresh, not muted like before (GR11)")
+  void leavingStartsFresh() throws Exception {
+    // Arrange - rui opened it and muted it
+    ChatSettings muted = new ChatSettings(group, rui);
+    muted.setNotificationLevel(NotificationLevel.NONE);
+    chatSettingsRepository.saveAndFlush(muted);
+    leave(ruiSession, group.getId()).andExpect(status().isNoContent());
+    assertTrue(settingsOfRui().isEmpty());
+
+    // Act
+    mockMvc.perform(post("/chats/" + group.getId() + "/members").with(csrf()).session(anaSession)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"memberNumbers\":[" + rui.getNumber() + "]}"))
+        .andExpect(status().isOk());
+
+    // Assert
+    assertEquals(List.of(NotificationLevel.ALL), settingsOfRui().stream()
+        .map(ChatSettings::getNotificationLevel)
+        .toList());
+  }
+
   @Test
   @DisplayName("The last one out deletes the chat with its messages and everyone's settings")
   void lastOneOutDeletes() throws Exception {
-    // Arrange - rui opened it before leaving, so rui's settings are there too
+    // Arrange - ana opened it, and rui's settings came back after leaving, from a read still running
     messageRepository.save(new Message(group, ana, "hi all"));
-    mockMvc.perform(put("/chats/" + group.getId() + "/read").with(csrf()).session(ruiSession))
+    mockMvc.perform(put("/chats/" + group.getId() + "/read").with(csrf()).session(anaSession))
         .andExpect(status().isNoContent());
     leave(ruiSession, group.getId()).andExpect(status().isNoContent());
+    chatSettingsRepository.saveAndFlush(new ChatSettings(group, rui));
     leave(evaSession, group.getId()).andExpect(status().isNoContent());
 
     // Act
