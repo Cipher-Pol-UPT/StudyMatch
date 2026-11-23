@@ -19,8 +19,8 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
 
   void deleteByAssignmentAndStatus(Assignment assignment, GroupStatus status);
 
-  // view groups: drafts and published together, with their members in the same select
-  @EntityGraph(attributePaths = "members")
+  // view groups: drafts and published together, with their members and the languages they share in the same select
+  @EntityGraph(attributePaths = { "members", "members.languages" })
   List<Group> findByAssignmentOrderByNumber(Assignment assignment);
 
   // analytics: the members come with their groups, not one select per group

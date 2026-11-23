@@ -13,7 +13,11 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
+import jakarta.persistence.EntityManager;
+
 import org.hamcrest.Matchers;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,7 +62,7 @@ import com.studymatch.repositories.SubjectEditionRepository;
 import com.studymatch.repositories.SubjectRepository;
 import com.studymatch.repositories.TeacherRepository;
 
-@SpringBootTest
+@SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
@@ -82,6 +86,7 @@ class ViewGroupsIntegrationTest {
   @Autowired private EnrolmentRepository enrolmentRepository;
   @Autowired private AssignmentRepository assignmentRepository;
   @Autowired private GroupRepository groupRepository;
+  @Autowired private EntityManager entityManager;
 
   private SubjectEdition edition;
   private Degree degree;
@@ -278,6 +283,34 @@ class ViewGroupsIntegrationTest {
     // Assert
     assertEquals(JsonPath.<List<Object>>read(preview, "$[*].members[*].number"),
         JsonPath.<List<Object>>read(draft, "$.draft[*].members[*].number"));
+  }
+
+  private long selectsFor(MockHttpSession session, Assignment assignment) throws Exception {
+    entityManager.flush();
+    entityManager.clear();
+    Statistics statistics = entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics();
+    statistics.clear();
+    mockMvc.perform(get("/subject-editions/" + edition.getId() + "/assignments/" + assignment.getId() + "/groups")
+        .session(session))
+        .andExpect(status().isOk());
+    return statistics.getPrepareStatementCount();
+  }
+
+  @Test
+  @DisplayName("More groups and members don't mean more queries")
+  void queriesDontGrowWithTheMembers() throws Exception {
+    // Arrange - measured with one published group, then a draft group of the other two
+    Assignment assignment = project();
+    group(assignment, 1, true, ana, bruno);
+    MockHttpSession session = loginAs(TEACHER);
+    long before = selectsFor(session, assignment);
+    group(assignment, 2, false, carla, duarte);
+
+    // Act
+    long after = selectsFor(session, assignment);
+
+    // Assert
+    assertEquals(before, after);
   }
 
   @Test
