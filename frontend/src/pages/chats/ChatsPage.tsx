@@ -9,11 +9,16 @@ import { NewMessageDialog } from '../../components/chat/NewMessageDialog';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
 import { Banner, Button, buttonClass, ChatComposer, ChatHead, ChatLayout, ChatListPane, ChatMessage, ChatMessages, ChatStart, ChatThread, EmptyState } from '../../studymatch-ui';
-import { MESSAGE_MAX_LENGTH, type DirectChatData } from '../../types/chat';
+import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData } from '../../types/chat';
 import { newMessageKey, useConversation, type ThreadMessage } from './conversations';
 
+export interface ChatsPageProps {
+  // where someone's profile is, for the people who have one you can open
+  profilePath?: (contact: ChatContactData) => string | undefined;
+}
+
 // Chats: the list (#201) and the open conversation; this page starts DMs (#199)
-export function ChatsPage() {
+export function ChatsPage({ profilePath }: ChatsPageProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { number } = useParams();
@@ -31,7 +36,7 @@ export function ChatsPage() {
             <EmptyState compact icon={MessagesSquare} title={t('chats.noChats')} body={t('chats.noChatsBody')} />
           </ChatListPane>
         )}
-        thread={number ? <DirectConversation key={number} number={Number(number)} /> : (
+        thread={number ? <DirectConversation key={number} number={Number(number)} profilePath={profilePath} /> : (
           <ChatThread label={t('chats.conversation')}>
             <EmptyState compact icon={MessagesSquare} title={t('chats.pickChat')} body={t('chats.pickChatBody')} />
           </ChatThread>
@@ -43,7 +48,7 @@ export function ChatsPage() {
 }
 
 // the DM with one person: empty with a hint to say hi until the first message, then what's sent in it (its history is #203)
-function DirectConversation({ number }: { number: number }) {
+function DirectConversation({ number, profilePath }: { number: number } & ChatsPageProps) {
   const { t } = useTranslation();
   const load = useCallback(() => Number.isInteger(number) ? getDirectChat(number) : Promise.reject({ code: 'NOT_FOUND' }), [number]);
   const chat = useRemoteData(`direct-chat:${number}`, load);
@@ -60,13 +65,13 @@ function DirectConversation({ number }: { number: number }) {
     return <ChatThread label={t('chats.conversation')}><DataLoadState /></ChatThread>;
   }
 
-  return <LoadedConversation chat={chat.data} />;
+  return <LoadedConversation chat={chat.data} profilePath={profilePath} />;
 }
 
 // messages closer than this are one run: only the first shows when
 const RUN_MS = 5 * 60 * 1000;
 
-function LoadedConversation({ chat: { chatId, contact } }: { chat: DirectChatData }) {
+function LoadedConversation({ chat: { chatId, contact }, profilePath }: { chat: DirectChatData } & ChatsPageProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [conversation, update] = useConversation(contact.number);
@@ -119,7 +124,8 @@ function LoadedConversation({ chat: { chatId, contact } }: { chat: DirectChatDat
 
   return (
     <ChatThread label={t('chats.with', { name: contact.name })} scrollRef={scroll}
-      head={<ChatHead name={contact.name} subtitle={line} backLabel={t('chats.back')} onBack={() => navigate('/chats')} />}
+      head={<ChatHead name={contact.name} subtitle={line} backLabel={t('chats.back')} onBack={() => navigate('/chats')}
+        profileHref={profilePath?.(contact)} linkAs={Link} profileLabel={t('chats.openProfile', { name: contact.name })} />}
       composer={(
         <ChatComposer label={t('chats.messageLabel', { name: contact.name })} placeholder={t('chats.messageLabel', { name: firstName })}
           value={conversation.draft} onChange={draft => update(current => ({ ...current, draft }))} onSend={send}
