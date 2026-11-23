@@ -422,14 +422,18 @@
 <text x="610" y="315" text-anchor="middle" font-weight="bold">DirectChat</text>
 <line x1="555" y1="322" x2="665" y2="322" stroke="#1F4E79"/>
 <line x1="555" y1="344" x2="665" y2="344" stroke="#1F4E79"/>
-<rect x="880" y="30" width="180" height="104" fill="#7ACFF5" stroke="#1F4E79" stroke-width="1"/>
+<polyline points="940,30 940,2 1030,2 1030,30" fill="none" stroke="#000" stroke-width="1"/>
+<text x="935.0" y="24.0" text-anchor="end" font-size="11">0..*</text>
+<text x="1035.0" y="24.0" font-size="11">replyTo 0..1</text>
+<rect x="880" y="30" width="180" height="120" fill="#7ACFF5" stroke="#1F4E79" stroke-width="1"/>
 <text x="970" y="45" text-anchor="middle" font-weight="bold">Message</text>
 <line x1="880" y1="52" x2="1060" y2="52" stroke="#1F4E79"/>
 <text x="888" y="65">-id : Long</text>
 <text x="888" y="81">-text : String</text>
 <text x="888" y="97">-sentAt : LocalDateTime</text>
 <text x="888" y="113">-editedAt : LocalDateTime</text>
-<line x1="880" y1="122" x2="1060" y2="122" stroke="#1F4E79"/>
+<text x="888" y="129">-reply : boolean</text>
+<line x1="880" y1="138" x2="1060" y2="138" stroke="#1F4E79"/>
 <rect x="860" y="180" width="235" height="88" fill="#7ACFF5" stroke="#1F4E79" stroke-width="1"/>
 <text x="977.5" y="195" text-anchor="middle" font-weight="bold">ChatSettings</text>
 <line x1="860" y1="202" x2="1095" y2="202" stroke="#1F4E79"/>
