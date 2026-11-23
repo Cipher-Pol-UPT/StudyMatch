@@ -122,7 +122,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 | Method | Path | Who | What it does |
 | --- | --- | --- | --- |
-| GET | `/chats/` | Student, Teacher | your chats, the one with the latest message first, each with its name, the other person in a DM, whether a group chat has a picture, the last message and how many you haven't read. A group chat nobody has written in yet has no last message and sits by when it was created |
+| GET | `/chats/` | Student, Teacher | your chats, the one with the latest message first, each with its name, the other person in a DM, whether a group chat has a picture and when it last changed, the last message and how many you haven't read. A group chat nobody has written in yet has no last message and sits by when it was created |
 | GET | `/chats/unread-count` | Student, Teacher | how many messages you haven't read across every chat, for the side menu |
 | GET | `/chats/online` | Student, Teacher | the numbers of the people you share a chat with who have the app open, for the chat list's first load |
 | GET | `/chats/{id}/messages?before=` | member of the chat | open a chat: its 50 newest messages oldest first, or with `before` (the oldest message id on screen) the 50 before it. `hasMore` is false once the first message is in |
@@ -138,6 +138,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/chats/{id}/members` | member of the chat | add Students and Teachers to a group chat, any member can. They're in straight away and get it in their chat lists with the whole history, already read. Anyone already in is skipped, and the members come back. A chat you're not in is 404, and so is anyone the contact search wouldn't offer. A DM is `CHAT_MEMBERS_FIXED`, going past 20 is `TOO_MANY_GROUP_CHAT_MEMBERS`, and anyone who blocked you is `CANNOT_ADD_TO_GROUP_CHAT` |
 | DELETE | `/chats/{id}/members/{number}` | the group chat's owner | remove someone, who loses the chat and its history straight away and gets `CHAT_REMOVED`. The members left come back. Someone who isn't in it changes nothing. A chat you're not in is 404, another member is `NOT_CHAT_OWNER`, yourself is `CANNOT_REMOVE_YOURSELF` and a DM is `CHAT_MEMBERS_FIXED` |
 | POST | `/chats/{id}/leave` | member of the chat | leave a group chat (204), your other tabs get `CHAT_REMOVED`. The owner leaving makes whoever's been there longest the owner, and the last one leaving deletes the chat with its messages. A chat you're not in is 404 and a DM is `CHAT_MEMBERS_FIXED` |
+| PUT | `/chats/{id}/name` | member of the chat | rename a group chat (204), any member can. The name is checked like when creating it, and every member's list gets `CHAT_EDITED`. A chat you're not in is 404, and so is a DM, which has no name of its own |
+| PUT | `/chats/{id}/picture` | the group chat's owner | change a group chat's picture (204), `null` takes it off. It's checked like when creating it (`INVALID_GROUP_CHAT_PICTURE`), and every member's list gets `CHAT_EDITED`. Another member is `NOT_CHAT_OWNER`, and a chat you're not in or a DM is 404 |
 | GET | `/blocks/` | Student, Teacher | the people you blocked, by name |
 | PUT | `/blocks/{number}` | Student, Teacher | block a Student or Teacher's DMs (204, again changes nothing). They aren't told. Yourself is `CANNOT_BLOCK_YOURSELF` |
 | DELETE | `/blocks/{number}` | Student, Teacher | unblock (204, someone not blocked changes nothing). The DM comes back without what they sent while blocked |

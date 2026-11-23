@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -534,6 +535,34 @@ class ChatWebSocketIntegrationTest {
       assertNotNull(removed);
       assertEquals("CHAT_REMOVED", removed.get("type"));
       assertEquals(group.getId().intValue(), removed.get("payload"));
+    } finally {
+      deleteGroupChat(group);
+    }
+  }
+
+  @Test
+  @DisplayName("A rename reaches the other members' chat lists as CHAT_EDITED with the new name (#234)")
+  void renameIsPushed() throws Exception {
+    // Arrange
+    CustomChat group = chatRepository.save(new CustomChat("Study group", null, ana, List.of(rui, eva)));
+    try {
+      BlockingQueue<Map<String, Object>> chatList = chatListOf(rui);
+
+      // Act
+      int status = send("PUT", login(eva.getInstitutionalEmail()), "/chats/" + group.getId() + "/name",
+          "{\"name\":\"Exam prep\"}");
+
+      // Assert
+      assertEquals(204, status);
+      Map<String, Object> edited = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(edited);
+      assertEquals("CHAT_EDITED", edited.get("type"));
+      Map<String, Object> payload = new HashMap<>();
+      payload.put("chatId", group.getId().intValue());
+      payload.put("name", "Exam prep");
+      payload.put("picture", false);
+      payload.put("pictureUpdatedAt", null);
+      assertEquals(payload, edited.get("payload"));
     } finally {
       deleteGroupChat(group);
     }

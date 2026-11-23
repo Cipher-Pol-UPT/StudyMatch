@@ -3,11 +3,13 @@ package com.studymatch.models;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.LongStream;
@@ -112,6 +114,7 @@ class CustomChatTest {
 
     // Assert
     assertEquals(picture, chat.getPicture());
+    assertNotNull(chat.getPictureUpdatedAt());
   }
 
   @Test
@@ -122,6 +125,24 @@ class CustomChatTest {
 
     // Assert
     assertNull(chat.getPicture());
+    assertNull(chat.getPictureUpdatedAt());
+  }
+
+  @Test
+  @DisplayName("A new picture gets a new date, renaming keeps it and taking the picture off clears it")
+  void pictureDate() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", png(100), ana, List.of(rui, eva));
+    LocalDateTime before = LocalDateTime.of(2026, 1, 1, 0, 0);
+    ReflectionTestUtils.setField(chat, "pictureUpdatedAt", before);
+
+    // Act + Assert
+    chat.rename("Exam prep");
+    assertEquals(before, chat.getPictureUpdatedAt());
+    chat.setPicture(png(200));
+    assertTrue(chat.getPictureUpdatedAt().isAfter(before));
+    chat.setPicture(null);
+    assertNull(chat.getPictureUpdatedAt());
   }
 
   @Test
