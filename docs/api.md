@@ -122,7 +122,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 | Method | Path | Who | What it does |
 | --- | --- | --- | --- |
-| GET | `/chats/` | Student, Teacher | your chats, the one with the latest message first, each with its name, the other person in a DM, whether a group chat has a picture, the last message and how many you haven't read. A group chat nobody has written in yet has no last message and sits by when it was created |
+| GET | `/chats/` | Student, Teacher | your chats, the one with the latest message first, each with its name, the other person in a DM, whether a group chat has a picture and when it last changed, the last message and how many you haven't read. A group chat nobody has written in yet has no last message and sits by when it was created |
 | GET | `/chats/unread-count` | Student, Teacher | how many messages you haven't read across every chat, for the side menu |
 | GET | `/chats/online` | Student, Teacher | the numbers of the people you share a chat with who have the app open, for the chat list's first load |
 | GET | `/chats/{id}/messages?before=` | member of the chat | open a chat: its 50 newest messages oldest first, or with `before` (the oldest message id on screen) the 50 before it. `hasMore` is false once the first message is in |
