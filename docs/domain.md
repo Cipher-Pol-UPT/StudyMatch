@@ -36,6 +36,8 @@ Everyone sees the public part: name, banner, photo, about me, skills, interests,
 
 The student themselves, Staff, and the teachers of any edition the student is enrolled in also see the private part: institutional email, degree, curricular year, personality profile, attendance, and whether the student has any academic history yet.
 
+On the frontend a student opens a classmate's profile at `/classmates/{number}`, from the head of a DM with them: the public part, with a Message button to that DM. Their own number opens My profile instead. Teachers in Chats have no profile, so their name isn't a link (#286). Opening it from a subject's students is #299, after the call that lists them for a student (#298).
+
 Staff's student record (`GET /students/{number}`) adds the average grade, the category levels, every enrolment, and the special statute.
 
 The self-declared fields (about me, skills, interests, banner) are only for display and never used to form groups. Languages are the exception, since every group must share one (GR4).
