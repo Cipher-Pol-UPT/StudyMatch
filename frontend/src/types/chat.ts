@@ -12,7 +12,11 @@ export interface ChatContactData { number: number; name: string; role: Role }
 // your DM with someone: chatId is null until the first message creates it, or while you've blocked them
 export interface DirectChatData { chatId: number | null; contact: ChatContactData; blocked: boolean }
 
-// a message as the chat shows it; editedAt is null until it's edited
+// the message a reply quotes
+export interface MessageQuoteData { id: number; author: ChatContactData; text: string }
+
+// a message as the chat shows it; editedAt is null until it's edited.
+// a reply with a null replyTo shows that the original was deleted
 export interface MessageData {
   id: number;
   chatId: number;
@@ -20,6 +24,8 @@ export interface MessageData {
   text: string;
   sentAt: string;
   editedAt: string | null;
+  reply: boolean;
+  replyTo: MessageQuoteData | null;
 }
 
 // the most characters a message can have (GR10)
