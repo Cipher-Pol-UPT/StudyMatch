@@ -265,6 +265,66 @@ class CustomChatTest {
   }
 
   @Test
+  @DisplayName("A member leaving is out, the owner stays")
+  void memberLeaves() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+
+    // Act
+    chat.leave(rui);
+
+    // Assert
+    assertEquals(List.of(ana, eva), chat.getMembers());
+    assertSame(ana, chat.getOwner());
+  }
+
+  @Test
+  @DisplayName("The owner leaving makes whoever's been there longest the owner, who's then first")
+  void ownerHandsOver() {
+    // Arrange - zeca joined after rui and eva
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+    Student zeca = student("Zeca", 1004L);
+    chat.addMembers(List.of(zeca));
+
+    // Act
+    chat.leave(student("Ana", 1001L));
+
+    // Assert
+    assertSame(rui, chat.getOwner());
+    assertSame(chat.getOwner(), chat.getMembers().getFirst());
+  }
+
+  @Test
+  @DisplayName("The new owner leaving hands it on again, by joining order")
+  void handsOverTwice() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+    chat.leave(ana);
+
+    // Act
+    chat.leave(rui);
+
+    // Assert
+    assertSame(eva, chat.getOwner());
+    assertEquals(List.of(eva), chat.getMembers());
+  }
+
+  @Test
+  @DisplayName("The last member leaving leaves nobody")
+  void lastMemberLeaves() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+    chat.leave(rui);
+    chat.leave(eva);
+
+    // Act
+    chat.leave(ana);
+
+    // Assert
+    assertTrue(chat.getMembers().isEmpty());
+  }
+
+  @Test
   @DisplayName("A chat down to its owner can take one person and stay below 3, the 3 is only for creating")
   void smallChatTakesOneMore() {
     // Arrange - down to ana

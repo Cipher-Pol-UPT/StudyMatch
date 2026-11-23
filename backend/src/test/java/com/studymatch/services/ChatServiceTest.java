@@ -478,6 +478,7 @@ class ChatServiceTest {
 
     // Assert
     assertFalse(group.hasMember(rui));
+    verify(chatSettingsService).deleteOf(group, rui);
     verify(eventPublisher).publishEvent(new UserChatEvent(rui, ChatEventType.CHAT_REMOVED, group.getId()));
   }
 
@@ -520,6 +521,7 @@ class ChatServiceTest {
 
     // Assert
     assertEquals(3, group.getMembers().size());
+    verify(chatSettingsService, never()).deleteOf(any(), any());
     verify(eventPublisher, never()).publishEvent(any(UserChatEvent.class));
   }
 
@@ -531,6 +533,47 @@ class ChatServiceTest {
 
     // Assert
     assertEquals(ErrorCode.CHAT_MEMBERS_FIXED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("The owner leaving hands it to whoever's been there longest, their other tabs get CHAT_REMOVED")
+  void ownerLeaves() {
+    // Arrange
+    CustomChat group = groupChat(student("Eva", 1003L));
+
+    // Act
+    chatService.leave(6L, ana);
+
+    // Assert
+    assertFalse(group.hasMember(ana));
+    assertEquals(1002L, group.getOwner().getNumber());
+    verify(chatSettingsService).deleteOf(group, ana);
+    verify(eventPublisher).publishEvent(new UserChatEvent(ana, ChatEventType.CHAT_REMOVED, group.getId()));
+  }
+
+  @Test
+  @DisplayName("Nobody leaves a DM: CHAT_MEMBERS_FIXED")
+  void directChatLeaveFixed() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> chatService.leave(5L, ana));
+
+    // Assert
+    assertEquals(ErrorCode.CHAT_MEMBERS_FIXED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Deleting a chat takes everyone's settings with it, then the chat")
+  void deleteTakesSettings() {
+    // Arrange
+    CustomChat group = groupChat(student("Eva", 1003L));
+    ReflectionTestUtils.setField(group, "id", 6L);
+
+    // Act
+    chatService.deleteWithSettings(group);
+
+    // Assert
+    verify(chatSettingsService).deleteAllOf(group);
+    verify(chatRepository).deleteById(6L);
   }
 
   @Test
