@@ -540,6 +540,30 @@ class ChatWebSocketIntegrationTest {
   }
 
   @Test
+  @DisplayName("A rename reaches the other members' chat lists as CHAT_EDITED with the new name (#234)")
+  void renameIsPushed() throws Exception {
+    // Arrange
+    CustomChat group = chatRepository.save(new CustomChat("Study group", null, ana, List.of(rui, eva)));
+    try {
+      BlockingQueue<Map<String, Object>> chatList = chatListOf(rui);
+
+      // Act
+      int status = send("PUT", login(eva.getInstitutionalEmail()), "/chats/" + group.getId() + "/name",
+          "{\"name\":\"Exam prep\"}");
+
+      // Assert
+      assertEquals(204, status);
+      Map<String, Object> edited = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(edited);
+      assertEquals("CHAT_EDITED", edited.get("type"));
+      assertEquals(Map.of("chatId", group.getId().intValue(), "name", "Exam prep", "picture", false),
+          edited.get("payload"));
+    } finally {
+      deleteGroupChat(group);
+    }
+  }
+
+  @Test
   @DisplayName("The last one out deletes the chat and its messages, each leave committing on its own")
   void lastOneOutDeletesCommitted() throws Exception {
     // Arrange

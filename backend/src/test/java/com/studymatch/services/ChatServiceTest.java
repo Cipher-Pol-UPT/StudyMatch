@@ -2,6 +2,7 @@ package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,7 +27,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.AddMembersRequestDTO;
+import com.studymatch.dtos.ChatEditedDTO;
 import com.studymatch.dtos.CreateGroupChatRequestDTO;
+import com.studymatch.dtos.GroupChatPictureRequestDTO;
+import com.studymatch.dtos.RenameGroupChatRequestDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
 import com.studymatch.events.MemberChatEvent;
@@ -42,6 +46,9 @@ import com.studymatch.repositories.ChatRepository;
 import com.studymatch.utils.PresenceTracker;
 
 class ChatServiceTest {
+
+  // the 8 bytes every PNG starts with
+  private static final String PICTURE = "data:image/png;base64,iVBORw0KGgo=";
 
   private ChatRepository chatRepository;
   private UserService userService;
@@ -556,6 +563,123 @@ class ChatServiceTest {
 
     // Assert
     assertEquals(ErrorCode.CHAT_MEMBERS_FIXED, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Any member renames a group chat, not only the owner, and every member's list gets CHAT_EDITED")
+  void memberRenames() {
+    // Arrange
+    Student eva = student("Eva", 1003L);
+    CustomChat group = groupChat(eva);
+    User rui = chat.getSecondUser();
+
+    // Act
+    chatService.rename(6L, rui, new RenameGroupChatRequestDTO("Exam prep"));
+
+    // Assert
+    assertEquals("Exam prep", group.getName());
+    ChatEditedDTO edited = new ChatEditedDTO(group.getId(), "Exam prep", false);
+    for (User member : List.of(ana, rui, eva)) {
+      verify(eventPublisher).publishEvent(new UserChatEvent(member, ChatEventType.CHAT_EDITED, edited));
+    }
+  }
+
+  @Test
+  @DisplayName("Editing locks the chat first, saving writes the owner back too")
+  void editingLocks() {
+    // Arrange
+    groupChat(student("Eva", 1003L));
+
+    // Act
+    chatService.rename(6L, ana, new RenameGroupChatRequestDTO("Exam prep"));
+
+    // Assert
+    verify(chatRepository).findLockedCustomChat(6L);
+  }
+
+  @Test
+  @DisplayName("A DM has no name to change: NOT_FOUND")
+  void directChatRenameNotFound() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> chatService.rename(5L, ana, new RenameGroupChatRequestDTO("Exam prep")));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  @Test
+  @DisplayName("The owner changes the picture and every member's list gets CHAT_EDITED with it")
+  void ownerChangesPicture() {
+    // Arrange
+    CustomChat group = groupChat(student("Eva", 1003L));
+
+    // Act
+    chatService.changePicture(6L, ana, new GroupChatPictureRequestDTO(PICTURE));
+
+    // Assert
+    assertEquals(PICTURE, group.getPicture());
+    verify(eventPublisher).publishEvent(new UserChatEvent(ana, ChatEventType.CHAT_EDITED,
+        new ChatEditedDTO(group.getId(), "Study group", true)));
+  }
+
+  @Test
+  @DisplayName("The owner sending no picture takes it off")
+  void ownerRemovesPicture() {
+    // Arrange
+    CustomChat group = groupChat(student("Eva", 1003L));
+    group.setPicture(PICTURE);
+
+    // Act
+    chatService.changePicture(6L, ana, new GroupChatPictureRequestDTO(null));
+
+    // Assert
+    assertNull(group.getPicture());
+    verify(eventPublisher).publishEvent(new UserChatEvent(ana, ChatEventType.CHAT_EDITED,
+        new ChatEditedDTO(group.getId(), "Study group", false)));
+  }
+
+  @Test
+  @DisplayName("Only the owner changes the picture: NOT_CHAT_OWNER, and nobody's told")
+  void onlyOwnerChangesPicture() {
+    // Arrange
+    CustomChat group = groupChat(student("Eva", 1003L));
+    User rui = chat.getSecondUser();
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> chatService.changePicture(6L, rui, new GroupChatPictureRequestDTO(PICTURE)));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_CHAT_OWNER, e.getCode());
+    assertNull(group.getPicture());
+    verify(eventPublisher, never()).publishEvent(any(UserChatEvent.class));
+  }
+
+  @Test
+  @DisplayName("A picture that isn't a PNG or JPEG is refused like creating: INVALID_GROUP_CHAT_PICTURE")
+  void invalidPictureRefused() {
+    // Arrange
+    groupChat(student("Eva", 1003L));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> chatService.changePicture(6L, ana, new GroupChatPictureRequestDTO("data:image/png;base64,aGVsbG8=")));
+
+    // Assert
+    assertEquals(ErrorCode.INVALID_GROUP_CHAT_PICTURE, e.getCode());
+    verify(eventPublisher, never()).publishEvent(any(UserChatEvent.class));
+  }
+
+  @Test
+  @DisplayName("A DM has no picture of its own to change: NOT_FOUND")
+  void directChatPictureNotFound() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> chatService.changePicture(5L, ana, new GroupChatPictureRequestDTO(PICTURE)));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
   }
 
   @Test
