@@ -27,11 +27,11 @@ public class ReactionService {
       + "|[\\p{IsEmoji_Presentation}&&[^\\x{1F1E6}-\\x{1F1FF}]]"
       + "|[\\p{IsEmoji}&&[^\\p{IsEmoji_Presentation}0-9#*]]\\x{FE0F})";
 
-  // a flag, a keycap, a region's flag (Scotland) or singles joined by 200D (a family)
+  // a flag, a keycap, a region's flag (Scotland) or up to 4 singles joined by 200D (a family, a kiss)
   private static final Pattern EMOJI = Pattern.compile("[\\x{1F1E6}-\\x{1F1FF}]{2}"
       + "|[0-9#*]\\x{FE0F}\\x{20E3}"
       + "|\\x{1F3F4}[\\x{E0020}-\\x{E007E}]+\\x{E007F}"
-      + "|" + SINGLE + "(?:\\x{200D}" + SINGLE + ")*");
+      + "|" + SINGLE + "(?:\\x{200D}" + SINGLE + "){0,3}");
 
   private final ReactionRepository reactionRepository;
   private final ApplicationEventPublisher eventPublisher;
