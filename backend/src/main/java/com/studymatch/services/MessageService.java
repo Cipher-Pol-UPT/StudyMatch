@@ -17,6 +17,7 @@ import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.MessageDTO;
 import com.studymatch.dtos.MessageDeletedDTO;
 import com.studymatch.dtos.MessagePageDTO;
+import com.studymatch.dtos.SendMessageRequestDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
 import com.studymatch.events.MemberChatEvent;
@@ -53,19 +54,19 @@ public class MessageService {
 
   // send a message to a chat you're in (GR8)
   @Transactional
-  public MessageDTO send(Long chatId, User user, String text) {
-    return send(chatService.getChatFor(chatId, user), user, text);
+  public MessageDTO send(Long chatId, User user, SendMessageRequestDTO request) {
+    return send(chatService.getChatFor(chatId, user), user, request);
   }
 
   // the first message of a DM creates it, or goes into it if it's already there.
   // the blocker has to unblock first, it's their own block so telling them is fine (GR9)
   @Transactional
-  public MessageDTO sendDirect(Long number, User user, String text) {
+  public MessageDTO sendDirect(Long number, User user, SendMessageRequestDTO request) {
     User contact = userService.getChatContact(number, user);
     if (userBlockService.hasBlocked(user, contact)) {
       throw new StudyMatchException(ErrorCode.UNBLOCK_TO_MESSAGE);
     }
-    return send(chatService.getOrCreateDirectChat(user, contact), user, text);
+    return send(chatService.getOrCreateDirectChat(user, contact), user, request);
   }
 
   // only the author edits, only the text. the open chat swaps it, the chat list swaps the preview if it's the latest
@@ -74,19 +75,21 @@ public class MessageService {
   @Transactional
   public MessageDTO edit(Long chatId, Long messageId, User user, String text) {
     Chat chat = chatService.getChatFor(chatId, user);
+    // before the message is loaded, or an original deleted meanwhile would still be quoted in what's sent (#218)
+    messageRepository.lockOriginalOf(messageId, chat.getId());
     Message message = getOwnMessage(chat, messageId, user);
     if (message.getText().equals(text)) {
-      return MessageDTO.from(message);
+      return MessageDTO.from(message, user);
     }
     message.edit(text);
-    MessageDTO edited = MessageDTO.from(message);
-    publishToChat(message, ChatEventType.MESSAGE_EDITED, edited);
+    publishToChat(message, ChatEventType.MESSAGE_EDITED, viewer -> MessageDTO.from(message, viewer));
     for (User member : chat.getMembers()) {
       if (!message.isHiddenFrom(member)) {
-        eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.MESSAGE_EDITED, edited));
+        eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.MESSAGE_EDITED,
+            MessageDTO.from(message, member)));
       }
     }
-    return edited;
+    return MessageDTO.from(message, user);
   }
 
   // only the author, and it's gone for good (GR10). the open chat drops it, and every member's list reloads that
@@ -98,7 +101,7 @@ public class MessageService {
     Message message = getOwnMessage(chat, messageId, user);
     messageRepository.delete(message);
     MessageDeletedDTO deleted = new MessageDeletedDTO(chat.getId(), messageId);
-    publishToChat(message, ChatEventType.MESSAGE_DELETED, deleted);
+    publishToChat(message, ChatEventType.MESSAGE_DELETED, viewer -> deleted);
     for (User member : chat.getMembers()) {
       if (!message.isHiddenFrom(member)) {
         eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.MESSAGE_DELETED, deleted));
@@ -115,7 +118,9 @@ public class MessageService {
         ? messageRepository.findVisible(chat, user.getNumber(), limit)
         : messageRepository.findVisibleBefore(chat, before, user.getNumber(), limit);
     boolean hasMore = newestFirst.size() > MESSAGES_PER_PAGE;
-    List<MessageDTO> page = newestFirst.stream().limit(MESSAGES_PER_PAGE).map(MessageDTO::from).toList();
+    List<MessageDTO> page = newestFirst.stream().limit(MESSAGES_PER_PAGE)
+        .map(message -> MessageDTO.from(message, user))
+        .toList();
     return new MessagePageDTO(page.reversed(), hasMore);
   }
 
@@ -151,7 +156,7 @@ public class MessageService {
     Chat chat = chatService.getChatFor(chatId, user);
     MessageDTO lastMessage = messageRepository.findActivity(List.of(chat), user.getNumber()).stream()
         .findFirst()
-        .map(activity -> MessageDTO.from(activity.getLastMessage()))
+        .map(activity -> MessageDTO.from(activity.getLastMessage(), user))
         .orElse(null);
     for (User member : added) {
       eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_ADDED,
@@ -184,7 +189,7 @@ public class MessageService {
     if (activity == null) {
       return ChatSummaryDTO.from(chat, user, null, 0);
     }
-    return ChatSummaryDTO.from(chat, user, MessageDTO.from(activity.getLastMessage()), activity.getUnread());
+    return ChatSummaryDTO.from(chat, user, MessageDTO.from(activity.getLastMessage(), user), activity.getUnread());
   }
 
   // the side menu's badge, across every chat
@@ -196,19 +201,29 @@ public class MessageService {
 
   // the open chat gets the message, every member's chat list moves it to the top.
   // to someone who blocked the sender it goes through for the sender but never reaches them (GR9)
-  private MessageDTO send(Chat chat, User user, String text) {
-    Message saved = new Message(chat, user, text);
+  private MessageDTO send(Chat chat, User user, SendMessageRequestDTO request) {
+    Message original = request.replyToId() == null ? null : getOriginal(chat, request.replyToId(), user);
+    Message saved = new Message(chat, user, request.text(), original);
     if (chat instanceof DirectChat direct && userBlockService.hasBlocked(direct.getOtherUser(user), user)) {
       saved.hideFrom(direct.getOtherUser(user));
     }
-    MessageDTO message = MessageDTO.from(messageRepository.save(saved));
-    publishToChat(saved, ChatEventType.MESSAGE_CREATED, message);
+    messageRepository.save(saved);
+    publishToChat(saved, ChatEventType.MESSAGE_CREATED, viewer -> MessageDTO.from(saved, viewer));
     for (User member : chat.getMembers()) {
       if (!saved.isHiddenFrom(member)) {
-        eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_UPDATED, message));
+        eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_UPDATED,
+            MessageDTO.from(saved, member)));
       }
     }
-    return message;
+    return MessageDTO.from(saved, user);
+  }
+
+  // the message being replied to, in this chat and one the user can see. its own code, NOT_FOUND is the chat (#218)
+  private Message getOriginal(Chat chat, Long originalId, User user) {
+    return messageRepository.lockOriginal(originalId, chat.getId())
+        .flatMap(id -> messageRepository.findByIdAndChat(id, chat))
+        .filter(original -> !original.isHiddenFrom(user))
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.REPLIED_MESSAGE_NOT_FOUND));
   }
 
   // a message of that chat you wrote. missing or from another chat is 404, someone else's is 403
@@ -222,16 +237,17 @@ public class MessageService {
   }
 
   // a hidden message skips the topic, a blocker's tab opened before the block still listens there (GR9).
+  // so does a reply quoting a hidden one, only its author may see the quote.
   // a group chat always skips it, a removed member's open tab still listens there too (GR8)
-  private void publishToChat(Message message, ChatEventType type, Object payload) {
+  private void publishToChat(Message message, ChatEventType type, Function<User, Object> payloadFor) {
     Chat chat = message.getChat();
-    if (chat instanceof DirectChat && message.getHiddenFrom() == null) {
-      eventPublisher.publishEvent(new ChatEvent(chat.getId(), type, payload));
+    if (chat instanceof DirectChat && message.getHiddenFrom() == null && !message.quotesHidden()) {
+      eventPublisher.publishEvent(new ChatEvent(chat.getId(), type, payloadFor.apply(message.getAuthor())));
       return;
     }
     for (User member : chat.getMembers()) {
       if (!message.isHiddenFrom(member)) {
-        eventPublisher.publishEvent(new MemberChatEvent(member, chat.getId(), type, payload));
+        eventPublisher.publishEvent(new MemberChatEvent(member, chat.getId(), type, payloadFor.apply(member)));
       }
     }
   }

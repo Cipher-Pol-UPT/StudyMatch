@@ -56,4 +56,33 @@ class MessageTest {
     assertNotNull(message.getEditedAt());
   }
 
+  @Test
+  @DisplayName("A message isn't a reply unless it answers another")
+  void notAReply() {
+    // Act
+    Message message = new Message(chat, ana, "hello", null);
+
+    // Assert
+    assertFalse(message.isReply());
+    assertNull(message.getReplyTo());
+    assertFalse(message.quotesHidden());
+  }
+
+  @Test
+  @DisplayName("A reply keeps its original, and knows when that one is hidden from someone (GR9)")
+  void replyKeepsItsOriginal() {
+    // Arrange
+    Message original = new Message(chat, ana, "hello");
+
+    // Act
+    Message reply = new Message(chat, ana, "anyone?", original);
+
+    // Assert
+    assertTrue(reply.isReply());
+    assertSame(original, reply.getReplyTo());
+    assertFalse(reply.quotesHidden());
+    original.hideFrom(chat.getSecondUser());
+    assertTrue(reply.quotesHidden());
+  }
+
 }

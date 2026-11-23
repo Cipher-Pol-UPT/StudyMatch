@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.studymatch.dtos.EditMessageRequestDTO;
 import com.studymatch.dtos.MessageDTO;
 import com.studymatch.dtos.MessagePageDTO;
 import com.studymatch.dtos.SendMessageRequestDTO;
@@ -55,12 +56,12 @@ public class MessageController {
   // send a message
   @PostMapping("{chatId}/messages")
   @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
-  @Operation(summary = "Send a text message to a chat you're in, pushed to its members")
-  @ErrorCodes({ ErrorCode.NOT_FOUND })
+  @Operation(summary = "Send a text message to a chat you're in, pushed to its members. replyToId makes it a reply")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.REPLIED_MESSAGE_NOT_FOUND })
   public ResponseEntity<MessageDTO> send(@PathVariable Long chatId,
       @Valid @RequestBody SendMessageRequestDTO sendRequest, Authentication authentication) {
     User user = userService.getByInstitutionalEmail(authentication.getName());
-    return ResponseEntity.status(HttpStatus.CREATED).body(messageService.send(chatId, user, sendRequest.text()));
+    return ResponseEntity.status(HttpStatus.CREATED).body(messageService.send(chatId, user, sendRequest));
   }
 
   // edit your own message, same text rule as sending
@@ -70,7 +71,7 @@ public class MessageController {
       + "text. Nobody is notified again")
   @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NOT_MESSAGE_AUTHOR })
   public ResponseEntity<MessageDTO> edit(@PathVariable Long chatId, @PathVariable Long messageId,
-      @Valid @RequestBody SendMessageRequestDTO editRequest, Authentication authentication) {
+      @Valid @RequestBody EditMessageRequestDTO editRequest, Authentication authentication) {
     User user = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.ok(messageService.edit(chatId, messageId, user, editRequest.text()));
   }
@@ -91,12 +92,13 @@ public class MessageController {
   @PostMapping("direct/{number}/messages")
   @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
   @Operation(summary = "Send a DM, the first one creates the chat. Someone you blocked needs unblocking first")
-  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.DIRECT_CHAT_ALREADY_EXISTS, ErrorCode.UNBLOCK_TO_MESSAGE })
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.DIRECT_CHAT_ALREADY_EXISTS, ErrorCode.UNBLOCK_TO_MESSAGE,
+      ErrorCode.REPLIED_MESSAGE_NOT_FOUND })
   public ResponseEntity<MessageDTO> sendDirect(@PathVariable Long number,
       @Valid @RequestBody SendMessageRequestDTO sendRequest, Authentication authentication) {
     User user = userService.getByInstitutionalEmail(authentication.getName());
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(messageService.sendDirect(number, user, sendRequest.text()));
+        .body(messageService.sendDirect(number, user, sendRequest));
   }
 
 }

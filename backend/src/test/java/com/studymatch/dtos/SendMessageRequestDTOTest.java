@@ -37,7 +37,7 @@ class SendMessageRequestDTOTest {
   }
 
   private Set<ConstraintViolation<SendMessageRequestDTO>> validate(String text) {
-    return validator.validate(new SendMessageRequestDTO(text));
+    return validator.validate(new SendMessageRequestDTO(text, null));
   }
 
   private static Class<?> onlyViolation(Set<ConstraintViolation<SendMessageRequestDTO>> violations) {
@@ -85,7 +85,7 @@ class SendMessageRequestDTOTest {
   @DisplayName("Spaces and blank lines around the message are removed, the ones inside stay")
   void textIsStripped() {
     // Act + Assert
-    assertEquals("hi\n  there", new SendMessageRequestDTO("\n hi\n  there \n").text());
+    assertEquals("hi\n  there", new SendMessageRequestDTO("\n hi\n  there \n", null).text());
   }
 
   @Test
@@ -110,7 +110,7 @@ class SendMessageRequestDTOTest {
   @DisplayName("A missing message stays missing instead of crashing")
   void nullTextStaysNull() {
     // Act + Assert
-    assertNull(new SendMessageRequestDTO(null).text());
+    assertNull(new SendMessageRequestDTO(null, null).text());
   }
 
 }

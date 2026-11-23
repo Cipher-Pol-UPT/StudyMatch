@@ -2,17 +2,27 @@ package com.studymatch.models;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+// deleting a message looks for its replies, the foreign key alone has no index (#218)
 @Entity
+@Table(indexes = @Index(columnList = "reply_to_id"))
 public class Message {
 
   public static final int MAX_TEXT_LENGTH = 2000;
@@ -44,6 +54,17 @@ public class Message {
   @ManyToOne
   private User hiddenFrom;
 
+  // the database clears it when the original is deleted. lazy or it'd load a whole chain of replies, and never
+  // updated, editing the reply writes the whole row and would put a deleted original back (#218)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "reply_to_id", updatable = false)
+  @OnDelete(action = OnDeleteAction.SET_NULL)
+  private Message replyTo;
+
+  // stays true when the original is deleted, so it can say so. the default is for the messages from before
+  @ColumnDefault("false")
+  private boolean reply;
+
   protected Message() {
   }
 
@@ -52,6 +73,13 @@ public class Message {
     this.author = author;
     this.text = text;
     this.sentAt = LocalDateTime.now();
+  }
+
+  // the original is in the same chat, the service looked it up there
+  public Message(Chat chat, User author, String text, Message replyTo) {
+    this(chat, author, text);
+    this.replyTo = replyTo;
+    this.reply = replyTo != null;
   }
 
   public Long getId() {
@@ -93,6 +121,19 @@ public class Message {
 
   public void hideFrom(User blocker) {
     this.hiddenFrom = blocker;
+  }
+
+  public Message getReplyTo() {
+    return replyTo;
+  }
+
+  public boolean isReply() {
+    return reply;
+  }
+
+  // the original was hidden from a blocker and this reply isn't, so not everyone may see the quote (GR9)
+  public boolean quotesHidden() {
+    return replyTo != null && replyTo.getHiddenFrom() != null;
   }
 
   // by number, the user may come from another request than the message

@@ -36,12 +36,14 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             and not exists (select s from ChatSettings s
               where s.chat = u.chat and s.user.number = :number and s.lastReadAt >= u.sentAt)) as unread
       from Message m
+      left join fetch m.replyTo original
+      left join fetch original.author
       where m.chat in :chats
         and m.id = (select max(l.id) from Message l
           where l.chat = m.chat and (l.hiddenFrom is null or l.hiddenFrom.number <> :number))""")
   List<ChatActivity> findActivity(Collection<Chat> chats, Long number);
 
-  // a whole chat's messages at once, when the chat goes. nothing points at a message yet,
+  // a whole chat's messages at once, when the chat goes. replies only point at messages of the same chat,
   // attachments (#210) and reactions (#216) will have to go first.
   // a bulk delete skips the loaded entities, so it clears them, one left loaded would point at a deleted chat
   @Modifying(flushAutomatically = true, clearAutomatically = true)
@@ -59,7 +61,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
   long countUnread(Collection<Chat> chats, Long number);
 
   // an open chat's newest messages the user can see, newest first (GR9)
-  @EntityGraph(attributePaths = "author")
+  @EntityGraph(attributePaths = { "author", "replyTo.author" })
   @Query("""
       select m from Message m
       where m.chat = :chat and (m.hiddenFrom is null or m.hiddenFrom.number <> :number)
@@ -67,7 +69,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
   List<Message> findVisible(Chat chat, Long number, Limit limit);
 
   // scrolling up: the ones before the oldest on screen, by id so new messages don't shift the pages
-  @EntityGraph(attributePaths = "author")
+  @EntityGraph(attributePaths = { "author", "replyTo.author" })
   @Query("""
       select m from Message m
       where m.chat = :chat and m.id < :before and (m.hiddenFrom is null or m.hiddenFrom.number <> :number)
@@ -75,7 +77,19 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
   List<Message> findVisibleBefore(Chat chat, Long before, Long number, Limit limit);
 
   // a message of that chat, an id from another chat counts as missing
-  @EntityGraph(attributePaths = "author")
+  @EntityGraph(attributePaths = { "author", "replyTo.author" })
   Optional<Message> findByIdAndChat(Long id, Chat chat);
+
+  // replying to it, deleting it waits until the reply is saved and then clears the link. empty if it's already gone.
+  // key share, so editing it doesn't wait
+  @Query(nativeQuery = true, value = "select id from message where id = :id and chat_id = :chatId for key share")
+  Optional<Long> lockOriginal(Long id, Long chatId);
+
+  // editing a reply, the same lock on what it replies to. empty if it isn't a reply or that's already gone
+  @Query(nativeQuery = true, value = """
+      select original.id from message reply join message original on original.id = reply.reply_to_id
+      where reply.id = :replyId and reply.chat_id = :chatId
+      for key share of original""")
+  Optional<Long> lockOriginalOf(Long replyId, Long chatId);
 
 }
