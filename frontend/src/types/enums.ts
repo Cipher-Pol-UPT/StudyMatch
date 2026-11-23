@@ -28,7 +28,7 @@ export type TutorApplicationStatus = typeof TutorApplicationStatus[number];
 export const Role = ["ADMIN", "STAFF", "TEACHER", "STUDENT"] as const;
 export type Role = typeof Role[number];
 
-export const ChatEventType = ["MESSAGE_CREATED", "MESSAGE_EDITED", "MESSAGE_DELETED", "CHAT_UPDATED", "CHAT_ADDED", "CHAT_READ", "CHAT_REMOVED", "TYPING", "USER_ONLINE", "USER_OFFLINE"] as const;
+export const ChatEventType = ["MESSAGE_CREATED", "MESSAGE_EDITED", "MESSAGE_DELETED", "CHAT_UPDATED", "CHAT_EDITED", "CHAT_ADDED", "CHAT_READ", "CHAT_REMOVED", "TYPING", "USER_ONLINE", "USER_OFFLINE"] as const;
 export type ChatEventType = typeof ChatEventType[number];
 
 export const NotificationLevel = ["ALL", "MENTIONS", "NONE"] as const;

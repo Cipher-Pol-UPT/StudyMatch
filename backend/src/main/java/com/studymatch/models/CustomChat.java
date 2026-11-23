@@ -1,5 +1,7 @@
 package com.studymatch.models;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +38,9 @@ public class CustomChat extends Chat {
 
   @Column(columnDefinition = "TEXT")
   private String picture;
+
+  // the picture's version for its url, null without one or if it was set before this existed (#234)
+  private LocalDateTime pictureUpdatedAt;
 
   @ManyToOne
   @NotNull
@@ -110,16 +115,26 @@ public class CustomChat extends Chat {
     return name;
   }
 
+  // any member renames it, the request already checked it like creating (#234)
+  public void rename(String name) {
+    this.name = name;
+  }
+
   public String getPicture() {
     return picture;
   }
 
-  // checked like the profile photo
+  // checked like the profile photo. the date is cut to what the database keeps, so the push and the list agree
   public void setPicture(String picture) {
     if (picture != null && !ImageDataUrls.isValidImage(picture, MAX_PICTURE_BYTES)) {
       throw new StudyMatchException(ErrorCode.INVALID_GROUP_CHAT_PICTURE);
     }
     this.picture = picture;
+    this.pictureUpdatedAt = picture == null ? null : LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
+  }
+
+  public LocalDateTime getPictureUpdatedAt() {
+    return pictureUpdatedAt;
   }
 
   public User getOwner() {

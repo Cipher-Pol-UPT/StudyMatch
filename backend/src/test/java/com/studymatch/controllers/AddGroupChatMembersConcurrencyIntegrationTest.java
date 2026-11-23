@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -219,6 +220,39 @@ class AddGroupChatMembersConcurrencyIntegrationTest {
     // Assert - rui, eva and zeca
     assertEquals(List.of(204, 200), results);
     assertEquals(3, memberCount(ruiSession));
+  }
+
+  @Test
+  @DisplayName("The owner leaving while someone renames: both go through, the old owner doesn't come back (#234)")
+  void leaveAndRenameAtOnce() throws Exception {
+    // Arrange - both requests wait at the gate, then go together
+    MockHttpSession anaSession = loginAs(ana);
+    MockHttpSession evaSession = loginAs(eva);
+    CountDownLatch gate = new CountDownLatch(1);
+    ExecutorService threads = Executors.newFixedThreadPool(2);
+    Future<Integer> left = threads.submit(() -> {
+      gate.await();
+      return mockMvc.perform(post("/chats/" + group.getId() + "/leave").with(csrf()).session(anaSession))
+          .andReturn().getResponse().getStatus();
+    });
+    Future<Integer> renamed = threads.submit(() -> {
+      gate.await();
+      return mockMvc.perform(put("/chats/" + group.getId() + "/name").with(csrf()).session(evaSession)
+          .contentType(MediaType.APPLICATION_JSON)
+          .content("{\"name\":\"Exam prep\"}"))
+          .andReturn().getResponse().getStatus();
+    });
+
+    // Act
+    gate.countDown();
+    List<Integer> results = List.of(left.get(), renamed.get());
+    threads.shutdown();
+
+    // Assert - saving the rename writes the owner column too, it has to be rui's
+    assertEquals(List.of(204, 204), results);
+    CustomChat saved = (CustomChat) chatRepository.findById(group.getId()).orElseThrow();
+    assertEquals("Exam prep", saved.getName());
+    assertEquals(rui.getNumber(), saved.getOwner().getNumber());
   }
 
   @Test
