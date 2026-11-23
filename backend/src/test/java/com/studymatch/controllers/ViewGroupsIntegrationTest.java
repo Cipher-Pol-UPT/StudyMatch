@@ -297,14 +297,16 @@ class ViewGroupsIntegrationTest {
   }
 
   @Test
-  @DisplayName("More groups and members don't mean more queries")
+  @DisplayName("More groups, members and enrolled students don't mean more queries")
   void queriesDontGrowWithTheMembers() throws Exception {
-    // Arrange - measured with one published group, then a draft group of the other two
+    // Arrange - measured with one published group, then two more students enrolled and a draft group of four
     Assignment assignment = project();
     group(assignment, 1, true, ana, bruno);
     MockHttpSession session = loginAs(TEACHER);
     long before = selectsFor(session, assignment);
-    group(assignment, 2, false, carla, duarte);
+    Student eva = enrol(student("Eva", Set.of(Language.ENGLISH)), "T2");
+    Student filipe = enrol(student("Filipe", Set.of(Language.PORTUGUESE)), "T2");
+    group(assignment, 2, false, carla, duarte, eva, filipe);
 
     // Act
     long after = selectsFor(session, assignment);
