@@ -211,8 +211,28 @@ public class ChatService {
         .findFirst()
         .ifPresent(member -> {
           chat.removeMember(member);
+          chatSettingsService.deleteOf(chat, member);
           eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_REMOVED, chat.getId()));
         });
+  }
+
+  // any member leaves, the owner hands it to whoever's been there longest. CHAT_REMOVED is for their other tabs.
+  // gives the chat back so MessageService can delete it if nobody's left (#232)
+  @Transactional
+  public CustomChat leave(Long chatId, User user) {
+    CustomChat chat = getLockedCustomChatFor(chatId, user);
+    chat.leave(user);
+    chatSettingsService.deleteOf(chat, user);
+    eventPublisher.publishEvent(new UserChatEvent(user, ChatEventType.CHAT_REMOVED, chat.getId()));
+    return chat;
+  }
+
+  // delete the messages first (MessageService.leave), the foreign key refuses it otherwise.
+  // by id, deleting those leaves the chat detached
+  @Transactional
+  public void deleteWithSettings(Chat chat) {
+    chatSettingsService.deleteAllOf(chat);
+    chatRepository.deleteById(chat.getId());
   }
 
   // a chat whose members can change, locked so two changes at once go one after the other. it's locked before

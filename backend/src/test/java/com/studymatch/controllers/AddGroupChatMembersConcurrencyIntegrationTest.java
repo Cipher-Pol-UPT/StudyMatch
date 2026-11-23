@@ -191,6 +191,37 @@ class AddGroupChatMembersConcurrencyIntegrationTest {
   }
 
   @Test
+  @DisplayName("The owner leaving while another member adds someone: both go through (#232)")
+  void leaveAndAddAtOnce() throws Exception {
+    // Arrange - both requests wait at the gate, then go together
+    MockHttpSession anaSession = loginAs(ana);
+    MockHttpSession ruiSession = loginAs(rui);
+    CountDownLatch gate = new CountDownLatch(1);
+    ExecutorService threads = Executors.newFixedThreadPool(2);
+    Future<Integer> left = threads.submit(() -> {
+      gate.await();
+      return mockMvc.perform(post("/chats/" + group.getId() + "/leave").with(csrf()).session(anaSession))
+          .andReturn().getResponse().getStatus();
+    });
+    Future<Integer> added = threads.submit(() -> {
+      gate.await();
+      return mockMvc.perform(post("/chats/" + group.getId() + "/members").with(csrf()).session(ruiSession)
+          .contentType(MediaType.APPLICATION_JSON)
+          .content("{\"memberNumbers\":[" + zeca.getNumber() + "]}"))
+          .andReturn().getResponse().getStatus();
+    });
+
+    // Act
+    gate.countDown();
+    List<Integer> results = List.of(left.get(), added.get());
+    threads.shutdown();
+
+    // Assert - rui, eva and zeca
+    assertEquals(List.of(204, 200), results);
+    assertEquals(3, memberCount(ruiSession));
+  }
+
+  @Test
   @DisplayName("Two members adding the same person at the same moment: both fine, they're in once")
   void samePersonAtOnce() throws Exception {
     // Arrange

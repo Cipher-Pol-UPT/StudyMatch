@@ -93,6 +93,15 @@ public class CustomChat extends Chat {
     members.removeIf(current -> current.getNumber().equals(member.getNumber()));
   }
 
+  // the owner leaving hands it to whoever's been there longest, the first one left. so the owner is always
+  // first in the list. the last one leaving empties it, the chat gets deleted then (#232)
+  public void leave(User member) {
+    removeMember(member);
+    if (isOwner(member) && !members.isEmpty()) {
+      owner = members.getFirst();
+    }
+  }
+
   public boolean isOwner(User user) {
     return owner.getNumber().equals(user.getNumber());
   }
