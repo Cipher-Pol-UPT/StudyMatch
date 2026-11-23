@@ -76,9 +76,12 @@ export function ProfileHeader({ profile: p, viewer = { showPrivate: false, canEd
         <div className="sm-profile-head__text">
           <h1 className="sm-profile-head__name">{p.name}</h1>
           <div className="sm-profile-head__meta">
-            <span>
-              <GraduationCap size={15} aria-hidden /> {p.programme} {i18n.t('ui.curricular_year', {year:p.curricularYear})}
-            </span>
+            {/* the degree and year are private: someone else's public profile comes without them */}
+            {p.programme && (
+              <span>
+                <GraduationCap size={15} aria-hidden /> {p.programme} {i18n.t('ui.curricular_year', {year:p.curricularYear})}
+              </span>
+            )}
             <span className="sm-num">{p.studentNumber}</span>
             {viewer.showPrivate && (
               <span>
@@ -134,7 +137,7 @@ export interface ProfileViewProps {
   profile: StudentProfile;
   viewer?: ProfileViewer;
   onEdit?: () => void;
-  // more of the owner's own actions, after Edit profile
+  // more actions in the header: the owner's after Edit profile, or what someone else can do (Message)
   actions?: ReactNode;
   // shown in the corner of the Badges card, like a link to all the achievements
   badgesAction?: ReactNode;
@@ -166,9 +169,9 @@ export function ProfileView({ profile: p, viewer = { showPrivate: false, canEdit
         onBannerChange={onBannerChange}
         onBannerPresetChange={onBannerPresetChange}
         actions={
-          isSelf && (onEdit || actions) ? (
+          (isSelf && onEdit) || actions ? (
             <>
-              {onEdit && (
+              {isSelf && onEdit && (
                 <Button variant="secondary" icon={Pencil} onClick={onEdit}>
                    {i18n.t('ui.edit_profile')} </Button>
               )}
