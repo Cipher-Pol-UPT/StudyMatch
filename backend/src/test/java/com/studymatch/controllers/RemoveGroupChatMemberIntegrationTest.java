@@ -30,10 +30,12 @@ import com.studymatch.models.Degree;
 import com.studymatch.models.DirectChat;
 import com.studymatch.models.Message;
 import com.studymatch.models.PersonalityProfile;
+import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
 import com.studymatch.repositories.ChatRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.MessageRepository;
+import com.studymatch.repositories.StaffRepository;
 import com.studymatch.repositories.StudentRepository;
 
 @SpringBootTest
@@ -58,6 +60,9 @@ class RemoveGroupChatMemberIntegrationTest {
 
   @Autowired
   private MessageRepository messageRepository;
+
+  @Autowired
+  private StaffRepository staffRepository;
 
   @Autowired
   private PasswordEncoder passwordEncoder;
@@ -256,6 +261,29 @@ class RemoveGroupChatMemberIntegrationTest {
     // Act + Assert
     remove(zecaSession, group.getId(), rui.getNumber())
         .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @DisplayName("Staff can't remove members: 403")
+  void staffForbidden() throws Exception {
+    // Arrange
+    Staff staff = new Staff("it.removemember.staff@example.com", "it.removemember.staff@studymatch.com",
+        "Staff Remove Test", passwordHash);
+    staff.setMustChangePassword(false);
+    staffRepository.save(staff);
+    MockHttpSession staffSession = loginAs(staff.getInstitutionalEmail());
+
+    // Act + Assert
+    remove(staffSession, group.getId(), rui.getNumber())
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("Removing a member without logging in is 401")
+  void notLoggedIn() throws Exception {
+    // Act + Assert
+    mockMvc.perform(delete("/chats/" + group.getId() + "/members/" + rui.getNumber()).with(csrf()))
+        .andExpect(status().isUnauthorized());
   }
 
 }
