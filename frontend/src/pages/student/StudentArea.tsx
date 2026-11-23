@@ -6,6 +6,8 @@ import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry
 import type { CurrentUser } from '../../types/currentUser';
 import { AchievementsPage } from '../achievements/AchievementsPage';
 import { ChatsPage } from '../chats/ChatsPage';
+import { ClassmateProfilePage } from './ClassmateProfilePage';
+import type { ChatContactData } from '../../types/chat';
 import { HomePage } from '../home/HomePage';
 import { AccountPasswordPage } from '../password/AccountPasswordPage';
 import { ProfilePage } from '../profile/ProfilePage';
@@ -17,6 +19,8 @@ import { useMyProfile } from './useMyProfile';
 
 const PROFILE_PATH = '/profile';
 const CHANGE_PASSWORD_PATH = '/change-password';
+// only students have a profile to open; teachers in Chats don't
+const classmatePath = (contact: ChatContactData) => contact.role === 'STUDENT' ? `/classmates/${contact.number}` : undefined;
 
 export interface StudentAreaProps {
   currentUser: CurrentUser;
@@ -41,7 +45,7 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
     <AppShell
       brand={<Logo size={28} />}
       nav={nav}
-      title={t(current ? `nav.${current.key}` : pathname === '/achievements' ? 'achievements.title' : 'nav.home')}
+      title={t(current ? `nav.${current.key}` : pathname === '/achievements' ? 'achievements.title' : pathname.startsWith('/classmates/') ? 'classmate.title' : 'nav.home')}
       actions={<><ThemeSwitcher /><ProfileMenu user={currentUser} avatarUrl={profile?.avatarUrl ?? undefined} onLoggedOut={onLoggedOut} /></>}
       linkAs={Link}
       className="app-shell"
@@ -51,8 +55,9 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
         <Route path="/" element={<HomePage currentUser={currentUser} profile={profile} failed={failed} />} />
         <Route path={PROFILE_PATH} element={<ProfilePage onSaved={showSavedProfile} />} />
         <Route path="/study-rooms" element={<StudyRoomsPage currentUser={currentUser} />} />
-        <Route path="/chats" element={<ChatsPage />} />
-        <Route path="/chats/direct/:number" element={<ChatsPage />} />
+        <Route path="/chats" element={<ChatsPage profilePath={classmatePath} />} />
+        <Route path="/chats/direct/:number" element={<ChatsPage profilePath={classmatePath} />} />
+        <Route path="/classmates/:number" element={<ClassmateProfilePage myNumber={currentUser.number} profilePath={PROFILE_PATH} />} />
         <Route path={CHANGE_PASSWORD_PATH} element={<AccountPasswordPage />} />
         <Route path="/achievements" element={<AchievementsPage profile={profile} failed={failed} />} />
         {pages.filter((p) => ![PROFILE_PATH, '/study-rooms', '/chats', CHANGE_PASSWORD_PATH].includes(p.path)).map((p) => (

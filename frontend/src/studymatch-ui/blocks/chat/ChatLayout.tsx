@@ -1,5 +1,5 @@
 import { ArrowUp, ChevronLeft, CircleAlert } from 'lucide-react';
-import { useId, useLayoutEffect, useRef, type ReactNode, type Ref } from 'react';
+import { useId, useLayoutEffect, useRef, type ElementType, type ReactNode, type Ref } from 'react';
 import { Avatar } from '../../components/avatar/Avatar';
 import { IconButton } from '../../components/button/Button';
 import './chat.css';
@@ -58,18 +58,31 @@ export interface ChatHeadProps {
   subtitle?: string;
   backLabel: string;
   onBack: () => void;
+  // their profile, when they have one: the picture and name link to it
+  profileHref?: string;
+  profileLabel?: string;
+  // the router's link, like the app shell's
+  linkAs?: ElementType;
 }
 
 // who the conversation is with; the back button only shows on a phone
-export function ChatHead({ name, subtitle, backLabel, onBack }: ChatHeadProps) {
-  return (
-    <header className="sm-chat__head">
-      <IconButton className="sm-chat__back" icon={ChevronLeft} label={backLabel} variant="ghost" onClick={onBack} />
+export function ChatHead({ name, subtitle, backLabel, onBack, profileHref, profileLabel, linkAs }: ChatHeadProps) {
+  const LinkAs = linkAs ?? 'a';
+  const who = (
+    <>
       <Avatar name={name} size={40} />
       <div className="sm-chat__head-text">
         <h2 className="sm-chat__head-name">{name}</h2>
         {subtitle && <div className="sm-chat__head-sub">{subtitle}</div>}
       </div>
+    </>
+  );
+  return (
+    <header className="sm-chat__head">
+      <IconButton className="sm-chat__back" icon={ChevronLeft} label={backLabel} variant="ghost" onClick={onBack} />
+      {profileHref
+        ? <LinkAs href={profileHref} to={linkAs ? profileHref : undefined} className="sm-chat__who sm-chat__who--link" aria-label={profileLabel}>{who}</LinkAs>
+        : <div className="sm-chat__who">{who}</div>}
     </header>
   );
 }
