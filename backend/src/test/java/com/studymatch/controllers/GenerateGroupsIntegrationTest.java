@@ -186,6 +186,8 @@ class GenerateGroupsIntegrationTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.length()").value(2))
         .andExpect(jsonPath("$[0].number").value(1))
+        .andExpect(jsonPath("$[0].id").isNumber())
+        .andExpect(jsonPath("$[0].status").value("DRAFT"))
         .andExpect(jsonPath("$[0].size").value(4))
         .andExpect(jsonPath("$[1].size").value(4))
         .andExpect(jsonPath("$[0].sharedLanguages[0]").value("PORTUGUESE"))
@@ -219,9 +221,15 @@ class GenerateGroupsIntegrationTest {
 
     // Act + Assert
     // grades only steer the matching, the preview never shows them
+    // the statute student only shows that attendance doesn't apply (GR7)
     generate(assignment)
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$[0].members[0].level").doesNotExist());
+        .andExpect(jsonPath("$[0].members[0].level").doesNotExist())
+        .andExpect(jsonPath("$[*].members[?(@.number == " + students.get(5).getNumber() + ")].attendanceApplicable",
+            Matchers.contains(false)))
+        .andExpect(jsonPath("$[*].members[?(@.number == " + students.get(4).getNumber() + ")].attendanceApplicable",
+            Matchers.contains(true)))
+        .andExpect(jsonPath("$[0].members[0].attendance").doesNotExist());
     assertEquals(8, groups(assignment, GroupStatus.DRAFT).stream().mapToInt(group -> group.getMembers().size())
         .sum());
   }

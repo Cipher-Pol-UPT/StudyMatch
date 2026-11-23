@@ -80,6 +80,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/subject-editions/{id}/assignments` | Teacher of the edition | add an assignment, with group sizes and separations for group work |
 | GET | `/subject-editions/{id}/grades` | Teacher of the edition | the grade sheet; each assignment says whether it's group work (`groupWork`, it has a grouping rule) |
 | PUT | `/subject-editions/{id}/assignments/{assignmentId}/grades/{studentNumber}` | Teacher of the edition | give or change a grade; sets the final grade once everything's graded |
+| GET | `/subject-editions/{id}/assignments/{assignmentId}/groups` | Teacher of the edition | a group assignment's groups, `draft` and `published` apart (both exist until a regeneration is confirmed, empty when there are none), each with its members by name, their class, `attendanceApplicable` (false with a statute, never its type) and `blocked`, and the languages the group shares |
 | GET | `/subject-editions/{id}/assignments/{assignmentId}/groups/generation` | Teacher of the edition | about what generating will do, from the class sizes alone (no student's evidence is loaded): the students who can be grouped, how many groups, their optimal size and the most the matching algorithm searches (`searchMillis`, 0 when every class is a single group). The page's loader follows it |
 | POST | `/subject-editions/{id}/assignments/{assignmentId}/groups?replacePublished=` | Teacher of the edition | generate (or regenerate) a group assignment's groups as drafts and preview them; with published groups already, `replacePublished=true` is needed |
 | POST | `/subject-editions/{id}/assignments/{assignmentId}/groups/publish` | Teacher of the edition | publish the drafts, replacing the groups published before |
@@ -154,4 +155,4 @@ The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and 
 
 ## Coming next
 
-The other use cases (editing groups, a teacher viewing an assignment's groups, tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (editing groups, tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
