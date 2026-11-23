@@ -19,6 +19,8 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
 
   List<Enrolment> findByStudent(Student student);
 
+  // an edition's enrolments: each student and their class in the same select, not one select per student
+  @EntityGraph(attributePaths = { "student", "student.degree", "student.personalityProfile", "classSection" })
   List<Enrolment> findBySubjectEditionId(Long subjectEditionId);
 
   // analytics: each student comes with their profile in the same select, not one select per student

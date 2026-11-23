@@ -2,6 +2,7 @@ package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -9,15 +10,22 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.studymatch.dtos.AssignmentGroupsDTO;
+import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.MyGroupDTO;
 import com.studymatch.enums.AssignmentType;
 import com.studymatch.enums.GroupStatus;
+import com.studymatch.enums.Language;
+import com.studymatch.enums.StatuteType;
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.matching.GroupGenerator;
 import com.studymatch.models.Assignment;
 import com.studymatch.models.Group;
@@ -32,6 +40,8 @@ class GroupServiceTest {
   private static final Long ANA = 1001L;
 
   private GroupRepository groupRepository;
+  private AssignmentService assignmentService;
+  private EnrolmentService enrolmentService;
   private GroupService groupService;
   private SubjectEdition edition;
   private Student ana;
@@ -40,7 +50,9 @@ class GroupServiceTest {
   @BeforeEach
   void setUp() {
     groupRepository = mock(GroupRepository.class);
-    groupService = new GroupService(groupRepository, mock(AssignmentService.class), mock(EnrolmentService.class),
+    assignmentService = mock(AssignmentService.class);
+    enrolmentService = mock(EnrolmentService.class);
+    groupService = new GroupService(groupRepository, assignmentService, enrolmentService,
         mock(AcademicYearService.class), mock(SubjectEditionService.class), mock(LessonService.class),
         mock(AbsenceService.class), mock(GroupGenerator.class));
     edition = ModelTestData.subjectEdition();
@@ -55,14 +67,33 @@ class GroupServiceTest {
   }
 
   private Group group(String assignmentName, LocalDate date, int number, Student... members) {
-    Assignment assignment = new Assignment(edition, assignmentName, AssignmentType.PROJECT, date,
-        new BigDecimal("0.20"), new GroupingRule(2, 2, 3, false));
+    Group group = draft(project(assignmentName, date), number, members);
+    group.publish();
+    return group;
+  }
+
+  private Assignment project(String name, LocalDate date) {
+    return new Assignment(edition, name, AssignmentType.PROJECT, date, new BigDecimal("0.20"),
+        new GroupingRule(2, 2, 3, false));
+  }
+
+  private static Group draft(Assignment assignment, int number, Student... members) {
     Group group = new Group(assignment, number);
     for (Student member : members) {
       group.addMember(member);
     }
-    group.publish();
     return group;
+  }
+
+  // view groups: the assignment, its groups and the class of each enrolled student
+  private Assignment viewing(List<Group> groups, Student... enrolled) {
+    Assignment assignment = groups.isEmpty() ? project("Project", LocalDate.of(2026, 1, 10))
+        : groups.getFirst().getAssignment();
+    when(assignmentService.getAssignment(1L, 2L)).thenReturn(assignment);
+    when(groupRepository.findByAssignmentOrderByNumber(assignment)).thenReturn(groups);
+    when(enrolmentService.listEnrolments(1L))
+        .thenReturn(List.of(enrolled).stream().map(ModelTestData::enrolment).toList());
+    return assignment;
   }
 
   @Test
@@ -110,6 +141,94 @@ class GroupServiceTest {
 
     // Act + Assert
     assertTrue(groupService.listMyGroups(ANA).isEmpty());
+  }
+
+  @Test
+  @DisplayName("View groups: the drafts and the published groups come back apart, each with its status")
+  void listGroupsSplitsByStatus() {
+    // Arrange
+    Assignment assignment = project("Project", LocalDate.of(2026, 1, 10));
+    Group published = draft(assignment, 1, ana, rui);
+    published.publish();
+    viewing(List.of(published, draft(assignment, 1, ana), draft(assignment, 2, rui)), ana, rui);
+
+    // Act
+    AssignmentGroupsDTO groups = groupService.listGroups(1L, 2L);
+
+    // Assert
+    assertEquals(List.of(1, 2), groups.draft().stream().map(GroupDTO::number).toList());
+    assertTrue(groups.draft().stream().allMatch(group -> group.status() == GroupStatus.DRAFT));
+    assertEquals(1, groups.published().size());
+    assertEquals(GroupStatus.PUBLISHED, groups.published().getFirst().status());
+    assertEquals(2, groups.published().getFirst().size());
+  }
+
+  @Test
+  @DisplayName("View groups: no groups yet is two empty lists")
+  void listGroupsEmpty() {
+    // Arrange
+    viewing(List.of());
+
+    // Act
+    AssignmentGroupsDTO groups = groupService.listGroups(1L, 2L);
+
+    // Assert
+    assertTrue(groups.draft().isEmpty());
+    assertTrue(groups.published().isEmpty());
+  }
+
+  @Test
+  @DisplayName("View groups: members by name with their class, statute as not applicable only, blocked still listed")
+  void listGroupsMembers() {
+    // Arrange
+    rui.assignStatute(StatuteType.WORKING_STUDENT, LocalDate.now().plusYears(1));
+    Student bia = student("Bia", 1003L);
+    bia.block("test");
+    viewing(List.of(draft(project("Project", LocalDate.of(2026, 1, 10)), 1, rui, bia, ana)), ana, rui, bia);
+
+    // Act
+    List<GroupDTO.Member> members = groupService.listGroups(1L, 2L).draft().getFirst().members();
+
+    // Assert
+    assertEquals(List.of("Ana", "Bia", "Rui"), members.stream().map(GroupDTO.Member::name).toList());
+    assertEquals("T1", members.getFirst().classSection());
+    assertTrue(members.get(0).attendanceApplicable());
+    assertFalse(members.get(2).attendanceApplicable());
+    assertTrue(members.get(1).blocked());
+    assertFalse(members.get(0).blocked());
+  }
+
+  @Test
+  @DisplayName("View groups: the languages every member speaks, none in common is an empty list (GR4)")
+  void listGroupsSharedLanguages() {
+    // Arrange
+    ana.setLanguages(Set.of(Language.PORTUGUESE, Language.ENGLISH));
+    rui.setLanguages(Set.of(Language.ENGLISH));
+    Student bia = student("Bia", 1003L);
+    bia.setLanguages(Set.of(Language.PORTUGUESE));
+    Assignment assignment = project("Project", LocalDate.of(2026, 1, 10));
+    viewing(List.of(draft(assignment, 1, ana, rui), draft(assignment, 2, rui, bia)), ana, rui, bia);
+
+    // Act
+    List<GroupDTO> groups = groupService.listGroups(1L, 2L).draft();
+
+    // Assert
+    assertEquals(List.of(Language.ENGLISH), groups.get(0).sharedLanguages());
+    assertTrue(groups.get(1).sharedLanguages().isEmpty());
+  }
+
+  @Test
+  @DisplayName("View groups: an assignment without a grouping rule is ASSIGNMENT_NOT_GROUP_WORK")
+  void listGroupsNotGroupWork() {
+    // Arrange
+    when(assignmentService.getAssignment(1L, 2L)).thenReturn(new Assignment(edition, "Exam", AssignmentType.EXAM,
+        LocalDate.of(2026, 1, 20), new BigDecimal("0.60"), null));
+
+    // Act
+    StudyMatchException exception = assertThrows(StudyMatchException.class, () -> groupService.listGroups(1L, 2L));
+
+    // Assert
+    assertEquals(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, exception.getCode());
   }
 
 }
