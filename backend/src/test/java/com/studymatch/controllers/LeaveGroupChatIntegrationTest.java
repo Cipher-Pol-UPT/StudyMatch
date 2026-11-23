@@ -32,11 +32,13 @@ import com.studymatch.models.Degree;
 import com.studymatch.models.DirectChat;
 import com.studymatch.models.Message;
 import com.studymatch.models.PersonalityProfile;
+import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
 import com.studymatch.repositories.ChatRepository;
 import com.studymatch.repositories.ChatSettingsRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.MessageRepository;
+import com.studymatch.repositories.StaffRepository;
 import com.studymatch.repositories.StudentRepository;
 
 @SpringBootTest
@@ -64,6 +66,9 @@ class LeaveGroupChatIntegrationTest {
 
   @Autowired
   private ChatSettingsRepository chatSettingsRepository;
+
+  @Autowired
+  private StaffRepository staffRepository;
 
   @Autowired
   private PasswordEncoder passwordEncoder;
@@ -197,6 +202,28 @@ class LeaveGroupChatIntegrationTest {
     leave(anaSession, direct.getId())
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("CHAT_MEMBERS_FIXED"));
+  }
+
+  @Test
+  @DisplayName("Staff can't leave a chat: 403")
+  void staffForbidden() throws Exception {
+    // Arrange
+    Staff staff = new Staff("it.leavechat.staff@example.com", "it.leavechat.staff@studymatch.com",
+        "Staff Leave Test", passwordHash);
+    staff.setMustChangePassword(false);
+    staffRepository.save(staff);
+    MockHttpSession staffSession = loginAs(staff.getInstitutionalEmail());
+
+    // Act + Assert
+    leave(staffSession, group.getId()).andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("Leaving without logging in is 401")
+  void notLoggedIn() throws Exception {
+    // Act + Assert
+    mockMvc.perform(post("/chats/" + group.getId() + "/leave").with(csrf()))
+        .andExpect(status().isUnauthorized());
   }
 
 }
