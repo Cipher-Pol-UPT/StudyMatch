@@ -622,7 +622,9 @@
     "TOO_MANY_GROUP_CHAT_MEMBERS": "A group chat can have at most {{max}} members, counting you.",
     "INVALID_GROUP_CHAT_PICTURE": "Use a JPG or PNG image up to 1 MB for the group chat's picture.",
     "CANNOT_ADD_TO_GROUP_CHAT": "Some of the people you picked can't be added to this group chat.",
-    "CHAT_MEMBERS_FIXED": "The members of this chat can't be changed."
+    "CHAT_MEMBERS_FIXED": "The members of this chat can't be changed.",
+    "NOT_CHAT_OWNER": "Only the owner of this group chat can do that.",
+    "CANNOT_REMOVE_YOURSELF": "You can't remove yourself. Leave the group chat instead."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

@@ -22,6 +22,7 @@ import com.studymatch.dtos.ImageFileDTO;
 import com.studymatch.dtos.TypingDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
+import com.studymatch.events.MemberChatEvent;
 import com.studymatch.events.UserChatEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -110,8 +111,15 @@ public class ChatService {
     if (chat instanceof DirectChat direct && userBlockService.hasBlocked(direct.getOtherUser(user), user)) {
       return;
     }
-    eventPublisher.publishEvent(new ChatEvent(chat.getId(), ChatEventType.TYPING,
-        new TypingDTO(chat.getId(), ChatContactDTO.from(user))));
+    TypingDTO typing = new TypingDTO(chat.getId(), ChatContactDTO.from(user));
+    // a group chat goes to each member like its messages, a removed member's open tab still listens to the topic
+    if (chat instanceof CustomChat) {
+      for (User member : chat.getMembers()) {
+        eventPublisher.publishEvent(new MemberChatEvent(member, chat.getId(), ChatEventType.TYPING, typing));
+      }
+      return;
+    }
+    eventPublisher.publishEvent(new ChatEvent(chat.getId(), ChatEventType.TYPING, typing));
   }
 
   // their first tab puts them online for everyone they share a chat with. read only, but the pushes need a commit
@@ -185,6 +193,26 @@ public class ChatService {
     List<User> added = chat.addMembers(newcomers);
     chatSettingsService.startRead(chat, added);
     return added;
+  }
+
+  // only the owner removes people, who lose the chat and its history straight away (GR8). the owner leaves
+  // instead (#232), someone who isn't in changes nothing. CHAT_REMOVED takes it off their list
+  @Transactional
+  public void removeMember(Long chatId, User user, Long number) {
+    CustomChat chat = getLockedCustomChatFor(chatId, user);
+    if (!chat.isOwner(user)) {
+      throw new StudyMatchException(ErrorCode.NOT_CHAT_OWNER);
+    }
+    if (user.getNumber().equals(number)) {
+      throw new StudyMatchException(ErrorCode.CANNOT_REMOVE_YOURSELF);
+    }
+    chat.getMembers().stream()
+        .filter(member -> member.getNumber().equals(number))
+        .findFirst()
+        .ifPresent(member -> {
+          chat.removeMember(member);
+          eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_REMOVED, chat.getId()));
+        });
   }
 
   // a chat whose members can change, locked so two changes at once go one after the other. it's locked before
