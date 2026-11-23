@@ -316,12 +316,25 @@ class ReactMessageIntegrationTest {
   }
 
   @Test
-  @DisplayName("Emoji joined past 64 characters are INVALID_EMOJI, 64 isn't the problem")
+  @DisplayName("Up to 4 emoji joined are one emoji, 5 are INVALID_EMOJI")
+  void mostJoined() throws Exception {
+    // Arrange
+    String four = String.join("\\u200D", Collections.nCopies(4, "👩"));
+    String five = String.join("\\u200D", Collections.nCopies(5, "👩"));
+
+    // Act + Assert
+    react(anaSession, message, four).andExpect(status().isOk());
+    react(anaSession, message, five)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_EMOJI"));
+  }
+
+  @Test
+  @DisplayName("64 characters is the longest, past that is INVALID_EMOJI")
   void longestEmoji() throws Exception {
-    // Arrange - each one is 2 characters and the joiner 1, so 21 are 62 and 22 are 65
-    String joiner = "\\u200D";
-    String fits = String.join(joiner, Collections.nCopies(21, "👩"));
-    String tooLong = String.join(joiner, Collections.nCopies(22, "👩"));
+    // Arrange - a region's flag: the black flag, its letters and an end, 2 characters each
+    String fits = "🏴" + Character.toString(0xE0067).repeat(30) + Character.toString(0xE007F);
+    String tooLong = "🏴" + Character.toString(0xE0067).repeat(31) + Character.toString(0xE007F);
 
     // Act + Assert
     react(anaSession, message, fits).andExpect(status().isOk());
