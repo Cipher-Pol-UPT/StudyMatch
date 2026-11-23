@@ -1,5 +1,7 @@
 package com.studymatch.services;
 
+import java.util.List;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,17 @@ public class ChatSettingsService {
     settings.markRead();
     chatSettingsRepository.saveLastReadAt(settings);
     eventPublisher.publishEvent(new UserChatEvent(user, ChatEventType.CHAT_READ, chat.getId()));
+  }
+
+  // people added to a group chat start with the history read, it's there to scroll but doesn't count as unread.
+  // no CHAT_READ, they don't have the chat yet
+  @Transactional
+  public void startRead(Chat chat, List<User> users) {
+    for (User user : users) {
+      ChatSettings settings = new ChatSettings(chat, user);
+      settings.markRead();
+      chatSettingsRepository.saveLastReadAt(settings);
+    }
   }
 
 }

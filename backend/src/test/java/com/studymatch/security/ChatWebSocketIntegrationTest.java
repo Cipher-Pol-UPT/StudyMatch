@@ -49,6 +49,7 @@ import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
 import com.studymatch.events.MemberChatEvent;
 import com.studymatch.events.UserChatEvent;
+import com.studymatch.models.CustomChat;
 import com.studymatch.models.Degree;
 import com.studymatch.models.DirectChat;
 import com.studymatch.models.Message;
@@ -234,7 +235,8 @@ class ChatWebSocketIntegrationTest {
   }
 
   // once a queue's probe came back, an empty payload is a probe sent before that landing late, it'd be in the
-  // queue after the test clears it. no real event has an empty payload
+  // queue after the test clears it. no real event has an empty payload.
+  // so probe each queue once: a second publishUntilReceived with Map.of() on it gets dropped and fails
   private BlockingQueue<Map<String, Object>> subscribe(StompSession session, String destination) {
     BlockingQueue<Map<String, Object>> received = new LinkedBlockingQueue<>();
     session.subscribe(destination, new StompFrameHandler() {
@@ -449,6 +451,109 @@ class ChatWebSocketIntegrationTest {
     Map<?, ?> row = (Map<?, ?>) created.get("payload");
     assertEquals("Study group", row.get("name"));
     assertNull(row.get("lastMessage"));
+  }
+
+  @Test
+  @DisplayName("Someone added to a group chat gets it in their chat list with its last message and nothing unread")
+  void addedMemberIsPushed() throws Exception {
+    // Arrange - ana, rui and zeca have a group chat with a message, eva is added to it
+    Student zeca = saveStudent("it.ws.zeca@example.com", "Zeca Test");
+    CustomChat group = chatRepository.save(new CustomChat("Study group", null, ana, List.of(rui, zeca)));
+    try {
+      messageRepository.save(new Message(group, ana, "before eva"));
+      BlockingQueue<Map<String, Object>> chatList = chatListOf(eva);
+
+      // Act
+      int status = send("POST", login(ana.getInstitutionalEmail()), "/chats/" + group.getId() + "/members",
+          "{\"memberNumbers\":[" + eva.getNumber() + "]}");
+
+      // Assert
+      assertEquals(200, status);
+      Map<String, Object> added = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(added);
+      assertEquals("CHAT_ADDED", added.get("type"));
+      Map<?, ?> row = (Map<?, ?>) added.get("payload");
+      assertEquals(group.getId().intValue(), row.get("chatId"));
+      assertEquals("before eva", ((Map<?, ?>) row.get("lastMessage")).get("text"));
+      assertEquals(0, row.get("unread"));
+    } finally {
+      deleteGroupChat(group);
+      studentRepository.delete(zeca);
+    }
+  }
+
+  // a group chat made in a test, with what points at it
+  private void deleteGroupChat(CustomChat group) {
+    messageRepository.deleteAll(messageRepository.findAll().stream()
+        .filter(message -> message.getChat().getId().equals(group.getId()))
+        .toList());
+    chatSettingsRepository.deleteAll(chatSettingsRepository.findAll().stream()
+        .filter(settings -> settings.getChat().getId().equals(group.getId()))
+        .toList());
+    chatRepository.delete(group);
+  }
+
+  @Test
+  @DisplayName("Someone removed from a group chat gets CHAT_REMOVED on their chat list")
+  void removedMemberIsTold() throws Exception {
+    // Arrange
+    CustomChat group = chatRepository.save(new CustomChat("Study group", null, ana, List.of(rui, eva)));
+    try {
+      BlockingQueue<Map<String, Object>> chatList = chatListOf(rui);
+
+      // Act
+      int status = send("DELETE", login(ana.getInstitutionalEmail()),
+          "/chats/" + group.getId() + "/members/" + rui.getNumber(), "");
+
+      // Assert
+      assertEquals(200, status);
+      Map<String, Object> removed = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(removed);
+      assertEquals("CHAT_REMOVED", removed.get("type"));
+      assertEquals(group.getId().intValue(), removed.get("payload"));
+    } finally {
+      deleteGroupChat(group);
+    }
+  }
+
+  @Test
+  @DisplayName("A removed member's open tab stops getting the group chat's messages and typing, the others still do (GR8)")
+  void removedMemberStopsHearing() throws Exception {
+    // Arrange - rui and eva have the chat open, a first event proves each subscription is registered
+    CustomChat group = chatRepository.save(new CustomChat("Study group", null, ana, List.of(rui, eva)));
+    try {
+      StompSession ruiTab = connect(rui);
+      BlockingQueue<Map<String, Object>> ruiTopic = subscribe(ruiTab, "/topic/chats/" + group.getId());
+      BlockingQueue<Map<String, Object>> ruiQueue = subscribe(ruiTab, "/user/queue/chats/" + group.getId());
+      BlockingQueue<Map<String, Object>> evaQueue = subscribe(connect(eva), "/user/queue/chats/" + group.getId());
+      assertNotNull(publishUntilReceived(new ChatEvent(group.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiTopic));
+      assertNotNull(publishUntilReceived(
+          new MemberChatEvent(rui, group.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiQueue));
+      assertNotNull(publishUntilReceived(
+          new MemberChatEvent(eva, group.getId(), ChatEventType.CHAT_UPDATED, Map.of()), evaQueue));
+      ruiTopic.clear();
+      ruiQueue.clear();
+      evaQueue.clear();
+      Map<String, String> anaLogin = login(ana.getInstitutionalEmail());
+      assertEquals(200, send("DELETE", anaLogin, "/chats/" + group.getId() + "/members/" + rui.getNumber(), ""));
+
+      // Act
+      assertEquals(201, send("POST", anaLogin, "/chats/" + group.getId() + "/messages", "{\"text\":\"rui's gone\"}"));
+      StompSession anaTab = connect(ana);
+      anaTab.send("/app/chats/" + group.getId() + "/typing", "");
+
+      // Assert - eva gets both, by then rui would have too
+      Map<String, Object> created = evaQueue.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(created);
+      assertEquals("MESSAGE_CREATED", created.get("type"));
+      Map<String, Object> typing = evaQueue.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(typing);
+      assertEquals("TYPING", typing.get("type"));
+      assertNull(ruiTopic.poll(500, TimeUnit.MILLISECONDS));
+      assertNull(ruiQueue.poll(500, TimeUnit.MILLISECONDS));
+    } finally {
+      deleteGroupChat(group);
+    }
   }
 
   @Test

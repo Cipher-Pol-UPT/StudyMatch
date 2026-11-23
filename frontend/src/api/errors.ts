@@ -93,6 +93,9 @@ export const ERROR_CODES = [
   "TOO_MANY_GROUP_CHAT_MEMBERS",
   "INVALID_GROUP_CHAT_PICTURE",
   "CANNOT_ADD_TO_GROUP_CHAT",
+  "CHAT_MEMBERS_FIXED",
+  "NOT_CHAT_OWNER",
+  "CANNOT_REMOVE_YOURSELF",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;

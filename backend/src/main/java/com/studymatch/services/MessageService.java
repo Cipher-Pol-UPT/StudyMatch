@@ -12,6 +12,7 @@ import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.dtos.AddMembersRequestDTO;
 import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.MessageDTO;
 import com.studymatch.dtos.MessageDeletedDTO;
@@ -139,6 +140,25 @@ public class MessageService {
         .toList();
   }
 
+  // the rules are in ChatService, this is here for the new members' row, which has the last message.
+  // nothing is hidden in a group chat and it starts read for them, so one row with 0 unread fits all of them
+  @Transactional
+  public void addMembers(Long chatId, User user, AddMembersRequestDTO request) {
+    List<User> added = chatService.addMembers(chatId, user, request);
+    if (added.isEmpty()) {
+      return;
+    }
+    Chat chat = chatService.getChatFor(chatId, user);
+    MessageDTO lastMessage = messageRepository.findActivity(List.of(chat), user.getNumber()).stream()
+        .findFirst()
+        .map(activity -> MessageDTO.from(activity.getLastMessage()))
+        .orElse(null);
+    for (User member : added) {
+      eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_ADDED,
+          ChatSummaryDTO.from(chat, member, lastMessage, 0)));
+    }
+  }
+
   // an empty group chat counts from when it was made
   private static LocalDateTime lastActivity(Chat chat, ChatActivity activity) {
     return activity == null ? chat.getCreatedAt() : activity.getLastMessage().getSentAt();
@@ -191,10 +211,11 @@ public class MessageService {
     return message;
   }
 
-  // a hidden message skips the topic, a blocker's tab opened before the block still listens there (GR9)
+  // a hidden message skips the topic, a blocker's tab opened before the block still listens there (GR9).
+  // a group chat always skips it, a removed member's open tab still listens there too (GR8)
   private void publishToChat(Message message, ChatEventType type, Object payload) {
     Chat chat = message.getChat();
-    if (message.getHiddenFrom() == null) {
+    if (chat instanceof DirectChat && message.getHiddenFrom() == null) {
       eventPublisher.publishEvent(new ChatEvent(chat.getId(), type, payload));
       return;
     }
