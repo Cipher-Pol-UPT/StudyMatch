@@ -760,6 +760,78 @@ class ChatWebSocketIntegrationTest {
   }
 
   @Test
+  @DisplayName("A reaction and taking it off reach both open tabs of a DM and neither list")
+  void reactionReachesBoth() throws Exception {
+    // Arrange
+    Message message = messageRepository.save(new Message(chat, rui, "lunch?"));
+    BlockingQueue<Map<String, Object>> ruiChat = subscribe(connect(rui), "/user/queue/chats/" + chat.getId());
+    StompSession anaSession = connect(ana);
+    BlockingQueue<Map<String, Object>> anaChat = subscribe(anaSession, "/user/queue/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> anaList = subscribe(anaSession, "/user/queue/chats");
+    assertNotNull(publishUntilReceived(
+        new MemberChatEvent(rui, chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiChat));
+    assertNotNull(publishUntilReceived(
+        new MemberChatEvent(ana, chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), anaChat));
+    assertNotNull(publishUntilReceived(new UserChatEvent(ana, ChatEventType.CHAT_UPDATED, Map.of()), anaList));
+    ruiChat.clear();
+    anaChat.clear();
+    anaList.clear();
+    String url = "/chats/" + chat.getId() + "/messages/" + message.getId() + "/reaction";
+
+    // Act - the same one twice is pushed once
+    assertEquals(200, send("PUT", login(ana.getInstitutionalEmail()), url, "{\"emoji\":\"👍\"}"));
+    assertEquals(200, send("PUT", login(ana.getInstitutionalEmail()), url, "{\"emoji\":\"👍\"}"));
+    assertEquals(204, send("DELETE", login(ana.getInstitutionalEmail()), url, ""));
+
+    // Assert
+    for (BlockingQueue<Map<String, Object>> queue : List.of(ruiChat, anaChat)) {
+      Map<?, ?> reacted = pollReaction(queue);
+      assertEquals("👍", reacted.get("emoji"));
+      assertEquals(message.getId().intValue(), reacted.get("messageId"));
+      assertNull(pollReaction(queue).get("emoji"));
+      assertNull(queue.poll(500, TimeUnit.MILLISECONDS));
+    }
+    assertNull(anaList.poll(500, TimeUnit.MILLISECONDS));
+  }
+
+  private static Map<?, ?> pollReaction(BlockingQueue<Map<String, Object>> queue) throws InterruptedException {
+    Map<String, Object> event = queue.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(event);
+    assertEquals("MESSAGE_REACTED", event.get("type"));
+    return (Map<?, ?>) event.get("payload");
+  }
+
+  @Test
+  @DisplayName("Replacing a reaction while blocked takes the old one off for the blocker, the next ones never reach them (GR9)")
+  void blockedReactionSkipsTheBlocker() throws Exception {
+    // Arrange - Ana reacted, then Rui blocked her with the DM still open
+    Message message = messageRepository.save(new Message(chat, rui, "lunch?"));
+    String url = "/chats/" + chat.getId() + "/messages/" + message.getId() + "/reaction";
+    assertEquals(200, send("PUT", login(ana.getInstitutionalEmail()), url, "{\"emoji\":\"👍\"}"));
+    userBlockRepository.save(new UserBlock(rui, ana));
+    BlockingQueue<Map<String, Object>> ruiChat = subscribe(connect(rui), "/user/queue/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> anaChat = subscribe(connect(ana), "/user/queue/chats/" + chat.getId());
+    assertNotNull(publishUntilReceived(
+        new MemberChatEvent(rui, chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiChat));
+    assertNotNull(publishUntilReceived(
+        new MemberChatEvent(ana, chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), anaChat));
+    ruiChat.clear();
+    anaChat.clear();
+
+    // Act
+    assertEquals(200, send("PUT", login(ana.getInstitutionalEmail()), url, "{\"emoji\":\"😂\"}"));
+    assertEquals(200, send("PUT", login(ana.getInstitutionalEmail()), url, "{\"emoji\":\"😮\"}"));
+    assertEquals(204, send("DELETE", login(ana.getInstitutionalEmail()), url, ""));
+
+    // Assert
+    assertEquals("😂", pollReaction(anaChat).get("emoji"));
+    assertEquals("😮", pollReaction(anaChat).get("emoji"));
+    assertNull(pollReaction(anaChat).get("emoji"));
+    assertNull(pollReaction(ruiChat).get("emoji"));
+    assertNull(ruiChat.poll(500, TimeUnit.MILLISECONDS));
+  }
+
+  @Test
   @DisplayName("An edit of a message hidden from the blocker reaches only the sender, not the blocker's tab or list (GR9)")
   void hiddenEditSkipsTheBlocker() throws Exception {
     // Arrange - Rui has the DM open before blocking Ana, her message after the block is hidden from him
