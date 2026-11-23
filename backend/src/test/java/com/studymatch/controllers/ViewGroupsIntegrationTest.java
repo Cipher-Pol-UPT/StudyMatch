@@ -44,6 +44,7 @@ import com.studymatch.models.Degree;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.Group;
 import com.studymatch.models.GroupingRule;
+import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
 import com.studymatch.models.Subject;
@@ -348,6 +349,31 @@ class ViewGroupsIntegrationTest {
   void staffIsDenied() throws Exception {
     viewGroups(STAFF, edition.getId(), project().getId())
         .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("A student is 403, even one enrolled in the edition")
+  void studentIsDenied() throws Exception {
+    // Arrange - a student who can log in, so the 403 is the role and not the password change or the test
+    Student eva = new Student("it.viewgroups.eva@example.com", "Eva", passwordEncoder.encode(PASSWORD), degree, 1);
+    eva.setPersonalityProfile(new PersonalityProfile(0.5, 0.5, 0.5, 0.5, 0.5));
+    eva = studentRepository.save(withoutPasswordChange(eva));
+    eva.generateInstitutionalEmail("studymatch.com");
+    enrol(studentRepository.save(eva), "T1");
+
+    // Act + Assert
+    viewGroups(eva.getInstitutionalEmail(), edition.getId(), project().getId())
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+  }
+
+  @Test
+  @DisplayName("Nobody logged in gets 401")
+  void notLoggedIn() throws Exception {
+    // Act + Assert
+    mockMvc.perform(get("/subject-editions/" + edition.getId() + "/assignments/" + project().getId() + "/groups"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
   }
 
 }
