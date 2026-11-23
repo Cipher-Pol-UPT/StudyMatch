@@ -22,6 +22,9 @@ function backend(direct: (number: number) => Response = number => reply({ chatId
       searches.push(search);
       return reply(page([ana, rui].filter(contact => contact.name.toLowerCase().includes(search) || String(contact.number).includes(search))));
     }
+    // an existing DM's history (#203): empty is enough here
+    if (url.pathname.match(/^\/api\/chats\/\d+\/messages$/)) return reply({ messages: [], hasMore: false });
+    if (url.pathname.match(/^\/api\/chats\/\d+\/read$/)) return new Response(null, { status: 204 });
     const dm = url.pathname.match(/^\/api\/chats\/direct\/(\d+)$/);
     if (dm) return direct(Number(dm[1]));
     // the student area loads its own profile for the menu; this test doesn't need it

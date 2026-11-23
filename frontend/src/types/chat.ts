@@ -24,3 +24,9 @@ export interface MessageData {
 
 // the most characters a message can have (GR10)
 export const MESSAGE_MAX_LENGTH = 2000;
+
+// a page of an open chat, oldest first; hasMore is false once the first message is in
+export interface MessagePageData { messages: MessageData[]; hasMore: boolean }
+
+// what MESSAGE_DELETED carries: the message is gone, only its id is left
+export interface MessageDeletedData { chatId: number; messageId: number }

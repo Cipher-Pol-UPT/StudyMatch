@@ -1101,6 +1101,20 @@
     "notSent": "Not sent",
     "retry": "Retry",
     "discard": "Discard",
-    "startOfConversation": "This is the start of your conversation with {{name}}."
+    "startOfConversation": "This is the start of your conversation with {{name}}.",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "newMessages": "New messages",
+    "loadingOlder": "Loading older messages",
+    "edited": "(edited)",
+    "editedAt": "Edited {{when}}",
+    "messageActions": "Message actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "editMessage": "Edit message",
+    "editCancel": "to cancel",
+    "editSave": "to save",
+    "deleteTitle": "Delete this message?",
+    "deleteBody": "It's removed for everyone, with nothing left in its place."
   }
 }
