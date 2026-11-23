@@ -110,6 +110,11 @@ public class CustomChat extends Chat {
     return name;
   }
 
+  // any member renames it, the request already checked it like creating (#234)
+  public void rename(String name) {
+    this.name = name;
+  }
+
   public String getPicture() {
     return picture;
   }
