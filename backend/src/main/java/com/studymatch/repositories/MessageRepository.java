@@ -43,8 +43,8 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
           where l.chat = m.chat and (l.hiddenFrom is null or l.hiddenFrom.number <> :number))""")
   List<ChatActivity> findActivity(Collection<Chat> chats, Long number);
 
-  // a whole chat's messages at once, when the chat goes. replies only point at messages of the same chat,
-  // attachments (#210) and reactions (#216) will have to go first.
+  // a whole chat's messages at once, when the chat goes. replies only point at messages of the same chat
+  // and the database deletes the reactions, attachments (#210) will have to go first.
   // a bulk delete skips the loaded entities, so it clears them, one left loaded would point at a deleted chat
   @Modifying(flushAutomatically = true, clearAutomatically = true)
   @Query("delete from Message m where m.chat = :chat")
@@ -80,10 +80,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
   @EntityGraph(attributePaths = { "author", "replyTo.author" })
   Optional<Message> findByIdAndChat(Long id, Chat chat);
 
-  // replying to it, deleting it waits until the reply is saved and then clears the link. empty if it's already gone.
+  // replying or reacting to it, deleting it waits until that's saved and then clears the link or the reaction.
+  // empty if it's already gone.
   // key share, so editing it doesn't wait
   @Query(nativeQuery = true, value = "select id from message where id = :id and chat_id = :chatId for key share")
-  Optional<Long> lockOriginal(Long id, Long chatId);
+  Optional<Long> lockAgainstDelete(Long id, Long chatId);
 
   // editing a reply, the same lock on what it replies to. empty if it isn't a reply or that's already gone
   @Query(nativeQuery = true, value = """
