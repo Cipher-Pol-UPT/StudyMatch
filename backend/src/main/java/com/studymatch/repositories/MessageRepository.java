@@ -85,4 +85,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
   @Query(nativeQuery = true, value = "select id from message where id = :id and chat_id = :chatId for key share")
   Optional<Long> lockOriginal(Long id, Long chatId);
 
+  // editing a reply, the same lock on what it replies to. empty if it isn't a reply or that's already gone
+  @Query(nativeQuery = true, value = """
+      select original.id from message reply join message original on original.id = reply.reply_to_id
+      where reply.id = :replyId and reply.chat_id = :chatId
+      for key share of original""")
+  Optional<Long> lockOriginalOf(Long replyId, Long chatId);
+
 }

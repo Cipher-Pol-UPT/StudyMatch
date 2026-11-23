@@ -75,6 +75,8 @@ public class MessageService {
   @Transactional
   public MessageDTO edit(Long chatId, Long messageId, User user, String text) {
     Chat chat = chatService.getChatFor(chatId, user);
+    // before the message is loaded, or an original deleted meanwhile would still be quoted in what's sent (#218)
+    messageRepository.lockOriginalOf(messageId, chat.getId());
     Message message = getOwnMessage(chat, messageId, user);
     if (message.getText().equals(text)) {
       return MessageDTO.from(message, user);
