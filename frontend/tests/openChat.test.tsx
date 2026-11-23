@@ -147,3 +147,139 @@ describe('open a chat', () => {
     expect(screen.getByRole('link', { name: 'Back to chats' })).toBeTruthy();
   });
 });
+
+// the DM with one message of yours and one of Ana's; edits and deletes answer as `change` says
+function backendWithChanges(change: (method: string, id: number, body: unknown) => Response) {
+  const calls: string[] = [];
+  vi.stubGlobal('fetch', vi.fn<typeof fetch>(async (input, init) => {
+    const url = new URL(String(input), 'https://test.invalid');
+    const method = init?.method ?? 'GET';
+    calls.push(`${method} ${url.pathname}`);
+    if (url.pathname === `/api/chats/direct/${ana.number}`) return reply({ chatId: CHAT, contact: ana, blocked: false });
+    if (url.pathname === `/api/chats/${CHAT}/messages`) {
+      return reply({ hasMore: false, messages: [message(1, ana, 'Did you finish it?', '2026-11-21T09:00:00'), message(2, me, 'Almost done', '2026-11-21T09:01:00')] });
+    }
+    if (url.pathname === `/api/chats/${CHAT}/read`) return new Response(null, { status: 204 });
+    const own = url.pathname.match(new RegExp(`^/api/chats/${CHAT}/messages/(\\d+)$`));
+    if (own) return change(method, Number(own[1]), init?.body ? JSON.parse(String(init.body)) : undefined);
+    throw new Error(`Unexpected request: ${method} ${url.pathname}`);
+  }));
+  return calls;
+}
+
+const edited = (text: string) => reply(message(2, me, text, '2026-11-21T09:01:00', '2026-11-21T09:03:00'));
+const gone = () => new Response(null, { status: 204 });
+
+describe('edit a message', () => {
+  it('saves the new text with Enter and shows "(edited)"', async () => {
+    const calls = backendWithChanges((_, __, body) => edited((body as { text: string }).text));
+    open();
+    const messages = await log();
+    expect(within(messages.getByText('Did you finish it?').closest('.sm-msg') as HTMLElement).queryByRole('button', { name: 'Edit' })).toBeNull();
+
+    fireEvent.click(within(messages.getByText('Almost done').closest('.sm-msg') as HTMLElement).getByRole('button', { name: 'Edit' }));
+    const box = screen.getByRole('textbox', { name: 'Edit message' });
+    fireEvent.change(box, { target: { value: 'All done' } });
+    fireEvent.keyDown(box, { key: 'Enter' });
+
+    expect(await messages.findByText('All done')).toBeTruthy();
+    expect(messages.getByText('(edited)')).toBeTruthy();
+    expect(calls).toContain(`PUT /api/chats/${CHAT}/messages/2`);
+  });
+
+  it('puts the old text back with Esc', async () => {
+    const calls = backendWithChanges(() => edited('never'));
+    open();
+    const messages = await log();
+    fireEvent.click(within(messages.getByText('Almost done').closest('.sm-msg') as HTMLElement).getByRole('button', { name: 'Edit' }));
+    const box = screen.getByRole('textbox', { name: 'Edit message' });
+    fireEvent.change(box, { target: { value: 'Something else' } });
+
+    fireEvent.keyDown(box, { key: 'Escape' });
+
+    expect(screen.queryByRole('textbox', { name: 'Edit message' })).toBeNull();
+    expect(messages.getByText('Almost done')).toBeTruthy();
+    expect(calls).not.toContain(`PUT /api/chats/${CHAT}/messages/2`);
+  });
+
+  it('edits your last message with Arrow up in an empty message box', async () => {
+    backendWithChanges(() => edited('never'));
+    open();
+    await log();
+
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Message Test Ana' }), { key: 'ArrowUp' });
+
+    expect((screen.getByRole('textbox', { name: 'Edit message' }) as HTMLTextAreaElement).value).toBe('Almost done');
+  });
+
+  it("shows the backend's error under the box", async () => {
+    backendWithChanges(() => reply({ code: 'NOT_MESSAGE_AUTHOR' }, 403));
+    open();
+    const messages = await log();
+    fireEvent.click(within(messages.getByText('Almost done').closest('.sm-msg') as HTMLElement).getByRole('button', { name: 'Edit' }));
+    const box = screen.getByRole('textbox', { name: 'Edit message' });
+    fireEvent.change(box, { target: { value: 'All done' } });
+
+    fireEvent.keyDown(box, { key: 'Enter' });
+
+    expect((await screen.findByRole('alert')).textContent).toBe(i18n.t('errors.NOT_MESSAGE_AUTHOR'));
+  });
+});
+
+describe('delete a message', () => {
+  const deleteButton = (messages: ReturnType<typeof within>) =>
+    within(messages.getByText('Almost done').closest('.sm-msg') as HTMLElement).getByRole('button', { name: 'Delete' });
+
+  it('asks first, with the message, then removes it', async () => {
+    const calls = backendWithChanges(gone);
+    open();
+    const messages = await log();
+
+    fireEvent.click(deleteButton(messages));
+    const dialog = within(await screen.findByRole('dialog', { name: 'Delete this message?' }));
+    expect(dialog.getByText('Almost done')).toBeTruthy();
+    fireEvent.click(dialog.getByRole('button', { name: 'Delete' }));
+
+    await waitFor(() => expect(messages.queryByText('Almost done')).toBeNull());
+    expect(calls).toContain(`DELETE /api/chats/${CHAT}/messages/2`);
+  });
+
+  it('keeps it when you cancel', async () => {
+    const calls = backendWithChanges(gone);
+    open();
+    const messages = await log();
+
+    fireEvent.click(deleteButton(messages));
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: i18n.t('ui.cancel') }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(messages.getByText('Almost done')).toBeTruthy();
+    expect(calls.some(call => call.startsWith('DELETE'))).toBe(false);
+  });
+
+  it('skips the question when Shift is held', async () => {
+    const calls = backendWithChanges(gone);
+    open();
+    const messages = await log();
+
+    fireEvent.click(deleteButton(messages), { shiftKey: true });
+
+    await waitFor(() => expect(messages.queryByText('Almost done')).toBeNull());
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(calls).toContain(`DELETE /api/chats/${CHAT}/messages/2`);
+  });
+});
+
+describe('changes from the other side, while the chat is open', () => {
+  it('shows an edit and takes a deleted message away', async () => {
+    backendWithChanges(gone);
+    open();
+    const messages = await log();
+
+    push({ type: 'MESSAGE_EDITED', payload: message(1, ana, 'Did you finish the report?', '2026-11-21T09:00:00', '2026-11-21T09:02:00') });
+    expect(await messages.findByText('Did you finish the report?')).toBeTruthy();
+
+    push({ type: 'MESSAGE_DELETED', payload: { chatId: CHAT, messageId: 1 } });
+    await waitFor(() => expect(messages.queryByText('Did you finish the report?')).toBeNull());
+  });
+});
