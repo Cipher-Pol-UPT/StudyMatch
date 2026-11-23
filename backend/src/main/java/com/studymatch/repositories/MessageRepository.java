@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import com.studymatch.models.Chat;
@@ -39,6 +40,13 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         and m.id = (select max(l.id) from Message l
           where l.chat = m.chat and (l.hiddenFrom is null or l.hiddenFrom.number <> :number))""")
   List<ChatActivity> findActivity(Collection<Chat> chats, Long number);
+
+  // a whole chat's messages at once, when the chat goes. nothing points at a message yet,
+  // attachments (#210) and reactions (#216) will have to go first.
+  // a bulk delete skips the loaded entities, so it clears them, one left loaded would point at a deleted chat
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query("delete from Message m where m.chat = :chat")
+  void deleteByChat(Chat chat);
 
   // the side menu's total, same unread rule as findActivity
   @Query("""

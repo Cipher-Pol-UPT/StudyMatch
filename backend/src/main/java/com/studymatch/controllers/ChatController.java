@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,7 +27,9 @@ import com.studymatch.dtos.ChatContactDTO;
 import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.CreateGroupChatRequestDTO;
 import com.studymatch.dtos.DirectChatDTO;
+import com.studymatch.dtos.GroupChatPictureRequestDTO;
 import com.studymatch.dtos.ImageFileDTO;
+import com.studymatch.dtos.RenameGroupChatRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.exceptions.StudyMatchException;
@@ -148,6 +151,40 @@ public class ChatController {
     User user = userService.getByInstitutionalEmail(authentication.getName());
     chatService.removeMember(chatId, user, number);
     return ResponseEntity.ok(chatService.getMembers(chatId, user));
+  }
+
+  @PostMapping("{chatId}/leave")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Leave a group chat. The owner leaving makes whoever's been there longest the owner, "
+      + "the last one leaving deletes the chat and its messages")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.CHAT_MEMBERS_FIXED })
+  public ResponseEntity<Void> leave(@PathVariable Long chatId, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    messageService.leave(chatId, user);
+    return ResponseEntity.noContent().build();
+  }
+
+  @PutMapping("{chatId}/name")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Rename a group chat you're in, any member can. Pushed to every member's chat list")
+  @ErrorCodes(ErrorCode.NOT_FOUND)
+  public ResponseEntity<Void> rename(@PathVariable Long chatId,
+      @Valid @RequestBody RenameGroupChatRequestDTO renameRequest, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    chatService.rename(chatId, user, renameRequest);
+    return ResponseEntity.noContent().build();
+  }
+
+  @PutMapping("{chatId}/picture")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "Change the picture of a group chat you own, null takes it off. Pushed to every member's "
+      + "chat list")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NOT_CHAT_OWNER, ErrorCode.INVALID_GROUP_CHAT_PICTURE })
+  public ResponseEntity<Void> changePicture(@PathVariable Long chatId,
+      @RequestBody GroupChatPictureRequestDTO pictureRequest, Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    chatService.changePicture(chatId, user, pictureRequest);
+    return ResponseEntity.noContent().build();
   }
 
   // private cache like the profile photo, the summary's picture flag says when to ask

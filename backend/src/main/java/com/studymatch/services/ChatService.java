@@ -16,9 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.AddMembersRequestDTO;
 import com.studymatch.dtos.ChatContactDTO;
+import com.studymatch.dtos.ChatEditedDTO;
 import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.CreateGroupChatRequestDTO;
+import com.studymatch.dtos.GroupChatPictureRequestDTO;
 import com.studymatch.dtos.ImageFileDTO;
+import com.studymatch.dtos.RenameGroupChatRequestDTO;
 import com.studymatch.dtos.TypingDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
@@ -183,7 +186,7 @@ public class ChatService {
   // people already in are skipped, so is the block check for them. gives back who was really added
   @Transactional
   public List<User> addMembers(Long chatId, User user, AddMembersRequestDTO request) {
-    CustomChat chat = getLockedCustomChatFor(chatId, user);
+    CustomChat chat = getLockedCustomChatFor(chatId, user, ErrorCode.CHAT_MEMBERS_FIXED);
     // counted before the lookup like creating, people already in don't count
     Set<Long> numbers = new LinkedHashSet<>(request.memberNumbers());
     chat.getMembers().forEach(member -> numbers.remove(member.getNumber()));
@@ -199,7 +202,7 @@ public class ChatService {
   // instead (#232), someone who isn't in changes nothing. CHAT_REMOVED takes it off their list
   @Transactional
   public void removeMember(Long chatId, User user, Long number) {
-    CustomChat chat = getLockedCustomChatFor(chatId, user);
+    CustomChat chat = getLockedCustomChatFor(chatId, user, ErrorCode.CHAT_MEMBERS_FIXED);
     if (!chat.isOwner(user)) {
       throw new StudyMatchException(ErrorCode.NOT_CHAT_OWNER);
     }
@@ -211,20 +214,68 @@ public class ChatService {
         .findFirst()
         .ifPresent(member -> {
           chat.removeMember(member);
+          chatSettingsService.deleteOf(chat, member);
           eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_REMOVED, chat.getId()));
         });
   }
 
-  // a chat whose members can change, locked so two changes at once go one after the other. it's locked before
+  // any member leaves, the owner hands it to whoever's been there longest. CHAT_REMOVED is for their other tabs.
+  // gives the chat back so MessageService can delete it if nobody's left (#232)
+  @Transactional
+  public CustomChat leave(Long chatId, User user) {
+    CustomChat chat = getLockedCustomChatFor(chatId, user, ErrorCode.CHAT_MEMBERS_FIXED);
+    chat.leave(user);
+    chatSettingsService.deleteOf(chat, user);
+    eventPublisher.publishEvent(new UserChatEvent(user, ChatEventType.CHAT_REMOVED, chat.getId()));
+    return chat;
+  }
+
+  // delete the messages first (MessageService.leave), the foreign key refuses it otherwise.
+  // by id, deleting those leaves the chat detached
+  @Transactional
+  public void deleteWithSettings(Chat chat) {
+    chatSettingsService.deleteAllOf(chat);
+    chatRepository.deleteById(chat.getId());
+  }
+
+  // any member renames a group chat, the name's checked like creating (#234). a DM has no name, so 404
+  @Transactional
+  public void rename(Long chatId, User user, RenameGroupChatRequestDTO request) {
+    CustomChat chat = getLockedCustomChatFor(chatId, user, ErrorCode.NOT_FOUND);
+    chat.rename(request.name());
+    tellEdited(chat);
+  }
+
+  // only the owner changes the picture, null takes it off (#234)
+  @Transactional
+  public void changePicture(Long chatId, User user, GroupChatPictureRequestDTO request) {
+    CustomChat chat = getLockedCustomChatFor(chatId, user, ErrorCode.NOT_FOUND);
+    if (!chat.isOwner(user)) {
+      throw new StudyMatchException(ErrorCode.NOT_CHAT_OWNER);
+    }
+    chat.setPicture(request.picture());
+    tellEdited(chat);
+  }
+
+  // every member's list swaps the name and picture, the editor's other tabs included
+  private void tellEdited(CustomChat chat) {
+    ChatEditedDTO edited = ChatEditedDTO.from(chat);
+    for (User member : chat.getMembers()) {
+      eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_EDITED, edited));
+    }
+  }
+
+  // a group chat someone made, locked so two changes at once go one after the other. it's locked before
   // getChatFor loads the members, or the second would wait and then use the list from before the first.
-  // only group chats someone made, a DM's members never change. #236: if the assignment chat ends up extending
-  // CustomChat it has to be refused here too, its members come from the group
-  private CustomChat getLockedCustomChatFor(Long chatId, User user) {
+  // edits lock too, saving writes the whole row back, owner included (#234). anything else gets notGroupChat,
+  // a DM's members never change and it has no name. #236: if the assignment chat ends up extending CustomChat
+  // it has to be refused here too, its members come from the group
+  private CustomChat getLockedCustomChatFor(Long chatId, User user, ErrorCode notGroupChat) {
     chatRepository.findLockedCustomChat(chatId);
     if (getChatFor(chatId, user) instanceof CustomChat chat) {
       return chat;
     }
-    throw new StudyMatchException(ErrorCode.CHAT_MEMBERS_FIXED);
+    throw new StudyMatchException(notGroupChat);
   }
 
   // nobody who blocked the user can be put in a chat by them, the error names who but not why (GR9)

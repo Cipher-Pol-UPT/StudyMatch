@@ -1101,6 +1101,12 @@
     "notSent": "Não enviada",
     "retry": "Tentar novamente",
     "discard": "Descartar",
-    "startOfConversation": "Este é o início da sua conversa com {{name}}."
+    "startOfConversation": "Este é o início da sua conversa com {{name}}.",
+    "openProfile": "Abrir o perfil de {{name}}"
+  },
+  "classmate": {
+    "title": "Perfil do estudante",
+    "back": "Voltar",
+    "message": "Enviar mensagem"
   }
 }

@@ -3,11 +3,13 @@ package com.studymatch.models;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.LongStream;
@@ -112,6 +114,7 @@ class CustomChatTest {
 
     // Assert
     assertEquals(picture, chat.getPicture());
+    assertNotNull(chat.getPictureUpdatedAt());
   }
 
   @Test
@@ -122,6 +125,24 @@ class CustomChatTest {
 
     // Assert
     assertNull(chat.getPicture());
+    assertNull(chat.getPictureUpdatedAt());
+  }
+
+  @Test
+  @DisplayName("A new picture gets a new date, renaming keeps it and taking the picture off clears it")
+  void pictureDate() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", png(100), ana, List.of(rui, eva));
+    LocalDateTime before = LocalDateTime.of(2026, 1, 1, 0, 0);
+    ReflectionTestUtils.setField(chat, "pictureUpdatedAt", before);
+
+    // Act + Assert
+    chat.rename("Exam prep");
+    assertEquals(before, chat.getPictureUpdatedAt());
+    chat.setPicture(png(200));
+    assertTrue(chat.getPictureUpdatedAt().isAfter(before));
+    chat.setPicture(null);
+    assertNull(chat.getPictureUpdatedAt());
   }
 
   @Test
@@ -262,6 +283,66 @@ class CustomChatTest {
 
     // Assert
     assertEquals(List.of(ana, eva, rui), chat.getMembers());
+  }
+
+  @Test
+  @DisplayName("A member leaving is out, the owner stays")
+  void memberLeaves() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+
+    // Act
+    chat.leave(rui);
+
+    // Assert
+    assertEquals(List.of(ana, eva), chat.getMembers());
+    assertSame(ana, chat.getOwner());
+  }
+
+  @Test
+  @DisplayName("The owner leaving makes whoever's been there longest the owner, who's then first")
+  void ownerHandsOver() {
+    // Arrange - zeca joined after rui and eva
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+    Student zeca = student("Zeca", 1004L);
+    chat.addMembers(List.of(zeca));
+
+    // Act
+    chat.leave(student("Ana", 1001L));
+
+    // Assert
+    assertSame(rui, chat.getOwner());
+    assertSame(chat.getOwner(), chat.getMembers().getFirst());
+  }
+
+  @Test
+  @DisplayName("The new owner leaving hands it on again, by joining order")
+  void handsOverTwice() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+    chat.leave(ana);
+
+    // Act
+    chat.leave(rui);
+
+    // Assert
+    assertSame(eva, chat.getOwner());
+    assertEquals(List.of(eva), chat.getMembers());
+  }
+
+  @Test
+  @DisplayName("The last member leaving leaves nobody")
+  void lastMemberLeaves() {
+    // Arrange
+    CustomChat chat = new CustomChat("Study group", null, ana, List.of(rui, eva));
+    chat.leave(rui);
+    chat.leave(eva);
+
+    // Act
+    chat.leave(ana);
+
+    // Assert
+    assertTrue(chat.getMembers().isEmpty());
   }
 
   @Test
