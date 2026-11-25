@@ -76,6 +76,7 @@ export function CreateStudyRoomForm({ subjects, onSubmit, onCancel, now = new Da
         { value: 'auto', label: t('rooms.meetAuto'), description: t('rooms.meetAutoHint') },
         { value: 'own', label: t('rooms.meetOwn'), description: t('rooms.meetOwnHint') }]} />}
     {linkMode === 'own' && <TextField label={t('rooms.meetLink')} icon={Video} type="url" placeholder="https://meet.google.com/abc-defg-hij" value={link}
+      hint={room ? t('rooms.meetLinkEmpty') : undefined}
       disabled={feedback.busy} error={feedback.fieldError('link')} onChange={event => setLink(event.target.value)} />}
     <Textarea label={t('fields.description')} optional showCount maxLength={500} placeholder={t('rooms.descriptionPlaceholder')} value={description}
       disabled={feedback.busy} error={feedback.fieldError('description')} onChange={event => setDescription(event.target.value)} />
@@ -120,6 +121,7 @@ export function ConfirmAttendanceDialog({ open, participants, onClose, onSubmit,
       </Button>
     </>}>
     {feedback.message && <Banner tone="danger">{feedback.message}</Banner>}
+    {participants.length === 0 && <p className="sm-attendance__none">{t('rooms.nobodyJoined')}</p>}
     <ul className="sm-attendance">
       {participants.map(person => <li key={person.id}>
         <Checkbox checked={selected.includes(person.id)} disabled={feedback.busy} onCheckedChange={checked => tick(person.id, checked)}>

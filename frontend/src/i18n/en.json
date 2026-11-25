@@ -293,7 +293,10 @@
     "confirmAttendees_other": "Confirm {{count}} attendees",
     "ended": "{{topic}} has ended",
     "endedBody": "Mark who came. Only they can rate you, and the StudyRoom closes on its own 48 hours after it ends.",
-    "attendanceConfirmed": "Attendance confirmed. The StudyRoom is completed."
+    "attendanceConfirmed": "Attendance confirmed. The StudyRoom is completed.",
+    "meetLinkEmpty": "Leave it empty and a new Meet link is made for you.",
+    "nobodyJoined": "Nobody joined this StudyRoom.",
+    "confirmAttendees_zero": "Confirm nobody came"
   },
   "studyRooms": {
     "heading": "StudyRooms",
@@ -335,7 +338,8 @@
     "membershipFailed": "Couldn't update the study room. Try again.",
     "completed": "Completed",
     "attended_one": "{{count}} attended",
-    "attended_other": "{{count}} attended"
+    "attended_other": "{{count}} attended",
+    "attended_zero": "Nobody attended"
   },
   "personality": {
     "title": "Personality test",

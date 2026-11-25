@@ -40,6 +40,8 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
   const [creating, setCreating] = useState(false);
   // the hosted room being edited or waiting for Cancel to be confirmed (#50)
   const [editing, setEditing] = useState<StudyRoomData | null>(null);
+  // the edit form can't be closed while it saves, so its answer is never lost
+  const [saving, setSaving] = useState(false);
   const [cancelling, setCancelling] = useState<StudyRoomData | null>(null);
   // rooms the backend said have started or closed, though this page still thought they hadn't
   const [locked, setLocked] = useState<ReadonlySet<number>>(() => new Set());
@@ -121,7 +123,8 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
     && (room.status === 'SCHEDULED' || room.status === 'FULL') && new Date(room.startsAt).getTime() > now;
 
   const replaceRoom = (updated: StudyRoomData) => {
-    setRooms((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
+    // a new date can move it, so the list stays in start order like after creating one
+    setRooms((previous) => previous.map((item) => (item.id === updated.id ? updated : item)).sort((a, b) => a.startsAt.localeCompare(b.startsAt)));
     setDetail((previous) => previous?.id === updated.id ? { ...previous, ...updated } : previous);
   };
 
@@ -136,15 +139,21 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
   // anything else goes back to the form, under its field or in its banner
   const saveRoom = async (draft: StudyRoomDraft) => {
     if (!editing) return;
+    const room = editing;
+    // only closes the form if it's still this room's
+    const close = () => setEditing((current) => current?.id === room.id ? null : current);
+    setSaving(true);
     try {
-      replaceRoom(await updateStudyRoom(editing.id, {
+      replaceRoom(await updateStudyRoom(room.id, {
         startsAt: draft.startsAt, endsAt: draft.endsAt, capacity: draft.capacity, link: draft.link || null, description: draft.description || null,
       }));
-      setEditing(null);
+      close();
       toast.success(t('rooms.saved'));
     } catch (error) {
-      if (!tooLate(editing, error)) throw error;
-      setEditing(null);
+      if (!tooLate(room, error)) throw error;
+      close();
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -244,7 +253,7 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
         />
       </Dialog>
 
-      <Dialog open={editing !== null} onClose={() => setEditing(null)} title={t('rooms.editRoom')} description={t('rooms.editRoomDescription')} size="lg">
+      <Dialog open={editing !== null} onClose={() => { if (!saving) setEditing(null); }} title={t('rooms.editRoom')} description={t('rooms.editRoomDescription')} size="lg">
         {editing && (
           <CreateStudyRoomForm
             subjects={[{ id: editing.subjectId, name: editing.subjectName }]}

@@ -84,3 +84,4 @@
 .sm-attendance .sm-check { align-items: center; padding: 6px 0; }
 .sm-attendance__person { display: inline-flex; align-items: center; gap: 12px; }
 .sm-attendance__error { margin: 8px 0 0; font-size: 13px; color: var(--sm-danger-ink); }
+.sm-attendance__none { margin: 0; color: var(--sm-text-2); font-size: 14px; }

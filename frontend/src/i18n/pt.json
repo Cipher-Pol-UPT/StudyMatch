@@ -293,7 +293,10 @@
     "confirmAttendees_other": "Confirmar {{count}} presenças",
     "ended": "{{topic}} terminou",
     "endedBody": "Indique quem compareceu. Só essas pessoas o podem avaliar, e a sala de estudo fecha sozinha 48 horas depois de terminar.",
-    "attendanceConfirmed": "Presenças confirmadas. A sala de estudo foi concluída."
+    "attendanceConfirmed": "Presenças confirmadas. A sala de estudo foi concluída.",
+    "meetLinkEmpty": "Se o deixar vazio, é criada uma nova ligação do Meet.",
+    "nobodyJoined": "Ninguém se inscreveu nesta sala de estudo.",
+    "confirmAttendees_zero": "Confirmar que ninguém compareceu"
   },
   "studyRooms": {
     "heading": "Salas de estudo",
@@ -335,7 +338,8 @@
     "membershipFailed": "Não foi possível atualizar a sala de estudo. Tenta novamente.",
     "completed": "Concluída",
     "attended_one": "{{count}} presente",
-    "attended_other": "{{count}} presentes"
+    "attended_other": "{{count}} presentes",
+    "attended_zero": "Ninguém compareceu"
   },
   "personality": {
     "title": "Teste de personalidade",
