@@ -24,6 +24,24 @@ const ignore = () => undefined;
 // an open chat's messages: the 50 newest when it opens, 50 more each time loadOlder is called (#203).
 // Opening it marks it as read. A chat that doesn't exist yet (a DM before its first message) has none to load
 export function useChatHistory(chatId: number | null) {
+  // something came while the tab was hidden: it's marked as read when you come back, not before you've seen it
+  const unseen = useRef(false);
+  const markRead = useCallback(() => {
+    if (chatId === null) return;
+    if (document.visibilityState === 'visible') markChatRead(chatId).catch(ignore);
+    else unseen.current = true;
+  }, [chatId]);
+
+  useEffect(() => {
+    const visible = () => {
+      if (document.visibilityState !== 'visible' || !unseen.current) return;
+      unseen.current = false;
+      markRead();
+    };
+    document.addEventListener('visibilitychange', visible);
+    return () => document.removeEventListener('visibilitychange', visible);
+  }, [markRead]);
+
   const [history, setHistory] = useState<ChatHistory>(() => ({ messages: [], hasMore: false, loading: chatId !== null, loadingOlder: false }));
   // what's on screen, for loadOlder to read without being remade on every change
   const current = useRef(history);
@@ -36,12 +54,12 @@ export function useChatHistory(chatId: number | null) {
       page => {
         if (!open) return;
         setHistory(state => ({ ...state, messages: merge(state.messages, page.messages), hasMore: page.hasMore, loading: false }));
-        markChatRead(chatId).catch(ignore);
+        markRead();
       },
       error => { if (open) setHistory(state => ({ ...state, loading: false, error })); },
     );
     return () => { open = false; };
-  }, [chatId]);
+  }, [chatId, markRead]);
 
   const loadOlder = useCallback(() => {
     const { messages, hasMore, loading, loadingOlder } = current.current;
@@ -64,5 +82,5 @@ export function useChatHistory(chatId: number | null) {
     : state), []);
   const remove = useCallback((id: number) => setHistory(state => ({ ...state, messages: state.messages.filter(message => message.id !== id) })), []);
 
-  return { history, loadOlder, add, replace, remove };
+  return { history, loadOlder, add, replace, remove, markRead };
 }

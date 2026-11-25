@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
-import { deleteMessage, editMessage, markChatRead, sendDirectMessage } from '../../api/chats';
+import { deleteMessage, editMessage, getDirectChat, sendDirectMessage } from '../../api/chats';
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useChatEvents, useChatListEvents } from '../../hooks/useChatEvents';
@@ -49,12 +49,16 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   const [conversation, update] = useConversation(contact.number);
   // the DM gets its id with its first message, yours or theirs: from then on its history loads and its live events are followed
   const [chatId, setChatId] = useState(chat.chatId);
-  const { history, loadOlder, add, replace, remove } = useChatHistory(chatId);
+  const { history, loadOlder, add, replace, remove, markRead } = useChatHistory(chatId);
   const toast = useToast();
-  // a message you sent keeps the key it had while sending, so it doesn't jump when the backend answers
-  const [keys, setKeys] = useState<ReadonlyMap<number, string>>(() => new Map());
-  // a message arrived while the tab was hidden, it's marked as read when you come back
-  const unseen = useRef(false);
+  // a message you sent keeps the key it had while sending, so it doesn't jump when the backend answers.
+  // Each key belongs to one message: its live event can take it before the answer, which then puts it right
+  const claims = useRef<ReadonlyMap<number, string>>(new Map());
+  const [keys, setKeys] = useState(claims.current);
+  const claim = (next: Map<number, string>) => {
+    claims.current = next;
+    setKeys(next);
+  };
   const [newBelow, setNewBelow] = useState(false);
   const scroll = useRef<HTMLDivElement>(null);
   const atBottom = useRef(true);
@@ -64,6 +68,9 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   const composer = useRef<{ focus: () => void }>(null);
   // the message being edited, with its new text and why saving it failed
   const [editing, setEditing] = useState<{ id: number; text: string; error?: string; saving?: boolean } | null>(null);
+  // the box open now, for an edit that finishes after you've moved on
+  const editingNow = useRef(editing);
+  useEffect(() => { editingNow.current = editing; });
   // the message waiting for Delete to be confirmed
   const [deleting, setDeleting] = useState<MessageData | null>(null);
 
@@ -80,33 +87,61 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
       key: keys.get(message.id) ?? `message-${message.id}`, text: message.text, sentAt: message.sentAt, author: message.author,
       mine: isMine(message.author), editedAt: message.editedAt, message,
     })),
-    ...conversation.messages.map(message => ({ key: message.key, text: message.text, sentAt: message.sentAt, author: contact, mine: true, pending: message })),
+    ...conversation.messages.filter(message => !claimed(keys).has(message.key)).map(message => ({ key: message.key, text: message.text, sentAt: message.sentAt, author: contact, mine: true, pending: message })),
   ];
 
-  // yours, confirmed: the one still sending with that text goes, and the message keeps its key
-  const confirmed = (message: MessageData, key = conversation.messages.find(m => m.status === 'sending' && m.text === message.text)?.key) => {
-    if (key) {
-      setKeys(current => new Map(current).set(message.id, key));
-      update(current => ({ ...current, messages: current.messages.filter(m => m.key !== key) }));
+  // your live event, which can come before the answer to sending it: it takes the key of one still sending with
+  // that text, unless the answer already gave it its own
+  const ownEvent = (message: MessageData) => {
+    if (!claims.current.has(message.id)) {
+      update(current => {
+        const key = unclaimed(current.messages, message.text, claims.current);
+        if (key) claim(new Map(claims.current).set(message.id, key));
+        return current;
+      });
     }
     add(message);
   };
-
-  // their first message creates the DM while it's open here: its id comes in your chat list's event
-  useChatListEvents(event => {
-    const message = event.payload as Partial<MessageData> | null;
-    if (chatId === null && message?.chatId && message.author?.number === contact.number) setChatId(message.chatId);
+  // the answer to sending: the message gets that key for good. If another one's event took it, that one gets back
+  // the key it should have had, so the same text sent twice keeps two messages with a key each
+  const answered = (key: string, message: MessageData) => {
+    update(current => {
+      const next = new Map(claims.current);
+      const before = next.get(message.id);
+      const taker = holder(next, key, message.id);
+      next.set(message.id, key);
+      if (taker !== undefined) {
+        next.delete(taker);
+        const other = before !== undefined && before !== key ? before : unclaimed(current.messages, message.text, next, key);
+        if (other) next.set(taker, other);
+      }
+      claim(next);
+      return { ...current, messages: current.messages.filter(m => m.key !== key) };
+    });
+    add(message);
+  };
+  // sending failed: it shows Retry, unless a live event already showed it was sent
+  const notSent = (key: string, error: unknown) => update(current => {
+    const next = new Map(claims.current);
+    const taker = holder(next, key);
+    const text = current.messages.find(m => m.key === key)?.text;
+    if (taker !== undefined) {
+      next.delete(taker);
+      const other = text === undefined ? undefined : unclaimed(current.messages, text, next, key);
+      if (!other) return { ...current, messages: current.messages.filter(m => m.key !== key) };
+      // the event was another one's with the same text: it takes that one's key, and this one failed
+      claim(next.set(taker, other));
+    }
+    return { ...current, error, messages: current.messages.map(m => m.key === key ? { ...m, status: 'failed' } : m) };
   });
 
-  useEffect(() => {
-    const visible = () => {
-      if (document.visibilityState !== 'visible' || !unseen.current || chatId === null) return;
-      unseen.current = false;
-      markChatRead(chatId).catch(ignore);
-    };
-    document.addEventListener('visibilitychange', visible);
-    return () => document.removeEventListener('visibilitychange', visible);
-  }, [chatId]);
+  // their first message creates the DM while it's open here. The event comes for every chat and doesn't say which kind,
+  // so a message of theirs in a group you share would look the same: the DM itself says whether it exists now
+  useChatListEvents(event => {
+    const message = event.payload as Partial<MessageData> | null;
+    if (chatId !== null || message?.author?.number !== contact.number) return;
+    getDirectChat(contact.number).then(dm => { if (dm.chatId !== null) setChatId(id => id ?? dm.chatId); }, ignore);
+  });
 
   useChatEvents(chatId, event => {
     if (event.type === 'MESSAGE_EDITED') return replace(event.payload as MessageData);
@@ -119,13 +154,11 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
     }
     if (event.type !== 'MESSAGE_CREATED') return;
     const message = event.payload as MessageData;
-    // yours can come before the answer to sending it
-    if (isMine(message.author)) return confirmed(message);
+    if (isMine(message.author)) return ownEvent(message);
     add(message);
     if (!atBottom.current) setNewBelow(true);
     // you're looking at it, so it's read; otherwise once you come back to the tab
-    if (document.visibilityState !== 'visible') unseen.current = true;
-    else if (chatId !== null) markChatRead(chatId).catch(ignore);
+    markRead();
   });
 
   // older messages keep what you're reading in place; a new one at the bottom is followed when you're there or it's yours
@@ -168,14 +201,10 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   const deliver = (key: string, text: string) => {
     sendDirectMessage(contact.number, text).then(
       message => {
-        confirmed(message, key);
+        answered(key, message);
         setChatId(id => id ?? message.chatId);
       },
-      error => update(current => ({
-        ...current,
-        error,
-        messages: current.messages.map(m => m.key === key ? { ...m, status: 'failed' } : m),
-      })),
+      error => notSent(key, error),
     );
   };
   const send = () => {
@@ -220,8 +249,10 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
     editMessage(message.chatId, message.id, text).then(
       edited => {
         replace(edited);
-        setEditing(current => isThis(current) ? null : current);
-        if (!document.activeElement?.closest('.sm-msg__edit')) composer.current?.focus();
+        // back to the message box, unless you're editing another message by now
+        if (!isThis(editingNow.current)) return;
+        setEditing(null);
+        composer.current?.focus();
       },
       error => setEditing(current => isThis(current) ? { ...current!, saving: false, error: sendError(error, t) } : current),
     );
@@ -321,6 +352,17 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
     </ChatThread>
   );
 }
+
+// the keys messages already have
+const claimed = (claims: ReadonlyMap<number, string>) => new Set(claims.values());
+// the message holding that key, other than `except`
+const holder = (claims: ReadonlyMap<number, string>, key: string, except?: number) =>
+  [...claims].find(([id, k]) => k === key && id !== except)?.[0];
+// the oldest one still sending with that text that no message holds yet
+const unclaimed = (messages: ThreadMessage[], text: string, claims: ReadonlyMap<number, string>, except?: string) => {
+  const taken = claimed(claims);
+  return messages.find(m => m.status === 'sending' && m.text === text && m.key !== except && !taken.has(m.key))?.key;
+};
 
 // the text's own problem (empty, too long) when the backend names it, otherwise the error's code
 function sendError(error: unknown, t: TFunction) {
