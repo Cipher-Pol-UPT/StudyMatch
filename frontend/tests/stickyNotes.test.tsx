@@ -165,7 +165,7 @@ describe('sticky notes', () => {
 
     const dragBy = (spot: HTMLElement, dx: number, dy: number) => {
       fireEvent.pointerDown(spot, { button: 0, clientX: 100, clientY: 50, pointerId: 1 });
-      fireEvent.pointerMove(spot, { clientX: 100 + dx, clientY: 50 + dy, pointerId: 1 });
+      fireEvent.pointerMove(spot, { clientX: 100 + dx, clientY: 50 + dy, pointerId: 1, buttons: 1 });
       fireEvent.pointerUp(spot, { clientX: 100 + dx, clientY: 50 + dy, pointerId: 1 });
     };
 
@@ -192,6 +192,56 @@ describe('sticky notes', () => {
       expect(spotOf('Study recursion').style.top).toContain('min(10%');
     });
 
+    it("doesn't drag a note when the button was let go somewhere else", async () => {
+      renderNotes();
+      await screen.findByText('Study recursion');
+      const spot = spotOf('Study recursion');
+
+      // pressed near the edge, flicked off before it counted as a drag, let go outside
+      fireEvent.pointerDown(spot, { button: 0, clientX: 100, clientY: 50, pointerId: 1 });
+      fireEvent.pointerMove(spot, { clientX: 300, clientY: 150, pointerId: 1, buttons: 0 });
+      fireEvent.pointerUp(spot, { clientX: 300, clientY: 150, pointerId: 1 });
+
+      expect(spot.classList.contains('sticky-notes__spot--dragging')).toBe(false);
+      expect(updateNote).not.toHaveBeenCalled();
+    });
+
+    it("keeps the second drop's place when the first drop's answer comes after it", async () => {
+      let first: (saved: NoteData) => void = () => {};
+      vi.mocked(updateNote)
+        .mockReturnValueOnce(new Promise(resolve => { first = resolve; }))
+        .mockResolvedValueOnce(note(1, 'Study recursion', { x: 40, y: 30 }));
+      renderNotes();
+      await screen.findByText('Study recursion');
+
+      await act(async () => dragBy(spotOf('Study recursion'), 200, 100));
+      await act(async () => dragBy(spotOf('Study recursion'), 100, 0));
+      await act(async () => first(note(1, 'Study recursion', { x: 30, y: 30 })));
+
+      expect(vi.mocked(updateNote).mock.calls.map(call => call[1])).toEqual([{ x: 30, y: 30 }, { x: 40, y: 30 }]);
+      expect(spotOf('Study recursion').style.left).toContain('min(40%');
+    });
+
+    it('only puts the position back when a drop fails, a text saved meanwhile stays', async () => {
+      let failMove: (error: unknown) => void = () => {};
+      vi.mocked(updateNote).mockImplementation((_, changes) => 'x' in changes
+        ? new Promise((_resolve, reject) => { failMove = reject; })
+        : Promise.resolve(note(1, 'Study recursion and trees')));
+      renderNotes();
+      await screen.findByText('Study recursion');
+      await act(async () => dragBy(spotOf('Study recursion'), 200, 100));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Open note: Study recursion' }));
+      const box = screen.getByRole('textbox', { name: 'Note text' });
+      fireEvent.change(box, { target: { value: 'Study recursion and trees' } });
+      fireEvent.blur(box);
+      expect(await screen.findByText('Study recursion and trees')).toBeTruthy();
+      await act(async () => failMove(new Error('offline')));
+
+      expect(screen.getByText('Study recursion and trees')).toBeTruthy();
+      expect(spotOf('Study recursion and trees').style.left).toContain('min(10%');
+    });
+
     it('opens the note instead when it barely moved', async () => {
       renderNotes();
       await screen.findByText('Study recursion');
@@ -215,5 +265,23 @@ describe('sticky notes', () => {
     expect(texts[0]).toContain('Buy pens');
     expect(texts[1]).toContain('Study recursion');
     expect(board()).toBeNull();
+  });
+
+  it('keeps a text that failed to save on its note when another note is opened first', async () => {
+    let refuse: (error: unknown) => void = () => {};
+    vi.mocked(updateNote).mockReturnValue(new Promise((_resolve, reject) => { refuse = reject; }));
+    renderNotes();
+    fireEvent.click(await screen.findByRole('button', { name: 'Open note: Study recursion' }));
+    const box = screen.getByRole('textbox', { name: 'Note text' });
+    fireEvent.change(box, { target: { value: 'a'.repeat(501) } });
+
+    fireEvent.blur(box);
+    fireEvent.click(screen.getByRole('button', { name: 'Open note: Buy pens' }));
+    await act(async () => refuse({ code: 'NOTE_TOO_LONG', params: { max: 500 } }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe('A note can have up to 500 characters.');
+    expect((screen.getByRole('textbox', { name: 'Note text' }) as HTMLTextAreaElement).value).toBe('Buy pens');
+    fireEvent.click(screen.getByRole('button', { name: `Open note: ${'a'.repeat(501)}` }));
+    expect((screen.getByRole('textbox', { name: 'Note text' }) as HTMLTextAreaElement).value).toBe('a'.repeat(501));
   });
 });
