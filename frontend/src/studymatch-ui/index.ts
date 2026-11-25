@@ -104,7 +104,7 @@ export { LoginForm,type LoginFormProps } from './blocks/auth/LoginForm';
 export { ChangePasswordForm,ForgotPasswordForm,ResetPasswordForm,type ChangePasswordFormProps,type ForgotPasswordFormProps,type ResetPasswordFormProps } from './blocks/auth/PasswordForms';
 export { AuthStatus,BlockedNotice,CheckEmail,VerifyEmail,type AuthStatusProps,type BlockedNoticeProps,type CheckEmailProps,type VerifyEmailProps } from './blocks/auth/StatusScreens';
 export { CategoryDialog,type CategoryDialogProps } from './blocks/catalogue/CatalogueForms';
-export { ChatComposer,ChatDay,ChatHead,ChatJump,ChatLayout,ChatListPane,ChatMessage,ChatMessageEditor,ChatMessages,ChatOlder,ChatPeople,ChatPerson,ChatStart,ChatThread,type ChatComposerProps,type ChatHeadProps,type ChatLayoutProps,type ChatListPaneProps,type ChatMessageEditorProps,type ChatMessageProps,type ChatMessagesProps,type ChatPersonProps,type ChatStartProps,type ChatThreadProps } from './blocks/chat/ChatLayout';
+export { ChatComposer,ChatDay,ChatHead,ChatJump,ChatLayout,ChatListPane,ChatMessage,ChatMessageEditor,ChatMessages,ChatOlder,ChatPeople,ChatPerson,ChatRow,ChatRows,ChatStart,ChatThread,type ChatComposerProps,type ChatHeadProps,type ChatLayoutProps,type ChatListPaneProps,type ChatMessageEditorProps,type ChatMessageProps,type ChatMessagesProps,type ChatPersonProps,type ChatRowProps,type ChatStartProps,type ChatThreadProps } from './blocks/chat/ChatLayout';
 export { PersonalityTest,type PersonalityQuestion,type PersonalityTestProps } from './blocks/personality/PersonalityTest';
 export { EditProfileForm,type EditProfileFormProps,type ProfileEdits } from './blocks/profile/EditProfileForm';
 export { ImageCropper,type CroppedImage,type ImageCropperProps } from './blocks/profile/ImageCropper';

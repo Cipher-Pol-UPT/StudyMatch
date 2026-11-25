@@ -1152,7 +1152,14 @@
     "editSave": "to save",
     "deleteTitle": "Delete this message?",
     "deleteBody": "It's removed for everyone, with nothing left in its place.",
-    "openProfile": "Open {{name}}'s profile"
+    "openProfile": "Open {{name}}'s profile",
+    "unread_one": "{{count}} unread message",
+    "unread_other": "{{count}} unread messages",
+    "noMessagesYet": "No messages yet",
+    "byYou": "You: {{text}}",
+    "byThem": "{{name}}: {{text}}",
+    "groupSoon": "Group chats open here soon",
+    "groupSoonBody": "For now you can read their latest message in the list."
   },
   "classmate": {
     "title": "Student profile",
