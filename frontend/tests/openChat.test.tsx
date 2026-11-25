@@ -286,13 +286,14 @@ describe('changes from the other side, while the chat is open', () => {
 });
 
 // a DM that exists (or not yet, `chatId` null) with `history` in it; sending waits for `send` to answer
-function liveBackend({ chatId = CHAT as number | null, history = [] as MessageData[], send = () => new Promise<Response>(() => {}), edit = () => new Promise<Response>(() => {}) } = {}) {
+// `chatId` is the DM's id each time it's asked for, so a test can create the DM halfway through
+function liveBackend({ chatId = (() => CHAT) as () => number | null, history = [] as MessageData[], send = () => new Promise<Response>(() => {}), edit = () => new Promise<Response>(() => {}) } = {}) {
   const calls: string[] = [];
   vi.stubGlobal('fetch', vi.fn<typeof fetch>(async (input, init) => {
     const url = new URL(String(input), 'https://test.invalid');
     const method = init?.method ?? 'GET';
     calls.push(`${method} ${url.pathname}${url.search}`);
-    if (url.pathname === `/api/chats/direct/${ana.number}`) return reply({ chatId, contact: ana, blocked: false });
+    if (url.pathname === `/api/chats/direct/${ana.number}`) return reply({ chatId: chatId(), contact: ana, blocked: false });
     if (url.pathname === `/api/chats/direct/${ana.number}/messages`) return send();
     if (url.pathname === `/api/chats/${CHAT}/messages`) return reply({ hasMore: url.searchParams.has('before') ? false : history.length > 1, messages: url.searchParams.has('before') ? [] : history });
     if (url.pathname === `/api/chats/${CHAT}/read`) return new Response(null, { status: 204 });
@@ -322,10 +323,12 @@ describe('while a chat is open', () => {
   });
 
   it('loads the DM once they write first while it is open and still empty', async () => {
-    liveBackend({ chatId: null, history: [message(1, ana, 'Hi there', '2026-11-21T09:00:00')] });
+    let dm: number | null = null;
+    liveBackend({ chatId: () => dm, history: [message(1, ana, 'Hi there', '2026-11-21T09:00:00')] });
     open();
     await screen.findByText(/say hi/);
 
+    dm = CHAT;
     live.listeners.get('/user/queue/chats')?.({ type: 'CHAT_UPDATED', payload: message(1, ana, 'Hi there', '2026-11-21T09:00:00') });
 
     expect(await (await log()).findByText('Hi there')).toBeTruthy();
@@ -395,5 +398,105 @@ describe('while a chat is open', () => {
 
     expect(mine.classList.contains('sm-msg--first')).toBe(true);
     expect(mine.querySelector('time')).toBeTruthy();
+  });
+
+  it("stays an empty DM when they write in a group you're both in", async () => {
+    const calls = liveBackend({ chatId: () => null });
+    open();
+    await screen.findByText(/say hi/);
+
+    live.listeners.get('/user/queue/chats')?.({ type: 'CHAT_UPDATED', payload: { ...message(1, ana, 'Hi group', '2026-11-21T09:00:00'), chatId: 99 } });
+    await settle();
+
+    expect(calls.some(call => call.includes('/api/chats/99'))).toBe(false);
+    expect(screen.getByText(/say hi/)).toBeTruthy();
+  });
+
+  it('keeps both when the same text is sent twice and one fails after the other is confirmed', async () => {
+    const answers: ((response: Response) => void)[] = [];
+    liveBackend({ history: [message(1, ana, 'Hello', '2026-11-21T09:00:00')], send: () => new Promise(resolve => { answers.push(resolve); }) });
+    open();
+    const messages = await log();
+    const field = screen.getByRole('textbox', { name: 'Message Test Ana' });
+    for (let i = 0; i < 2; i++) {
+      fireEvent.change(field, { target: { value: 'haha' } });
+      fireEvent.keyDown(field, { key: 'Enter' });
+    }
+    await waitFor(() => expect(answers).toHaveLength(2));
+    const errors = vi.spyOn(console, 'error');
+
+    answers[0](reply(message(2, me, 'haha', '2026-11-21T09:02:00'), 201));
+    await settle();
+    push({ type: 'MESSAGE_CREATED', payload: message(2, me, 'haha', '2026-11-21T09:02:00') });
+    await settle();
+    answers[1](reply({ code: 'CHAT_NOT_FOUND' }, 404));
+
+    expect(await messages.findByRole('button', { name: 'Retry' })).toBeTruthy();
+    expect(messages.getAllByText('haha')).toHaveLength(2);
+    expect(errors.mock.calls.some(call => String(call[0]).includes('same key'))).toBe(false);
+    errors.mockRestore();
+  });
+
+  it("gives each of two same texts its own key when the second one's event comes first", async () => {
+    const answers: ((response: Response) => void)[] = [];
+    liveBackend({ history: [message(1, ana, 'Hello', '2026-11-21T09:00:00')], send: () => new Promise(resolve => { answers.push(resolve); }) });
+    open();
+    const messages = await log();
+    const field = screen.getByRole('textbox', { name: 'Message Test Ana' });
+    for (let i = 0; i < 2; i++) {
+      fireEvent.change(field, { target: { value: 'haha' } });
+      fireEvent.keyDown(field, { key: 'Enter' });
+    }
+    await waitFor(() => expect(answers).toHaveLength(2));
+    const errors = vi.spyOn(console, 'error');
+
+    push({ type: 'MESSAGE_CREATED', payload: message(3, me, 'haha', '2026-11-21T09:02:01') });
+    await settle();
+    answers[0](reply(message(2, me, 'haha', '2026-11-21T09:02:00'), 201));
+    await settle();
+    answers[1](reply(message(3, me, 'haha', '2026-11-21T09:02:01'), 201));
+    await settle();
+
+    expect(messages.getAllByText('haha')).toHaveLength(2);
+    expect(messages.queryByText('Sending…')).toBeNull();
+    expect(errors.mock.calls.some(call => String(call[0]).includes('same key'))).toBe(false);
+    errors.mockRestore();
+  });
+
+  it('waits for you to come back to the tab before marking a DM they wrote first as read', async () => {
+    let dm: number | null = null;
+    const calls = liveBackend({ chatId: () => dm, history: [message(1, ana, 'Hi there', '2026-11-21T09:00:00')] });
+    open();
+    await screen.findByText(/say hi/);
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+
+    dm = CHAT;
+    live.listeners.get('/user/queue/chats')?.({ type: 'CHAT_UPDATED', payload: message(1, ana, 'Hi there', '2026-11-21T09:00:00') });
+    expect(await (await log()).findByText('Hi there')).toBeTruthy();
+    await settle();
+    expect(reads(calls)).toBe(0);
+
+    visibility.mockReturnValue('visible');
+    fireEvent(document, new Event('visibilitychange'));
+
+    await waitFor(() => expect(reads(calls)).toBe(1));
+    visibility.mockRestore();
+  });
+
+  it('puts the focus back in the message box after saving an edit', async () => {
+    let answer: (response: Response) => void = () => {};
+    liveBackend({ history: [message(1, ana, 'Hello', '2026-11-21T09:00:00'), message(2, me, 'Almost done', '2026-11-21T09:01:00')], edit: () => new Promise(resolve => { answer = resolve; }) });
+    open();
+    const messages = await log();
+    fireEvent.click(within(messages.getByText('Almost done').closest('.sm-msg') as HTMLElement).getByRole('button', { name: 'Edit' }));
+    const box = screen.getByRole('textbox', { name: 'Edit message' });
+    box.focus();
+    fireEvent.change(box, { target: { value: 'All done' } });
+    fireEvent.keyDown(box, { key: 'Enter' });
+
+    answer(reply(message(2, me, 'All done', '2026-11-21T09:01:00', '2026-11-21T09:03:00')));
+
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Edit message' })).toBeNull());
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Message Test Ana' }));
   });
 });
