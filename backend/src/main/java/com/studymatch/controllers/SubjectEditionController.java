@@ -42,6 +42,7 @@ import com.studymatch.dtos.GradeSheetDTO;
 import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.GroupGenerationDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
+import com.studymatch.enums.ExportFormat;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.Student;
@@ -215,6 +216,26 @@ public class SubjectEditionController {
     User teacher = userService.getByInstitutionalEmail(authentication.getName());
     subjectEditionService.checkTaughtBy(id, teacher.getNumber());
     return ResponseEntity.ok(groupService.listGroups(id, assignmentId));
+  }
+
+  // export groups: the language only changes the PDF's headings, the CSV's columns stay what Import Groups reads
+  @GetMapping("{id}/assignments/{assignmentId}/groups/export")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Download the published groups as CSV, one row per student with groupNumber, studentNumber, "
+      + "name and institutionalEmail (the columns Import Groups reads), or as a PDF table per group. "
+      + "Never the statute (GR7)")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, ErrorCode.NO_GROUPS_TO_EXPORT })
+  public ResponseEntity<byte[]> exportGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      @RequestParam ExportFormat format, @RequestParam(defaultValue = "en") String language,
+      Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    byte[] file = groupService.exportGroups(id, assignmentId, format, language);
+    boolean csv = format == ExportFormat.CSV;
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"groups." + (csv ? "csv" : "pdf") + "\"")
+        .contentType(csv ? new MediaType("text", "csv", StandardCharsets.UTF_8) : MediaType.APPLICATION_PDF)
+        .body(file);
   }
 
   // generate groups: regenerating is the same call, the new drafts replace the old ones

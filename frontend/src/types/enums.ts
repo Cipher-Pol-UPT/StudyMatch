@@ -10,6 +10,9 @@ export type AssignmentType = typeof AssignmentType[number];
 export const EnrolmentStatus = ["IN_PROGRESS", "PASSED", "FAILED"] as const;
 export type EnrolmentStatus = typeof EnrolmentStatus[number];
 
+export const ExportFormat = ["CSV", "PDF"] as const;
+export type ExportFormat = typeof ExportFormat[number];
+
 export const GroupStatus = ["DRAFT", "PUBLISHED"] as const;
 export type GroupStatus = typeof GroupStatus[number];
 

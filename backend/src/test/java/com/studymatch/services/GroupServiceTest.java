@@ -5,11 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +25,7 @@ import com.studymatch.dtos.AssignmentGroupsDTO;
 import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.MyGroupDTO;
 import com.studymatch.enums.AssignmentType;
+import com.studymatch.enums.ExportFormat;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
 import com.studymatch.enums.StatuteType;
@@ -34,6 +39,8 @@ import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.GroupRepository;
+import com.studymatch.utils.GroupCsvWriter;
+import com.studymatch.utils.GroupPdfWriter;
 
 class GroupServiceTest {
 
@@ -42,6 +49,7 @@ class GroupServiceTest {
   private GroupRepository groupRepository;
   private AssignmentService assignmentService;
   private EnrolmentService enrolmentService;
+  private GroupPdfWriter groupPdfWriter;
   private GroupService groupService;
   private SubjectEdition edition;
   private Student ana;
@@ -52,9 +60,10 @@ class GroupServiceTest {
     groupRepository = mock(GroupRepository.class);
     assignmentService = mock(AssignmentService.class);
     enrolmentService = mock(EnrolmentService.class);
+    groupPdfWriter = mock(GroupPdfWriter.class);
     groupService = new GroupService(groupRepository, assignmentService, enrolmentService,
         mock(AcademicYearService.class), mock(SubjectEditionService.class), mock(LessonService.class),
-        mock(AbsenceService.class), mock(GroupGenerator.class));
+        mock(AbsenceService.class), mock(GroupGenerator.class), new GroupCsvWriter(), groupPdfWriter);
     edition = ModelTestData.subjectEdition();
     ana = student("Ana", ANA);
     rui = student("Rui", 1002L);
@@ -229,6 +238,102 @@ class GroupServiceTest {
 
     // Assert
     assertEquals(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, exception.getCode());
+  }
+
+  // export groups: the assignment and its published groups, numbered from 1
+  private void exporting(List<List<Student>> published) {
+    Assignment assignment = project("Project", LocalDate.of(2026, 1, 10));
+    when(assignmentService.getAssignment(1L, 2L)).thenReturn(assignment);
+    List<Group> groups = new ArrayList<>();
+    for (List<Student> members : published) {
+      Group group = draft(assignment, groups.size() + 1, members.toArray(Student[]::new));
+      group.publish();
+      groups.add(group);
+    }
+    when(groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.PUBLISHED))
+        .thenReturn(groups);
+  }
+
+  @Test
+  @DisplayName("Export groups as CSV: one row per student, by group and then by name, never the statute (GR7)")
+  void exportCsv() {
+    // Arrange
+    Student bia = student("Bia", 1003L);
+    for (Student student : List.of(ana, rui, bia)) {
+      student.generateInstitutionalEmail("studymatch.com");
+    }
+    rui.assignStatute(StatuteType.WORKING_STUDENT, LocalDate.now().plusYears(1));
+    exporting(List.of(List.of(rui, ana), List.of(bia)));
+
+    // Act
+    String csv = new String(groupService.exportGroups(1L, 2L, ExportFormat.CSV, "en"), StandardCharsets.UTF_8);
+
+    // Assert
+    assertEquals(List.of("﻿groupNumber,studentNumber,name,institutionalEmail",
+        "1,1001,Ana,1001@students.studymatch.com",
+        "1,1002,Rui,1002@students.studymatch.com",
+        "2,1003,Bia,1003@students.studymatch.com"), csv.lines().toList());
+    assertFalse(csv.toLowerCase().contains("statute"));
+    assertFalse(csv.contains(StatuteType.WORKING_STUDENT.name()));
+    verifyNoInteractions(groupPdfWriter);
+  }
+
+  @Test
+  @DisplayName("Export groups as PDF: the same rows with the subject and assignment, in the language asked for")
+  void exportPdf() {
+    // Arrange
+    exporting(List.of(List.of(ana)));
+    byte[] pdf = { 1, 2, 3 };
+    when(groupPdfWriter.write("Test Subject", "Project", List.of(new GroupCsvWriter.Row(1, ANA, "Ana", null)),
+        Locale.forLanguageTag("pt-PT"))).thenReturn(pdf);
+
+    // Act + Assert
+    assertEquals(pdf, groupService.exportGroups(1L, 2L, ExportFormat.PDF, "pt"));
+  }
+
+  @Test
+  @DisplayName("Export groups: no published groups is NO_GROUPS_TO_EXPORT, drafts don't count")
+  void exportWithoutPublishedGroups() {
+    // Arrange - the repository is only asked for the published ones
+    exporting(List.of());
+
+    // Act
+    StudyMatchException exception = assertThrows(StudyMatchException.class,
+        () -> groupService.exportGroups(1L, 2L, ExportFormat.CSV, "en"));
+
+    // Assert
+    assertEquals(ErrorCode.NO_GROUPS_TO_EXPORT, exception.getCode());
+    verifyNoInteractions(groupPdfWriter);
+  }
+
+  @Test
+  @DisplayName("Export groups: an assignment without a grouping rule is ASSIGNMENT_NOT_GROUP_WORK")
+  void exportNotGroupWork() {
+    // Arrange
+    when(assignmentService.getAssignment(1L, 2L)).thenReturn(new Assignment(edition, "Exam", AssignmentType.EXAM,
+        LocalDate.of(2026, 1, 20), new BigDecimal("0.60"), null));
+
+    // Act
+    StudyMatchException exception = assertThrows(StudyMatchException.class,
+        () -> groupService.exportGroups(1L, 2L, ExportFormat.PDF, "en"));
+
+    // Assert
+    assertEquals(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, exception.getCode());
+    verifyNoInteractions(groupPdfWriter);
+  }
+
+  @Test
+  @DisplayName("Export groups: an assignment of another edition is NOT_FOUND")
+  void exportUnknownAssignment() {
+    // Arrange
+    when(assignmentService.getAssignment(1L, 2L)).thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
+
+    // Act
+    StudyMatchException exception = assertThrows(StudyMatchException.class,
+        () -> groupService.exportGroups(1L, 2L, ExportFormat.CSV, "en"));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, exception.getCode());
   }
 
 }
