@@ -26,6 +26,7 @@ The diagram shows the entities and how they relate. This page covers what it can
 | StudyRoom, Participation, Rating | An online session a tutor hosts for one subject, the students who join it (and whether they attended), and their 1 to 5 star ratings. |
 | Earned achievement | An achievement a tutor earned, with the date and a verification code for the certificate. |
 | Group | A group of students for one group assignment. |
+| Note | A private sticky note on someone's home page, with its text, colour and place on the board. |
 | Chat, Message, Chat settings | A DM between two users or a group chat someone made, with its owner and members in the order they joined (assignment group chats come with #236), the messages in it, and each member's own settings for it: when they last read it and their notification level. |
 
 ## The student profile
@@ -190,3 +191,7 @@ Each member picks a notification level per chat: All (the default), Only @mentio
 On the frontend, Students and Teachers have a Chats page (`/chats`), laid out like the approved chat prototype with its pieces in the library's `blocks/chat`. It fills the page under the top bar, which carries its name, with the list beside the sidebar and the conversation kept to a readable width in the middle (#287). New message searches who you can message by name or number (`GET /users/chat-contacts`) and opens the DM at `/chats/direct/{number}` (`GET /chats/direct/{number}`): with someone you've never talked to it's empty, with a hint to say hi, and it only reaches the chat list once its first message exists. Anyone the search wouldn't offer gives `NOT_FOUND`, shown as a banner in the conversation (#199). The list itself and the messages come with #201 and #203.
 
 The message box at the bottom of a DM sends with `POST /chats/direct/{number}/messages`, which also creates the DM on its first message. It grows with the text up to a few lines; Enter sends and Shift+Enter adds a line, and a count shows in the last 200 of the 2000 characters, past which Send is off. A message shows greyed out until the backend confirms it; if it fails it stays with Retry and Discard, and the reason shows under the box (#205). What's typed and sent in each conversation is kept in memory while the app is open (`pages/chats/conversations.ts`), so switching chats loses no draft, and it's forgotten on logout.
+
+## Sticky notes
+
+Anyone logged in keeps up to 20 private sticky notes on their home page (`NOTE_LIMIT_REACHED` past that). A note has a text of up to 500 characters, not counting the spaces around it, which can be empty, one of four colours, and a position: x and y as percentages of the board, from 0 to 100, so it stays in place whatever the screen size (`NOTE_TOO_LONG`, `INVALID_NOTE_POSITION`). Only the owner sees or changes their notes, and someone else's note answers `NOT_FOUND` like one that doesn't exist. Every change, a move included, updates the note's change date, and the notes come back in that order, so the one touched last is drawn on top. There's no separate stacking order. Deleting is for good (#303).
