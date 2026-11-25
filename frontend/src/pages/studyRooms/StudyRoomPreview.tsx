@@ -16,9 +16,13 @@ interface StudyRoomPreviewProps {
   actions?: ReactNode;
   // how many came to a Completed room, once the tutor confirmed it (#54)
   attendees?: number;
+  // it started, so there's no Join or Leave any more (#44)
+  started?: boolean;
+  // above the card, like the room a join clashed with (#44)
+  notice?: ReactNode;
 }
 
-export function StudyRoomPreview({ room, studentNumber, rating, ratingCount, onToggleMembership, actions, attendees }: StudyRoomPreviewProps) {
+export function StudyRoomPreview({ room, studentNumber, rating, ratingCount, onToggleMembership, actions, attendees, started, notice }: StudyRoomPreviewProps) {
   const { t, i18n } = useTranslation();
   const titleId = useId();
   const start = new Date(room.startsAt);
@@ -72,7 +76,7 @@ export function StudyRoomPreview({ room, studentNumber, rating, ratingCount, onT
           <span className="study-room-preview__host">
             <Users size={15} aria-hidden />{attendees === undefined ? t('studyRooms.yourRoom') : t('studyRooms.attended', { count: attendees })}
           </span>
-        ) : (
+        ) : !started && (
           <Button
             variant={joined ? 'danger' : 'tinted'}
             size="sm"
@@ -85,11 +89,12 @@ export function StudyRoomPreview({ room, studentNumber, rating, ratingCount, onT
       </footer>
     </Card>
   );
-  if (!actions) return card;
+  if (!actions && !notice) return card;
   return (
     <div className="study-room-preview-wrap">
+      {notice}
       {card}
-      <div className="study-room-preview__actions">{actions}</div>
+      {actions && <div className="study-room-preview__actions">{actions}</div>}
     </div>
   );
 }

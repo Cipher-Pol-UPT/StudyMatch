@@ -34,7 +34,9 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detail, setDetail] = useState<StudyRoomDetailData | null>(null);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
-  const [notice, setNotice] = useState('');
+  // a joined room waiting for Leave to be confirmed, and the room a join clashed with (#44)
+  const [leaving, setLeaving] = useState<StudyRoomData | null>(null);
+  const [clash, setClash] = useState<{ roomId: number; text: string } | null>(null);
   const toast = useToast();
   const tutorSubjects = useTutorSubjects();
   const [creating, setCreating] = useState(false);
@@ -50,7 +52,8 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
   // how many came, for the rooms completed while the page is open
   const [attendees, setAttendees] = useState<ReadonlyMap<number, number>>(() => new Map());
   // the time, a minute at a time, so a room's actions go when it starts while the page is open
-  const [now, setNow] = useState(() => Date.now());
+  // a fixed date (the tests) is the page's clock until the first tick
+  const [now, setNow] = useState(() => initialDate?.getTime() ?? Date.now());
   useEffect(() => {
     const tick = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(tick);
@@ -219,18 +222,67 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
     setSelectedDay(new Date(room.startsAt));
   };
 
-  const toggleMembership = async (room: StudyRoomData) => {
-    if (room.tutorNumber === studentNumber) return;
-    const joined = room.link != null;
+  const started = (room: StudyRoomData) => locked.has(room.id) || new Date(room.startsAt).getTime() <= now;
+
+  // the room as the backend has it now, with your place in it or not
+  const refresh = (room: StudyRoomData) => {
+    getStudyRoom(room.id).then((fresh) => {
+      setRooms((previous) => previous.map((item) => (item.id === fresh.id ? fresh : item)));
+      setDetail((previous) => previous?.id === fresh.id ? fresh : previous);
+    }, () => undefined);
+  };
+
+  const joinedOrLeft = (updated: StudyRoomData, joined: boolean) => {
+    setRooms((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
+    setDetail((previous) => previous?.id === updated.id ? { ...previous, ...updated, joined, hosted: false } : previous);
+    toast.success(t(joined ? 'studyRooms.joinedNotice' : 'studyRooms.leftNotice', { topic: roomTopic(updated) }));
+  };
+
+  // an overlap names the other room above the card; full or already joined shows the room as it is now
+  const membershipFailed = (room: StudyRoomData, error: unknown) => {
+    if (!isBackendError(error)) return toast.danger(t('studyRooms.membershipFailed'));
+    const { code, params = {} } = error;
+    if (code === 'JOINED_STUDYROOM_OVERLAP') {
+      const day = new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+      const time = new Intl.DateTimeFormat(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false });
+      return setClash({ roomId: room.id, text: t('errors.JOINED_STUDYROOM_OVERLAP', {
+        subject: params.subject, startsAt: day.format(new Date(String(params.startsAt))), endsAt: time.format(new Date(String(params.endsAt))),
+      }) });
+    }
+    if (code === 'STUDYROOM_ALREADY_STARTED' || code === 'STUDYROOM_CLOSED') setLocked((previous) => new Set(previous).add(room.id));
+    if (code === 'STUDYROOM_FULL' || code === 'ALREADY_JOINED_STUDYROOM' || code === 'NOT_A_PARTICIPANT') refresh(room);
+    if (code !== 'ALREADY_JOINED_STUDYROOM') toast.danger(t(`errors.${code}`, params));
+  };
+
+  const join = async (room: StudyRoomData) => {
+    setClash(null);
     try {
-      const updated = joined ? await leaveStudyRoom(room.id) : await joinStudyRoom(room.id);
-      setRooms((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
-      setDetail((previous) => previous?.id === updated.id ? { ...previous, ...updated, joined: !joined, hosted: false } : previous);
-      setNotice(t(joined ? 'studyRooms.leftNotice' : 'studyRooms.joinedNotice', { topic: updated.description ?? updated.subjectName }));
+      joinedOrLeft(await joinStudyRoom(room.id), true);
     } catch (error) {
-      toast.danger(isBackendError(error) ? t(`errors.${error.code}`) : t('studyRooms.membershipFailed'));
+      membershipFailed(room, error);
     }
   };
+
+  const leave = async () => {
+    if (!leaving) return;
+    try {
+      joinedOrLeft(await leaveStudyRoom(leaving.id), false);
+    } catch (error) {
+      membershipFailed(leaving, error);
+    }
+  };
+
+  // the list's link is only there once you joined; leaving asks first
+  const toggleMembership = (room: StudyRoomData) => {
+    if (room.tutorNumber === studentNumber || started(room)) return;
+    if (room.link != null) setLeaving(room);
+    else void join(room);
+  };
+
+  const preview = (room: StudyRoomData, extra: Partial<Parameters<typeof StudyRoomPreview>[0]> = {}) => (
+    <StudyRoomPreview key={room.id} room={room} studentNumber={studentNumber} onToggleMembership={toggleMembership}
+      started={started(room)} actions={manage(room)} notice={clash?.roomId === room.id ? <Banner tone="danger">{clash.text}</Banner> : undefined} {...extra} />
+  );
 
   return (
     <div className="study-rooms">
@@ -292,18 +344,20 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
 
       <Dialog open={view === 'calendar' && !!selectedRoom} onClose={() => openRoom(null)} title={t('studyRooms.selectedRoom')} className="study-rooms-dialog">
         {selectedRoom && (
-          <StudyRoomPreview
-            room={detail ?? selectedRoom}
-            studentNumber={studentNumber}
-            rating={detail?.tutorAverageRating}
-            ratingCount={detail?.tutorRatingCount}
-            onToggleMembership={toggleMembership}
-            actions={manage(selectedRoom)}
-          />
+          preview(detail ?? selectedRoom, { rating: detail?.tutorAverageRating, ratingCount: detail?.tutorRatingCount, actions: manage(selectedRoom) })
         )}
       </Dialog>
 
-      <p className="sm-visually-hidden" role="status">{notice}</p>
+      <ConfirmDialog
+        open={leaving !== null}
+        onClose={() => setLeaving(null)}
+        tone="danger"
+        title={t('rooms.leaveTitle')}
+        description={leaving && t('rooms.leaveBody', { room: `${roomTopic(leaving)} · ${roomWhen(leaving, i18n.language)}` })}
+        confirmLabel={t('rooms.leave')}
+        cancelLabel={t('rooms.stay')}
+        onConfirm={leave}
+      />
 
       <div className="study-rooms__board">
         <aside className="study-rooms__sidebar" aria-label={t('studyRooms.filters')}>
@@ -375,7 +429,7 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
               ))}
               {personalRooms.length ? (
                 <div className="study-rooms__cards">
-                  {personalRooms.map((room) => <StudyRoomPreview key={room.id} room={room} studentNumber={studentNumber} onToggleMembership={toggleMembership} actions={manage(room)} attendees={attendees.get(room.id)} />)}
+                  {personalRooms.map((room) => preview(room, { attendees: attendees.get(room.id) }))}
                 </div>
               ) : (
                 <EmptyState icon={view === 'created' ? Users : ListChecks} title={t('studyRooms.noRooms')} body={t('studyRooms.noPersonalRoomsBody')} action={<Button variant="tinted" onClick={() => { selectSubject(null); setView('calendar'); }}>{t('studyRooms.browseRooms')}</Button>} />

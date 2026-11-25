@@ -296,7 +296,10 @@
     "attendanceConfirmed": "Presenças confirmadas. A sala de estudo foi concluída.",
     "meetLinkEmpty": "Se o deixar vazio, é criada uma nova ligação do Meet.",
     "nobodyJoined": "Ninguém se inscreveu nesta sala de estudo.",
-    "confirmAttendees_zero": "Confirmar que ninguém compareceu"
+    "confirmAttendees_zero": "Confirmar que ninguém compareceu",
+    "leaveTitle": "Sair desta sala de estudo?",
+    "leaveBody": "{{room}}. O seu lugar fica livre para outros estudantes.",
+    "stay": "Ficar"
   },
   "studyRooms": {
     "heading": "Salas de estudo",
