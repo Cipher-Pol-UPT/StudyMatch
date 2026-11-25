@@ -622,6 +622,7 @@
     "INVALID_EMOJI": "Reaja com um único emoji.",
     "SEARCH_TOO_SHORT": "Escreva pelo menos {{min}} caracteres para pesquisar.",
     "MESSAGE_EMPTY": "Uma mensagem não pode ficar vazia. Elimine-a.",
+    "MESSAGE_NOT_EDITABLE": "Esta mensagem não tem texto para editar.",
     "TOO_MANY_ATTACHMENTS": "Uma mensagem pode ter no máximo {{max}} ficheiros.",
     "ATTACHMENT_TOO_LARGE": "{{name}} tem mais de {{max}} MB.",
     "ATTACHMENT_TYPE_NOT_ALLOWED": "Não é possível enviar {{name}}. Utilize um ficheiro PNG, JPG, GIF, WebP, PDF, Word, Excel, PowerPoint ou de texto.",

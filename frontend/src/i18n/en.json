@@ -622,6 +622,7 @@
     "INVALID_EMOJI": "React with a single emoji.",
     "SEARCH_TOO_SHORT": "Type at least {{min}} characters to search.",
     "MESSAGE_EMPTY": "A message can't be empty. Delete it instead.",
+    "MESSAGE_NOT_EDITABLE": "This message has no text to edit.",
     "TOO_MANY_ATTACHMENTS": "A message can have at most {{max}} files.",
     "ATTACHMENT_TOO_LARGE": "{{name}} is over {{max}} MB.",
     "ATTACHMENT_TYPE_NOT_ALLOWED": "{{name}} can't be sent. Use a PNG, JPG, GIF, WebP, PDF, Word, Excel, PowerPoint or text file.",
