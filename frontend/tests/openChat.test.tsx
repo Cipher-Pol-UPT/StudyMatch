@@ -1,4 +1,4 @@
-import { cleanup, configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
@@ -48,6 +48,7 @@ function open() {
 
 const log = async () => within(await screen.findByRole('log', { name: 'Messages' }));
 const push = (event: ChatEvent) => live.listeners.get(`/topic/chats/${CHAT}`)?.(event);
+const settle = () => act(() => new Promise(resolve => setTimeout(resolve, 50)));
 
 beforeEach(async () => { await i18n.changeLanguage('en'); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); forgetConversations(); live.listeners.clear(); });
@@ -281,5 +282,118 @@ describe('changes from the other side, while the chat is open', () => {
 
     push({ type: 'MESSAGE_DELETED', payload: { chatId: CHAT, messageId: 1 } });
     await waitFor(() => expect(messages.queryByText('Did you finish the report?')).toBeNull());
+  });
+});
+
+// a DM that exists (or not yet, `chatId` null) with `history` in it; sending waits for `send` to answer
+function liveBackend({ chatId = CHAT as number | null, history = [] as MessageData[], send = () => new Promise<Response>(() => {}), edit = () => new Promise<Response>(() => {}) } = {}) {
+  const calls: string[] = [];
+  vi.stubGlobal('fetch', vi.fn<typeof fetch>(async (input, init) => {
+    const url = new URL(String(input), 'https://test.invalid');
+    const method = init?.method ?? 'GET';
+    calls.push(`${method} ${url.pathname}${url.search}`);
+    if (url.pathname === `/api/chats/direct/${ana.number}`) return reply({ chatId, contact: ana, blocked: false });
+    if (url.pathname === `/api/chats/direct/${ana.number}/messages`) return send();
+    if (url.pathname === `/api/chats/${CHAT}/messages`) return reply({ hasMore: url.searchParams.has('before') ? false : history.length > 1, messages: url.searchParams.has('before') ? [] : history });
+    if (url.pathname === `/api/chats/${CHAT}/read`) return new Response(null, { status: 204 });
+    if (url.pathname.startsWith(`/api/chats/${CHAT}/messages/`)) return edit();
+    throw new Error(`Unexpected request: ${method} ${url.pathname}`);
+  }));
+  return calls;
+}
+
+const reads = (calls: string[]) => calls.filter(call => call === `PUT /api/chats/${CHAT}/read`).length;
+
+describe('while a chat is open', () => {
+  it("ignores an edit to a message that isn't loaded, so older ones still load from the oldest shown", async () => {
+    const calls = liveBackend({ history: [message(60, ana, 'Newest', '2026-11-21T09:00:00'), message(61, ana, 'Newer', '2026-11-21T09:01:00')] });
+    open();
+    const messages = await log();
+
+    await messages.findByText('Newest');
+    push({ type: 'MESSAGE_EDITED', payload: message(5, ana, 'From months ago', '2026-01-10T09:00:00', '2026-11-21T09:05:00') });
+
+    // scrolled again until it asks, a scroll while the first page is still settling loads nothing
+    await waitFor(() => {
+      fireEvent.scroll(document.querySelector('.sm-chat__scroll')!);
+      expect(calls).toContain(`GET /api/chats/${CHAT}/messages?before=60`);
+    });
+    expect(messages.queryByText('From months ago')).toBeNull();
+  });
+
+  it('loads the DM once they write first while it is open and still empty', async () => {
+    liveBackend({ chatId: null, history: [message(1, ana, 'Hi there', '2026-11-21T09:00:00')] });
+    open();
+    await screen.findByText(/say hi/);
+
+    live.listeners.get('/user/queue/chats')?.({ type: 'CHAT_UPDATED', payload: message(1, ana, 'Hi there', '2026-11-21T09:00:00') });
+
+    expect(await (await log()).findByText('Hi there')).toBeTruthy();
+  });
+
+  it('marks a message that came while the tab was hidden as read once you come back', async () => {
+    const calls = liveBackend({ history: [message(1, ana, 'Hello', '2026-11-21T09:00:00')] });
+    open();
+    await log();
+    await waitFor(() => expect(reads(calls)).toBe(1));
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+
+    push({ type: 'MESSAGE_CREATED', payload: message(2, ana, 'Still there?', '2026-11-21T09:01:00') });
+    expect(await screen.findByText('Still there?')).toBeTruthy();
+    expect(reads(calls)).toBe(1);
+
+    visibility.mockReturnValue('visible');
+    fireEvent(document, new Event('visibilitychange'));
+
+    await waitFor(() => expect(reads(calls)).toBe(2));
+    visibility.mockRestore();
+  });
+
+  it('shows your message once when its live event comes before the answer to sending it', async () => {
+    let answer: (response: Response) => void = () => {};
+    liveBackend({ history: [message(1, ana, 'Hello', '2026-11-21T09:00:00')], send: () => new Promise(resolve => { answer = resolve; }) });
+    open();
+    const messages = await log();
+    const field = screen.getByRole('textbox', { name: 'Message Test Ana' });
+    fireEvent.change(field, { target: { value: 'On my way' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(await messages.findByText('Sending…')).toBeTruthy();
+
+    push({ type: 'MESSAGE_CREATED', payload: message(2, me, 'On my way', '2026-11-21T09:02:00') });
+    await waitFor(() => expect(messages.queryByText('Sending…')).toBeNull());
+    expect(messages.getAllByText('On my way')).toHaveLength(1);
+
+    answer(reply(message(2, me, 'On my way', '2026-11-21T09:02:00'), 201));
+    await settle();
+    expect(messages.getAllByText('On my way')).toHaveLength(1);
+  });
+
+  it('saves an edit once when Enter is pressed twice', async () => {
+    const calls = liveBackend({ history: [message(1, ana, 'Hello', '2026-11-21T09:00:00'), message(2, me, 'Almost done', '2026-11-21T09:01:00')] });
+    open();
+    const messages = await log();
+    fireEvent.click(within(messages.getByText('Almost done').closest('.sm-msg') as HTMLElement).getByRole('button', { name: 'Edit' }));
+    const box = screen.getByRole('textbox', { name: 'Edit message' });
+    fireEvent.change(box, { target: { value: 'All done' } });
+
+    fireEvent.keyDown(box, { key: 'Enter' });
+    fireEvent.keyDown(box, { key: 'Enter' });
+    await settle();
+
+    expect(calls.filter(call => call === `PUT /api/chats/${CHAT}/messages/2`)).toHaveLength(1);
+  });
+
+  it('starts a new run with its time when you write right after them', async () => {
+    liveBackend({ history: [message(1, ana, 'Hello', new Date().toISOString().slice(0, 19))] });
+    open();
+    const messages = await log();
+    const field = screen.getByRole('textbox', { name: 'Message Test Ana' });
+    fireEvent.change(field, { target: { value: 'Hi Ana' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    const mine = (await messages.findByText('Hi Ana')).closest('.sm-msg') as HTMLElement;
+
+    expect(mine.classList.contains('sm-msg--first')).toBe(true);
+    expect(mine.querySelector('time')).toBeTruthy();
   });
 });
