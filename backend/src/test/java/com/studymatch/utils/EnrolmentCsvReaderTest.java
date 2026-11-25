@@ -79,6 +79,22 @@ class EnrolmentCsvReaderTest {
   }
 
   @Test
+  @DisplayName("1 MB is accepted, one byte more gets FILE_TOO_LARGE")
+  void fileLimit() {
+    // Arrange - blank lines up to the limit
+    String file = HEADER + "50001\n";
+    String megabyte = file + "\n".repeat(CsvFiles.MAX_BYTES - file.length());
+
+    // Act
+    List<EnrolmentCsvReader.Row> rows = read(megabyte);
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> read(megabyte + "\n"));
+
+    // Assert
+    assertEquals(1, rows.size());
+    assertEquals(ErrorCode.FILE_TOO_LARGE, e.getCode());
+  }
+
+  @Test
   @DisplayName("Excel's BOM at the start doesn't break the header")
   void bomIsIgnored() {
     // Act
