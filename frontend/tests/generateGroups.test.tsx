@@ -30,6 +30,8 @@ function backend(answers: Record<string, (url: URL) => Response> = {}) {
     if (url.pathname === '/api/subject-editions/7/grades') return reply({ assignments: [project, exam], students: [], weightsComplete: true });
     // what generating will do comes with every generate, answered unless the test says otherwise
     if (url.pathname.endsWith('/groups/generation') && !answers[`GET ${url.pathname}`]) return reply(smallClass);
+    // the side menu's unread count, none here
+    if (url.pathname === '/api/chats/unread-count') return reply(0);
     const key = `${method} ${url.pathname}`;
     calls.push(`${key}${url.search}`);
     const answer = answers[key];

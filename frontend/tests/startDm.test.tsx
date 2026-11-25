@@ -29,6 +29,9 @@ function backend(direct: (number: number) => Response = number => reply({ chatId
     if (dm) return direct(Number(dm[1]));
     // the student area loads its own profile for the menu; this test doesn't need it
     if (url.pathname === '/api/students/me/profile') return reply({ code: 'NOT_FOUND' }, 404);
+    // the chat list and the side menu's count, both empty here
+    if (url.pathname === '/api/chats/') return new Response('[]', { status: 200 });
+    if (url.pathname === '/api/chats/unread-count') return new Response('0', { status: 200 });
     throw new Error(`Unexpected request: ${url.pathname}`);
   }));
   return searches;

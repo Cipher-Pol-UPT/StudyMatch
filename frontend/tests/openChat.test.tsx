@@ -37,6 +37,9 @@ function backend(pages: (before: string | null) => Response) {
     if (url.pathname === `/api/chats/direct/${ana.number}`) return reply({ chatId: CHAT, contact: ana });
     if (url.pathname === `/api/chats/${CHAT}/messages`) return pages(url.searchParams.get('before'));
     if (url.pathname === `/api/chats/${CHAT}/read`) return new Response(null, { status: 204 });
+    // the chat list and the side menu's count, both empty here
+    if (url.pathname === '/api/chats/') return new Response('[]', { status: 200 });
+    if (url.pathname === '/api/chats/unread-count') return new Response('0', { status: 200 });
     throw new Error(`Unexpected request: ${url.pathname}`);
   }));
   return calls;
@@ -163,6 +166,9 @@ function backendWithChanges(change: (method: string, id: number, body: unknown) 
     if (url.pathname === `/api/chats/${CHAT}/read`) return new Response(null, { status: 204 });
     const own = url.pathname.match(new RegExp(`^/api/chats/${CHAT}/messages/(\\d+)$`));
     if (own) return change(method, Number(own[1]), init?.body ? JSON.parse(String(init.body)) : undefined);
+    // the chat list and the side menu's count, both empty here
+    if (url.pathname === '/api/chats/') return new Response('[]', { status: 200 });
+    if (url.pathname === '/api/chats/unread-count') return new Response('0', { status: 200 });
     throw new Error(`Unexpected request: ${method} ${url.pathname}`);
   }));
   return calls;
@@ -298,6 +304,9 @@ function liveBackend({ chatId = (() => CHAT) as () => number | null, history = [
     if (url.pathname === `/api/chats/${CHAT}/messages`) return reply({ hasMore: url.searchParams.has('before') ? false : history.length > 1, messages: url.searchParams.has('before') ? [] : history });
     if (url.pathname === `/api/chats/${CHAT}/read`) return new Response(null, { status: 204 });
     if (url.pathname.startsWith(`/api/chats/${CHAT}/messages/`)) return edit();
+    // the chat list and the side menu's count, both empty here
+    if (url.pathname === '/api/chats/') return new Response('[]', { status: 200 });
+    if (url.pathname === '/api/chats/unread-count') return new Response('0', { status: 200 });
     throw new Error(`Unexpected request: ${method} ${url.pathname}`);
   }));
   return calls;
