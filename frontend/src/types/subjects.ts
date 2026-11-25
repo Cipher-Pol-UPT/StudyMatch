@@ -6,10 +6,11 @@ export interface SubjectData {
 }
 export interface DegreePlacementRequest { degreeId: number; curricularYear: number; semester: number }
 export interface SubjectRequest {
-  code: string; name: string; ects: number; categoryId: number;
+  code: string; name: string; ects: number;
+  // null when no category is chosen, so the backend answers VALIDATION_FAILED under the field instead of NOT_FOUND
+  categoryId: number | null;
   degrees: DegreePlacementRequest[];
   edition: { academicYear: number; teacherNumbers: number[]; classSections?: string[] };
 }
 export interface TeacherData { number: number; name: string; institutionalEmail: string }
-// startYear 2026 is the 2026/2027 academic year
-export interface AcademicYearData { startYear: number }
+export interface AcademicYearPreviewData { nextStartYear: number }

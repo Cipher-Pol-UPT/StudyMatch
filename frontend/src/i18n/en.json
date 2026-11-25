@@ -158,7 +158,6 @@
     "back": "Back",
     "unexpectedError": "Something went wrong. Please try again.",
     "language": "Language",
-    "add": "Add",
     "required": "{{field}} is required."
   },
   "appearance": {
@@ -254,7 +253,7 @@
   "subjects": {
     "intro": "Register a subject and its first edition.",
     "newSubject": "New subject",
-    "newSubjectDescription": "Creates the subject and its edition for the chosen year.",
+    "newSubjectDescription": "Creates the subject and its edition for the next academic year.",
     "registerSubject": "Register subject",
     "subjectRegistered": "Subject {{name}} registered.",
     "noSubjects": "No subjects yet",
@@ -278,6 +277,8 @@
     "classes": "Classes",
     "classesPlaceholder": "Add a class",
     "teachersHint": "Teachers · at least one",
+    "noTeachers": "No teachers are registered yet. A subject needs at least one teacher.",
+    "loadFailed": "The form couldn't load its data. Check your connection and try again.",
     "addTeacher": "Add a teacher",
     "chooseTeacher": "Choose a teacher",
     "removeTeacher": "Remove {{name}}",

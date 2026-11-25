@@ -158,7 +158,6 @@
     "back": "Voltar",
     "unexpectedError": "Ocorreu um erro. Tente novamente.",
     "language": "Idioma",
-    "add": "Adicionar",
     "required": "O campo {{field}} é obrigatório."
   },
   "appearance": {
@@ -254,7 +253,7 @@
   "subjects": {
     "intro": "Registe uma unidade curricular e a sua primeira edição.",
     "newSubject": "Nova unidade curricular",
-    "newSubjectDescription": "Cria a unidade curricular e a sua edição para o ano escolhido.",
+    "newSubjectDescription": "Cria a unidade curricular e a sua edição para o próximo ano letivo.",
     "registerSubject": "Registar unidade curricular",
     "subjectRegistered": "Unidade curricular {{name}} registada.",
     "noSubjects": "Ainda não existem unidades curriculares",
@@ -278,6 +277,8 @@
     "classes": "Turmas",
     "classesPlaceholder": "Adicionar uma turma",
     "teachersHint": "Docentes · pelo menos um",
+    "noTeachers": "Ainda não há docentes registados. Uma unidade curricular precisa de pelo menos um docente.",
+    "loadFailed": "O formulário não conseguiu carregar os dados. Verifique a ligação e tente novamente.",
     "addTeacher": "Adicionar docente",
     "chooseTeacher": "Escolha um docente",
     "removeTeacher": "Remover {{name}}",

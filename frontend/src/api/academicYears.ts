@@ -1,4 +1,4 @@
-import type { AcademicYearData } from '../types/subjects';
+import type { AcademicYearPreviewData } from '../types/subjects';
 import { request } from './client';
 
-export const getAcademicYears = () => request<AcademicYearData[]>('GET', '/academic-years/');
+export const getNextAcademicYear = () => request<AcademicYearPreviewData>('GET', '/academic-years/next');
