@@ -76,6 +76,24 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
       order by m.id desc""")
   List<Message> findVisibleBefore(Chat chat, Long before, Long number, Limit limit);
 
+  // scrolling down after jumping to an old one: the ones after the newest on screen, oldest first
+  @EntityGraph(attributePaths = { "author", "replyTo.author" })
+  @Query("""
+      select m from Message m
+      where m.chat = :chat and m.id > :after and (m.hiddenFrom is null or m.hiddenFrom.number <> :number)
+      order by m.id""")
+  List<Message> findVisibleAfter(Chat chat, Long after, Long number, Limit limit);
+
+  // by a message's own text, not the one it quotes, any capitals. only what the user can see (GR9).
+  // the pattern comes from SearchPatterns
+  @EntityGraph(attributePaths = { "author", "replyTo.author" })
+  @Query("""
+      select m from Message m
+      where m.chat = :chat and m.id < :before and (m.hiddenFrom is null or m.hiddenFrom.number <> :number)
+        and m.text ilike :pattern escape :escape
+      order by m.id desc""")
+  List<Message> search(Chat chat, String pattern, char escape, Long before, Long number, Limit limit);
+
   // a message of that chat, an id from another chat counts as missing
   @EntityGraph(attributePaths = { "author", "replyTo.author" })
   Optional<Message> findByIdAndChat(Long id, Chat chat);

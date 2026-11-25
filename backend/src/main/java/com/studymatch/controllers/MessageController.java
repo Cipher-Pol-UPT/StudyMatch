@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.studymatch.dtos.EditMessageRequestDTO;
 import com.studymatch.dtos.MessageDTO;
 import com.studymatch.dtos.MessagePageDTO;
+import com.studymatch.dtos.MessageSearchDTO;
 import com.studymatch.dtos.SendMessageRequestDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
@@ -41,16 +42,40 @@ public class MessageController {
     this.userService = userService;
   }
 
-  // open a chat, then scroll up with the oldest id on screen as before. marking it read is a separate PUT
+  // open a chat, then scroll up with the oldest id on screen as before, or down from a search result with the newest
+  // as after. marking it read is a separate PUT
   @GetMapping("{chatId}/messages")
   @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
-  @Operation(summary = "50 messages of a chat you're in, oldest first: the newest ones, or the ones before a message "
-      + "id when scrolling up. hasMore is false once the first message is in")
+  @Operation(summary = "50 messages of a chat you're in, oldest first: the newest ones, or the ones before or after a "
+      + "message id when scrolling. hasMore is false once the first message is in, hasNewer once the latest is")
   @ErrorCodes({ ErrorCode.NOT_FOUND })
   public ResponseEntity<MessagePageDTO> getMessages(@PathVariable Long chatId,
+      @RequestParam(required = false) Long before, @RequestParam(required = false) Long after,
+      Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(messageService.getMessages(chatId, user, before, after));
+  }
+
+  // the chat's search, and jumping to a result
+  @GetMapping("{chatId}/messages/search")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "The messages of a chat you're in with that text, in any capitals, newest first, 25 at a time. "
+      + "before is the oldest result's id")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.SEARCH_TOO_SHORT })
+  public ResponseEntity<MessageSearchDTO> search(@PathVariable Long chatId, @RequestParam String text,
       @RequestParam(required = false) Long before, Authentication authentication) {
     User user = userService.getByInstitutionalEmail(authentication.getName());
-    return ResponseEntity.ok(messageService.getMessages(chatId, user, before));
+    return ResponseEntity.ok(messageService.search(chatId, user, text, before));
+  }
+
+  @GetMapping("{chatId}/messages/{messageId}/around")
+  @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+  @Operation(summary = "A message with up to 25 on each side of it, oldest first, like a page of the chat")
+  @ErrorCodes({ ErrorCode.NOT_FOUND })
+  public ResponseEntity<MessagePageDTO> getMessagesAround(@PathVariable Long chatId, @PathVariable Long messageId,
+      Authentication authentication) {
+    User user = userService.getByInstitutionalEmail(authentication.getName());
+    return ResponseEntity.ok(messageService.getMessagesAround(chatId, messageId, user));
   }
 
   // send a message

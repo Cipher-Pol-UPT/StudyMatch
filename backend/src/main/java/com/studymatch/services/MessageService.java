@@ -1,6 +1,7 @@
 package com.studymatch.services;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.MessageDTO;
 import com.studymatch.dtos.MessageDeletedDTO;
 import com.studymatch.dtos.MessagePageDTO;
+import com.studymatch.dtos.MessageSearchDTO;
 import com.studymatch.dtos.ReactionDTO;
 import com.studymatch.dtos.SendMessageRequestDTO;
 import com.studymatch.enums.ChatEventType;
@@ -33,11 +35,15 @@ import com.studymatch.models.Message;
 import com.studymatch.models.User;
 import com.studymatch.repositories.MessageRepository;
 import com.studymatch.repositories.MessageRepository.ChatActivity;
+import com.studymatch.utils.SearchPatterns;
 
 @Service
 public class MessageService {
 
   private static final int MESSAGES_PER_PAGE = 50;
+  private static final int MESSAGES_AROUND = 25;
+  private static final int RESULTS_PER_PAGE = 25;
+  private static final int MIN_SEARCH_LENGTH = 2;
 
   private final MessageRepository messageRepository;
   private final ChatService chatService;
@@ -113,18 +119,56 @@ public class MessageService {
     }
   }
 
-  // an open chat, 50 at a time going back. one extra is fetched to know if there's anything older
+  // an open chat, 50 at a time: the newest, the ones before one (scrolling up) or the ones after one (scrolling down
+  // from a search result). one extra is fetched to know if there's more that way
   @Transactional(readOnly = true)
-  public MessagePageDTO getMessages(Long chatId, User user, Long before) {
+  public MessagePageDTO getMessages(Long chatId, User user, Long before, Long after) {
+    if (before != null && after != null) {
+      throw new StudyMatchException(ErrorCode.VALIDATION_FAILED);
+    }
     Chat chat = chatService.getChatFor(chatId, user);
     Limit limit = Limit.of(MESSAGES_PER_PAGE + 1);
+    if (after != null) {
+      List<Message> oldestFirst = messageRepository.findVisibleAfter(chat, after, user.getNumber(), limit);
+      return toPage(first(oldestFirst, MESSAGES_PER_PAGE), user, true, oldestFirst.size() > MESSAGES_PER_PAGE);
+    }
     List<Message> newestFirst = before == null
         ? messageRepository.findVisible(chat, user.getNumber(), limit)
         : messageRepository.findVisibleBefore(chat, before, user.getNumber(), limit);
-    boolean hasMore = newestFirst.size() > MESSAGES_PER_PAGE;
-    List<Message> page = newestFirst.stream().limit(MESSAGES_PER_PAGE).toList();
-    List<MessageDTO> messages = page.reversed().stream().map(message -> MessageDTO.from(message, user)).toList();
-    return new MessagePageDTO(messages, reactionService.list(page, user), hasMore);
+    return toPage(first(newestFirst, MESSAGES_PER_PAGE).reversed(), user, newestFirst.size() > MESSAGES_PER_PAGE,
+        before != null);
+  }
+
+  // jumping to a search result: the message with up to 25 on each side of it
+  @Transactional(readOnly = true)
+  public MessagePageDTO getMessagesAround(Long chatId, Long messageId, User user) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    Message message = messageRepository.findByIdAndChat(messageId, chat)
+        .filter(found -> !found.isHiddenFrom(user))
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    Limit limit = Limit.of(MESSAGES_AROUND + 1);
+    List<Message> older = messageRepository.findVisibleBefore(chat, messageId, user.getNumber(), limit);
+    List<Message> newer = messageRepository.findVisibleAfter(chat, messageId, user.getNumber(), limit);
+    List<Message> page = new ArrayList<>(first(older, MESSAGES_AROUND).reversed());
+    page.add(message);
+    page.addAll(first(newer, MESSAGES_AROUND));
+    return toPage(page, user, older.size() > MESSAGES_AROUND, newer.size() > MESSAGES_AROUND);
+  }
+
+  // in the chat's texts, newest first, 25 at a time going back from the oldest result
+  @Transactional(readOnly = true)
+  public MessageSearchDTO search(Long chatId, User user, String text, Long before) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    String searched = text.strip();
+    if (searched.length() < MIN_SEARCH_LENGTH) {
+      throw new StudyMatchException(ErrorCode.SEARCH_TOO_SHORT, Map.of("min", MIN_SEARCH_LENGTH));
+    }
+    List<Message> found = messageRepository.search(chat, SearchPatterns.containing(searched), SearchPatterns.ESCAPE,
+        before == null ? Long.MAX_VALUE : before, user.getNumber(), Limit.of(RESULTS_PER_PAGE + 1));
+    List<MessageDTO> messages = first(found, RESULTS_PER_PAGE).stream()
+        .map(message -> MessageDTO.from(message, user))
+        .toList();
+    return new MessageSearchDTO(messages, found.size() > RESULTS_PER_PAGE);
   }
 
   // to any message you can see, your own included. here for the chat and message checks, the rest is in
@@ -254,6 +298,16 @@ public class MessageService {
     return messageRepository.lockAgainstDelete(messageId, chat.getId())
         .flatMap(id -> messageRepository.findByIdAndChat(id, chat))
         .filter(message -> !message.isHiddenFrom(user));
+  }
+
+  // without the extra one that says if there's more
+  private static List<Message> first(List<Message> messages, int count) {
+    return messages.stream().limit(count).toList();
+  }
+
+  private MessagePageDTO toPage(List<Message> oldestFirst, User user, boolean hasMore, boolean hasNewer) {
+    List<MessageDTO> messages = oldestFirst.stream().map(message -> MessageDTO.from(message, user)).toList();
+    return new MessagePageDTO(messages, reactionService.list(oldestFirst, user), hasMore, hasNewer);
   }
 
   // a message of that chat you wrote. missing or from another chat is 404, someone else's is 403
