@@ -27,6 +27,7 @@ import com.studymatch.dtos.CreateAccountRequestDTO;
 import com.studymatch.dtos.PageDTO;
 import com.studymatch.dtos.ResetPasswordRequestDTO;
 import com.studymatch.enums.AccountStatus;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -51,11 +52,12 @@ public class UserService {
   private final StudyRoomService studyRoomService;
   private final TutorApplicationService tutorApplicationService;
   private final SubjectEditionService subjectEditionService;
+  private final NotificationService notificationService;
   private final String institutionDomain;
 
   public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailSender emailSender,
       StudyRoomService studyRoomService, TutorApplicationService tutorApplicationService,
-      SubjectEditionService subjectEditionService,
+      SubjectEditionService subjectEditionService, NotificationService notificationService,
       @Value("${studymatch.institution-domain}") String institutionDomain) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
@@ -63,6 +65,7 @@ public class UserService {
     this.studyRoomService = studyRoomService;
     this.tutorApplicationService = tutorApplicationService;
     this.subjectEditionService = subjectEditionService;
+    this.notificationService = notificationService;
     this.institutionDomain = institutionDomain;
   }
 
@@ -173,11 +176,12 @@ public class UserService {
     return new BlockedAccountDTO(AccountSummaryDTO.from(user), cancelledStudyRooms, cancelledTutorApplications);
   }
 
-  // the cancelled StudyRooms stay cancelled. Telling the user comes with notifications (#144)
+  // the cancelled StudyRooms stay cancelled
   @Transactional
   public AccountSummaryDTO unblockAccount(Long number) {
     User user = getByNumber(number);
     user.unblock();
+    notificationService.notify(user, NotificationType.ACCOUNT_UNBLOCKED, null, null, Map.of());
     return AccountSummaryDTO.from(userRepository.save(user));
   }
 

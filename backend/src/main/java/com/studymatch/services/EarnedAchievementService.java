@@ -23,6 +23,8 @@ import com.studymatch.dtos.VerifiedAchievementDTO;
 import com.studymatch.dtos.VerifiedCertificateDTO;
 import com.studymatch.enums.Achievement;
 import com.studymatch.enums.Achievement.TutorRecord;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -44,17 +46,19 @@ public class EarnedAchievementService {
   private final TutorRoleService tutorRoleService;
   private final AchievementRecordService achievementRecordService;
   private final CertificatePdfWriter certificatePdfWriter;
+  private final NotificationService notificationService;
 
   public EarnedAchievementService(EarnedAchievementRepository earnedAchievementRepository,
       StudyRoomService studyRoomService, ParticipationService participationService,
       TutorRoleService tutorRoleService, AchievementRecordService achievementRecordService,
-      CertificatePdfWriter certificatePdfWriter) {
+      CertificatePdfWriter certificatePdfWriter, NotificationService notificationService) {
     this.earnedAchievementRepository = earnedAchievementRepository;
     this.studyRoomService = studyRoomService;
     this.participationService = participationService;
     this.tutorRoleService = tutorRoleService;
     this.achievementRecordService = achievementRecordService;
     this.certificatePdfWriter = certificatePdfWriter;
+    this.notificationService = notificationService;
   }
 
   public List<AchievementBadgeDTO> getAchievements(Student student) {
@@ -125,7 +129,8 @@ public class EarnedAchievementService {
     return new Entry(earned.getAchievement(), earned.getEarnedAt().toLocalDate(), earned.getEvidence());
   }
 
-  // runs inside the confirm or rating transaction. Achievements are only added, never taken away
+  // runs inside the confirm or rating transaction. Achievements are only added, never taken away.
+  // the tutor is only told about one this call added, not one a rating at the same time beat it to
   @EventListener
   public void awardAchievements(TutorActivityEvent event) {
     Student tutor = event.tutor();
@@ -136,8 +141,12 @@ public class EarnedAchievementService {
         .collect(Collectors.toSet());
     Arrays.stream(Achievement.values())
         .filter(achievement -> !earned.contains(achievement) && achievement.isMetBy(record))
-        .forEach(achievement -> earnedAchievementRepository.saveIfNew(new EarnedAchievement(tutor, achievement)));
-    // telling the tutor about a new badge comes with notifications (#144)
+        .forEach(achievement -> {
+          if (earnedAchievementRepository.saveIfNew(new EarnedAchievement(tutor, achievement)) == 1) {
+            notificationService.notify(tutor, NotificationType.ACHIEVEMENT_EARNED, NotificationTarget.ACHIEVEMENT,
+                null, Map.of("achievement", achievement.name()));
+          }
+        });
   }
 
 }
