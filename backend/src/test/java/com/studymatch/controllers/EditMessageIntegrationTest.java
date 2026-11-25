@@ -216,13 +216,12 @@ class EditMessageIntegrationTest {
   // the text rule (GR10)
 
   @Test
-  @DisplayName("Empty text is refused with VALIDATION_FAILED and the old text stays")
+  @DisplayName("Empty text on a message without attachments is refused with MESSAGE_EMPTY and the old text stays")
   void blankText() throws Exception {
     // Act
     edit(withRui.getId(), anasMessage.getId(), anaSession, "   ")
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
-        .andExpect(jsonPath("$.fieldErrors[0].code").value("NOT_BLANK"));
+        .andExpect(jsonPath("$.code").value("MESSAGE_EMPTY"));
 
     // Assert
     assertEquals("see you at 10", messageRepository.findById(anasMessage.getId()).orElseThrow().getText());
