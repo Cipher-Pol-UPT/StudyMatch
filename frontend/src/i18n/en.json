@@ -580,6 +580,7 @@
     "SEPARATIONS_CANNOT_BE_MET": "The separations leave no valid way to form the groups.",
     "GROUPS_ALREADY_PUBLISHED": "This assignment already has published groups. Regenerating discards them and any manual edits, and students have already seen them.",
     "NO_DRAFT_GROUPS": "There are no draft groups to confirm.",
+    "NO_GROUPS_TO_EXPORT": "This assignment has no published groups to export yet.",
     "ASSIGNMENT_ALREADY_EXISTS": "This subject already has an assignment with this name.",
     "ASSIGNMENT_WEIGHT_EXCEEDED": "The assignment weights would go over 100%. Weight available: {{remaining}}%.",
     "STUDENT_NOT_ENROLLED": "Student {{number}} is not enrolled in this subject.",
