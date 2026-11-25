@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.studymatch.enums.AssignmentType;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.enums.StatuteType;
 import com.studymatch.models.Absence;
 import com.studymatch.models.AcademicYear;
@@ -47,6 +50,7 @@ import com.studymatch.models.Enrolment;
 import com.studymatch.models.Group;
 import com.studymatch.models.GroupingRule;
 import com.studymatch.models.Lesson;
+import com.studymatch.models.Notification;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Student;
 import com.studymatch.models.Subject;
@@ -61,6 +65,7 @@ import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.EnrolmentRepository;
 import com.studymatch.repositories.GroupRepository;
 import com.studymatch.repositories.LessonRepository;
+import com.studymatch.repositories.NotificationRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.SubjectEditionRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -90,6 +95,7 @@ class GenerateGroupsIntegrationTest {
   @Autowired private GroupRepository groupRepository;
   @Autowired private LessonRepository lessonRepository;
   @Autowired private AbsenceRepository absenceRepository;
+  @Autowired private NotificationRepository notificationRepository;
 
   private SubjectEdition edition;
   private List<Student> students;
@@ -173,6 +179,10 @@ class GenerateGroupsIntegrationTest {
 
   private List<Group> groups(Assignment assignment, GroupStatus status) {
     return groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, status);
+  }
+
+  private List<Notification> notificationsOf(User user) {
+    return notificationRepository.findByRecipientNumber(user.getNumber(), Pageable.unpaged()).getContent();
   }
 
   @Test
@@ -315,6 +325,38 @@ class GenerateGroupsIntegrationTest {
     // Assert
     assertTrue(groups(assignment, GroupStatus.DRAFT).isEmpty());
     assertEquals(2, groups(assignment, GroupStatus.PUBLISHED).size());
+  }
+
+  @Test
+  @DisplayName("Confirming tells every member their group, and generating or cancelling tells nobody")
+  void confirmNotifiesMembers() throws Exception {
+    // Arrange
+    Assignment assignment = project(3, 4, 5);
+    generate(assignment).andExpect(status().isCreated());
+    assertTrue(students.stream().allMatch(student -> notificationsOf(student).isEmpty()));
+
+    // Act
+    publish(assignment).andExpect(status().isNoContent());
+
+    // Assert
+    for (Group group : groups(assignment, GroupStatus.PUBLISHED)) {
+      for (Student member : group.getMembers()) {
+        List<Notification> notifications = notificationsOf(member);
+        assertEquals(1, notifications.size());
+        Notification notification = notifications.getFirst();
+        assertEquals(NotificationType.GROUP_PUBLISHED, notification.getType());
+        assertEquals(NotificationTarget.GROUP, notification.getTarget());
+        assertEquals(group.getId(), notification.getTargetId());
+        assertEquals(assignment.getName(), notification.getParams().get("assignment"));
+        assertEquals(group.getNumber(), notification.getParams().get("number"));
+      }
+    }
+    assertTrue(notificationsOf(blocked).isEmpty());
+
+    // Act + Assert - new drafts and cancelling them change nothing for the students
+    generate(TEACHER, assignment, true).andExpect(status().isCreated());
+    discard(assignment).andExpect(status().isNoContent());
+    assertTrue(students.stream().allMatch(student -> notificationsOf(student).size() == 1));
   }
 
   @Test

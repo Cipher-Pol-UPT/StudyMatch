@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +26,8 @@ import com.studymatch.dtos.MyGroupDTO;
 import com.studymatch.enums.AssignmentType;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.enums.StatuteType;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -42,6 +47,7 @@ class GroupServiceTest {
   private GroupRepository groupRepository;
   private AssignmentService assignmentService;
   private EnrolmentService enrolmentService;
+  private NotificationService notificationService;
   private GroupService groupService;
   private SubjectEdition edition;
   private Student ana;
@@ -52,9 +58,10 @@ class GroupServiceTest {
     groupRepository = mock(GroupRepository.class);
     assignmentService = mock(AssignmentService.class);
     enrolmentService = mock(EnrolmentService.class);
+    notificationService = mock(NotificationService.class);
     groupService = new GroupService(groupRepository, assignmentService, enrolmentService,
         mock(AcademicYearService.class), mock(SubjectEditionService.class), mock(LessonService.class),
-        mock(AbsenceService.class), mock(GroupGenerator.class));
+        mock(AbsenceService.class), mock(GroupGenerator.class), notificationService);
     edition = ModelTestData.subjectEdition();
     ana = student("Ana", ANA);
     rui = student("Rui", 1002L);
@@ -229,6 +236,45 @@ class GroupServiceTest {
 
     // Assert
     assertEquals(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, exception.getCode());
+  }
+
+  @Test
+  @DisplayName("Publishing tells each member their group, pointing at it")
+  void publishNotifiesMembers() {
+    // Arrange
+    Assignment assignment = project("Project", LocalDate.of(2026, 1, 10));
+    Group first = draft(assignment, 1, ana);
+    Group second = draft(assignment, 2, rui);
+    ReflectionTestUtils.setField(first, "id", 11L);
+    ReflectionTestUtils.setField(second, "id", 12L);
+    when(assignmentService.getLockedAssignment(1L, 2L)).thenReturn(assignment);
+    when(groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT))
+        .thenReturn(List.of(first, second));
+
+    // Act
+    groupService.publishGroups(1L, 2L);
+
+    // Assert
+    verify(notificationService).notifyAll(Set.of(ana), NotificationType.GROUP_PUBLISHED, NotificationTarget.GROUP,
+        11L, Map.of("subject", "Test Subject", "assignment", "Project", "number", 1));
+    verify(notificationService).notifyAll(Set.of(rui), NotificationType.GROUP_PUBLISHED, NotificationTarget.GROUP,
+        12L, Map.of("subject", "Test Subject", "assignment", "Project", "number", 2));
+  }
+
+  @Test
+  @DisplayName("Publishing without drafts is NO_DRAFT_GROUPS and tells nobody")
+  void publishWithoutDraftsNotifiesNobody() {
+    // Arrange
+    Assignment assignment = project("Project", LocalDate.of(2026, 1, 10));
+    when(assignmentService.getLockedAssignment(1L, 2L)).thenReturn(assignment);
+    when(groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT)).thenReturn(List.of());
+
+    // Act
+    StudyMatchException exception = assertThrows(StudyMatchException.class, () -> groupService.publishGroups(1L, 2L));
+
+    // Assert
+    assertEquals(ErrorCode.NO_DRAFT_GROUPS, exception.getCode());
+    verifyNoInteractions(notificationService);
   }
 
 }
