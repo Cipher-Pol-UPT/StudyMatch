@@ -34,6 +34,8 @@ import com.studymatch.dtos.GroupGenerationDTO;
 import com.studymatch.dtos.MyGroupDTO;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.matching.Candidate;
@@ -65,12 +67,13 @@ public class GroupService {
   private final LessonService lessonService;
   private final AbsenceService absenceService;
   private final GroupGenerator groupGenerator;
+  private final NotificationService notificationService;
   private final Random random = new SecureRandom();
 
   public GroupService(GroupRepository groupRepository, AssignmentService assignmentService,
       EnrolmentService enrolmentService, AcademicYearService academicYearService,
       SubjectEditionService subjectEditionService, LessonService lessonService, AbsenceService absenceService,
-      GroupGenerator groupGenerator) {
+      GroupGenerator groupGenerator, NotificationService notificationService) {
     this.groupRepository = groupRepository;
     this.assignmentService = assignmentService;
     this.enrolmentService = enrolmentService;
@@ -79,6 +82,7 @@ public class GroupService {
     this.lessonService = lessonService;
     this.absenceService = absenceService;
     this.groupGenerator = groupGenerator;
+    this.notificationService = notificationService;
   }
 
   // generate groups: the new groups replace the drafts, the published ones stay until the teacher confirms
@@ -157,7 +161,12 @@ public class GroupService {
     groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.PUBLISHED);
     groupRepository.flush();
     drafts.forEach(Group::publish);
-    // telling the students about their groups comes with notifications (#144)
+    // every member is told, a republish too: their group may have changed
+    drafts.forEach(group -> notificationService.notifyAll(group.getMembers(), NotificationType.GROUP_PUBLISHED,
+        NotificationTarget.GROUP, group.getId(), Map.of(
+            "subject", assignment.getSubjectEdition().getSubject().getName(),
+            "assignment", assignment.getName(),
+            "number", group.getNumber())));
   }
 
   // generate groups, cancel: the published groups, if any, stay as they were
