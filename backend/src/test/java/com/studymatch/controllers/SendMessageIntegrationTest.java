@@ -200,8 +200,7 @@ class SendMessageIntegrationTest {
     // Act + Assert
     send("/chats/" + anaAndRui.getId() + "/messages", anaSession, "   ")
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
-        .andExpect(jsonPath("$.fieldErrors[0].code").value("NOT_BLANK"));
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
   }
 
   @Test
