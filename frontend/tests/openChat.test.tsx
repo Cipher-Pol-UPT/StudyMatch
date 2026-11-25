@@ -12,7 +12,8 @@ const live = vi.hoisted(() => ({ listeners: new Map<string, (event: unknown) => 
 vi.mock('../src/api/chatSocket', () => ({
   subscribeToChatEvents: (destination: string, onEvent: (event: unknown) => void) => {
     live.listeners.set(destination, onEvent);
-    return () => live.listeners.delete(destination);
+    // only its own, a newer subscription to the same place stays
+    return () => { if (live.listeners.get(destination) === onEvent) live.listeners.delete(destination); };
   },
 }));
 
@@ -48,6 +49,11 @@ function open() {
 
 const log = async () => within(await screen.findByRole('log', { name: 'Messages' }));
 const push = (event: ChatEvent) => live.listeners.get(`/topic/chats/${CHAT}`)?.(event);
+// the chat list's queue, once the open chat listens to it: on a slow machine the page can show before it subscribes
+async function pushToList(event: unknown) {
+  await waitFor(() => expect(live.listeners.has('/user/queue/chats')).toBe(true));
+  live.listeners.get('/user/queue/chats')?.(event);
+}
 const settle = () => act(() => new Promise(resolve => setTimeout(resolve, 50)));
 
 beforeEach(async () => { await i18n.changeLanguage('en'); });
@@ -329,7 +335,7 @@ describe('while a chat is open', () => {
     await screen.findByText(/say hi/);
 
     dm = CHAT;
-    live.listeners.get('/user/queue/chats')?.({ type: 'CHAT_UPDATED', payload: message(1, ana, 'Hi there', '2026-11-21T09:00:00') });
+    await pushToList({ type: 'CHAT_UPDATED', payload: message(1, ana, 'Hi there', '2026-11-21T09:00:00') });
 
     expect(await (await log()).findByText('Hi there')).toBeTruthy();
   });
@@ -405,7 +411,7 @@ describe('while a chat is open', () => {
     open();
     await screen.findByText(/say hi/);
 
-    live.listeners.get('/user/queue/chats')?.({ type: 'CHAT_UPDATED', payload: { ...message(1, ana, 'Hi group', '2026-11-21T09:00:00'), chatId: 99 } });
+    await pushToList({ type: 'CHAT_UPDATED', payload: { ...message(1, ana, 'Hi group', '2026-11-21T09:00:00'), chatId: 99 } });
     await settle();
 
     expect(calls.some(call => call.includes('/api/chats/99'))).toBe(false);
@@ -471,7 +477,7 @@ describe('while a chat is open', () => {
     const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
 
     dm = CHAT;
-    live.listeners.get('/user/queue/chats')?.({ type: 'CHAT_UPDATED', payload: message(1, ana, 'Hi there', '2026-11-21T09:00:00') });
+    await pushToList({ type: 'CHAT_UPDATED', payload: message(1, ana, 'Hi there', '2026-11-21T09:00:00') });
     expect(await (await log()).findByText('Hi there')).toBeTruthy();
     await settle();
     expect(reads(calls)).toBe(0);
