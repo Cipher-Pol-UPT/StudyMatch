@@ -6,6 +6,8 @@ export interface CreateStudyRoomRequest {
   subjectId: number | null; startsAt: string | null; endsAt: string | null;
   description: string | null; capacity: number; link: string | null;
 }
+// Edit StudyRoom (#51): everything but the subject, which can't change
+export type UpdateStudyRoomRequest = Omit<CreateStudyRoomRequest, 'subjectId'>;
 // the View StudyRoom (#43) calendar row: the link is null unless you host the room or already joined
 export interface StudyRoomData {
   id: number; subjectId: number; subjectName: string; tutorNumber: number; tutorName: string;

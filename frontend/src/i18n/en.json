@@ -273,7 +273,22 @@
     "meetOwn": "Use my own link",
     "meetOwnHint": "Paste a Google Meet link you already have.",
     "descriptionPlaceholder": "What will you cover? What should people bring?",
-    "created": "StudyRoom created."
+    "created": "StudyRoom created.",
+    "subjectLocked": "The subject can't be changed. Cancel and create a new StudyRoom instead.",
+    "save": "Save changes",
+    "saved": "StudyRoom updated.",
+    "edit": "Edit",
+    "editRoom": "Edit StudyRoom",
+    "editRoomDescription": "The participants are told about the changes.",
+    "cancel": "Cancel StudyRoom",
+    "cancelTitle": "Cancel this StudyRoom?",
+    "cancelBody_one": "{{room}}. The participant is told, with your reason if you give one.",
+    "cancelBody_other": "{{room}}. The {{count}} participants are told, with your reason if you give one.",
+    "cancelBodyEmpty": "{{room}}. Nobody has joined yet.",
+    "cancelReason": "Reason",
+    "cancelReasonPlaceholder": "e.g. I'm ill, I'll open a new one next week",
+    "keep": "Keep it",
+    "cancelled": "StudyRoom cancelled."
   },
   "studyRooms": {
     "heading": "StudyRooms",

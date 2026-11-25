@@ -21,20 +21,25 @@ export interface StudyRoomDraft {
 }
 export interface CreateStudyRoomFormProps extends FormFeedbackProps {
   subjects: { id: number; name: string }[]; onSubmit: (draft: StudyRoomDraft) => Promise<void>; onCancel?: () => void; now?: Date;
+  // editing a room (#50): its values filled in, the subject locked and its own Meet link, saved with Save changes
+  room?: { subjectId: number; startsAt: string; endsAt: string; capacity: number; link: string | null; description: string | null };
 }
+// the backend's codes about one field show under it, the rest (an overlap) in the banner at the top
+const CODE_FIELDS = { STUDYROOM_IN_PAST: 'startsAt', STUDYROOM_ENDS_BEFORE_START: 'endsAt', CAPACITY_BELOW_PARTICIPANTS: 'capacity' } as const;
 const dateInput = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-export function CreateStudyRoomForm({ subjects, onSubmit, onCancel, now = new Date(), fieldErrors }: CreateStudyRoomFormProps) {
+export function CreateStudyRoomForm({ subjects, onSubmit, onCancel, now = new Date(), fieldErrors, room }: CreateStudyRoomFormProps) {
   const { t } = useTranslation();
-  const feedback = useFormFeedback(fieldErrors);
-  const [subjectId, setSubjectId] = useState(subjects[0] ? String(subjects[0].id) : '');
-  const [date, setDate] = useState(() => dateInput(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)));
-  const [from, setFrom] = useState('18:00');
-  const [to, setTo] = useState('19:00');
-  const [capacity, setCapacity] = useState(8);
-  const [linkMode, setLinkMode] = useState<'auto' | 'own'>('auto');
-  const [link, setLink] = useState('');
-  const [description, setDescription] = useState('');
+  const feedback = useFormFeedback(fieldErrors, CODE_FIELDS);
+  const [subjectId, setSubjectId] = useState(room ? String(room.subjectId) : subjects[0] ? String(subjects[0].id) : '');
+  // the backend's times are local "2026-11-15T18:00:00"
+  const [date, setDate] = useState(() => room ? room.startsAt.slice(0, 10) : dateInput(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)));
+  const [from, setFrom] = useState(room ? room.startsAt.slice(11, 16) : '18:00');
+  const [to, setTo] = useState(room ? room.endsAt.slice(11, 16) : '19:00');
+  const [capacity, setCapacity] = useState(room?.capacity ?? 8);
+  const [linkMode, setLinkMode] = useState<'auto' | 'own'>(room ? 'own' : 'auto');
+  const [link, setLink] = useState(room?.link ?? '');
+  const [description, setDescription] = useState(room?.description ?? '');
   const at = (time: string) => date && time ? `${date}T${time}` : null;
   return <form className="sm-room-form" noValidate onSubmit={event => {
     event.preventDefault();
@@ -50,7 +55,7 @@ export function CreateStudyRoomForm({ subjects, onSubmit, onCancel, now = new Da
     });
   }}>
     {feedback.message && <Banner tone="danger">{feedback.message}</Banner>}
-    <Select label={t('fields.subject')} value={subjectId} hint={t('rooms.subjectHint')} disabled={feedback.busy}
+    <Select label={t('fields.subject')} value={subjectId} hint={t(room ? 'rooms.subjectLocked' : 'rooms.subjectHint')} disabled={!!room || feedback.busy}
       error={feedback.fieldError('subjectId')} options={subjects.map(subject => ({ value: String(subject.id), label: subject.name }))}
       onChange={event => setSubjectId(event.target.value)} />
     <div className="sm-room-form__row">
@@ -62,19 +67,19 @@ export function CreateStudyRoomForm({ subjects, onSubmit, onCancel, now = new Da
     </div>
     <div className="sm-room-form__box">
       <NumberStepper label={t('rooms.places')} hint={t('rooms.placesHint', CAPACITY_RANGE)} value={capacity} onValueChange={setCapacity}
-        min={CAPACITY_RANGE.min} max={CAPACITY_RANGE.max} disabled={feedback.busy} />
+        min={CAPACITY_RANGE.min} max={CAPACITY_RANGE.max} disabled={feedback.busy} error={feedback.fieldError('capacity')} />
     </div>
-    <RadioGroup label={t('rooms.meetChoice')} variant="cards" orientation="horizontal" value={linkMode} disabled={feedback.busy}
+    {!room && <RadioGroup label={t('rooms.meetChoice')} variant="cards" orientation="horizontal" value={linkMode} disabled={feedback.busy}
       onValueChange={value => setLinkMode(value as 'auto' | 'own')} options={[
         { value: 'auto', label: t('rooms.meetAuto'), description: t('rooms.meetAutoHint') },
-        { value: 'own', label: t('rooms.meetOwn'), description: t('rooms.meetOwnHint') }]} />
+        { value: 'own', label: t('rooms.meetOwn'), description: t('rooms.meetOwnHint') }]} />}
     {linkMode === 'own' && <TextField label={t('rooms.meetLink')} icon={Video} type="url" placeholder="https://meet.google.com/abc-defg-hij" value={link}
       disabled={feedback.busy} error={feedback.fieldError('link')} onChange={event => setLink(event.target.value)} />}
     <Textarea label={t('fields.description')} optional showCount maxLength={500} placeholder={t('rooms.descriptionPlaceholder')} value={description}
       disabled={feedback.busy} error={feedback.fieldError('description')} onChange={event => setDescription(event.target.value)} />
     <div className="sm-room-form__actions">
       {onCancel && <Button variant="secondary" onClick={onCancel} disabled={feedback.busy}>{t('common.cancel')}</Button>}
-      <Button type="submit" icon={CalendarPlus} loading={feedback.busy}>{t('rooms.create')}</Button>
+      <Button type="submit" icon={CalendarPlus} loading={feedback.busy}>{t(room ? 'rooms.save' : 'rooms.create')}</Button>
     </div>
   </form>;
 }

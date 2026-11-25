@@ -1,13 +1,14 @@
-import { BookOpen, CalendarDays, Check, ListChecks, Plus, Users } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, CircleX, ListChecks, Pencil, Plus, Users } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isBackendError } from '../../api/errors';
-import { createStudyRoom, getStudyRoom, getStudyRooms, joinStudyRoom, leaveStudyRoom } from '../../api/studyRooms';
+import { cancelStudyRoom, createStudyRoom, getStudyRoom, getStudyRooms, joinStudyRoom, leaveStudyRoom, updateStudyRoom } from '../../api/studyRooms';
 import { getSubjects } from '../../api/subjects';
-import { Button, CreateStudyRoomForm, Dialog, EmptyState, Skeleton, useToast, type StudyRoomDraft } from '../../studymatch-ui';
+import { Button, ConfirmDialog, CreateStudyRoomForm, Dialog, EmptyState, Skeleton, useToast, type StudyRoomDraft } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import type { StudyRoomData, StudyRoomDetailData, SubjectData } from '../../types/studyRooms';
 import { dateKey, monthStart } from './calendar';
+import { roomTopic, roomWhen } from './roomTime';
 import { StudyRoomCalendar, StudyRoomMiniCalendar } from './StudyRoomCalendar';
 import { StudyRoomPreview } from './StudyRoomPreview';
 import { subjectColor } from './subjectColor';
@@ -22,7 +23,7 @@ interface StudyRoomsPageProps {
 type StudyRoomsView = 'calendar' | 'inscriptions' | 'created';
 
 export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [today] = useState(() => initialDate ?? new Date());
   const [rooms, setRooms] = useState<StudyRoomData[]>([]);
   const [subjects, setSubjects] = useState<SubjectData[]>([]);
@@ -37,6 +38,17 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
   const toast = useToast();
   const tutorSubjects = useTutorSubjects();
   const [creating, setCreating] = useState(false);
+  // the hosted room being edited or waiting for Cancel to be confirmed (#50)
+  const [editing, setEditing] = useState<StudyRoomData | null>(null);
+  const [cancelling, setCancelling] = useState<StudyRoomData | null>(null);
+  // rooms the backend said have started or closed, though this page still thought they hadn't
+  const [locked, setLocked] = useState<ReadonlySet<number>>(() => new Set());
+  // the time, a minute at a time, so a room's actions go when it starts while the page is open
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const tick = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(tick);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -100,6 +112,58 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
     toast.success(t('rooms.created'));
   };
 
+  // a tutor's own room can change until it starts, while it's Scheduled or Full
+  const canManage = (room: StudyRoomData) => room.tutorNumber === studentNumber && !locked.has(room.id)
+    && (room.status === 'SCHEDULED' || room.status === 'FULL') && new Date(room.startsAt).getTime() > now;
+
+  const replaceRoom = (updated: StudyRoomData) => {
+    setRooms((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
+    setDetail((previous) => previous?.id === updated.id ? { ...previous, ...updated } : previous);
+  };
+
+  // it started or closed meanwhile: say so, and its actions go
+  const tooLate = (room: StudyRoomData, error: unknown) => {
+    if (!isBackendError(error) || (error.code !== 'STUDYROOM_ALREADY_STARTED' && error.code !== 'STUDYROOM_CLOSED')) return false;
+    toast.danger(t(`errors.${error.code}`));
+    setLocked((previous) => new Set(previous).add(room.id));
+    return true;
+  };
+
+  // anything else goes back to the form, under its field or in its banner
+  const saveRoom = async (draft: StudyRoomDraft) => {
+    if (!editing) return;
+    try {
+      replaceRoom(await updateStudyRoom(editing.id, {
+        startsAt: draft.startsAt, endsAt: draft.endsAt, capacity: draft.capacity, link: draft.link || null, description: draft.description || null,
+      }));
+      setEditing(null);
+      toast.success(t('rooms.saved'));
+    } catch (error) {
+      if (!tooLate(editing, error)) throw error;
+      setEditing(null);
+    }
+  };
+
+  // the reason goes to the participants; any other failure shows in the dialog
+  const cancelRoom = async (reason: string) => {
+    if (!cancelling) return;
+    try {
+      await cancelStudyRoom(cancelling.id, reason || null);
+      setRooms((previous) => previous.filter((item) => item.id !== cancelling.id));
+      if (selectedId === cancelling.id) openRoom(null);
+      toast.success(t('rooms.cancelled'));
+    } catch (error) {
+      if (!tooLate(cancelling, error)) throw error;
+    }
+  };
+
+  const manage = (room: StudyRoomData) => canManage(room) && (
+    <>
+      <Button variant="secondary" icon={Pencil} onClick={() => { openRoom(null); setEditing(room); }}>{t('rooms.edit')}</Button>
+      <Button variant="danger" icon={CircleX} onClick={() => { openRoom(null); setCancelling(room); }}>{t('rooms.cancel')}</Button>
+    </>
+  );
+
   const selectRoom = (room: StudyRoomData) => {
     document.getElementById(`study-room-event-${room.id}`)?.focus();
     openRoom(room.id);
@@ -140,6 +204,32 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
         />
       </Dialog>
 
+      <Dialog open={editing !== null} onClose={() => setEditing(null)} title={t('rooms.editRoom')} description={t('rooms.editRoomDescription')} size="lg">
+        {editing && (
+          <CreateStudyRoomForm
+            subjects={[{ id: editing.subjectId, name: editing.subjectName }]}
+            room={editing}
+            now={today}
+            onCancel={() => setEditing(null)}
+            onSubmit={saveRoom}
+          />
+        )}
+      </Dialog>
+
+      <ConfirmDialog
+        open={cancelling !== null}
+        onClose={() => setCancelling(null)}
+        tone="danger"
+        title={t('rooms.cancelTitle')}
+        description={cancelling && t(cancelling.participantCount ? 'rooms.cancelBody' : 'rooms.cancelBodyEmpty', {
+          room: `${roomTopic(cancelling)} · ${roomWhen(cancelling, i18n.language)}`, count: cancelling.participantCount,
+        })}
+        reason={{ label: t('rooms.cancelReason'), placeholder: t('rooms.cancelReasonPlaceholder'), maxLength: 500 }}
+        confirmLabel={t('rooms.cancel')}
+        cancelLabel={t('rooms.keep')}
+        onConfirm={cancelRoom}
+      />
+
       <Dialog open={view === 'calendar' && !!selectedRoom} onClose={() => openRoom(null)} title={t('studyRooms.selectedRoom')} className="study-rooms-dialog">
         {selectedRoom && (
           <StudyRoomPreview
@@ -148,6 +238,7 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
             rating={detail?.tutorAverageRating}
             ratingCount={detail?.tutorRatingCount}
             onToggleMembership={toggleMembership}
+            actions={manage(selectedRoom)}
           />
         )}
       </Dialog>
@@ -218,7 +309,7 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
               </header>
               {personalRooms.length ? (
                 <div className="study-rooms__cards">
-                  {personalRooms.map((room) => <StudyRoomPreview key={room.id} room={room} studentNumber={studentNumber} onToggleMembership={toggleMembership} />)}
+                  {personalRooms.map((room) => <StudyRoomPreview key={room.id} room={room} studentNumber={studentNumber} onToggleMembership={toggleMembership} actions={manage(room)} />)}
                 </div>
               ) : (
                 <EmptyState icon={view === 'created' ? Users : ListChecks} title={t('studyRooms.noRooms')} body={t('studyRooms.noPersonalRoomsBody')} action={<Button variant="tinted" onClick={() => { selectSubject(null); setView('calendar'); }}>{t('studyRooms.browseRooms')}</Button>} />

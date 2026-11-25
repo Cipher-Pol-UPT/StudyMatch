@@ -273,7 +273,22 @@
     "meetOwn": "Usar a minha ligação",
     "meetOwnHint": "Cole uma ligação do Google Meet que já tenha.",
     "descriptionPlaceholder": "O que vai abordar? O que devem trazer os participantes?",
-    "created": "Sala de estudo criada."
+    "created": "Sala de estudo criada.",
+    "subjectLocked": "A unidade curricular não pode ser alterada. Cancele e crie uma nova sala de estudo.",
+    "save": "Guardar alterações",
+    "saved": "Sala de estudo atualizada.",
+    "edit": "Editar",
+    "editRoom": "Editar sala de estudo",
+    "editRoomDescription": "Os participantes são avisados das alterações.",
+    "cancel": "Cancelar sala de estudo",
+    "cancelTitle": "Cancelar esta sala de estudo?",
+    "cancelBody_one": "{{room}}. O participante é avisado, com o motivo se o indicar.",
+    "cancelBody_other": "{{room}}. Os {{count}} participantes são avisados, com o motivo se o indicar.",
+    "cancelBodyEmpty": "{{room}}. Ainda ninguém se inscreveu.",
+    "cancelReason": "Motivo",
+    "cancelReasonPlaceholder": "p. ex. estou doente, abro uma nova na próxima semana",
+    "keep": "Manter",
+    "cancelled": "Sala de estudo cancelada."
   },
   "studyRooms": {
     "heading": "Salas de estudo",
