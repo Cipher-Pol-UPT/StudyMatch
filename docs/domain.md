@@ -26,6 +26,7 @@ The diagram shows the entities and how they relate. This page covers what it can
 | StudyRoom, Participation, Rating | An online session a tutor hosts for one subject, the students who join it (and whether they attended), and their 1 to 5 star ratings. |
 | Earned achievement | An achievement a tutor earned, with the date and a verification code for the certificate. |
 | Group | A group of students for one group assignment. |
+| Notification | Something the System told one user: a type and its params, not text, the page it opens if any, when it was made and whether it was read. Never deleted. |
 | Chat, Message, Chat settings | A DM between two users or a group chat someone made, with its owner and members in the order they joined (assignment group chats come with #236), the messages in it, and each member's own settings for it: when they last read it and their notification level. |
 
 ## The student profile
@@ -116,15 +117,15 @@ A student who joined a StudyRoom can leave it (`POST /study-rooms/{id}/leave`) b
 
 A student joins a StudyRoom (`POST /study-rooms/{id}/join`) before it starts, as long as they're enrolled in the subject's current edition and haven't passed it (`NOT_ELIGIBLE_FOR_STUDYROOM` otherwise). They can't be in two rooms at the same time (`JOINED_STUDYROOM_OVERLAP` names the conflicting room), and the model refuses their own room (`TUTOR_CANNOT_JOIN_OWN_STUDYROOM`), a full one (`STUDYROOM_FULL`) and joining twice (`ALREADY_JOINED_STUDYROOM`).
 
-A tutor cancels a StudyRoom they host (`POST /study-rooms/{id}/cancel`) while it's Scheduled or Full and hasn't started, with an optional reason. It leaves the calendar and never counts toward achievements. Once it started it's too late (`STUDYROOM_ALREADY_STARTED`), and cancelling an already cancelled room gives `STUDYROOM_CLOSED`. Telling the participants, with the reason if given, waits for the notifications (#144).
+A tutor cancels a StudyRoom they host (`POST /study-rooms/{id}/cancel`) while it's Scheduled or Full and hasn't started, with an optional reason. It leaves the calendar and never counts toward achievements. Once it started it's too late (`STUDYROOM_ALREADY_STARTED`), and cancelling an already cancelled room gives `STUDYROOM_CLOSED`. The participants are notified, with the reason if given.
 
-Once a room has ended, its tutor ticks who actually came (`POST /study-rooms/{id}/attendance` with their student numbers, the list comes from `GET /study-rooms/{id}/participants`). Everyone else counts as absent, and the room becomes Completed, so it can only be confirmed once. Ticking someone who never joined gives `ATTENDEE_NOT_A_PARTICIPANT`. The tutor has 48 hours after the end. After that the room is Completed with nobody attended, and confirming gives `STUDYROOM_CLOSED`. Nothing runs at the 48-hour mark: the status is worked out when the room is read, the same way Full is. Only the people who attended can rate the tutor. Confirming also checks the tutor's achievements (see below). Telling the attendees they can rate waits for the notifications (#144).
+Once a room has ended, its tutor ticks who actually came (`POST /study-rooms/{id}/attendance` with their student numbers, the list comes from `GET /study-rooms/{id}/participants`). Everyone else counts as absent, and the room becomes Completed, so it can only be confirmed once. Ticking someone who never joined gives `ATTENDEE_NOT_A_PARTICIPANT`. The tutor has 48 hours after the end. After that the room is Completed with nobody attended, and confirming gives `STUDYROOM_CLOSED`. Nothing runs at the 48-hour mark: the status is worked out when the room is read, the same way Full is. Only the people who attended can rate the tutor. Confirming also checks the tutor's achievements (see below). The attendees are notified that they can rate the tutor.
 
 A student whose attendance was confirmed rates the tutor once per room, from 1 to 5 stars with an optional comment, up to 7 days after the room ended (`POST /study-rooms/{id}/rating`). A second rating of the same room gives `ROOM_ALREADY_RATED`, and rating again is only possible after attending another of the tutor's rooms. Comments are public: anyone logged in sees them on the tutor's ratings (`GET /students/{number}/ratings`), but never who wrote them. The badge on the tutor's profile averages each student's own average first, so a student who rated three times counts as much as one who rated once. Ana's 5, 5 and 5 with Bruno's 3 give 4.0, not 4.5. The number next to it is still every rating, 4 in that example.
 
 ## Achievements
 
-Tutors earn achievements automatically. Only StudyRooms with at least two confirmed attendees count, and an achievement is never taken away once earned. They're checked every time the tutor confirms a room's attendance or gets rated, in the same transaction, so a rating that fails doesn't leave a badge behind. If two ratings at the same time both earn the tutor the same badge, the second one just skips it, so neither rating fails. "Different students tutored" are the students who attended those counted rooms, and the subject average is the same one the profile badge shows. Checking when a tutor application is approved waits for #81, and telling the tutor about a new achievement waits for the notifications (#144).
+Tutors earn achievements automatically. Only StudyRooms with at least two confirmed attendees count, and an achievement is never taken away once earned. They're checked every time the tutor confirms a room's attendance or gets rated, in the same transaction, so a rating that fails doesn't leave a badge behind. If two ratings at the same time both earn the tutor the same badge, the second one just skips it, so neither rating fails. "Different students tutored" are the students who attended those counted rooms, and the subject average is the same one the profile badge shows. Checking when a tutor application is approved waits for #81. The tutor is notified of each new achievement, only by the request that added it.
 
 | Achievement | Criteria |
 | --- | --- |
@@ -141,11 +142,29 @@ A student exports one achievement as a certificate (A4 landscape), or several as
 
 An Admin can block any account except another Admin's, so there's always someone left who can unblock. The Admin gives a reason, which is stored with the account and only shown to Admins. Accounts are never deleted (GR5): a blocked account keeps its groups, grades and the rest of its history.
 
-A blocked account can't log in, and a session it already had ends on its next request (`AccountStateFilter` checks the status every time). Blocking a tutor also cancels their StudyRooms that haven't started yet, without a reason (the block reason stays private), and their pending tutor applications get the status Cancelled. A room already in progress or finished is left as it is. The participants of the cancelled rooms aren't notified yet, that comes with the notifications (#144).
+A blocked account can't log in, and a session it already had ends on its next request (`AccountStateFilter` checks the status every time). Blocking a tutor also cancels their StudyRooms that haven't started yet, without a reason (the block reason stays private), and their pending tutor applications get the status Cancelled. A room already in progress or finished is left as it is. The participants of the cancelled rooms are notified, without a reason.
 
 Before confirming, the Admin sees what blocking would cancel (`GET /users/{number}/block-impact`). For a teacher it also lists their editions this year, because Staff has to give them another teacher; that's a warning, the block still goes through.
 
-Unblocking (`PUT /users/{number}/unblock`) makes the account active again and clears the reason, and it can log in straight away. Nothing the block cancelled comes back: the StudyRooms and tutor applications stay cancelled. The user is placed in groups generated after that, like any other active account. Unblocking an account that isn't blocked gives `ACCOUNT_NOT_BLOCKED`. Telling the user they were unblocked waits for the notifications (#144).
+Unblocking (`PUT /users/{number}/unblock`) makes the account active again and clears the reason, and it can log in straight away. Nothing the block cancelled comes back: the StudyRooms and tutor applications stay cancelled. The user is placed in groups generated after that, like any other active account. Unblocking an account that isn't blocked gives `ACCOUNT_NOT_BLOCKED`. The user is notified that they were unblocked, and sees it with whatever else they were sent while blocked.
+
+## Notifications
+
+Notifications are in-app only. Each one is a `NotificationType` with its params, which the frontend translates the same way it does error codes, and a `NotificationTarget` with an id when there's a page to open. They're made in the same transaction as the use case, so one that fails notifies nobody. The other services call `NotificationService.notify` or `notifyAll`, which depends on no other service.
+
+| Type | Who gets it | Params | Opens |
+| --- | --- | --- | --- |
+| `ACCOUNT_UNBLOCKED` | the unblocked user | | nothing |
+| `TUTOR_APPLICATION_SUBMITTED` | every teacher of the subject's current edition | `subject`, `subjectId`, `student`, `number` | the application |
+| `TUTOR_APPLICATION_APPROVED` | the student | `subject`, `subjectId` | the application |
+| `TUTOR_APPLICATION_REJECTED` | the student | `subject`, `subjectId`, `reason` if given | the application |
+| `STUDYROOM_LEFT` | the tutor | `subject`, `startsAt`, `student`, `number` | the StudyRoom |
+| `STUDYROOM_UPDATED` | the participants | `subject`, `startsAt`, `endsAt` (the new times) | the StudyRoom |
+| `STUDYROOM_CANCELLED` | the participants, also when a block cancels it | `subject`, `startsAt`, `reason` if given | the StudyRoom |
+| `STUDYROOM_RATING_OPEN` | the attendees, when attendance is confirmed | `subject`, `startsAt`, `tutor` | the StudyRoom |
+| `ACHIEVEMENT_EARNED` | the tutor | `achievement` | the achievements page (no id) |
+
+`GROUP` is a target already, for the group notifications to come. A user only sees their own: someone else's notification is `NOT_FOUND`, the same as one that doesn't exist. A Student without this year's personality test can't see them yet (GR1).
 
 ## Groups
 
