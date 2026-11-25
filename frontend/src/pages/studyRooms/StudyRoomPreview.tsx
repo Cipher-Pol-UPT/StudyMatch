@@ -14,9 +14,11 @@ interface StudyRoomPreviewProps {
   onToggleMembership: (room: StudyRoomData) => void;
   // what the tutor can do with their own room, under the card (#50)
   actions?: ReactNode;
+  // how many came to a Completed room, once the tutor confirmed it (#54)
+  attendees?: number;
 }
 
-export function StudyRoomPreview({ room, studentNumber, rating, ratingCount, onToggleMembership, actions }: StudyRoomPreviewProps) {
+export function StudyRoomPreview({ room, studentNumber, rating, ratingCount, onToggleMembership, actions, attendees }: StudyRoomPreviewProps) {
   const { t, i18n } = useTranslation();
   const titleId = useId();
   const start = new Date(room.startsAt);
@@ -24,7 +26,7 @@ export function StudyRoomPreview({ room, studentNumber, rating, ratingCount, onT
   // the calendar's link is null unless the student hosts or already joined the room
   const joined = !hosting && room.link != null;
   const remaining = room.availablePlaces;
-  const state = hosting ? 'hosting' : joined ? 'joined' : remaining === 0 ? 'full' : 'open';
+  const state = room.status === 'COMPLETED' ? 'completed' : hosting ? 'hosting' : joined ? 'joined' : remaining === 0 ? 'full' : 'open';
   const format = (options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(i18n.language, options).format(start);
 
   const card = (
@@ -67,7 +69,9 @@ export function StudyRoomPreview({ room, studentNumber, rating, ratingCount, onT
           </div>
         </div>
         {hosting ? (
-          <span className="study-room-preview__host"><Users size={15} aria-hidden />{t('studyRooms.yourRoom')}</span>
+          <span className="study-room-preview__host">
+            <Users size={15} aria-hidden />{attendees === undefined ? t('studyRooms.yourRoom') : t('studyRooms.attended', { count: attendees })}
+          </span>
         ) : (
           <Button
             variant={joined ? 'danger' : 'tinted'}

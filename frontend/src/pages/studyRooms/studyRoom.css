@@ -90,6 +90,7 @@ td[data-today='true'] .study-rooms-calendar__day { background: var(--sm-violet);
 .study-room-preview__status > i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .study-room-preview__status[data-state='open'] { background: var(--sm-success-50); color: var(--sm-success-ink); }
 .study-room-preview__status[data-state='full'] { background: var(--sm-gray-100); color: var(--sm-text-2); }
+.study-room-preview__status[data-state='completed'] { background: var(--sm-gray-100); color: var(--sm-text-2); }
 .study-room-preview__time { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--sm-text-2); font-size: 12px; line-height: 1.5; }
 .study-room-preview__time > svg { flex: none; }
 .study-room-preview .sm-progress-head { font-size: 11px; }
@@ -147,3 +148,4 @@ td[data-today='true'] .study-rooms-calendar__day { background: var(--sm-violet);
 /* a hosted room's Edit and Cancel StudyRoom, under its card (#50) */
 .study-room-preview-wrap { display: grid; gap: 12px; min-width: 0; align-content: start; }
 .study-room-preview__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.study-rooms__personal > .sm-banner { margin-bottom: 15px; }

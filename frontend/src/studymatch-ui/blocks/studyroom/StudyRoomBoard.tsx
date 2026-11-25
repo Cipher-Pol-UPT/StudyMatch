@@ -1,8 +1,9 @@
 import { CalendarPlus,Video } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isBackendError } from '../../../api/errors';
 import type { FormFeedbackProps } from '../../../types/forms';
+import { Avatar } from '../../components/avatar/Avatar';
 import { Button } from '../../components/button/Button';
 import { Select } from '../../components/field/Select';
 import { Textarea } from '../../components/field/Textarea';
@@ -10,6 +11,7 @@ import { TextField } from '../../components/field/TextField';
 import { NumberStepper } from '../../components/inputs/NumberStepper';
 import { Banner } from '../../components/overlay/Banner';
 import { Dialog } from '../../components/overlay/Dialog';
+import { Checkbox } from '../../components/selection/Checkbox';
 import { RadioGroup } from '../../components/selection/Radio';
 import { useFormFeedback } from '../../utils/useFormFeedback';
 import { StudyRoomCard,type StudyRoomCardProps } from './StudyRoomCard';
@@ -101,15 +103,33 @@ export function StudyRoomBoard({ rooms, actions, ...callbacks }: StudyRoomBoardP
 }
 export interface ConfirmAttendanceDialogProps extends FormFeedbackProps {
   open: boolean; participants: StudyRoomPerson[]; onClose: () => void; onSubmit: (ids: string[]) => Promise<void>;
+  // which room, e.g. "JUnit and regression tests · Wed, Dec 2 · 14:00–15:30"
+  description?: ReactNode;
 }
-export function ConfirmAttendanceDialog({ open, participants, onClose, onSubmit, fieldErrors }: ConfirmAttendanceDialogProps) {
-  const { t } = useTranslation(); const [selected, setSelected] = useState<string[]>([]);
+// the tutor ticks who came; the button says how many, and confirming nobody is allowed (#54)
+export function ConfirmAttendanceDialog({ open, participants, onClose, onSubmit, description, fieldErrors }: ConfirmAttendanceDialogProps) {
+  const { t } = useTranslation();
+  const [selected, setSelected] = useState<string[]>([]);
   const feedback = useFormFeedback(fieldErrors);
-  return <Dialog open={open} onClose={onClose} title={t('rooms.attendance')}>
-    {participants.map(person => <label key={person.id}><input type="checkbox" checked={selected.includes(person.id)}
-      onChange={event => setSelected(ids => event.target.checked ? [...ids,person.id] : ids.filter(id => id !== person.id))} />{person.name}</label>)}
-    {feedback.fieldError('attendees') && <p role="alert">{feedback.fieldError('attendees')}</p>}
+  const tick = (id: string, checked: boolean) => setSelected(ids => checked ? [...ids, id] : ids.filter(other => other !== id));
+  return <Dialog open={open} onClose={feedback.busy ? () => {} : onClose} title={t('rooms.attendance')} description={description} size="sm"
+    footer={<>
+      <Button variant="secondary" onClick={onClose} disabled={feedback.busy}>{t('common.cancel')}</Button>
+      <Button loading={feedback.busy} onClick={() => void feedback.submit(() => onSubmit(selected))}>
+        {t('rooms.confirmAttendees', { count: selected.length })}
+      </Button>
+    </>}>
     {feedback.message && <Banner tone="danger">{feedback.message}</Banner>}
-    <Button loading={feedback.busy} onClick={() => void feedback.submit(() => onSubmit(selected))}>{t('common.confirm')}</Button>
+    <ul className="sm-attendance">
+      {participants.map(person => <li key={person.id}>
+        <Checkbox checked={selected.includes(person.id)} disabled={feedback.busy} onCheckedChange={checked => tick(person.id, checked)}>
+          <span className="sm-attendance__person">
+            {/* the name is right beside it, so the box is read once */}
+            <span aria-hidden><Avatar name={person.name} src={person.avatarUrl} size={32} /></span>{person.name}
+          </span>
+        </Checkbox>
+      </li>)}
+    </ul>
+    {feedback.fieldError('attendeeNumbers') && <p className="sm-attendance__error" role="alert">{feedback.fieldError('attendeeNumbers')}</p>}
   </Dialog>;
 }

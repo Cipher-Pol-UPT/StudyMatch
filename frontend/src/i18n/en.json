@@ -288,7 +288,12 @@
     "cancelReason": "Reason",
     "cancelReasonPlaceholder": "e.g. I'm ill, I'll open a new one next week",
     "keep": "Keep it",
-    "cancelled": "StudyRoom cancelled."
+    "cancelled": "StudyRoom cancelled.",
+    "confirmAttendees_one": "Confirm {{count}} attendee",
+    "confirmAttendees_other": "Confirm {{count}} attendees",
+    "ended": "{{topic}} has ended",
+    "endedBody": "Mark who came. Only they can rate you, and the StudyRoom closes on its own 48 hours after it ends.",
+    "attendanceConfirmed": "Attendance confirmed. The StudyRoom is completed."
   },
   "studyRooms": {
     "heading": "StudyRooms",
@@ -327,7 +332,10 @@
     "noPersonalRoomsBody": "Choose Show all subjects or browse the calendar to find a session.",
     "browseRooms": "Browse study rooms",
     "loading": "Loading study rooms…",
-    "membershipFailed": "Couldn't update the study room. Try again."
+    "membershipFailed": "Couldn't update the study room. Try again.",
+    "completed": "Completed",
+    "attended_one": "{{count}} attended",
+    "attended_other": "{{count}} attended"
   },
   "personality": {
     "title": "Personality test",

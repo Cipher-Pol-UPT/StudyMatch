@@ -19,3 +19,5 @@ export interface StudyRoomDetailData extends StudyRoomData {
   tutorAverageRating: number | null; tutorRatingCount: number;
   hosted: boolean; joined: boolean; canJoin: boolean;
 }
+// Confirm StudyRoom attendance (#55): someone who joined a room you host, and whether they came
+export interface ParticipantData { number: number; name: string; attended: boolean }

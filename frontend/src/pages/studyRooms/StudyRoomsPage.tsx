@@ -2,11 +2,11 @@ import { BookOpen, CalendarDays, Check, CircleX, ListChecks, Pencil, Plus, Users
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isBackendError } from '../../api/errors';
-import { cancelStudyRoom, createStudyRoom, getStudyRoom, getStudyRooms, joinStudyRoom, leaveStudyRoom, updateStudyRoom } from '../../api/studyRooms';
+import { cancelStudyRoom, confirmAttendance, createStudyRoom, getStudyRoom, getStudyRoomParticipants, getStudyRooms, joinStudyRoom, leaveStudyRoom, updateStudyRoom } from '../../api/studyRooms';
 import { getSubjects } from '../../api/subjects';
-import { Button, ConfirmDialog, CreateStudyRoomForm, Dialog, EmptyState, Skeleton, useToast, type StudyRoomDraft } from '../../studymatch-ui';
+import { Banner, Button, ConfirmAttendanceDialog, ConfirmDialog, CreateStudyRoomForm, Dialog, EmptyState, Skeleton, useToast, type StudyRoomDraft } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
-import type { StudyRoomData, StudyRoomDetailData, SubjectData } from '../../types/studyRooms';
+import type { ParticipantData, StudyRoomData, StudyRoomDetailData, SubjectData } from '../../types/studyRooms';
 import { dateKey, monthStart } from './calendar';
 import { roomTopic, roomWhen } from './roomTime';
 import { StudyRoomCalendar, StudyRoomMiniCalendar } from './StudyRoomCalendar';
@@ -43,6 +43,10 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
   const [cancelling, setCancelling] = useState<StudyRoomData | null>(null);
   // rooms the backend said have started or closed, though this page still thought they hadn't
   const [locked, setLocked] = useState<ReadonlySet<number>>(() => new Set());
+  // an ended room whose attendance is being confirmed, with who joined it (#54)
+  const [confirming, setConfirming] = useState<{ room: StudyRoomData; participants: ParticipantData[] } | null>(null);
+  // how many came, for the rooms completed while the page is open
+  const [attendees, setAttendees] = useState<ReadonlyMap<number, number>>(() => new Map());
   // the time, a minute at a time, so a room's actions go when it starts while the page is open
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -157,6 +161,42 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
     }
   };
 
+  // the tutor's rooms that ended and still wait for who came, until they're Completed (48 hours at most)
+  const toConfirm = createdRooms.filter((room) => room.status !== 'COMPLETED' && room.status !== 'CANCELLED'
+    && new Date(room.endsAt).getTime() <= now);
+
+  const openAttendance = async (room: StudyRoomData) => {
+    try {
+      setConfirming({ room, participants: await getStudyRoomParticipants(room.id) });
+    } catch (error) {
+      toast.danger(isBackendError(error) ? t(`errors.${error.code}`) : t('common.unexpectedError'));
+    }
+  };
+
+  // already confirmed, or past the 48 hours: it's Completed, with however many the backend has as attended
+  const completed = (room: StudyRoomData) => {
+    replaceRoom({ ...room, status: 'COMPLETED' });
+    getStudyRoomParticipants(room.id)
+      .then((participants) => setAttendees((previous) => new Map(previous).set(room.id, participants.filter((p) => p.attended).length)))
+      .catch(() => undefined);
+  };
+
+  // not ended yet or already closed: a toast and the dialog closes; anything else stays in the dialog
+  const submitAttendance = async (ids: string[]) => {
+    if (!confirming) return;
+    const { room } = confirming;
+    try {
+      replaceRoom(await confirmAttendance(room.id, ids.map(Number)));
+      setAttendees((previous) => new Map(previous).set(room.id, ids.length));
+      toast.success(t('rooms.attendanceConfirmed'));
+    } catch (error) {
+      if (!isBackendError(error) || (error.code !== 'STUDYROOM_NOT_ENDED' && error.code !== 'STUDYROOM_CLOSED')) throw error;
+      toast.danger(t(`errors.${error.code}`));
+      if (error.code === 'STUDYROOM_CLOSED') completed(room);
+    }
+    setConfirming(null);
+  };
+
   const manage = (room: StudyRoomData) => canManage(room) && (
     <>
       <Button variant="secondary" icon={Pencil} onClick={() => { openRoom(null); setEditing(room); }}>{t('rooms.edit')}</Button>
@@ -229,6 +269,17 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
         cancelLabel={t('rooms.keep')}
         onConfirm={cancelRoom}
       />
+
+      {confirming && (
+        <ConfirmAttendanceDialog
+          key={confirming.room.id}
+          open
+          onClose={() => setConfirming(null)}
+          description={`${roomTopic(confirming.room)} · ${roomWhen(confirming.room, i18n.language)}`}
+          participants={confirming.participants.map((person) => ({ id: String(person.number), name: person.name, avatarUrl: `/api/students/${person.number}/pfp` }))}
+          onSubmit={submitAttendance}
+        />
+      )}
 
       <Dialog open={view === 'calendar' && !!selectedRoom} onClose={() => openRoom(null)} title={t('studyRooms.selectedRoom')} className="study-rooms-dialog">
         {selectedRoom && (
@@ -307,9 +358,15 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
                 </div>
                 <span>{t('studyRooms.roomCount', { count: personalRooms.length })}</span>
               </header>
+              {view === 'created' && toConfirm.map((room) => (
+                <Banner key={room.id} tone="warning" title={t('rooms.ended', { topic: roomTopic(room) })}
+                  action={<Button onClick={() => void openAttendance(room)}>{t('rooms.attendance')}</Button>}>
+                  {t('rooms.endedBody')}
+                </Banner>
+              ))}
               {personalRooms.length ? (
                 <div className="study-rooms__cards">
-                  {personalRooms.map((room) => <StudyRoomPreview key={room.id} room={room} studentNumber={studentNumber} onToggleMembership={toggleMembership} actions={manage(room)} />)}
+                  {personalRooms.map((room) => <StudyRoomPreview key={room.id} room={room} studentNumber={studentNumber} onToggleMembership={toggleMembership} actions={manage(room)} attendees={attendees.get(room.id)} />)}
                 </div>
               ) : (
                 <EmptyState icon={view === 'created' ? Users : ListChecks} title={t('studyRooms.noRooms')} body={t('studyRooms.noPersonalRoomsBody')} action={<Button variant="tinted" onClick={() => { selectSubject(null); setView('calendar'); }}>{t('studyRooms.browseRooms')}</Button>} />

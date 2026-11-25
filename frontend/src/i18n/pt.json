@@ -288,7 +288,12 @@
     "cancelReason": "Motivo",
     "cancelReasonPlaceholder": "p. ex. estou doente, abro uma nova na próxima semana",
     "keep": "Manter",
-    "cancelled": "Sala de estudo cancelada."
+    "cancelled": "Sala de estudo cancelada.",
+    "confirmAttendees_one": "Confirmar {{count}} presença",
+    "confirmAttendees_other": "Confirmar {{count}} presenças",
+    "ended": "{{topic}} terminou",
+    "endedBody": "Indique quem compareceu. Só essas pessoas o podem avaliar, e a sala de estudo fecha sozinha 48 horas depois de terminar.",
+    "attendanceConfirmed": "Presenças confirmadas. A sala de estudo foi concluída."
   },
   "studyRooms": {
     "heading": "Salas de estudo",
@@ -327,7 +332,10 @@
     "noPersonalRoomsBody": "Escolha Mostrar todas as unidades curriculares ou procure uma sessão no calendário.",
     "browseRooms": "Explorar salas de estudo",
     "loading": "A carregar as salas de estudo…",
-    "membershipFailed": "Não foi possível atualizar a sala de estudo. Tenta novamente."
+    "membershipFailed": "Não foi possível atualizar a sala de estudo. Tenta novamente.",
+    "completed": "Concluída",
+    "attended_one": "{{count}} presente",
+    "attended_other": "{{count}} presentes"
   },
   "personality": {
     "title": "Teste de personalidade",
