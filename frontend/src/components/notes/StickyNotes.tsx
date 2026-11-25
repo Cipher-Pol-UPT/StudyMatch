@@ -28,7 +28,7 @@ const paper = (colour: NoteColour) => colour.toLowerCase() as NoteColor;
 function freeSpot(notes: NoteData[]) {
   const distance = (spot: { x: number; y: number }) =>
     Math.min(Infinity, ...notes.map(note => Math.hypot(spot.x - note.x, spot.y - note.y)));
-  return SPOTS.reduce((best, spot) => distance(spot) > distance(best) ? spot : best);
+  return SPOTS.reduce((best, spot) => distance(spot) > distance(best) ? spot : best, SPOTS[0]);
 }
 
 function usePhone() {
@@ -78,6 +78,12 @@ export function StickyNotes() {
   // the last drop of each note, so an older drop's answer never moves it back
   const drops = useRef(new Map<number, number>());
   const board = useRef<HTMLDivElement>(null);
+  // the open note's text box, focused when a note opens so you can type straight away
+  const editor = useRef<HTMLTextAreaElement>(null);
+  const editingId = editing?.id;
+  useEffect(() => {
+    if (editingId !== undefined) editor.current?.focus();
+  }, [editingId]);
 
   useEffect(() => {
     let alive = true;
@@ -267,7 +273,7 @@ export function StickyNotes() {
         {isOpen ? (
           <StickyNote color={paper(note.colour)} size={size} onRemove={() => void remove(note)}
             footer={swatches(note.colour, next => void recolour(note, next), true)}>
-            <textarea className="sticky-notes__input" aria-label={t('notes.text')} value={editing.text} autoFocus
+            <textarea className="sticky-notes__input" aria-label={t('notes.text')} value={editing.text} ref={editor}
               aria-invalid={error ? true : undefined}
               onChange={event => setEditing({ id: note.id, text: event.target.value })}
               onBlur={() => void saveText(note)}

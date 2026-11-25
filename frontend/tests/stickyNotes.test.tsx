@@ -103,6 +103,7 @@ describe('sticky notes', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Open note: Study recursion' }));
 
     const box = screen.getByRole('textbox', { name: 'Note text' });
+    expect(document.activeElement).toBe(box);
     fireEvent.change(box, { target: { value: 'Study recursion and trees' } });
     fireEvent.blur(box);
 
