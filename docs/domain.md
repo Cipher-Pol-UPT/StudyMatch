@@ -163,8 +163,9 @@ Notifications are in-app only. Each one is a `NotificationType` with its params,
 | `STUDYROOM_CANCELLED` | the participants, also when a block cancels it | `subject`, `startsAt`, `reason` if given | the StudyRoom |
 | `STUDYROOM_RATING_OPEN` | the attendees, when attendance is confirmed | `subject`, `startsAt`, `tutor` | the StudyRoom |
 | `ACHIEVEMENT_EARNED` | the tutor | `achievement` | the achievements page (no id) |
+| `GROUP_PUBLISHED` | every member, when the teacher confirms the groups (a republish too) | `subject`, `assignment`, `number` | the group |
 
-`GROUP` is a target already, for the group notifications to come. A user only sees their own: someone else's notification is `NOT_FOUND`, the same as one that doesn't exist. A Student without this year's personality test can't see them yet (GR1).
+Editing and importing groups will send theirs when they're built. A user only sees their own: someone else's notification is `NOT_FOUND`, the same as one that doesn't exist. A Student without this year's personality test can't see them yet (GR1).
 
 ## Groups
 
@@ -172,7 +173,7 @@ Groups are generated per group assignment (#57). Blocked accounts aren't placed 
 
 Generating saves the groups as drafts and answers with a preview: each group's members with their class, and the languages the whole group shares. An empty list means the group has none in common, so the page marks it and the teacher edits it or confirms anyway. The preview never shows grades, attendance figures or the statute type: a student with a statute only shows that attendance doesn't apply (GR7). Generating again replaces the drafts, confirming publishes them and cancelling deletes them. The teacher can also edit the drafts before publishing (#63).
 
-If the assignment already has published groups, generating answers `GROUPS_ALREADY_PUBLISHED`, so the page can warn that students have already seen them; with `replacePublished=true` it goes ahead. The published groups stay until the new ones are confirmed, which is why a draft and a published group can share a number. Fewer students than the minimum size gives `NOT_ENOUGH_STUDENTS_FOR_GROUPS`, a class that can't be split within the sizes gives `NO_VALID_GROUP_SPLIT` (the teacher widens the range), separations that leave no valid grouping give `SEPARATIONS_CANNOT_BE_MET`, and confirming without drafts gives `NO_DRAFT_GROUPS`. Telling the students about their groups waits for the notifications (#144).
+If the assignment already has published groups, generating answers `GROUPS_ALREADY_PUBLISHED`, so the page can warn that students have already seen them; with `replacePublished=true` it goes ahead. The published groups stay until the new ones are confirmed, which is why a draft and a published group can share a number. Fewer students than the minimum size gives `NOT_ENOUGH_STUDENTS_FOR_GROUPS`, a class that can't be split within the sizes gives `NO_VALID_GROUP_SPLIT` (the teacher widens the range), separations that leave no valid grouping give `SEPARATIONS_CANNOT_BE_MET`, and confirming without drafts gives `NO_DRAFT_GROUPS`. Confirming tells every member their group (`GROUP_PUBLISHED`); generating and cancelling drafts tell nobody, since students never see drafts.
 
 Students only ever see published groups, never drafts. My Groups (#16) lists every published group a student is in, from every year, latest assignment first, with each member's name and institutional email, and the page opens a member's public profile from there. A blocked member still shows in the groups they were already in, marked as blocked (GR5).
 
