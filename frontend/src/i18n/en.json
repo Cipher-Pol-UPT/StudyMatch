@@ -618,6 +618,7 @@
     "CANNOT_BLOCK_YOURSELF": "You can't block yourself.",
     "UNBLOCK_TO_MESSAGE": "You blocked this person. Unblock them to send a message.",
     "NOT_MESSAGE_AUTHOR": "Only the person who sent this message can change it.",
+    "REPLIED_MESSAGE_NOT_FOUND": "The message you're replying to isn't there anymore.",
     "NOT_ENOUGH_GROUP_CHAT_MEMBERS": "Pick at least {{min}} people for a group chat.",
     "TOO_MANY_GROUP_CHAT_MEMBERS": "A group chat can have at most {{max}} members, counting you.",
     "INVALID_GROUP_CHAT_PICTURE": "Use a JPG or PNG image up to 1 MB for the group chat's picture.",
@@ -1115,6 +1116,12 @@
     "editCancel": "to cancel",
     "editSave": "to save",
     "deleteTitle": "Delete this message?",
-    "deleteBody": "It's removed for everyone, with nothing left in its place."
+    "deleteBody": "It's removed for everyone, with nothing left in its place.",
+    "openProfile": "Open {{name}}'s profile"
+  },
+  "classmate": {
+    "title": "Student profile",
+    "back": "Back",
+    "message": "Message"
   }
 }

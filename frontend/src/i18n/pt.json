@@ -618,6 +618,7 @@
     "CANNOT_BLOCK_YOURSELF": "Não se pode bloquear a si próprio.",
     "UNBLOCK_TO_MESSAGE": "Bloqueou esta pessoa. Desbloqueie-a para enviar uma mensagem.",
     "NOT_MESSAGE_AUTHOR": "Só quem enviou esta mensagem a pode alterar.",
+    "REPLIED_MESSAGE_NOT_FOUND": "A mensagem a que está a responder já não existe.",
     "NOT_ENOUGH_GROUP_CHAT_MEMBERS": "Escolha pelo menos {{min}} pessoas para uma conversa de grupo.",
     "TOO_MANY_GROUP_CHAT_MEMBERS": "Uma conversa de grupo pode ter no máximo {{max}} membros, contando consigo.",
     "INVALID_GROUP_CHAT_PICTURE": "Utilize uma imagem JPG ou PNG com até 1 MB para a fotografia da conversa de grupo.",
@@ -1115,6 +1116,12 @@
     "editCancel": "para cancelar",
     "editSave": "para guardar",
     "deleteTitle": "Eliminar esta mensagem?",
-    "deleteBody": "É removida para todos, sem deixar nada no seu lugar."
+    "deleteBody": "É removida para todos, sem deixar nada no seu lugar.",
+    "openProfile": "Abrir o perfil de {{name}}"
+  },
+  "classmate": {
+    "title": "Perfil do estudante",
+    "back": "Voltar",
+    "message": "Enviar mensagem"
   }
 }

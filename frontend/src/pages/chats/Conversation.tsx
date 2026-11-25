@@ -14,6 +14,8 @@ import { useChatHistory } from './useChatHistory';
 
 export interface ConversationProps {
   chat: DirectChatData;
+  // where someone's profile is, for the people who have one you can open
+  profilePath?: (contact: ChatContactData) => string | undefined;
 }
 
 // messages closer than this are one run: only the first shows who and when
@@ -40,7 +42,7 @@ const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 const photoOf = (author: ChatContactData) => author.role === 'STUDENT' ? `/api/students/${author.number}/pfp` : undefined;
 
 // a DM: its history, live messages while it's open, editing and deleting your own, and the message box (#203, #205, #207, #209)
-export function Conversation({ chat }: ConversationProps) {
+export function Conversation({ chat, profilePath }: ConversationProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { contact } = chat;
@@ -231,7 +233,8 @@ export function Conversation({ chat }: ConversationProps) {
   const askToDelete = (message: MessageData, shift: boolean) => shift ? deleteForGood(message) : setDeleting(message);
 
   const head = (
-    <ChatHead name={contact.name} avatarSrc={photoOf(contact)} subtitle={line} backLabel={t('chats.back')} onBack={() => navigate('/chats')} />
+    <ChatHead name={contact.name} avatarSrc={photoOf(contact)} subtitle={line} backLabel={t('chats.back')} onBack={() => navigate('/chats')}
+      profileHref={profilePath?.(contact)} linkAs={Link} profileLabel={t('chats.openProfile', { name: contact.name })} />
   );
 
   if (history.error !== undefined) {

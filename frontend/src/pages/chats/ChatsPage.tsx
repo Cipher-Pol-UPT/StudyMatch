@@ -8,10 +8,16 @@ import { NewMessageDialog } from '../../components/chat/NewMessageDialog';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
 import { Banner, Button, buttonClass, ChatLayout, ChatListPane, ChatThread, EmptyState } from '../../studymatch-ui';
+import { type ChatContactData } from '../../types/chat';
 import { Conversation } from './Conversation';
 
+export interface ChatsPageProps {
+  // where someone's profile is, for the people who have one you can open
+  profilePath?: (contact: ChatContactData) => string | undefined;
+}
+
 // Chats: the list (#201) and the open conversation; this page starts DMs (#199)
-export function ChatsPage() {
+export function ChatsPage({ profilePath }: ChatsPageProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { number } = useParams();
@@ -29,7 +35,7 @@ export function ChatsPage() {
             <EmptyState compact icon={MessagesSquare} title={t('chats.noChats')} body={t('chats.noChatsBody')} />
           </ChatListPane>
         )}
-        thread={number ? <DirectConversation key={number} number={Number(number)} /> : (
+        thread={number ? <DirectConversation key={number} number={Number(number)} profilePath={profilePath} /> : (
           <ChatThread label={t('chats.conversation')}>
             <EmptyState compact icon={MessagesSquare} title={t('chats.pickChat')} body={t('chats.pickChatBody')} />
           </ChatThread>
@@ -41,7 +47,7 @@ export function ChatsPage() {
 }
 
 // the DM with one person: found by their number, then its messages and the message box
-function DirectConversation({ number }: { number: number }) {
+function DirectConversation({ number, profilePath }: { number: number } & ChatsPageProps) {
   const { t } = useTranslation();
   const load = useCallback(() => Number.isInteger(number) ? getDirectChat(number) : Promise.reject({ code: 'NOT_FOUND' }), [number]);
   const chat = useRemoteData(`direct-chat:${number}`, load);
@@ -58,5 +64,5 @@ function DirectConversation({ number }: { number: number }) {
     return <ChatThread label={t('chats.conversation')}><DataLoadState /></ChatThread>;
   }
 
-  return <Conversation chat={chat.data} />;
+  return <Conversation chat={chat.data} profilePath={profilePath} />;
 }

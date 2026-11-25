@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.studymatch.dtos.AssignmentGroupsDTO;
 import com.studymatch.dtos.AssignmentResponseDTO;
 import com.studymatch.dtos.AttendanceRequestDTO;
 import com.studymatch.dtos.AttendanceSheetDTO;
@@ -38,8 +39,8 @@ import com.studymatch.dtos.EnrolmentResultDTO;
 import com.studymatch.dtos.GradeRequestDTO;
 import com.studymatch.dtos.GradeResponseDTO;
 import com.studymatch.dtos.GradeSheetDTO;
+import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.GroupGenerationDTO;
-import com.studymatch.dtos.GroupPreviewDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
@@ -203,6 +204,19 @@ public class SubjectEditionController {
     return ResponseEntity.ok(gradeService.gradeStudent(id, assignmentId, studentNumber, request.value()));
   }
 
+  // view groups
+  @GetMapping("{id}/assignments/{assignmentId}/groups")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "The groups of a group assignment, the drafts and the published ones, with their members. "
+      + "Students with a statute show only that attendance doesn't apply, never the statute type (GR7)")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK })
+  public ResponseEntity<AssignmentGroupsDTO> listGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    return ResponseEntity.ok(groupService.listGroups(id, assignmentId));
+  }
+
   // generate groups: regenerating is the same call, the new drafts replace the old ones
   @PostMapping("{id}/assignments/{assignmentId}/groups")
   @PreAuthorize("hasRole('TEACHER')")
@@ -210,7 +224,7 @@ public class SubjectEditionController {
       + "replacePublished=true confirms they'll be replaced once the new ones are confirmed")
   @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, ErrorCode.GROUPS_ALREADY_PUBLISHED,
       ErrorCode.NOT_ENOUGH_STUDENTS_FOR_GROUPS, ErrorCode.NO_VALID_GROUP_SPLIT, ErrorCode.SEPARATIONS_CANNOT_BE_MET })
-  public ResponseEntity<List<GroupPreviewDTO>> generateGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+  public ResponseEntity<List<GroupDTO>> generateGroups(@PathVariable Long id, @PathVariable Long assignmentId,
       @RequestParam(defaultValue = "false") boolean replacePublished, Authentication authentication) {
     User teacher = userService.getByInstitutionalEmail(authentication.getName());
     subjectEditionService.checkTaughtBy(id, teacher.getNumber());

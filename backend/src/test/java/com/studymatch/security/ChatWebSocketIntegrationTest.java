@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -540,6 +541,34 @@ class ChatWebSocketIntegrationTest {
   }
 
   @Test
+  @DisplayName("A rename reaches the other members' chat lists as CHAT_EDITED with the new name (#234)")
+  void renameIsPushed() throws Exception {
+    // Arrange
+    CustomChat group = chatRepository.save(new CustomChat("Study group", null, ana, List.of(rui, eva)));
+    try {
+      BlockingQueue<Map<String, Object>> chatList = chatListOf(rui);
+
+      // Act
+      int status = send("PUT", login(eva.getInstitutionalEmail()), "/chats/" + group.getId() + "/name",
+          "{\"name\":\"Exam prep\"}");
+
+      // Assert
+      assertEquals(204, status);
+      Map<String, Object> edited = chatList.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(edited);
+      assertEquals("CHAT_EDITED", edited.get("type"));
+      Map<String, Object> payload = new HashMap<>();
+      payload.put("chatId", group.getId().intValue());
+      payload.put("name", "Exam prep");
+      payload.put("picture", false);
+      payload.put("pictureUpdatedAt", null);
+      assertEquals(payload, edited.get("payload"));
+    } finally {
+      deleteGroupChat(group);
+    }
+  }
+
+  @Test
   @DisplayName("The last one out deletes the chat and its messages, each leave committing on its own")
   void lastOneOutDeletesCommitted() throws Exception {
     // Arrange
@@ -684,6 +713,50 @@ class ChatWebSocketIntegrationTest {
       assertEquals(chat.getId().intValue(), payload.get("chatId"));
       assertEquals(message.getId().intValue(), payload.get("messageId"));
     }
+  }
+
+  @Test
+  @DisplayName("A reply quoting a hidden message reaches both, with the quote only for its author (GR9)")
+  void hiddenQuoteOnlyReachesItsAuthor() throws Exception {
+    // Arrange - Rui had blocked Ana and unblocked since, what she sent meanwhile stays hidden from him
+    Message hidden = new Message(chat, ana, "see you at 10");
+    hidden.hideFrom(rui);
+    hidden = messageRepository.save(hidden);
+    StompSession ruiSession = connect(rui);
+    BlockingQueue<Map<String, Object>> ruiTopic = subscribe(ruiSession, "/topic/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> ruiChat = subscribe(ruiSession, "/user/queue/chats/" + chat.getId());
+    BlockingQueue<Map<String, Object>> ruiList = subscribe(ruiSession, "/user/queue/chats");
+    BlockingQueue<Map<String, Object>> anaChat = subscribe(connect(ana), "/user/queue/chats/" + chat.getId());
+    assertNotNull(publishUntilReceived(new ChatEvent(chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiTopic));
+    assertNotNull(publishUntilReceived(
+        new MemberChatEvent(rui, chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), ruiChat));
+    assertNotNull(publishUntilReceived(new UserChatEvent(rui, ChatEventType.CHAT_UPDATED, Map.of()), ruiList));
+    assertNotNull(publishUntilReceived(
+        new MemberChatEvent(ana, chat.getId(), ChatEventType.CHAT_UPDATED, Map.of()), anaChat));
+    ruiTopic.clear();
+    ruiChat.clear();
+    ruiList.clear();
+    anaChat.clear();
+
+    // Act
+    int status = send("POST", login(ana.getInstitutionalEmail()), "/chats/" + chat.getId() + "/messages",
+        "{\"text\":\"so?\",\"replyToId\":" + hidden.getId() + "}");
+
+    // Assert
+    assertEquals(201, status);
+    Map<String, Object> toAna = anaChat.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+    assertNotNull(toAna);
+    Map<?, ?> quote = (Map<?, ?>) ((Map<?, ?>) toAna.get("payload")).get("replyTo");
+    assertEquals("see you at 10", quote.get("text"));
+    for (BlockingQueue<Map<String, Object>> ofRui : List.of(ruiChat, ruiList)) {
+      Map<String, Object> toRui = ofRui.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+      assertNotNull(toRui);
+      Map<?, ?> message = (Map<?, ?>) toRui.get("payload");
+      assertEquals("so?", message.get("text"));
+      assertEquals(true, message.get("reply"));
+      assertNull(message.get("replyTo"));
+    }
+    assertNull(ruiTopic.poll(500, TimeUnit.MILLISECONDS));
   }
 
   @Test

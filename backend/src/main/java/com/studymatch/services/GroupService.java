@@ -28,8 +28,9 @@ import com.studymatch.dtos.AnalyticsDTO.GroupBalance;
 import com.studymatch.dtos.AnalyticsDTO.GroupOption;
 import com.studymatch.dtos.AnalyticsDTO.MonthAttendance;
 import com.studymatch.dtos.AnalyticsDTO.TraitCount;
+import com.studymatch.dtos.AssignmentGroupsDTO;
+import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.GroupGenerationDTO;
-import com.studymatch.dtos.GroupPreviewDTO;
 import com.studymatch.dtos.MyGroupDTO;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
@@ -82,7 +83,7 @@ public class GroupService {
 
   // generate groups: the new groups replace the drafts, the published ones stay until the teacher confirms
   @Transactional
-  public List<GroupPreviewDTO> generateGroups(Long subjectEditionId, Long assignmentId, boolean replacePublished) {
+  public List<GroupDTO> generateGroups(Long subjectEditionId, Long assignmentId, boolean replacePublished) {
     Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
     GroupingRule rule = assignment.getGroupingRule();
     if (rule == null) {
@@ -101,14 +102,29 @@ public class GroupService {
     groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.DRAFT);
     // the old drafts have to be gone before the new ones take their numbers
     groupRepository.flush();
-    List<GroupPreviewDTO> previews = new ArrayList<>();
+    Map<Long, String> classOf = classSections(enrolments);
+    List<GroupDTO> previews = new ArrayList<>();
     for (int index = 0; index < groups.size(); index++) {
       Group group = new Group(assignment, index + 1);
       groups.get(index).forEach(student -> group.addMember(enrolments.get(student).getStudent()));
-      groupRepository.save(group);
-      previews.add(preview(index + 1, groups.get(index), enrolments));
+      previews.add(toDTO(groupRepository.save(group), classOf));
     }
     return previews;
+  }
+
+  // view groups: the drafts and the published groups, no groups yet is two empty lists
+  @Transactional(readOnly = true)
+  public AssignmentGroupsDTO listGroups(Long subjectEditionId, Long assignmentId) {
+    Assignment assignment = assignmentService.getAssignment(subjectEditionId, assignmentId);
+    if (assignment.getGroupingRule() == null) {
+      throw new StudyMatchException(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK);
+    }
+    Map<Long, String> classOf = classSections(enrolmentService.listEnrolments(subjectEditionId));
+    Map<GroupStatus, List<GroupDTO>> byStatus = groupRepository.findByAssignmentOrderByNumber(assignment).stream()
+        .map(group -> toDTO(group, classOf))
+        .collect(Collectors.groupingBy(GroupDTO::status));
+    return new AssignmentGroupsDTO(byStatus.getOrDefault(GroupStatus.DRAFT, List.of()),
+        byStatus.getOrDefault(GroupStatus.PUBLISHED, List.of()));
   }
 
   // generate groups, before generating: about how many groups and how long the search takes, for the page's loader
@@ -212,17 +228,24 @@ public class GroupService {
     return pairs;
   }
 
-  private static GroupPreviewDTO preview(int number, List<Integer> students, List<Enrolment> enrolments) {
+  // each student's class now, so a student moved after generating shows in their new class
+  private static Map<Long, String> classSections(List<Enrolment> enrolments) {
+    return enrolments.stream().collect(Collectors.toMap(enrolment -> enrolment.getStudent().getNumber(),
+        enrolment -> enrolment.getClassSection().getCode()));
+  }
+
+  // never the statute type or any grade or attendance figure, only whether attendance applies (GR7)
+  private static GroupDTO toDTO(Group group, Map<Long, String> classOf) {
     Set<Language> shared = EnumSet.allOf(Language.class);
-    List<GroupPreviewDTO.Member> members = new ArrayList<>();
-    for (int student : students) {
-      Enrolment enrolment = enrolments.get(student);
-      shared.retainAll(enrolment.getStudent().getLanguages());
-      members.add(new GroupPreviewDTO.Member(enrolment.getStudent().getNumber(), enrolment.getStudent().getName(),
-          enrolment.getClassSection().getCode()));
+    List<GroupDTO.Member> members = new ArrayList<>();
+    for (Student student : group.getMembers()) {
+      shared.retainAll(student.getLanguages());
+      members.add(new GroupDTO.Member(student.getNumber(), student.getName(), classOf.get(student.getNumber()),
+          !student.hasActiveStatute(), student.isBlocked()));
     }
-    members.sort(Comparator.comparing(GroupPreviewDTO.Member::name).thenComparing(GroupPreviewDTO.Member::number));
-    return new GroupPreviewDTO(number, members.size(), List.copyOf(shared), members);
+    members.sort(Comparator.comparing(GroupDTO.Member::name).thenComparing(GroupDTO.Member::number));
+    return new GroupDTO(group.getId(), group.getNumber(), group.getStatus(), members.size(), List.copyOf(shared),
+        members);
   }
 
   // view my groups: drafts can still change, so students only see published groups, latest assignment first
