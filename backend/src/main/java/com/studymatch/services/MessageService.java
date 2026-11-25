@@ -13,14 +13,17 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.studymatch.dtos.AddMembersRequestDTO;
+import com.studymatch.dtos.AttachmentFileDTO;
 import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.MessageDTO;
 import com.studymatch.dtos.MessageDeletedDTO;
 import com.studymatch.dtos.MessagePageDTO;
 import com.studymatch.dtos.MessageSearchDTO;
 import com.studymatch.dtos.ReactionDTO;
+import com.studymatch.dtos.SendAttachmentsRequestDTO;
 import com.studymatch.dtos.SendMessageRequestDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
@@ -50,36 +53,45 @@ public class MessageService {
   private final UserService userService;
   private final UserBlockService userBlockService;
   private final ReactionService reactionService;
+  private final AttachmentService attachmentService;
   private final ApplicationEventPublisher eventPublisher;
 
   public MessageService(MessageRepository messageRepository, ChatService chatService, UserService userService,
-      UserBlockService userBlockService, ReactionService reactionService, ApplicationEventPublisher eventPublisher) {
+      UserBlockService userBlockService, ReactionService reactionService, AttachmentService attachmentService,
+      ApplicationEventPublisher eventPublisher) {
     this.messageRepository = messageRepository;
     this.chatService = chatService;
     this.userService = userService;
     this.userBlockService = userBlockService;
     this.reactionService = reactionService;
+    this.attachmentService = attachmentService;
     this.eventPublisher = eventPublisher;
   }
 
   // send a message to a chat you're in (GR8)
   @Transactional
   public MessageDTO send(Long chatId, User user, SendMessageRequestDTO request) {
-    return send(chatService.getChatFor(chatId, user), user, request);
+    return send(chatService.getChatFor(chatId, user), user, request.text(), request.replyToId(), List.of());
   }
 
-  // the first message of a DM creates it, or goes into it if it's already there.
-  // the blocker has to unblock first, it's their own block so telling them is fine (GR9)
+  // the same with files, the text is optional then (GR10)
+  @Transactional
+  public MessageDTO sendAttachments(Long chatId, User user, SendAttachmentsRequestDTO request) {
+    return send(chatService.getChatFor(chatId, user), user, request.text(), request.replyToId(), request.files());
+  }
+
+  // the first message of a DM creates it, or goes into it if it's already there
   @Transactional
   public MessageDTO sendDirect(Long number, User user, SendMessageRequestDTO request) {
-    User contact = userService.getChatContact(number, user);
-    if (userBlockService.hasBlocked(user, contact)) {
-      throw new StudyMatchException(ErrorCode.UNBLOCK_TO_MESSAGE);
-    }
-    return send(chatService.getOrCreateDirectChat(user, contact), user, request);
+    return send(getOrCreateDirectChat(number, user), user, request.text(), request.replyToId(), List.of());
   }
 
-  // only the author edits, only the text. the open chat swaps it, the chat list swaps the preview if it's the latest
+  @Transactional
+  public MessageDTO sendDirectAttachments(Long number, User user, SendAttachmentsRequestDTO request) {
+    return send(getOrCreateDirectChat(number, user), user, request.text(), request.replyToId(), request.files());
+  }
+
+  // only the author edits, only the text, and without attachments it can't be left empty. the open chat swaps it, the chat list swaps the preview if it's the latest
   // without moving the chat, an edit notifies no one (GR10). the same text again changes nothing, so no "(edited)".
   // a message hidden from a blocker stays hidden when edited, it goes the same way as when it was sent (GR9)
   @Transactional
@@ -88,6 +100,9 @@ public class MessageService {
     // before the message is loaded, or an original deleted meanwhile would still be quoted in what's sent (#218)
     messageRepository.lockOriginalOf(messageId, chat.getId());
     Message message = getOwnMessage(chat, messageId, user);
+    if (text.isEmpty() && message.getAttachments().isEmpty()) {
+      throw new StudyMatchException(ErrorCode.MESSAGE_EMPTY);
+    }
     if (message.getText().equals(text)) {
       return MessageDTO.from(message, user);
     }
@@ -143,9 +158,7 @@ public class MessageService {
   @Transactional(readOnly = true)
   public MessagePageDTO getMessagesAround(Long chatId, Long messageId, User user) {
     Chat chat = chatService.getChatFor(chatId, user);
-    Message message = messageRepository.findByIdAndChat(messageId, chat)
-        .filter(found -> !found.isHiddenFrom(user))
-        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    Message message = findVisible(chat, messageId, user);
     Limit limit = Limit.of(MESSAGES_AROUND + 1);
     List<Message> older = messageRepository.findVisibleBefore(chat, messageId, user.getNumber(), limit);
     List<Message> newer = messageRepository.findVisibleAfter(chat, messageId, user.getNumber(), limit);
@@ -153,6 +166,13 @@ public class MessageService {
     page.add(message);
     page.addAll(first(newer, MESSAGES_AROUND));
     return toPage(page, user, older.size() > MESSAGES_AROUND, newer.size() > MESSAGES_AROUND);
+  }
+
+  // a file of a message you can see, opening its link is the same as seeing the message (GR8, GR9)
+  @Transactional(readOnly = true)
+  public AttachmentFileDTO openAttachment(Long chatId, Long messageId, Long attachmentId, User user) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    return attachmentService.open(findVisible(chat, messageId, user), attachmentId);
   }
 
   // in the chat's texts, newest first, 25 at a time going back from the oldest result
@@ -268,15 +288,25 @@ public class MessageService {
     return chats.isEmpty() ? 0 : messageRepository.countUnread(chats, user.getNumber());
   }
 
+  // the blocker has to unblock first, it's their own block so telling them is fine (GR9)
+  private DirectChat getOrCreateDirectChat(Long number, User user) {
+    User contact = userService.getChatContact(number, user);
+    if (userBlockService.hasBlocked(user, contact)) {
+      throw new StudyMatchException(ErrorCode.UNBLOCK_TO_MESSAGE);
+    }
+    return chatService.getOrCreateDirectChat(user, contact);
+  }
+
   // the open chat gets the message, every member's chat list moves it to the top.
   // to someone who blocked the sender it goes through for the sender but never reaches them (GR9)
-  private MessageDTO send(Chat chat, User user, SendMessageRequestDTO request) {
-    Message original = request.replyToId() == null ? null : getOriginal(chat, request.replyToId(), user);
-    Message saved = new Message(chat, user, request.text(), original);
+  private MessageDTO send(Chat chat, User user, String text, Long replyToId, List<MultipartFile> files) {
+    Message original = replyToId == null ? null : getOriginal(chat, replyToId, user);
+    Message saved = new Message(chat, user, text, original);
     if (chat instanceof DirectChat direct && userBlockService.hasBlocked(direct.getOtherUser(user), user)) {
       saved.hideFrom(direct.getOtherUser(user));
     }
     messageRepository.save(saved);
+    attachmentService.attach(saved, files);
     publishToChat(saved, ChatEventType.MESSAGE_CREATED, viewer -> MessageDTO.from(saved, viewer));
     for (User member : chat.getMembers()) {
       if (!saved.isHiddenFrom(member)) {
@@ -298,6 +328,13 @@ public class MessageService {
     return messageRepository.lockAgainstDelete(messageId, chat.getId())
         .flatMap(id -> messageRepository.findByIdAndChat(id, chat))
         .filter(message -> !message.isHiddenFrom(user));
+  }
+
+  // the same just to read it, without keeping it from being deleted
+  private Message findVisible(Chat chat, Long messageId, User user) {
+    return messageRepository.findByIdAndChat(messageId, chat)
+        .filter(found -> !found.isHiddenFrom(user))
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
   }
 
   // without the extra one that says if there's more

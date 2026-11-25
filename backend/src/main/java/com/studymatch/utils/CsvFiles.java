@@ -26,6 +26,9 @@ public final class CsvFiles {
 
   public static final int MAX_ROWS = 200;
 
+  // the rows are far below this, the app's own limit is for attachments
+  public static final int MAX_BYTES = 1024 * 1024;
+
   // the invisible mark Excel puts at the start of UTF-8 files
   private static final String BOM = "\uFEFF";
 
@@ -45,6 +48,9 @@ public final class CsvFiles {
   }
 
   public static List<Line> read(byte[] file, List<String> columns) {
+    if (file.length > MAX_BYTES) {
+      throw new StudyMatchException(ErrorCode.FILE_TOO_LARGE);
+    }
     String text = decodeUtf8(file);
     if (text.startsWith(BOM)) {
       text = text.substring(1); // otherwise the first column would be read as BOM + its name

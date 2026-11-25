@@ -136,6 +136,8 @@ We use JPA with Hibernate, and `ddl-auto=update` creates and extends the tables 
 
 The four kinds of user use `JOINED` inheritance: a `users` table with what every account has, and `admin`, `staff`, `teacher` and `student` tables with the rest.
 
+A message's files are in Postgres, in two tables. `attachment` has the name, type and size, which every list of messages shows, and `attachment_file` has the bytes, under the same id. Hibernate loads all the columns of an entity, so with one table opening a chat would load every file in it. The foreign keys cascade, so deleting a message, or a whole chat's, deletes its files in the same transaction. The upload limit in `application.properties` is 51 MB for the request: five files of 10 MB and the form around them. Each kind of file checks its own limit in code (10 MB for attachments, 1 MB for CSV imports), because Spring's limit per file stops the request before we know which file it was.
+
 `open-in-view` is off, so lazy relations only load inside a service's transaction. A controller that touches one gets an exception instead of a hidden extra query. That's one reason services return DTOs and not entities.
 
 Enrolling students, creating an assignment and grading lock the subject edition row (`SubjectEditionRepository.findLockedById`, `PESSIMISTIC_WRITE`) until the transaction ends. Without the lock, two Staff could enrol the same student at the same moment, or two grades for the same student could both miss setting the final grade. Unique columns (emails, codes, names) catch what's left: if two requests pass the "already exists?" check at once, the second insert fails and the service turns that into the same `..._ALREADY_EXISTS` code.
