@@ -20,9 +20,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-// deleting a message looks for its replies, the foreign key alone has no index (#218)
+// deleting a message looks for its replies, the foreign key alone has no index (#218).
+// and a chat's pages and search go through its messages by id, without reading the other chats' (#220)
 @Entity
-@Table(indexes = @Index(columnList = "reply_to_id"))
+@Table(indexes = { @Index(columnList = "reply_to_id"), @Index(columnList = "chat_id, id") })
 public class Message {
 
   public static final int MAX_TEXT_LENGTH = 2000;

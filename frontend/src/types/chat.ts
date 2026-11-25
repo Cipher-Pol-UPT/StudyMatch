@@ -28,6 +28,9 @@ export interface MessageData {
   replyTo: MessageQuoteData | null;
 }
 
+// one person's reaction to a message, replaces the one they had; a null emoji means they took it off
+export interface ReactionData { chatId: number; messageId: number; user: ChatContactData; emoji: string | null }
+
 // the most characters a message can have (GR10)
 export const MESSAGE_MAX_LENGTH = 2000;
 

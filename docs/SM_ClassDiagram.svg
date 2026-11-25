@@ -434,6 +434,18 @@
 <text x="888" y="113">-editedAt : LocalDateTime</text>
 <text x="888" y="129">-reply : boolean</text>
 <line x1="880" y1="138" x2="1060" y2="138" stroke="#1F4E79"/>
+<line x1="1060.0" y1="68.0" x2="1170.0" y2="68.0" stroke="#000" stroke-width="1"/>
+<text x="1074.0" y="62.0" text-anchor="middle" font-size="11">1</text>
+<text x="1150.0" y="62.0" text-anchor="middle" font-size="11">0..*</text>
+<line x1="1250.0" y1="108.0" x2="1325.0" y2="356.0" stroke="#000" stroke-width="1"/>
+<text x="1270.0" y="126.0" text-anchor="middle" font-size="11">0..*</text>
+<text x="1330.0" y="344.0" text-anchor="middle" font-size="11">1</text>
+<rect x="1170" y="36" width="130" height="72" fill="#7ACFF5" stroke="#1F4E79" stroke-width="1"/>
+<text x="1235" y="51" text-anchor="middle" font-weight="bold">Reaction</text>
+<line x1="1170" y1="58" x2="1300" y2="58" stroke="#1F4E79"/>
+<text x="1178" y="71">-id : Long</text>
+<text x="1178" y="87">-emoji : String</text>
+<line x1="1170" y1="96" x2="1300" y2="96" stroke="#1F4E79"/>
 <rect x="860" y="180" width="235" height="88" fill="#7ACFF5" stroke="#1F4E79" stroke-width="1"/>
 <text x="977.5" y="195" text-anchor="middle" font-weight="bold">ChatSettings</text>
 <line x1="860" y1="202" x2="1095" y2="202" stroke="#1F4E79"/>

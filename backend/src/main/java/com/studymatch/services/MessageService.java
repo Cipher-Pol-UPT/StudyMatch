@@ -1,9 +1,11 @@
 package com.studymatch.services;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -17,6 +19,8 @@ import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.MessageDTO;
 import com.studymatch.dtos.MessageDeletedDTO;
 import com.studymatch.dtos.MessagePageDTO;
+import com.studymatch.dtos.MessageSearchDTO;
+import com.studymatch.dtos.ReactionDTO;
 import com.studymatch.dtos.SendMessageRequestDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
@@ -31,24 +35,30 @@ import com.studymatch.models.Message;
 import com.studymatch.models.User;
 import com.studymatch.repositories.MessageRepository;
 import com.studymatch.repositories.MessageRepository.ChatActivity;
+import com.studymatch.utils.SearchPatterns;
 
 @Service
 public class MessageService {
 
   private static final int MESSAGES_PER_PAGE = 50;
+  private static final int MESSAGES_AROUND = 25;
+  private static final int RESULTS_PER_PAGE = 25;
+  private static final int MIN_SEARCH_LENGTH = 2;
 
   private final MessageRepository messageRepository;
   private final ChatService chatService;
   private final UserService userService;
   private final UserBlockService userBlockService;
+  private final ReactionService reactionService;
   private final ApplicationEventPublisher eventPublisher;
 
   public MessageService(MessageRepository messageRepository, ChatService chatService, UserService userService,
-      UserBlockService userBlockService, ApplicationEventPublisher eventPublisher) {
+      UserBlockService userBlockService, ReactionService reactionService, ApplicationEventPublisher eventPublisher) {
     this.messageRepository = messageRepository;
     this.chatService = chatService;
     this.userService = userService;
     this.userBlockService = userBlockService;
+    this.reactionService = reactionService;
     this.eventPublisher = eventPublisher;
   }
 
@@ -109,19 +119,78 @@ public class MessageService {
     }
   }
 
-  // an open chat, 50 at a time going back. one extra is fetched to know if there's anything older
+  // an open chat, 50 at a time: the newest, the ones before one (scrolling up) or the ones after one (scrolling down
+  // from a search result). one extra is fetched to know if there's more that way
   @Transactional(readOnly = true)
-  public MessagePageDTO getMessages(Long chatId, User user, Long before) {
+  public MessagePageDTO getMessages(Long chatId, User user, Long before, Long after) {
+    if (before != null && after != null) {
+      throw new StudyMatchException(ErrorCode.VALIDATION_FAILED);
+    }
     Chat chat = chatService.getChatFor(chatId, user);
     Limit limit = Limit.of(MESSAGES_PER_PAGE + 1);
+    if (after != null) {
+      List<Message> oldestFirst = messageRepository.findVisibleAfter(chat, after, user.getNumber(), limit);
+      return toPage(first(oldestFirst, MESSAGES_PER_PAGE), user, true, oldestFirst.size() > MESSAGES_PER_PAGE);
+    }
     List<Message> newestFirst = before == null
         ? messageRepository.findVisible(chat, user.getNumber(), limit)
         : messageRepository.findVisibleBefore(chat, before, user.getNumber(), limit);
-    boolean hasMore = newestFirst.size() > MESSAGES_PER_PAGE;
-    List<MessageDTO> page = newestFirst.stream().limit(MESSAGES_PER_PAGE)
+    return toPage(first(newestFirst, MESSAGES_PER_PAGE).reversed(), user, newestFirst.size() > MESSAGES_PER_PAGE,
+        before != null);
+  }
+
+  // jumping to a search result: the message with up to 25 on each side of it
+  @Transactional(readOnly = true)
+  public MessagePageDTO getMessagesAround(Long chatId, Long messageId, User user) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    Message message = messageRepository.findByIdAndChat(messageId, chat)
+        .filter(found -> !found.isHiddenFrom(user))
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    Limit limit = Limit.of(MESSAGES_AROUND + 1);
+    List<Message> older = messageRepository.findVisibleBefore(chat, messageId, user.getNumber(), limit);
+    List<Message> newer = messageRepository.findVisibleAfter(chat, messageId, user.getNumber(), limit);
+    List<Message> page = new ArrayList<>(first(older, MESSAGES_AROUND).reversed());
+    page.add(message);
+    page.addAll(first(newer, MESSAGES_AROUND));
+    return toPage(page, user, older.size() > MESSAGES_AROUND, newer.size() > MESSAGES_AROUND);
+  }
+
+  // in the chat's texts, newest first, 25 at a time going back from the oldest result
+  @Transactional(readOnly = true)
+  public MessageSearchDTO search(Long chatId, User user, String text, Long before) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    String searched = text.strip();
+    if (searched.length() < MIN_SEARCH_LENGTH) {
+      throw new StudyMatchException(ErrorCode.SEARCH_TOO_SHORT, Map.of("min", MIN_SEARCH_LENGTH));
+    }
+    List<Message> found = messageRepository.search(chat, SearchPatterns.containing(searched), SearchPatterns.ESCAPE,
+        before == null ? Long.MAX_VALUE : before, user.getNumber(), Limit.of(RESULTS_PER_PAGE + 1));
+    List<MessageDTO> messages = first(found, RESULTS_PER_PAGE).stream()
         .map(message -> MessageDTO.from(message, user))
         .toList();
-    return new MessagePageDTO(page.reversed(), hasMore);
+    return new MessageSearchDTO(messages, found.size() > RESULTS_PER_PAGE);
+  }
+
+  // to any message you can see, your own included. here for the chat and message checks, the rest is in
+  // ReactionService. in a DM a blocked user's reaction never reaches the blocker, who doesn't have the DM until
+  // they unblock. blocks don't change group chats (GR9)
+  @Transactional
+  public ReactionDTO react(Long chatId, Long messageId, User user, String emoji) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    Message message = getVisible(chat, messageId, user)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    User hiddenFrom = message.getHiddenFrom();
+    if (chat instanceof DirectChat direct && userBlockService.hasBlocked(direct.getOtherUser(user), user)) {
+      hiddenFrom = direct.getOtherUser(user);
+    }
+    return reactionService.react(message, user, emoji, hiddenFrom);
+  }
+
+  @Transactional
+  public void removeReaction(Long chatId, Long messageId, User user) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    reactionService.remove(getVisible(chat, messageId, user)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND)), user);
   }
 
   // the chat list, the latest activity first. here and not in ChatService because the numbers in a row come from
@@ -220,10 +289,25 @@ public class MessageService {
 
   // the message being replied to, in this chat and one the user can see. its own code, NOT_FOUND is the chat (#218)
   private Message getOriginal(Chat chat, Long originalId, User user) {
-    return messageRepository.lockOriginal(originalId, chat.getId())
-        .flatMap(id -> messageRepository.findByIdAndChat(id, chat))
-        .filter(original -> !original.isHiddenFrom(user))
+    return getVisible(chat, originalId, user)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.REPLIED_MESSAGE_NOT_FOUND));
+  }
+
+  // a message of that chat the user can see, that isn't deleted until what points at it is saved
+  private Optional<Message> getVisible(Chat chat, Long messageId, User user) {
+    return messageRepository.lockAgainstDelete(messageId, chat.getId())
+        .flatMap(id -> messageRepository.findByIdAndChat(id, chat))
+        .filter(message -> !message.isHiddenFrom(user));
+  }
+
+  // without the extra one that says if there's more
+  private static List<Message> first(List<Message> messages, int count) {
+    return messages.stream().limit(count).toList();
+  }
+
+  private MessagePageDTO toPage(List<Message> oldestFirst, User user, boolean hasMore, boolean hasNewer) {
+    List<MessageDTO> messages = oldestFirst.stream().map(message -> MessageDTO.from(message, user)).toList();
+    return new MessagePageDTO(messages, reactionService.list(oldestFirst, user), hasMore, hasNewer);
   }
 
   // a message of that chat you wrote. missing or from another chat is 404, someone else's is 403
