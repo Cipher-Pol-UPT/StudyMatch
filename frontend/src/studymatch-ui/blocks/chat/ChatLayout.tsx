@@ -75,17 +75,19 @@ export function ChatJump({ label, onClick }: { label: string; onClick: () => voi
 
 export interface ChatHeadProps {
   name: string;
+  // the chat's picture; initials when there's none
+  avatarSrc?: string;
   subtitle?: string;
   backLabel: string;
   onBack: () => void;
 }
 
 // who the conversation is with; the back button only shows on a phone
-export function ChatHead({ name, subtitle, backLabel, onBack }: ChatHeadProps) {
+export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack }: ChatHeadProps) {
   return (
     <header className="sm-chat__head">
       <IconButton className="sm-chat__back" icon={ChevronLeft} label={backLabel} variant="ghost" onClick={onBack} />
-      <Avatar name={name} size={40} />
+      <Avatar name={name} src={avatarSrc} size={40} />
       <div className="sm-chat__head-text">
         <h2 className="sm-chat__head-name">{name}</h2>
         {subtitle && <div className="sm-chat__head-sub">{subtitle}</div>}
@@ -96,14 +98,15 @@ export function ChatHead({ name, subtitle, backLabel, onBack }: ChatHeadProps) {
 
 export interface ChatStartProps {
   name: string;
+  avatarSrc?: string;
   children?: ReactNode;
 }
 
 // the top of a conversation: who it's with, and a word on how to begin
-export function ChatStart({ name, children }: ChatStartProps) {
+export function ChatStart({ name, avatarSrc, children }: ChatStartProps) {
   return (
     <div className="sm-chat__start">
-      <Avatar name={name} size={64} />
+      <Avatar name={name} src={avatarSrc} size={64} />
       <h3>{name}</h3>
       {children && <p>{children}</p>}
     </div>
@@ -192,7 +195,18 @@ export function ChatMessage({ text, time, dateTime, mine = false, first = true, 
             <time dateTime={dateTime}>{time}</time>
           </div>
         )}
-        {editor ?? <div className="sm-msg__bubble">{text}{editedLabel && <span className="sm-msg__edited" title={editedTitle}>{editedLabel}</span>}</div>}
+        {editor ?? (
+          <div className="sm-msg__line">
+            <div className="sm-msg__bubble">{text}{editedLabel && <span className="sm-msg__edited" title={editedTitle}>{editedLabel}</span>}</div>
+            {(onEdit || onDelete) && (
+              <div className="sm-msg__tools" role="toolbar" aria-label={toolsLabel}>
+                {onEdit && <IconButton icon={Pencil} label={editLabel} size="sm" variant="ghost" onClick={onEdit} />}
+                {onDelete && <IconButton icon={Trash2} label={deleteLabel} size="sm" variant="ghost" className="sm-msg__delete"
+                  onClick={(event: MouseEvent) => onDelete(event.shiftKey)} />}
+              </div>
+            )}
+          </div>
+        )}
         {status === 'sending' && <span className="sm-msg__status">{statusLabel}</span>}
         {status === 'failed' && (
           <div className="sm-msg__failed">
@@ -202,13 +216,6 @@ export function ChatMessage({ text, time, dateTime, mine = false, first = true, 
           </div>
         )}
       </div>
-      {!editor && (onEdit || onDelete) && (
-        <div className="sm-msg__tools" role="toolbar" aria-label={toolsLabel}>
-          {onEdit && <IconButton icon={Pencil} label={editLabel} size="sm" variant="ghost" onClick={onEdit} />}
-          {onDelete && <IconButton icon={Trash2} label={deleteLabel} size="sm" variant="ghost" className="sm-msg__delete"
-            onClick={(event: MouseEvent) => onDelete(event.shiftKey)} />}
-        </div>
-      )}
     </div>
   );
 }

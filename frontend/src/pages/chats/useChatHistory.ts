@@ -56,9 +56,13 @@ export function useChatHistory(chatId: number | null) {
     return true;
   }, [chatId]);
 
-  // a new message, or a newer version of one (edited)
+  // a new message, or the answer to one you sent
   const add = useCallback((message: MessageData) => setHistory(state => ({ ...state, messages: merge(state.messages, [message]) })), []);
+  // a newer version of a message (edited). One that isn't loaded stays out, or it would show out of place above a gap
+  const replace = useCallback((message: MessageData) => setHistory(state => state.messages.some(m => m.id === message.id)
+    ? { ...state, messages: state.messages.map(m => m.id === message.id ? message : m) }
+    : state), []);
   const remove = useCallback((id: number) => setHistory(state => ({ ...state, messages: state.messages.filter(message => message.id !== id) })), []);
 
-  return { history, loadOlder, add, remove };
+  return { history, loadOlder, add, replace, remove };
 }

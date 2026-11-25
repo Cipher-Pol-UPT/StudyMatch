@@ -1,12 +1,12 @@
 import type { TFunction } from 'i18next';
 import { ArrowLeft } from 'lucide-react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { deleteMessage, editMessage, markChatRead, sendDirectMessage } from '../../api/chats';
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
-import { useChatEvents } from '../../hooks/useChatEvents';
+import { useChatEvents, useChatListEvents } from '../../hooks/useChatEvents';
 import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatStart, ChatThread, ConfirmDialog, useToast } from '../../studymatch-ui';
 import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData } from '../../types/chat';
 import { newMessageKey, useConversation, type ThreadMessage } from './conversations';
@@ -45,10 +45,14 @@ export function Conversation({ chat }: ConversationProps) {
   const navigate = useNavigate();
   const { contact } = chat;
   const [conversation, update] = useConversation(contact.number);
-  const { history, loadOlder, add, remove } = useChatHistory(chat.chatId);
-  const toast = useToast();
-  // the DM gets its id with its first message, from then on its live events can be followed
+  // the DM gets its id with its first message, yours or theirs: from then on its history loads and its live events are followed
   const [chatId, setChatId] = useState(chat.chatId);
+  const { history, loadOlder, add, replace, remove } = useChatHistory(chatId);
+  const toast = useToast();
+  // a message you sent keeps the key it had while sending, so it doesn't jump when the backend answers
+  const [keys, setKeys] = useState<ReadonlyMap<number, string>>(() => new Map());
+  // a message arrived while the tab was hidden, it's marked as read when you come back
+  const unseen = useRef(false);
   const [newBelow, setNewBelow] = useState(false);
   const scroll = useRef<HTMLDivElement>(null);
   const atBottom = useRef(true);
@@ -57,7 +61,7 @@ export function Conversation({ chat }: ConversationProps) {
   const lastKey = useRef<string | undefined>(undefined);
   const composer = useRef<{ focus: () => void }>(null);
   // the message being edited, with its new text and why saving it failed
-  const [editing, setEditing] = useState<{ id: number; text: string; error?: string } | null>(null);
+  const [editing, setEditing] = useState<{ id: number; text: string; error?: string; saving?: boolean } | null>(null);
   // the message waiting for Delete to be confirmed
   const [deleting, setDeleting] = useState<MessageData | null>(null);
 
@@ -71,14 +75,39 @@ export function Conversation({ chat }: ConversationProps) {
 
   const items: Item[] = [
     ...history.messages.map(message => ({
-      key: `message-${message.id}`, text: message.text, sentAt: message.sentAt, author: message.author,
+      key: keys.get(message.id) ?? `message-${message.id}`, text: message.text, sentAt: message.sentAt, author: message.author,
       mine: isMine(message.author), editedAt: message.editedAt, message,
     })),
     ...conversation.messages.map(message => ({ key: message.key, text: message.text, sentAt: message.sentAt, author: contact, mine: true, pending: message })),
   ];
 
+  // yours, confirmed: the one still sending with that text goes, and the message keeps its key
+  const confirmed = (message: MessageData, key = conversation.messages.find(m => m.status === 'sending' && m.text === message.text)?.key) => {
+    if (key) {
+      setKeys(current => new Map(current).set(message.id, key));
+      update(current => ({ ...current, messages: current.messages.filter(m => m.key !== key) }));
+    }
+    add(message);
+  };
+
+  // their first message creates the DM while it's open here: its id comes in your chat list's event
+  useChatListEvents(event => {
+    const message = event.payload as Partial<MessageData> | null;
+    if (chatId === null && message?.chatId && message.author?.number === contact.number) setChatId(message.chatId);
+  });
+
+  useEffect(() => {
+    const visible = () => {
+      if (document.visibilityState !== 'visible' || !unseen.current || chatId === null) return;
+      unseen.current = false;
+      markChatRead(chatId).catch(ignore);
+    };
+    document.addEventListener('visibilitychange', visible);
+    return () => document.removeEventListener('visibilitychange', visible);
+  }, [chatId]);
+
   useChatEvents(chatId, event => {
-    if (event.type === 'MESSAGE_EDITED') return add(event.payload as MessageData);
+    if (event.type === 'MESSAGE_EDITED') return replace(event.payload as MessageData);
     if (event.type === 'MESSAGE_DELETED') {
       const { messageId } = event.payload as MessageDeletedData;
       remove(messageId);
@@ -88,11 +117,13 @@ export function Conversation({ chat }: ConversationProps) {
     }
     if (event.type !== 'MESSAGE_CREATED') return;
     const message = event.payload as MessageData;
+    // yours can come before the answer to sending it
+    if (isMine(message.author)) return confirmed(message);
     add(message);
-    if (isMine(message.author)) return;
     if (!atBottom.current) setNewBelow(true);
-    // you're looking at it, so it's read
-    if (chatId !== null && document.visibilityState === 'visible') markChatRead(chatId).catch(ignore);
+    // you're looking at it, so it's read; otherwise once you come back to the tab
+    if (document.visibilityState !== 'visible') unseen.current = true;
+    else if (chatId !== null) markChatRead(chatId).catch(ignore);
   });
 
   // older messages keep what you're reading in place; a new one at the bottom is followed when you're there or it's yours
@@ -135,9 +166,8 @@ export function Conversation({ chat }: ConversationProps) {
   const deliver = (key: string, text: string) => {
     sendDirectMessage(contact.number, text).then(
       message => {
-        add(message);
+        confirmed(message, key);
         setChatId(id => id ?? message.chatId);
-        update(current => ({ ...current, messages: current.messages.filter(m => m.key !== key) }));
       },
       error => update(current => ({
         ...current,
@@ -167,6 +197,7 @@ export function Conversation({ chat }: ConversationProps) {
     setEditing(null);
     composer.current?.focus();
   };
+
   const startEditing = (message: MessageData) => setEditing({ id: message.id, text: message.text });
   // Arrow up in an empty message box: your last message that the backend has
   const editLast = () => {
@@ -176,16 +207,21 @@ export function Conversation({ chat }: ConversationProps) {
     return true;
   };
   const saveEdit = (message: MessageData) => {
-    if (!editing) return;
+    // Enter again while it's saving sends nothing more
+    if (!editing || editing.saving) return;
     const text = editing.text.trim();
     // nothing changed, or emptied: emptying isn't deleting, the backend refuses it like an empty message
     if (text === message.text) return stopEditing();
+    setEditing({ ...editing, saving: true });
+    // the answer only closes or marks this message's box, not another one you've started editing since
+    const isThis = (current: { id: number } | null) => current?.id === message.id;
     editMessage(message.chatId, message.id, text).then(
       edited => {
-        add(edited);
-        stopEditing();
+        replace(edited);
+        setEditing(current => isThis(current) ? null : current);
+        if (!document.activeElement?.closest('.sm-msg__edit')) composer.current?.focus();
       },
-      error => setEditing(current => current && { ...current, error: sendError(error, t) }),
+      error => setEditing(current => isThis(current) ? { ...current!, saving: false, error: sendError(error, t) } : current),
     );
   };
   const deleteForGood = (message: MessageData) => deleteMessage(message.chatId, message.id).then(
@@ -195,7 +231,7 @@ export function Conversation({ chat }: ConversationProps) {
   const askToDelete = (message: MessageData, shift: boolean) => shift ? deleteForGood(message) : setDeleting(message);
 
   const head = (
-    <ChatHead name={contact.name} subtitle={line} backLabel={t('chats.back')} onBack={() => navigate('/chats')} />
+    <ChatHead name={contact.name} avatarSrc={photoOf(contact)} subtitle={line} backLabel={t('chats.back')} onBack={() => navigate('/chats')} />
   );
 
   if (history.error !== undefined) {
@@ -218,8 +254,8 @@ export function Conversation({ chat }: ConversationProps) {
 
   // the top of the conversation once its first message is on screen, or a hint to say hi when there's none
   const start = history.loading || history.hasMore ? null
-    : items.length ? <ChatStart name={contact.name}>{t('chats.startOfConversation', { name: firstName })}</ChatStart>
-      : <ChatStart name={contact.name}>{t('chats.sayHi', { line, name: firstName })}</ChatStart>;
+    : items.length ? <ChatStart name={contact.name} avatarSrc={photoOf(contact)}>{t('chats.startOfConversation', { name: firstName })}</ChatStart>
+      : <ChatStart name={contact.name} avatarSrc={photoOf(contact)}>{t('chats.sayHi', { line, name: firstName })}</ChatStart>;
 
   return (
     <ChatThread label={t('chats.with', { name: contact.name })} scrollRef={scroll} onScroll={onScroll} head={head}
@@ -239,7 +275,8 @@ export function Conversation({ chat }: ConversationProps) {
             const previous = items[index - 1];
             const sentAt = new Date(item.sentAt);
             const newDay = !previous || !sameDay(new Date(previous.sentAt), sentAt);
-            const first = newDay || previous.author.number !== item.author.number
+            // yours still sending have no author of their own, so a run changes when the side does
+            const first = newDay || previous.mine !== item.mine || (!item.mine && previous.author.number !== item.author.number)
               || sentAt.getTime() - new Date(previous.sentAt).getTime() > RUN_MS;
             const status = item.pending?.status;
             const own = item.mine ? item.message : undefined;
