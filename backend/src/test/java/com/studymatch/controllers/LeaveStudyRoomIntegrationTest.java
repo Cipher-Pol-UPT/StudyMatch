@@ -2,6 +2,7 @@ package com.studymatch.controllers;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -9,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,8 +29,11 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
+import com.studymatch.models.Notification;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Student;
 import com.studymatch.models.StudyRoom;
@@ -35,8 +41,10 @@ import com.studymatch.models.Subject;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.TutorApplication;
 import com.studymatch.models.TutorRole;
+import com.studymatch.models.User;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
+import com.studymatch.repositories.NotificationRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.StudyRoomRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -73,6 +81,8 @@ class LeaveStudyRoomIntegrationTest {
   private TutorRoleRepository tutorRoleRepository;
   @Autowired
   private StudyRoomRepository studyRoomRepository;
+  @Autowired
+  private NotificationRepository notificationRepository;
 
   private Teacher teacher;
   private Category category;
@@ -209,6 +219,37 @@ class LeaveStudyRoomIntegrationTest {
         .andExpect(status().isForbidden());
     mockMvc.perform(post("/study-rooms/" + room.getId() + "/leave").with(csrf()))
         .andExpect(status().isUnauthorized());
+  }
+
+  private List<Notification> notificationsOf(User user) {
+    return notificationRepository.findByRecipientNumber(user.getNumber(), Pageable.unpaged()).getContent();
+  }
+
+  @Test
+  @DisplayName("Leaving tells the tutor who left, pointing at the room")
+  void leavingNotifiesTutor() throws Exception {
+    // Act
+    leave(room.getId(), session).andExpect(status().isOk());
+
+    // Assert
+    List<Notification> notifications = notificationsOf(tutor);
+    assertEquals(1, notifications.size());
+    Notification notification = notifications.getFirst();
+    assertEquals(NotificationType.STUDYROOM_LEFT, notification.getType());
+    assertEquals(NotificationTarget.STUDYROOM, notification.getTarget());
+    assertEquals(room.getId(), notification.getTargetId());
+    assertEquals("Test Maths", notification.getParams().get("subject"));
+    assertEquals("Participant Test", notification.getParams().get("student"));
+  }
+
+  @Test
+  @DisplayName("A leave that fails tells nobody")
+  void failedLeaveNotifiesNobody() throws Exception {
+    // Act
+    leave(room.getId(), loginAndGetSession(otherStudent.getInstitutionalEmail())).andExpect(status().isForbidden());
+
+    // Assert
+    assertTrue(notificationsOf(tutor).isEmpty());
   }
 
 }

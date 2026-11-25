@@ -4,12 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +23,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.studymatch.dtos.AchievementBadgeDTO;
 import com.studymatch.dtos.MyAchievementDTO;
 import com.studymatch.enums.Achievement;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.models.EarnedAchievement;
 import com.studymatch.models.ModelTestData;
@@ -35,6 +40,7 @@ class EarnedAchievementServiceTest {
   private StudyRoomService studyRoomService;
   private ParticipationService participationService;
   private TutorRoleService tutorRoleService;
+  private NotificationService notificationService;
   private EarnedAchievementService earnedAchievementService;
 
   private Student student;
@@ -45,8 +51,10 @@ class EarnedAchievementServiceTest {
     studyRoomService = mock(StudyRoomService.class);
     participationService = mock(ParticipationService.class);
     tutorRoleService = mock(TutorRoleService.class);
+    notificationService = mock(NotificationService.class);
     earnedAchievementService = new EarnedAchievementService(earnedAchievementRepository, studyRoomService,
-        participationService, tutorRoleService, mock(AchievementRecordService.class), mock(CertificatePdfWriter.class));
+        participationService, tutorRoleService, mock(AchievementRecordService.class), mock(CertificatePdfWriter.class),
+        notificationService);
 
     student = ModelTestData.student("Test Student");
     ReflectionTestUtils.setField(student, "number", TUTOR_NUMBER);
@@ -150,6 +158,7 @@ class EarnedAchievementServiceTest {
 
     // Assert
     assertTrue(awarded().isEmpty());
+    verifyNoInteractions(notificationService);
   }
 
   @Test
@@ -173,6 +182,35 @@ class EarnedAchievementServiceTest {
 
     // Assert
     assertEquals(List.of(Achievement.FIRST_STUDYROOM, Achievement.DEDICATED_TUTOR), awarded());
+  }
+
+  @Test
+  @DisplayName("The tutor is told about a new achievement")
+  void newAchievementNotifiesTutor() {
+    // Arrange
+    when(studyRoomService.countCounted(TUTOR_NUMBER)).thenReturn(1L);
+    when(earnedAchievementRepository.saveIfNew(any())).thenReturn(1);
+
+    // Act
+    earnedAchievementService.awardAchievements(new TutorActivityEvent(student));
+
+    // Assert
+    verify(notificationService).notify(student, NotificationType.ACHIEVEMENT_EARNED, NotificationTarget.ACHIEVEMENT,
+        null, Map.of("achievement", "FIRST_STUDYROOM"));
+  }
+
+  @Test
+  @DisplayName("A rating at the same time that already added the achievement means the tutor isn't told twice")
+  void achievementAddedByAnotherRatingIsNotNotified() {
+    // Arrange - saveIfNew is 0, the other transaction added it first
+    when(studyRoomService.countCounted(TUTOR_NUMBER)).thenReturn(1L);
+
+    // Act
+    earnedAchievementService.awardAchievements(new TutorActivityEvent(student));
+
+    // Assert
+    assertEquals(List.of(Achievement.FIRST_STUDYROOM), awarded());
+    verifyNoInteractions(notificationService);
   }
 
 }
