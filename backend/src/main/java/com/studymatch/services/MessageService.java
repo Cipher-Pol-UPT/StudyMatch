@@ -68,27 +68,33 @@ public class MessageService {
     this.eventPublisher = eventPublisher;
   }
 
-  // send a message to a chat you're in (GR8)
+  // send a message, a text or a GIF, to a chat you're in (GR8)
   @Transactional
   public MessageDTO send(Long chatId, User user, SendMessageRequestDTO request) {
-    return send(chatService.getChatFor(chatId, user), user, request.text(), request.replyToId(), List.of());
+    requireOneContent(request);
+    return send(chatService.getChatFor(chatId, user), user, request.text(), request.gifId(), request.replyToId(),
+        List.of());
   }
 
   // the same with files, the text is optional then (GR10)
   @Transactional
   public MessageDTO sendAttachments(Long chatId, User user, SendAttachmentsRequestDTO request) {
-    return send(chatService.getChatFor(chatId, user), user, request.text(), request.replyToId(), request.files());
+    return send(chatService.getChatFor(chatId, user), user, request.text(), null, request.replyToId(),
+        request.files());
   }
 
   // the first message of a DM creates it, or goes into it if it's already there
   @Transactional
   public MessageDTO sendDirect(Long number, User user, SendMessageRequestDTO request) {
-    return send(getOrCreateDirectChat(number, user), user, request.text(), request.replyToId(), List.of());
+    requireOneContent(request);
+    return send(getOrCreateDirectChat(number, user), user, request.text(), request.gifId(), request.replyToId(),
+        List.of());
   }
 
   @Transactional
   public MessageDTO sendDirectAttachments(Long number, User user, SendAttachmentsRequestDTO request) {
-    return send(getOrCreateDirectChat(number, user), user, request.text(), request.replyToId(), request.files());
+    return send(getOrCreateDirectChat(number, user), user, request.text(), null, request.replyToId(),
+        request.files());
   }
 
   // only the author edits, only the text, and without attachments it can't be left empty. the open chat swaps it, the chat list swaps the preview if it's the latest
@@ -100,6 +106,10 @@ public class MessageService {
     // before the message is loaded, or an original deleted meanwhile would still be quoted in what's sent (#218)
     messageRepository.lockOriginalOf(messageId, chat.getId());
     Message message = getOwnMessage(chat, messageId, user);
+    // it has no text to change (GR10)
+    if (message.isGif()) {
+      throw new StudyMatchException(ErrorCode.MESSAGE_NOT_EDITABLE);
+    }
     if (text.isEmpty() && message.getAttachments().isEmpty()) {
       throw new StudyMatchException(ErrorCode.MESSAGE_EMPTY);
     }
@@ -297,11 +307,18 @@ public class MessageService {
     return chatService.getOrCreateDirectChat(user, contact);
   }
 
+  // a text or a GIF (GR10), before the first message of a DM creates it
+  private static void requireOneContent(SendMessageRequestDTO request) {
+    if (!request.hasOneContent()) {
+      throw new StudyMatchException(ErrorCode.VALIDATION_FAILED);
+    }
+  }
+
   // the open chat gets the message, every member's chat list moves it to the top.
   // to someone who blocked the sender it goes through for the sender but never reaches them (GR9)
-  private MessageDTO send(Chat chat, User user, String text, Long replyToId, List<MultipartFile> files) {
+  private MessageDTO send(Chat chat, User user, String text, String gifId, Long replyToId, List<MultipartFile> files) {
     Message original = replyToId == null ? null : getOriginal(chat, replyToId, user);
-    Message saved = new Message(chat, user, text, original);
+    Message saved = new Message(chat, user, text, original, gifId);
     if (chat instanceof DirectChat direct && userBlockService.hasBlocked(direct.getOtherUser(user), user)) {
       saved.hideFrom(direct.getOtherUser(user));
     }
