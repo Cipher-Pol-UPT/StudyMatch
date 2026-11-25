@@ -23,6 +23,10 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
   @EntityGraph(attributePaths = { "members", "members.languages" })
   List<Group> findByAssignmentOrderByNumber(Assignment assignment);
 
+  // export groups: one status, with the members in the same select
+  @EntityGraph(attributePaths = "members")
+  List<Group> findWithMembersByAssignmentAndStatusOrderByNumber(Assignment assignment, GroupStatus status);
+
   // analytics: the members come with their groups, not one select per group
   @EntityGraph(attributePaths = { "members", "members.degree", "members.personalityProfile", "assignment",
       "assignment.groupingRule", "assignment.subjectEdition", "assignment.subjectEdition.subject" })
