@@ -627,7 +627,10 @@
     "CANNOT_ADD_TO_GROUP_CHAT": "Some of the people you picked can't be added to this group chat.",
     "CHAT_MEMBERS_FIXED": "The members of this chat can't be changed.",
     "NOT_CHAT_OWNER": "Only the owner of this group chat can do that.",
-    "CANNOT_REMOVE_YOURSELF": "You can't remove yourself. Leave the group chat instead."
+    "CANNOT_REMOVE_YOURSELF": "You can't remove yourself. Leave the group chat instead.",
+    "NOTE_TOO_LONG": "A note can have up to {{max}} characters.",
+    "INVALID_NOTE_POSITION": "The note has to stay on the board.",
+    "NOTE_LIMIT_REACHED": "You can have up to {{max}} notes. Delete one to add another."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",
