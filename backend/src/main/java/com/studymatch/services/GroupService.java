@@ -9,6 +9,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,6 +33,7 @@ import com.studymatch.dtos.AssignmentGroupsDTO;
 import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.GroupGenerationDTO;
 import com.studymatch.dtos.MyGroupDTO;
+import com.studymatch.enums.ExportFormat;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
 import com.studymatch.exceptions.ErrorCode;
@@ -53,6 +55,8 @@ import com.studymatch.models.Separation;
 import com.studymatch.models.Student;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.GroupRepository;
+import com.studymatch.utils.GroupCsvWriter;
+import com.studymatch.utils.GroupPdfWriter;
 
 @Service
 public class GroupService {
@@ -65,12 +69,14 @@ public class GroupService {
   private final LessonService lessonService;
   private final AbsenceService absenceService;
   private final GroupGenerator groupGenerator;
+  private final GroupCsvWriter groupCsvWriter;
+  private final GroupPdfWriter groupPdfWriter;
   private final Random random = new SecureRandom();
 
   public GroupService(GroupRepository groupRepository, AssignmentService assignmentService,
       EnrolmentService enrolmentService, AcademicYearService academicYearService,
       SubjectEditionService subjectEditionService, LessonService lessonService, AbsenceService absenceService,
-      GroupGenerator groupGenerator) {
+      GroupGenerator groupGenerator, GroupCsvWriter groupCsvWriter, GroupPdfWriter groupPdfWriter) {
     this.groupRepository = groupRepository;
     this.assignmentService = assignmentService;
     this.enrolmentService = enrolmentService;
@@ -79,6 +85,8 @@ public class GroupService {
     this.lessonService = lessonService;
     this.absenceService = absenceService;
     this.groupGenerator = groupGenerator;
+    this.groupCsvWriter = groupCsvWriter;
+    this.groupPdfWriter = groupPdfWriter;
   }
 
   // generate groups: the new groups replace the drafts, the published ones stay until the teacher confirms
@@ -125,6 +133,31 @@ public class GroupService {
         .collect(Collectors.groupingBy(GroupDTO::status));
     return new AssignmentGroupsDTO(byStatus.getOrDefault(GroupStatus.DRAFT, List.of()),
         byStatus.getOrDefault(GroupStatus.PUBLISHED, List.of()));
+  }
+
+  // export groups: only the published ones, the drafts can still change. Never the statute (GR7)
+  @Transactional(readOnly = true)
+  public byte[] exportGroups(Long subjectEditionId, Long assignmentId, ExportFormat format, String language) {
+    Assignment assignment = assignmentService.getAssignment(subjectEditionId, assignmentId);
+    if (assignment.getGroupingRule() == null) {
+      throw new StudyMatchException(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK);
+    }
+    List<Group> groups = groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment,
+        GroupStatus.PUBLISHED);
+    if (groups.isEmpty()) {
+      throw new StudyMatchException(ErrorCode.NO_GROUPS_TO_EXPORT);
+    }
+    List<GroupCsvWriter.Row> rows = groups.stream()
+        .flatMap(group -> group.getMembers().stream()
+            .sorted(Comparator.comparing(Student::getName).thenComparing(Student::getNumber))
+            .map(student -> new GroupCsvWriter.Row(group.getNumber(), student.getNumber(), student.getName(),
+                student.getInstitutionalEmail())))
+        .toList();
+    return switch (format) {
+      case CSV -> groupCsvWriter.write(rows);
+      case PDF -> groupPdfWriter.write(assignment.getSubjectEdition().getSubject().getName(), assignment.getName(),
+          rows, Locale.forLanguageTag("pt".equals(language) ? "pt-PT" : "en-GB"));
+    };
   }
 
   // generate groups, before generating: about how many groups and how long the search takes, for the page's loader
