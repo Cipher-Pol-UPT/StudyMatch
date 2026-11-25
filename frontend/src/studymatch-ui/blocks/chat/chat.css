@@ -120,5 +120,5 @@
   .sm-chat__back { display: inline-grid; }
   .sm-chat { --sm-chat-gutter: 12px; }
   /* a long message fills the width, so there's no room on its left: Edit and Delete sit above its corner */
-  .sm-msg__tools { top: auto; bottom: calc(100% + 4px); right: 0; transform: none; }
+  .sm-msg__tools { top: auto; bottom: 100%; right: 0; transform: none; }
 }
