@@ -619,6 +619,7 @@
     "UNBLOCK_TO_MESSAGE": "You blocked this person. Unblock them to send a message.",
     "NOT_MESSAGE_AUTHOR": "Only the person who sent this message can change it.",
     "REPLIED_MESSAGE_NOT_FOUND": "The message you're replying to isn't there anymore.",
+    "INVALID_EMOJI": "React with a single emoji.",
     "NOT_ENOUGH_GROUP_CHAT_MEMBERS": "Pick at least {{min}} people for a group chat.",
     "TOO_MANY_GROUP_CHAT_MEMBERS": "A group chat can have at most {{max}} members, counting you.",
     "INVALID_GROUP_CHAT_PICTURE": "Use a JPG or PNG image up to 1 MB for the group chat's picture.",

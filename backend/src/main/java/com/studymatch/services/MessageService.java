@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -17,6 +18,7 @@ import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.MessageDTO;
 import com.studymatch.dtos.MessageDeletedDTO;
 import com.studymatch.dtos.MessagePageDTO;
+import com.studymatch.dtos.ReactionDTO;
 import com.studymatch.dtos.SendMessageRequestDTO;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
@@ -41,14 +43,16 @@ public class MessageService {
   private final ChatService chatService;
   private final UserService userService;
   private final UserBlockService userBlockService;
+  private final ReactionService reactionService;
   private final ApplicationEventPublisher eventPublisher;
 
   public MessageService(MessageRepository messageRepository, ChatService chatService, UserService userService,
-      UserBlockService userBlockService, ApplicationEventPublisher eventPublisher) {
+      UserBlockService userBlockService, ReactionService reactionService, ApplicationEventPublisher eventPublisher) {
     this.messageRepository = messageRepository;
     this.chatService = chatService;
     this.userService = userService;
     this.userBlockService = userBlockService;
+    this.reactionService = reactionService;
     this.eventPublisher = eventPublisher;
   }
 
@@ -118,10 +122,31 @@ public class MessageService {
         ? messageRepository.findVisible(chat, user.getNumber(), limit)
         : messageRepository.findVisibleBefore(chat, before, user.getNumber(), limit);
     boolean hasMore = newestFirst.size() > MESSAGES_PER_PAGE;
-    List<MessageDTO> page = newestFirst.stream().limit(MESSAGES_PER_PAGE)
-        .map(message -> MessageDTO.from(message, user))
-        .toList();
-    return new MessagePageDTO(page.reversed(), hasMore);
+    List<Message> page = newestFirst.stream().limit(MESSAGES_PER_PAGE).toList();
+    List<MessageDTO> messages = page.reversed().stream().map(message -> MessageDTO.from(message, user)).toList();
+    return new MessagePageDTO(messages, reactionService.list(page, user), hasMore);
+  }
+
+  // to any message you can see, your own included. here for the chat and message checks, the rest is in
+  // ReactionService. in a DM a blocked user's reaction never reaches the blocker, who doesn't have the DM until
+  // they unblock. blocks don't change group chats (GR9)
+  @Transactional
+  public ReactionDTO react(Long chatId, Long messageId, User user, String emoji) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    Message message = getVisible(chat, messageId, user)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+    User hiddenFrom = message.getHiddenFrom();
+    if (chat instanceof DirectChat direct && userBlockService.hasBlocked(direct.getOtherUser(user), user)) {
+      hiddenFrom = direct.getOtherUser(user);
+    }
+    return reactionService.react(message, user, emoji, hiddenFrom);
+  }
+
+  @Transactional
+  public void removeReaction(Long chatId, Long messageId, User user) {
+    Chat chat = chatService.getChatFor(chatId, user);
+    reactionService.remove(getVisible(chat, messageId, user)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND)), user);
   }
 
   // the chat list, the latest activity first. here and not in ChatService because the numbers in a row come from
@@ -220,10 +245,15 @@ public class MessageService {
 
   // the message being replied to, in this chat and one the user can see. its own code, NOT_FOUND is the chat (#218)
   private Message getOriginal(Chat chat, Long originalId, User user) {
-    return messageRepository.lockOriginal(originalId, chat.getId())
-        .flatMap(id -> messageRepository.findByIdAndChat(id, chat))
-        .filter(original -> !original.isHiddenFrom(user))
+    return getVisible(chat, originalId, user)
         .orElseThrow(() -> new StudyMatchException(ErrorCode.REPLIED_MESSAGE_NOT_FOUND));
+  }
+
+  // a message of that chat the user can see, that isn't deleted until what points at it is saved
+  private Optional<Message> getVisible(Chat chat, Long messageId, User user) {
+    return messageRepository.lockAgainstDelete(messageId, chat.getId())
+        .flatMap(id -> messageRepository.findByIdAndChat(id, chat))
+        .filter(message -> !message.isHiddenFrom(user));
   }
 
   // a message of that chat you wrote. missing or from another chat is 404, someone else's is 403
