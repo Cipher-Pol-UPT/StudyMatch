@@ -34,7 +34,7 @@ export type ChatEventType = typeof ChatEventType[number];
 export const NotificationLevel = ["ALL", "MENTIONS", "NONE"] as const;
 export type NotificationLevel = typeof NotificationLevel[number];
 
-export const NotificationType = ["ACCOUNT_UNBLOCKED", "TUTOR_APPLICATION_SUBMITTED", "TUTOR_APPLICATION_APPROVED", "TUTOR_APPLICATION_REJECTED", "STUDYROOM_LEFT", "STUDYROOM_UPDATED", "STUDYROOM_CANCELLED", "STUDYROOM_RATING_OPEN", "ACHIEVEMENT_EARNED"] as const;
+export const NotificationType = ["ACCOUNT_UNBLOCKED", "TUTOR_APPLICATION_SUBMITTED", "TUTOR_APPLICATION_APPROVED", "TUTOR_APPLICATION_REJECTED", "STUDYROOM_LEFT", "STUDYROOM_UPDATED", "STUDYROOM_CANCELLED", "STUDYROOM_RATING_OPEN", "ACHIEVEMENT_EARNED", "GROUP_PUBLISHED"] as const;
 export type NotificationType = typeof NotificationType[number];
 
 export const NotificationTarget = ["STUDYROOM", "GROUP", "TUTOR_APPLICATION", "ACHIEVEMENT"] as const;
