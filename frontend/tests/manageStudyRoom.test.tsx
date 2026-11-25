@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cancelStudyRoom, getStudyRooms, updateStudyRoom } from '../src/api/studyRooms';
 import i18n from '../src/i18n';
@@ -178,5 +178,41 @@ describe('manage my StudyRoom', () => {
 
     expect(cancelStudyRoom).not.toHaveBeenCalled();
     expect(screen.getByRole('article', { name: 'Test regression tests' })).toBeTruthy();
+  });
+
+  it('moves an edited room to its new place in the list', async () => {
+    vi.mocked(getStudyRooms).mockResolvedValue([room(), room({ id: 2, description: 'Test later room', startsAt: inDays(5, 14), endsAt: inDays(5, 15) })]);
+    vi.mocked(updateStudyRoom).mockResolvedValue(room({ startsAt: inDays(7, 14), endsAt: inDays(7, 15) }));
+    const card = await openHosting();
+    fireEvent.click(within(card.parentElement as HTMLElement).getByRole('button', { name: 'Edit' }));
+
+    save(screen.getByRole('dialog', { name: 'Edit StudyRoom' }));
+
+    expect(await screen.findByText('StudyRoom updated.')).toBeTruthy();
+    expect(screen.getAllByRole('article').map((article) => article.querySelector('h3')?.textContent))
+      .toEqual(['Test later room', 'Test regression tests']);
+  });
+
+  it("can't close the form while it saves, and the answer still closes it", async () => {
+    let answer: (saved: StudyRoomData) => void = () => {};
+    vi.mocked(updateStudyRoom).mockReturnValue(new Promise((resolve) => { answer = resolve; }));
+    const dialog = await openEdit();
+    save(dialog);
+
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    // past the closing animation, so a dialog on its way out doesn't count
+    await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+
+    expect(screen.getByRole('dialog', { name: 'Edit StudyRoom' })).toBeTruthy();
+    answer(room({ capacity: 9 }));
+    expect(await screen.findByText('StudyRoom updated.')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Edit StudyRoom' })).toBeNull());
+  });
+
+  it('says in edit that an empty Meet link makes a new one', async () => {
+    const dialog = await openEdit();
+
+    expect(within(dialog).getByText('Leave it empty and a new Meet link is made for you.')).toBeTruthy();
   });
 });

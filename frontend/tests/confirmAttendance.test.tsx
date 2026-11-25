@@ -103,17 +103,17 @@ describe('confirm StudyRoom attendance', () => {
     vi.mocked(confirmAttendance).mockResolvedValue(ended({ status: 'COMPLETED' }));
     const dialog = await openDialog();
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm 0 attendees' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm nobody came' }));
 
     await waitFor(() => expect(confirmAttendance).toHaveBeenCalledWith(1, []));
-    expect(await within(card()).findByText('0 attended')).toBeTruthy();
+    expect(await within(card()).findByText('Nobody attended')).toBeTruthy();
   });
 
   it('shows a toast when the room has not ended yet', async () => {
     vi.mocked(confirmAttendance).mockRejectedValue({ code: 'STUDYROOM_NOT_ENDED' });
     const dialog = await openDialog();
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm 0 attendees' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm nobody came' }));
 
     expect(await screen.findByText('The StudyRoom has not ended yet.')).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Confirm attendance' })).toBeNull());
@@ -125,11 +125,19 @@ describe('confirm StudyRoom attendance', () => {
     const dialog = await openDialog();
     vi.mocked(getStudyRoomParticipants).mockResolvedValue(participants.map((person, index) => ({ ...person, attended: index === 0 })));
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm 0 attendees' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm nobody came' }));
 
     expect(await screen.findByText('This StudyRoom is closed.')).toBeTruthy();
     expect(within(card()).getByText('Completed')).toBeTruthy();
     expect(await within(card()).findByText('1 attended')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Confirm attendance' })).toBeNull();
+  });
+
+  it('says nobody joined when the list is empty', async () => {
+    vi.mocked(getStudyRoomParticipants).mockResolvedValue([]);
+    const dialog = await openDialog();
+
+    expect(within(dialog).getByText('Nobody joined this StudyRoom.')).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: 'Confirm nobody came' })).toBeTruthy();
   });
 });
