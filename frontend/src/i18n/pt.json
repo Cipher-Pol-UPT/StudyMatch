@@ -2,8 +2,6 @@
   "workspace": {
     "welcome": "Escolha uma área para começar.",
     "open": "Abrir",
-    "noActivity": "Ainda sem atividade",
-    "noActivityBody": "As novidades aparecerão aqui à medida que as restantes funcionalidades ficarem disponíveis.",
     "loggedOut": "A sessão foi terminada.",
     "logoutFailed": "Não foi possível terminar a sessão. Verifique a ligação e tente novamente.",
     "roles": {
@@ -1114,5 +1112,16 @@
     "title": "Perfil do estudante",
     "back": "Voltar",
     "message": "Enviar mensagem"
+  },
+  "notes": {
+    "title": "Notas",
+    "intro": "Notas rápidas que só o próprio vê.",
+    "none": "Ainda não tem notas. Adicione uma para o que quiser lembrar.",
+    "emptyNote": "Nota vazia",
+    "text": "Texto da nota",
+    "moveFailed": "Não foi possível mover a nota. Voltou ao sítio onde estava.",
+    "loadFailed": "Não foi possível carregar as suas notas. Tente mais tarde.",
+    "loading": "A carregar as suas notas…",
+    "open": "Abrir nota: {{text}}"
   }
 }

@@ -2,8 +2,6 @@
   "workspace": {
     "welcome": "Choose an area to get started.",
     "open": "Open",
-    "noActivity": "No activity yet",
-    "noActivityBody": "Updates will appear here as the remaining features become available.",
     "loggedOut": "You have been logged out.",
     "logoutFailed": "Could not end your session. Check your connection and try again.",
     "roles": {
@@ -1114,5 +1112,16 @@
     "title": "Student profile",
     "back": "Back",
     "message": "Message"
+  },
+  "notes": {
+    "title": "Notes",
+    "intro": "Quick notes only you can see.",
+    "none": "No notes yet. Add one for anything you want to keep in mind.",
+    "emptyNote": "Empty note",
+    "text": "Note text",
+    "moveFailed": "Couldn't move the note. It's back where it was.",
+    "loadFailed": "Couldn't load your notes. Try again later.",
+    "loading": "Loading your notes…",
+    "open": "Open note: {{text}}"
   }
 }

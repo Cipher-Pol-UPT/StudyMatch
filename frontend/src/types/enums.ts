@@ -33,3 +33,6 @@ export type ChatEventType = typeof ChatEventType[number];
 
 export const NotificationLevel = ["ALL", "MENTIONS", "NONE"] as const;
 export type NotificationLevel = typeof NotificationLevel[number];
+
+export const NoteColour = ["YELLOW", "PINK", "BLUE", "GREEN"] as const;
+export type NoteColour = typeof NoteColour[number];
