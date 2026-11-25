@@ -25,7 +25,7 @@ vi.mock('../src/api/subjects', () => ({
 vi.mock('../src/api/degrees', () => ({ getDegrees: vi.fn(() => Promise.resolve(mocks.degrees)) }));
 vi.mock('../src/api/categories', () => ({ getCategories: vi.fn(() => Promise.resolve(mocks.categories)) }));
 vi.mock('../src/api/teachers', () => ({ getTeachers: vi.fn(() => Promise.resolve(mocks.teachers)) }));
-vi.mock('../src/api/academicYears', () => ({ getNextAcademicYear: vi.fn(() => Promise.resolve({ nextStartYear: 2026 })) }));
+vi.mock('../src/api/academicYears', () => ({ getAcademicYears: vi.fn(() => Promise.resolve([{ startYear: 2026 }])) }));
 
 const created = {
   id: 1, academicYear: 2026,
@@ -93,7 +93,6 @@ describe('register a subject', () => {
     const first = within(dialog).getByLabelText('Degree') as HTMLSelectElement;
     fireEvent.change(first, { target: { value: '1' } });
     expect(first.value).toBe('1');
-    // the picked degree is still an option on its own row, not replaced by the next one
     expect(within(first).getByRole('option', { name: 'Computer Science' })).toBeTruthy();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Add degree' }));
@@ -123,6 +122,28 @@ describe('register a subject', () => {
     }));
   });
 
+  it('locks the code while it looks up the existing subject, so the banner cannot reappear', async () => {
+    mocks.registerSubject.mockRejectedValue({ code: 'SUBJECT_ALREADY_EXISTS', params: { id: 5 } });
+    let resolveSubject!: (subject: typeof existingSubject) => void;
+    mocks.getSubject.mockImplementation(() => new Promise((resolve) => { resolveSubject = resolve; }));
+    renderPage();
+    const dialog = await openForm();
+
+    await fillSubject(dialog);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Register subject' }));
+
+    // while the lookup is pending the submit is still busy, so the code field is locked
+    const codeInput = within(dialog).getByLabelText('Code') as HTMLInputElement;
+    await waitFor(() => expect(codeInput.disabled).toBe(true));
+
+    resolveSubject(existingSubject);
+    await within(dialog).findByText(/Software Quality exists/);
+
+    // once it's done, changing the code clears the offer
+    fireEvent.change(within(dialog).getByLabelText('Code'), { target: { value: 'NEW9' } });
+    await waitFor(() => expect(within(dialog).queryByText(/already registered/i)).toBeNull());
+  });
+
   it('clears the taken-code banner when the code changes', async () => {
     mocks.registerSubject.mockRejectedValue({ code: 'SUBJECT_ALREADY_EXISTS', params: { id: 5 } });
     mocks.getSubject.mockResolvedValue(existingSubject);
@@ -147,6 +168,18 @@ describe('register a subject', () => {
 
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.getByRole('dialog', { name: 'New subject' })).toBeTruthy();
+  });
+
+  it('shows an error on a degree row left without a degree', async () => {
+    renderPage();
+    const dialog = await openForm();
+
+    await fillSubject(dialog);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add degree' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Register subject' }));
+
+    expect(await within(dialog).findByText('This field is required.')).toBeTruthy();
+    expect(mocks.registerSubject).not.toHaveBeenCalled();
   });
 
   it('shows an error under Degrees when no degree is given', async () => {

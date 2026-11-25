@@ -28,6 +28,9 @@ function backend(answer: (text: string) => Promise<Response> = async text => rep
       sends.push({ number: Number(send[1]), text });
       return answer(text);
     }
+    // the first message creates the DM, whose history then loads: what was just sent is all there is
+    if (url.pathname === '/api/chats/7/messages') return reply({ hasMore: false, messages: sends.length ? [sent(sends.at(-1)!.text)] : [] });
+    if (url.pathname === '/api/chats/7/read') return new Response(null, { status: 204 });
     const dm = url.pathname.match(/^\/api\/chats\/direct\/(\d+)$/);
     if (dm) return reply({ chatId: null, contact: Number(dm[1]) === ana.number ? ana : rui });
     throw new Error(`Unexpected request: ${url.pathname}`);

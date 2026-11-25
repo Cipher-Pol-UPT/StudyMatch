@@ -1,7 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getNextAcademicYear } from '../../api/academicYears';
+import { getAcademicYears } from '../../api/academicYears';
 import { getCategories } from '../../api/categories';
 import { getDegrees } from '../../api/degrees';
 import { isBackendError } from '../../api/errors';
@@ -28,7 +28,7 @@ export function SubjectDialog({ open, onClose, onRegistered }: SubjectDialogProp
   const degrees = useRemoteData('degrees', getDegrees);
   const categories = useRemoteData('categories', getCategories);
   const teachers = useRemoteData('teachers', getTeachers);
-  const nextYear = useRemoteData('next-academic-year', getNextAcademicYear);
+  const academicYears = useRemoteData('academic-years', getAcademicYears);
   const feedback = useFormFeedback([], {
     SUBJECT_ALREADY_IN_DEGREE: 'degrees',
     AT_LEAST_ONE_TEACHER_REQUIRED: 'teachers',
@@ -42,11 +42,14 @@ export function SubjectDialog({ open, onClose, onRegistered }: SubjectDialogProp
   const [degreeRows, setDegreeRows] = useState<DegreeRow[]>([{ degreeId: '', year: 1, semester: 1 }]);
   const [classes, setClasses] = useState<string[]>([]);
   const [teacherNumbers, setTeacherNumbers] = useState<number[]>([]);
+  const [academicYear, setAcademicYear] = useState<number | null>(null);
+  // set once the user tried to submit, so an empty degree shows "required" on its own row
+  const [attempted, setAttempted] = useState(false);
   // the subject that already has this code, so the banner can offer its edition with its real name
   const [existing, setExisting] = useState<SubjectData | null>(null);
 
-  // the edition belongs to the next academic year, the one Start Academic Year would create
-  const year = nextYear.data?.nextStartYear ?? 0;
+  // the current year comes first from the backend; Staff can pick another registered one
+  const year = academicYear ?? academicYears.data?.[0]?.startYear ?? 0;
   const edition = () => ({ academicYear: year, teacherNumbers, classSections: classes });
 
   const changeCode = (value: string) => {
@@ -72,27 +75,32 @@ export function SubjectDialog({ open, onClose, onRegistered }: SubjectDialogProp
   const yearOptions = (max: number) => Array.from({ length: max }, (_, i) => i + 1)
     .map((value) => ({ value: String(value), label: t('subjects.yearOption', { year: value }) }));
 
-  // an empty category is null and empty degree rows are dropped, so the backend answers
-  // VALIDATION_FAILED under the field instead of a NOT_FOUND banner for "id 0"
+  // an empty category is null, so the backend answers VALIDATION_FAILED under the field instead of a NOT_FOUND banner
   const buildRequest = (): SubjectRequest => ({
     code: code.trim(), name: name.trim(), ects,
     categoryId: categoryId === '' ? null : Number(categoryId),
-    degrees: degreeRows
-      .filter((row) => row.degreeId !== '')
-      .map((row) => ({ degreeId: Number(row.degreeId), curricularYear: row.year, semester: row.semester })),
+    degrees: degreeRows.map((row) => ({ degreeId: Number(row.degreeId), curricularYear: row.year, semester: row.semester })),
     edition: edition(),
   });
 
   const submitSubject = () => {
+    // a degree row without a degree is shown on that row, not silently dropped
+    setAttempted(true);
+    if (degreeRows.some((row) => row.degreeId === '')) return;
     setExisting(null);
     void feedback.submit(async () => {
       try {
         const created = await registerSubject(buildRequest());
         onRegistered(created.subject);
       } catch (error) {
-        // offer to register this year's edition of the subject that already has this code
+        // offer to register this year's edition of the subject that already has this code. The fetch is
+        // awaited while the form is busy (the code field is disabled), so a later change can't resurrect it
         if (isBackendError(error) && error.code === 'SUBJECT_ALREADY_EXISTS' && error.params?.id != null) {
-          getSubject(Number(error.params.id)).then(setExisting).catch(() => setExisting(null));
+          try {
+            setExisting(await getSubject(Number(error.params.id)));
+          } catch {
+            setExisting(null);
+          }
         }
         throw error;
       }
@@ -109,7 +117,7 @@ export function SubjectDialog({ open, onClose, onRegistered }: SubjectDialogProp
 
   const availableTeachers = (teachers.data ?? []).filter((teacher) => !teacherNumbers.includes(teacher.number));
   const noTeachers = teachers.data !== undefined && teachers.data.length === 0;
-  const loadFailed = [degrees, categories, teachers, nextYear].some((item) => item.error !== undefined);
+  const loadFailed = [degrees, categories, teachers, academicYears].some((item) => item.error !== undefined);
 
   return (
     <Dialog open={open} onClose={onClose} dismissible={!feedback.busy} title={t('subjects.newSubject')}
@@ -138,6 +146,7 @@ export function SubjectDialog({ open, onClose, onRegistered }: SubjectDialogProp
           {degreeRows.map((row, index) => (
             <div key={index} className="sm-subject-degrees__row">
               <Select label={t('subjects.degree')} value={row.degreeId} disabled={feedback.busy}
+                error={attempted && row.degreeId === '' ? t('validation.NOT_BLANK') : undefined}
                 onChange={(event) => {
                   const degreeId = event.target.value;
                   const max = degrees.data?.find((degree) => String(degree.id) === degreeId)?.curricularYears ?? 6;
@@ -160,8 +169,9 @@ export function SubjectDialog({ open, onClose, onRegistered }: SubjectDialogProp
         </section>
 
         <div className="sm-subject-form__row">
-          <Select label={t('subjects.academicYear')} value={String(year)} disabled
-            options={year ? [{ value: String(year), label: formatYear(year) }] : []} />
+          <Select label={t('subjects.academicYear')} value={String(year)} disabled={feedback.busy || !academicYears.data?.length}
+            onChange={(event) => setAcademicYear(Number(event.target.value))}
+            options={(academicYears.data ?? []).map((item) => ({ value: String(item.startYear), label: formatYear(item.startYear) }))} />
           <TagInput label={t('subjects.classes')} value={classes} onValueChange={setClasses}
             placeholder={t('subjects.classesPlaceholder')} />
         </div>

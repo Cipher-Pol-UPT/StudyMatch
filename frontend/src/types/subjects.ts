@@ -13,4 +13,5 @@ export interface SubjectRequest {
   edition: { academicYear: number; teacherNumbers: number[]; classSections?: string[] };
 }
 export interface TeacherData { number: number; name: string; institutionalEmail: string }
-export interface AcademicYearPreviewData { nextStartYear: number }
+// startYear 2026 is the 2026/2027 academic year
+export interface AcademicYearData { startYear: number }
