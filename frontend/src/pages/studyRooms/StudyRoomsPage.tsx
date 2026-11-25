@@ -6,7 +6,8 @@ import { createStudyRoom, getStudyRoom, getStudyRooms, joinStudyRoom, leaveStudy
 import { getSubjects } from '../../api/subjects';
 import { Button, CreateStudyRoomForm, Dialog, EmptyState, Skeleton, useToast, type StudyRoomDraft } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
-import type { StudyRoomData, StudyRoomDetailData, SubjectData } from '../../types/studyRooms';
+import type { SubjectData } from '../../types/subjects';
+import type { StudyRoomData, StudyRoomDetailData } from '../../types/studyRooms';
 import { dateKey, monthStart } from './calendar';
 import { StudyRoomCalendar, StudyRoomMiniCalendar } from './StudyRoomCalendar';
 import { StudyRoomPreview } from './StudyRoomPreview';
