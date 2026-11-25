@@ -1,16 +1,13 @@
 package com.studymatch.utils;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HexFormat;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
+
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 // what an attachment says it is against what's in it (GR10)
 public final class AttachmentFiles {
@@ -59,29 +56,14 @@ public final class AttachmentFiles {
     return name.substring(0, end) + extension;
   }
 
-  // only the zip's index is read, nothing is unzipped, so a small zip of something huge costs nothing.
-  // in a temp file because reading the index from memory means unzipping everything before it
+  // only the zip's index is read, nothing is unzipped, so a small zip of something huge costs nothing
   private static boolean isOffice(byte[] bytes, String mainPart) {
     if (!hasAt(bytes, 0, ZIP)) {
       return false;
     }
-    try {
-      Path temp = Files.createTempFile("attachment", ".zip");
-      try {
-        Files.write(temp, bytes);
-        return hasParts(temp, "[Content_Types].xml", mainPart);
-      } finally {
-        Files.delete(temp);
-      }
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-  }
-
-  private static boolean hasParts(Path zip, String... parts) throws IOException {
-    try (ZipFile file = new ZipFile(zip.toFile())) {
-      return Arrays.stream(parts).allMatch(part -> file.getEntry(part) != null);
-    } catch (ZipException notAZip) {
+    try (ZipFile zip = ZipFile.builder().setByteArray(bytes).setIgnoreLocalFileHeader(true).get()) {
+      return zip.getEntry("[Content_Types].xml") != null && zip.getEntry(mainPart) != null;
+    } catch (IOException notAZip) {
       return false;
     }
   }
