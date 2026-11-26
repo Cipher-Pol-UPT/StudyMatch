@@ -115,6 +115,8 @@ A student opens the StudyRooms calendar (`GET /study-rooms/`), which shows every
 
 A student who joined a StudyRoom can leave it (`POST /study-rooms/{id}/leave`) before it starts, which frees their place and makes a full room Scheduled again. Only a participant can leave (`NOT_A_PARTICIPANT` otherwise), and once the room has started it's too late (`STUDYROOM_ALREADY_STARTED`).
 
+On the StudyRooms page a room's card shows Join, or Leave once you joined, until the room starts. Joining and leaving update the card and say so in a toast, and leaving asks first. A join that overlaps another of your rooms names it in a banner above the card. If the room filled up meanwhile, or you had already joined it, the card shows it as it is now, Full or with Leave (#44).
+
 A student joins a StudyRoom (`POST /study-rooms/{id}/join`) before it starts, as long as they're enrolled in the subject's current edition and haven't passed it (`NOT_ELIGIBLE_FOR_STUDYROOM` otherwise). They can't be in two rooms at the same time (`JOINED_STUDYROOM_OVERLAP` names the conflicting room), and the model refuses their own room (`TUTOR_CANNOT_JOIN_OWN_STUDYROOM`), a full one (`STUDYROOM_FULL`) and joining twice (`ALREADY_JOINED_STUDYROOM`).
 
 A tutor cancels a StudyRoom they host (`POST /study-rooms/{id}/cancel`) while it's Scheduled or Full and hasn't started, with an optional reason. It leaves the calendar and never counts toward achievements. Once it started it's too late (`STUDYROOM_ALREADY_STARTED`), and cancelling an already cancelled room gives `STUDYROOM_CLOSED`. Telling the participants, with the reason if given, waits for the notifications (#144).

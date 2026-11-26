@@ -294,7 +294,10 @@
     "attendanceConfirmed": "Attendance confirmed. The StudyRoom is completed.",
     "meetLinkEmpty": "Leave it empty and a new Meet link is made for you.",
     "nobodyJoined": "Nobody joined this StudyRoom.",
-    "confirmAttendees_zero": "Confirm nobody came"
+    "confirmAttendees_zero": "Confirm nobody came",
+    "leaveTitle": "Leave this StudyRoom?",
+    "leaveBody": "{{room}}. Your place goes back to the other students.",
+    "stay": "Stay"
   },
   "studyRooms": {
     "heading": "StudyRooms",
