@@ -7,12 +7,14 @@ import { TeacherArea } from '../src/pages/teacher/TeacherArea';
 import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { ChatContactData, ChatEvent, MessageData } from '../src/types/chat';
 
-// the live connection, faked: the test pushes events to whoever listens
-const live = vi.hoisted(() => ({ listeners: new Map<string, (event: unknown) => void>() }));
+// every listener of a destination gets what the test pushes: the open chat, the chat list and the side menu all listen
+const live = vi.hoisted(() => ({ listeners: new Map<string, Set<(event: unknown) => void>>() }));
 vi.mock('../src/api/chatSocket', () => ({
   subscribeToChatEvents: (destination: string, onEvent: (event: unknown) => void) => {
-    live.listeners.set(destination, onEvent);
-    return () => live.listeners.delete(destination);
+    const set = live.listeners.get(destination) ?? new Set();
+    set.add(onEvent);
+    live.listeners.set(destination, set);
+    return () => set.delete(onEvent);
   },
 }));
 
@@ -50,7 +52,13 @@ function open() {
 }
 
 const log = async () => within(await screen.findByRole('log', { name: 'Messages' }));
-const push = (event: ChatEvent) => live.listeners.get(`/topic/chats/${CHAT}`)?.(event);
+const listening = (destination: string) => (live.listeners.get(destination)?.size ?? 0) > 0;
+const push = (event: ChatEvent) => live.listeners.get(`/topic/chats/${CHAT}`)?.forEach(listener => listener(event));
+// the chat list's queue, once something listens to it: on a slow machine the page can show before it subscribes
+async function pushToList(event: unknown) {
+  await waitFor(() => expect(listening('/user/queue/chats')).toBe(true));
+  live.listeners.get('/user/queue/chats')?.forEach(listener => listener(event));
+}
 const settle = () => act(() => new Promise(resolve => setTimeout(resolve, 50)));
 
 beforeEach(async () => { await i18n.changeLanguage('en'); });
@@ -136,11 +144,11 @@ describe('open a chat', () => {
     backend(() => reply({ hasMore: false, messages: [] }));
     open();
     await screen.findByText(/say hi/);
-    expect(live.listeners.has(`/topic/chats/${CHAT}`)).toBe(true);
+    expect(listening(`/topic/chats/${CHAT}`)).toBe(true);
 
     cleanup();
 
-    expect(live.listeners.has(`/topic/chats/${CHAT}`)).toBe(false);
+    expect(listening(`/topic/chats/${CHAT}`)).toBe(false);
   });
 
   it("shows the backend's error with a way back to the list", async () => {
@@ -338,7 +346,7 @@ describe('while a chat is open', () => {
     await screen.findByText(/say hi/);
 
     dm = CHAT;
-    live.listeners.get('/user/queue/chats')?.({ type: 'CHAT_UPDATED', payload: message(1, ana, 'Hi there', '2026-11-21T09:00:00') });
+    await pushToList({ type: 'CHAT_UPDATED', payload: message(1, ana, 'Hi there', '2026-11-21T09:00:00') });
 
     expect(await (await log()).findByText('Hi there')).toBeTruthy();
   });
@@ -414,7 +422,7 @@ describe('while a chat is open', () => {
     open();
     await screen.findByText(/say hi/);
 
-    live.listeners.get('/user/queue/chats')?.({ type: 'CHAT_UPDATED', payload: { ...message(1, ana, 'Hi group', '2026-11-21T09:00:00'), chatId: 99 } });
+    await pushToList({ type: 'CHAT_UPDATED', payload: { ...message(1, ana, 'Hi group', '2026-11-21T09:00:00'), chatId: 99 } });
     await settle();
 
     expect(calls.some(call => call.includes('/api/chats/99'))).toBe(false);
@@ -480,7 +488,7 @@ describe('while a chat is open', () => {
     const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
 
     dm = CHAT;
-    live.listeners.get('/user/queue/chats')?.({ type: 'CHAT_UPDATED', payload: message(1, ana, 'Hi there', '2026-11-21T09:00:00') });
+    await pushToList({ type: 'CHAT_UPDATED', payload: message(1, ana, 'Hi there', '2026-11-21T09:00:00') });
     expect(await (await log()).findByText('Hi there')).toBeTruthy();
     await settle();
     expect(reads(calls)).toBe(0);
