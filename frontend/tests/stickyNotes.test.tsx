@@ -243,6 +243,61 @@ describe('sticky notes', () => {
       expect(spotOf('Study recursion and trees').style.left).toContain('min(10%');
     });
 
+    it('goes back to where it was saved when two drops both fail', async () => {
+      const fails: ((error: unknown) => void)[] = [];
+      vi.mocked(updateNote).mockImplementation(() => new Promise((_resolve, reject) => { fails.push(reject); }));
+      renderNotes();
+      await screen.findByText('Study recursion');
+
+      await act(async () => dragBy(spotOf('Study recursion'), 200, 100));
+      await act(async () => dragBy(spotOf('Study recursion'), 100, 0));
+      await act(async () => fails[0](new Error('offline')));
+      await act(async () => fails[1](new Error('offline')));
+
+      expect(spotOf('Study recursion').style.left).toContain('min(10%');
+      expect(spotOf('Study recursion').style.top).toContain('min(10%');
+    });
+
+    it("keeps a pending drop's place when a text saves meanwhile", async () => {
+      let saveMove: (saved: NoteData) => void = () => {};
+      vi.mocked(updateNote).mockImplementation((_, changes) => 'x' in changes
+        ? new Promise(resolve => { saveMove = resolve; })
+        // the text's answer still has the place from before the drop
+        : Promise.resolve(note(1, 'Study recursion and trees', { x: 10, y: 10 })));
+      renderNotes();
+      await screen.findByText('Study recursion');
+      await act(async () => dragBy(spotOf('Study recursion'), 200, 100));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Open note: Study recursion' }));
+      const box = screen.getByRole('textbox', { name: 'Note text' });
+      fireEvent.change(box, { target: { value: 'Study recursion and trees' } });
+      fireEvent.blur(box);
+      expect(await screen.findByText('Study recursion and trees')).toBeTruthy();
+
+      expect(spotOf('Study recursion and trees').style.left).toContain('min(30%');
+      await act(async () => saveMove(note(1, 'Study recursion and trees', { x: 30, y: 30 })));
+      expect(spotOf('Study recursion and trees').style.left).toContain('min(30%');
+    });
+
+    it("keeps an unsaved text's error when the note is moved", async () => {
+      vi.mocked(updateNote).mockImplementation(async (_, changes) => {
+        if ('text' in changes) throw { code: 'NOTE_TOO_LONG', params: { max: 500 } };
+        return note(1, 'Study recursion', changes);
+      });
+      renderNotes();
+      fireEvent.click(await screen.findByRole('button', { name: 'Open note: Study recursion' }));
+      const box = screen.getByRole('textbox', { name: 'Note text' });
+      fireEvent.change(box, { target: { value: 'a'.repeat(501) } });
+      fireEvent.blur(box);
+      await screen.findByRole('alert');
+      // another note opens, so the first can be dragged
+      fireEvent.click(screen.getByRole('button', { name: 'Open note: Buy pens' }));
+
+      await act(async () => dragBy(spotOf('a'.repeat(501)), 200, 100));
+
+      expect(screen.getByRole('alert').textContent).toBe('A note can have up to 500 characters.');
+    });
+
     it('opens the note instead when it barely moved', async () => {
       renderNotes();
       await screen.findByText('Study recursion');
@@ -284,5 +339,39 @@ describe('sticky notes', () => {
     expect((screen.getByRole('textbox', { name: 'Note text' }) as HTMLTextAreaElement).value).toBe('Buy pens');
     fireEvent.click(screen.getByRole('button', { name: `Open note: ${'a'.repeat(501)}` }));
     expect((screen.getByRole('textbox', { name: 'Note text' }) as HTMLTextAreaElement).value).toBe('a'.repeat(501));
+  });
+
+  it('keeps what you type while the text saves, and the answer leaves the note open', async () => {
+    let answer: (saved: NoteData) => void = () => {};
+    vi.mocked(updateNote).mockReturnValue(new Promise(resolve => { answer = resolve; }));
+    renderNotes();
+    fireEvent.click(await screen.findByRole('button', { name: 'Open note: Study recursion' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Note text' }), { target: { value: 'Study recursion and trees' } });
+    fireEvent.blur(screen.getByRole('textbox', { name: 'Note text' }));
+
+    // back in the box before the answer comes
+    const box = screen.getByRole('textbox', { name: 'Note text' }) as HTMLTextAreaElement;
+    box.focus();
+    expect(box.value).toBe('Study recursion and trees');
+    fireEvent.change(box, { target: { value: 'Study recursion and trees and graphs' } });
+    await act(async () => answer(note(1, 'Study recursion and trees')));
+
+    expect((screen.getByRole('textbox', { name: 'Note text' }) as HTMLTextAreaElement).value).toBe('Study recursion and trees and graphs');
+  });
+
+  it('goes back to the saved text with Escape after a text fails, without the error', async () => {
+    vi.mocked(updateNote).mockRejectedValue({ code: 'NOTE_TOO_LONG', params: { max: 500 } });
+    renderNotes();
+    fireEvent.click(await screen.findByRole('button', { name: 'Open note: Study recursion' }));
+    const box = screen.getByRole('textbox', { name: 'Note text' });
+    fireEvent.change(box, { target: { value: 'a'.repeat(501) } });
+    fireEvent.blur(box);
+    await screen.findByRole('alert');
+
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Note text' }), { key: 'Escape' });
+
+    expect(screen.queryByRole('textbox', { name: 'Note text' })).toBeNull();
+    expect(screen.getByText('Study recursion')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });
