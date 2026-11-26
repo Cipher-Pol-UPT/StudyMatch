@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +31,7 @@ import com.studymatch.dtos.AnalyticsDTO.GroupOption;
 import com.studymatch.dtos.AnalyticsDTO.MonthAttendance;
 import com.studymatch.dtos.AnalyticsDTO.TraitCount;
 import com.studymatch.dtos.AssignmentGroupsDTO;
+import com.studymatch.dtos.EditGroupsRequestDTO;
 import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.GroupGenerationDTO;
 import com.studymatch.dtos.MyGroupDTO;
@@ -198,6 +200,95 @@ public class GroupService {
   public void discardGroups(Long subjectEditionId, Long assignmentId) {
     Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
     groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.DRAFT);
+  }
+
+  // edit groups: sizes and constraints only warn on the page. A kept group keeps its row, so its chat stays (#236)
+  @Transactional
+  public List<GroupDTO> editGroups(Long subjectEditionId, Long assignmentId, GroupStatus status,
+      List<EditGroupsRequestDTO.EditedGroup> edited) {
+    Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
+    if (assignment.getGroupingRule() == null) {
+      throw new StudyMatchException(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK);
+    }
+    List<Group> current = groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment, status);
+    if (current.isEmpty()) {
+      throw new StudyMatchException(status == GroupStatus.DRAFT ? ErrorCode.NO_DRAFT_GROUPS
+          : ErrorCode.NO_PUBLISHED_GROUPS);
+    }
+    List<Enrolment> enrolments = enrolmentService.listEnrolments(subjectEditionId);
+    List<List<Student>> members = editedMembers(edited, enrolments);
+
+    // what's left in removed at the end is every group the teacher took out
+    Map<Long, Group> removed = current.stream().collect(Collectors.toMap(Group::getId, Function.identity()));
+    List<Group> kept = new ArrayList<>();
+    for (EditGroupsRequestDTO.EditedGroup group : edited) {
+      Group existing = group.id() == null ? null : removed.remove(group.id());
+      if (group.id() != null && existing == null) {
+        throw new StudyMatchException(ErrorCode.NOT_FOUND);
+      }
+      kept.add(existing);
+    }
+    groupRepository.deleteAll(removed.values());
+    groupRepository.flush();
+
+    // one at a time and only ever down, so two groups never share a number on the way
+    List<Group> survivors = kept.stream().filter(Objects::nonNull).sorted(Comparator.comparing(Group::getNumber))
+        .toList();
+    for (int i = 0; i < survivors.size(); i++) {
+      if (survivors.get(i).getNumber() != i + 1) {
+        survivors.get(i).renumber(i + 1);
+        groupRepository.flush();
+      }
+    }
+
+    int next = survivors.size();
+    List<Group> saved = new ArrayList<>();
+    for (int i = 0; i < edited.size(); i++) {
+      Group group = kept.get(i);
+      if (group == null) {
+        group = new Group(assignment, ++next);
+        if (status == GroupStatus.PUBLISHED) {
+          group.publish();
+        }
+      }
+      group.replaceMembers(members.get(i));
+      saved.add(groupRepository.save(group));
+    }
+    // telling the students of changed published groups comes with notifications (#144)
+    Map<Long, String> classOf = classSections(enrolments);
+    return saved.stream().sorted(Comparator.comparing(Group::getNumber)).map(group -> toDTO(group, classOf)).toList();
+  }
+
+  // every enrolled student who isn't blocked in exactly one group, a blocked one can stay or go (GR5)
+  private static List<List<Student>> editedMembers(List<EditGroupsRequestDTO.EditedGroup> edited,
+      List<Enrolment> enrolments) {
+    Map<Long, Student> enrolled = enrolments.stream().map(Enrolment::getStudent)
+        .collect(Collectors.toMap(Student::getNumber, Function.identity()));
+    Set<Long> placed = new HashSet<>();
+    List<List<Student>> members = new ArrayList<>();
+    for (EditGroupsRequestDTO.EditedGroup group : edited) {
+      List<Student> students = new ArrayList<>();
+      for (Long number : group.members()) {
+        Student student = enrolled.get(number);
+        if (student == null) {
+          throw new StudyMatchException(ErrorCode.STUDENT_NOT_ENROLLED, Map.of("number", number));
+        }
+        if (!placed.add(number)) {
+          throw new StudyMatchException(ErrorCode.STUDENT_IN_TWO_GROUPS, Map.of("number", number));
+        }
+        students.add(student);
+      }
+      members.add(students);
+    }
+    List<Long> left = enrolled.values().stream()
+        .filter(student -> !student.isBlocked() && !placed.contains(student.getNumber()))
+        .map(Student::getNumber)
+        .sorted()
+        .toList();
+    if (!left.isEmpty()) {
+      throw new StudyMatchException(ErrorCode.STUDENT_WITHOUT_GROUP, Map.of("numbers", left));
+    }
+    return members;
   }
 
   private List<List<Integer>> generate(List<Candidate> candidates, List<int[]> separations, GroupingRule rule) {

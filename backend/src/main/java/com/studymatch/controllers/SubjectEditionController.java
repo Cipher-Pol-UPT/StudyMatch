@@ -32,6 +32,7 @@ import com.studymatch.dtos.AttendanceRequestDTO;
 import com.studymatch.dtos.AttendanceSheetDTO;
 import com.studymatch.dtos.ChangeClassRequestDTO;
 import com.studymatch.dtos.CreateAssignmentRequestDTO;
+import com.studymatch.dtos.EditGroupsRequestDTO;
 import com.studymatch.dtos.EditionStudentDTO;
 import com.studymatch.dtos.EnrolStudentsRequestDTO;
 import com.studymatch.dtos.EnrolmentRecordDTO;
@@ -43,6 +44,7 @@ import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.GroupGenerationDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.enums.ExportFormat;
+import com.studymatch.enums.GroupStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.Student;
@@ -290,6 +292,37 @@ public class SubjectEditionController {
     subjectEditionService.checkTaughtBy(id, teacher.getNumber());
     groupService.discardGroups(id, assignmentId);
     return ResponseEntity.noContent().build();
+  }
+
+  // edit groups, from the generate preview
+  @PutMapping("{id}/assignments/{assignmentId}/groups/draft")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Save the edited draft groups: every group after the edit, a group left out is removed and "
+      + "an id of null is a new one. Sizes and constraints only warn on the page, but every enrolled student who "
+      + "isn't blocked has to be in exactly one group")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.VALIDATION_FAILED, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK,
+      ErrorCode.NO_DRAFT_GROUPS, ErrorCode.STUDENT_NOT_ENROLLED, ErrorCode.STUDENT_IN_TWO_GROUPS,
+      ErrorCode.STUDENT_WITHOUT_GROUP })
+  public ResponseEntity<List<GroupDTO>> editDraftGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      @Valid @RequestBody EditGroupsRequestDTO request, Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    return ResponseEntity.ok(groupService.editGroups(id, assignmentId, GroupStatus.DRAFT, request.groups()));
+  }
+
+  // edit groups, after publishing
+  @PutMapping("{id}/assignments/{assignmentId}/groups/published")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Save the edited published groups, the same way as the drafts. A kept group stays the same "
+      + "group, a new one is published straight away")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.VALIDATION_FAILED, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK,
+      ErrorCode.NO_PUBLISHED_GROUPS, ErrorCode.STUDENT_NOT_ENROLLED, ErrorCode.STUDENT_IN_TWO_GROUPS,
+      ErrorCode.STUDENT_WITHOUT_GROUP })
+  public ResponseEntity<List<GroupDTO>> editPublishedGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      @Valid @RequestBody EditGroupsRequestDTO request, Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    return ResponseEntity.ok(groupService.editGroups(id, assignmentId, GroupStatus.PUBLISHED, request.groups()));
   }
 
   // register attendance: the class's students for one lesson, with the record if it was registered before

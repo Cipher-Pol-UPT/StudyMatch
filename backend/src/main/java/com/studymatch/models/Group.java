@@ -1,5 +1,6 @@
 package com.studymatch.models;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -78,6 +79,11 @@ public class Group {
     this.status = GroupStatus.PUBLISHED;
   }
 
+  // edit groups: a removed group leaves a gap, the ones after it move down
+  public void renumber(int number) {
+    this.number = number;
+  }
+
   public Set<Student> getMembers() {
     return Collections.unmodifiableSet(members);
   }
@@ -88,6 +94,11 @@ public class Group {
 
   public void removeMember(Student student) {
     members.remove(student);
+  }
+
+  public void replaceMembers(Collection<Student> students) {
+    members.clear();
+    members.addAll(students);
   }
 
 }

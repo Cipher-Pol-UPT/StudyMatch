@@ -86,6 +86,8 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/subject-editions/{id}/assignments/{assignmentId}/groups?replacePublished=` | Teacher of the edition | generate (or regenerate) a group assignment's groups as drafts and preview them; with published groups already, `replacePublished=true` is needed |
 | POST | `/subject-editions/{id}/assignments/{assignmentId}/groups/publish` | Teacher of the edition | publish the drafts, replacing the groups published before |
 | DELETE | `/subject-editions/{id}/assignments/{assignmentId}/groups/draft` | Teacher of the edition | discard the drafts, the published groups stay |
+| PUT | `/subject-editions/{id}/assignments/{assignmentId}/groups/draft` | Teacher of the edition | save the edited drafts. The body has every group after the edit, as `{ "groups": [{ "id", "members": [studentNumber] }] }`: a group left out is removed, `id: null` adds one, and the groups after a removed one move down a number. Sizes and constraints only warn on the page, but every enrolled student who isn't blocked has to be in exactly one group (`STUDENT_WITHOUT_GROUP` with their `numbers`, `STUDENT_IN_TWO_GROUPS`). No drafts is `NO_DRAFT_GROUPS` |
+| PUT | `/subject-editions/{id}/assignments/{assignmentId}/groups/published` | Teacher of the edition | the same for the published groups. A kept group stays the same group, a new one is published straight away. None published yet is `NO_PUBLISHED_GROUPS` |
 | GET | `/subject-editions/{id}/attendance?classSection=&startsAt=` | Staff | one lesson's attendance sheet, with the saved record if there is one |
 | PUT | `/subject-editions/{id}/attendance` | Staff | register or correct a lesson's absences (current year only) |
 | DELETE | `/subject-editions/{id}/attendance?classSection=&startsAt=` | Staff | delete a lesson registered by mistake, with its absences (current year only) |
@@ -171,4 +173,4 @@ The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and 
 
 ## Coming next
 
-The other use cases (editing groups, tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
