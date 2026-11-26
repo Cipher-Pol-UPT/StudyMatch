@@ -217,4 +217,34 @@ describe('view chats', () => {
 
     expect((await screen.findByRole('alert')).textContent).toBe(i18n.t('errors.ACCESS_DENIED'));
   });
+
+  it("asks the backend for a group chat's row when someone else writes in it, so a blocked person never counts", async () => {
+    // Rui is blocked: the backend doesn't count his message, so the row comes back with nothing unread
+    const calls = backend([[group(5, 'Test Study Group', message(50, 5, ana, 'Hi all'))], [group(5, 'Test Study Group', message(51, 5, rui, 'From Rui', today(12)))]]);
+    open();
+    await list();
+
+    await push({ type: 'CHAT_UPDATED', payload: message(51, 5, rui, 'From Rui', today(12)) });
+
+    await waitFor(() => expect(within(screen.getByRole('list', { name: 'Chats' })).getByRole('link').textContent).toContain('From Rui'));
+    expect(within(screen.getByRole('list', { name: 'Chats' })).queryByText(/unread/)).toBeNull();
+    expect(calls.filter(call => call === '/api/chats/')).toHaveLength(2);
+  });
+
+  it('shows what a message with only files has: a photo, the file name, or how many', async () => {
+    const withFiles = (id: number, chatId: number, author: ChatContactData, files: { name: string; contentType: string }[]) =>
+      ({ ...message(id, chatId, author, ''), attachments: files.map((file, index) => ({ id: index + 1, size: 1000, ...file })) });
+    backend([[
+      dm(1, ana, withFiles(10, 1, me, [{ name: 'notes.pdf', contentType: 'application/pdf' }])),
+      dm(2, rui, withFiles(20, 2, rui, [{ name: 'board.jpg', contentType: 'image/jpeg' }])),
+      group(5, 'Test Study Group', withFiles(50, 5, ana, [{ name: 'a.pdf', contentType: 'application/pdf' }, { name: 'b.png', contentType: 'image/png' }])),
+    ]]);
+    open();
+
+    const rows = within(await list()).getAllByRole('link');
+
+    expect(rows[0].textContent).toContain('You: notes.pdf');
+    expect(rows[1].textContent).toContain('Photo');
+    expect(rows[2].textContent).toContain('Test: 2 files');
+  });
 });
