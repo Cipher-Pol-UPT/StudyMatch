@@ -7,13 +7,14 @@ import { TeacherArea } from '../src/pages/teacher/TeacherArea';
 import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { ChatContactData, ChatEvent, MessageData } from '../src/types/chat';
 
-// the live connection, faked: the test pushes events to whoever listens
-const live = vi.hoisted(() => ({ listeners: new Map<string, (event: unknown) => void>() }));
+// every listener of a destination gets what the test pushes: the open chat, the chat list and the side menu all listen
+const live = vi.hoisted(() => ({ listeners: new Map<string, Set<(event: unknown) => void>>() }));
 vi.mock('../src/api/chatSocket', () => ({
   subscribeToChatEvents: (destination: string, onEvent: (event: unknown) => void) => {
-    live.listeners.set(destination, onEvent);
-    // only its own, a newer subscription to the same place stays
-    return () => { if (live.listeners.get(destination) === onEvent) live.listeners.delete(destination); };
+    const set = live.listeners.get(destination) ?? new Set();
+    set.add(onEvent);
+    live.listeners.set(destination, set);
+    return () => set.delete(onEvent);
   },
 }));
 
@@ -38,6 +39,9 @@ function backend(pages: (before: string | null) => Response) {
     if (url.pathname === `/api/chats/direct/${ana.number}`) return reply({ chatId: CHAT, contact: ana });
     if (url.pathname === `/api/chats/${CHAT}/messages`) return pages(url.searchParams.get('before'));
     if (url.pathname === `/api/chats/${CHAT}/read`) return new Response(null, { status: 204 });
+    // the chat list and the side menu's count, both empty here
+    if (url.pathname === '/api/chats/') return new Response('[]', { status: 200 });
+    if (url.pathname === '/api/chats/unread-count') return new Response('0', { status: 200 });
     throw new Error(`Unexpected request: ${url.pathname}`);
   }));
   return calls;
@@ -48,11 +52,12 @@ function open() {
 }
 
 const log = async () => within(await screen.findByRole('log', { name: 'Messages' }));
-const push = (event: ChatEvent) => live.listeners.get(`/topic/chats/${CHAT}`)?.(event);
-// the chat list's queue, once the open chat listens to it: on a slow machine the page can show before it subscribes
+const listening = (destination: string) => (live.listeners.get(destination)?.size ?? 0) > 0;
+const push = (event: ChatEvent) => live.listeners.get(`/topic/chats/${CHAT}`)?.forEach(listener => listener(event));
+// the chat list's queue, once something listens to it: on a slow machine the page can show before it subscribes
 async function pushToList(event: unknown) {
-  await waitFor(() => expect(live.listeners.has('/user/queue/chats')).toBe(true));
-  live.listeners.get('/user/queue/chats')?.(event);
+  await waitFor(() => expect(listening('/user/queue/chats')).toBe(true));
+  live.listeners.get('/user/queue/chats')?.forEach(listener => listener(event));
 }
 const settle = () => act(() => new Promise(resolve => setTimeout(resolve, 50)));
 
@@ -150,11 +155,11 @@ describe('open a chat', () => {
     backend(() => reply({ hasMore: false, messages: [] }));
     open();
     await screen.findByText(/say hi/);
-    expect(live.listeners.has(`/topic/chats/${CHAT}`)).toBe(true);
+    expect(listening(`/topic/chats/${CHAT}`)).toBe(true);
 
     cleanup();
 
-    expect(live.listeners.has(`/topic/chats/${CHAT}`)).toBe(false);
+    expect(listening(`/topic/chats/${CHAT}`)).toBe(false);
   });
 
   it("shows the backend's error with a way back to the list", async () => {
@@ -180,6 +185,9 @@ function backendWithChanges(change: (method: string, id: number, body: unknown) 
     if (url.pathname === `/api/chats/${CHAT}/read`) return new Response(null, { status: 204 });
     const own = url.pathname.match(new RegExp(`^/api/chats/${CHAT}/messages/(\\d+)$`));
     if (own) return change(method, Number(own[1]), init?.body ? JSON.parse(String(init.body)) : undefined);
+    // the chat list and the side menu's count, both empty here
+    if (url.pathname === '/api/chats/') return new Response('[]', { status: 200 });
+    if (url.pathname === '/api/chats/unread-count') return new Response('0', { status: 200 });
     throw new Error(`Unexpected request: ${method} ${url.pathname}`);
   }));
   return calls;
@@ -315,6 +323,9 @@ function liveBackend({ chatId = (() => CHAT) as () => number | null, history = [
     if (url.pathname === `/api/chats/${CHAT}/messages`) return reply({ hasMore: url.searchParams.has('before') ? false : history.length > 1, messages: url.searchParams.has('before') ? [] : history });
     if (url.pathname === `/api/chats/${CHAT}/read`) return new Response(null, { status: 204 });
     if (url.pathname.startsWith(`/api/chats/${CHAT}/messages/`)) return edit();
+    // the chat list and the side menu's count, both empty here
+    if (url.pathname === '/api/chats/') return new Response('[]', { status: 200 });
+    if (url.pathname === '/api/chats/unread-count') return new Response('0', { status: 200 });
     throw new Error(`Unexpected request: ${method} ${url.pathname}`);
   }));
   return calls;

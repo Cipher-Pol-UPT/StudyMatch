@@ -1157,7 +1157,17 @@
     "editSave": "para guardar",
     "deleteTitle": "Eliminar esta mensagem?",
     "deleteBody": "É removida para todos, sem deixar nada no seu lugar.",
-    "openProfile": "Abrir o perfil de {{name}}"
+    "openProfile": "Abrir o perfil de {{name}}",
+    "unread_one": "{{count}} mensagem por ler",
+    "unread_other": "{{count}} mensagens por ler",
+    "noMessagesYet": "Ainda sem mensagens",
+    "byYou": "Você: {{text}}",
+    "byThem": "{{name}}: {{text}}",
+    "groupSoon": "As conversas de grupo abrem aqui em breve",
+    "groupSoonBody": "Por agora pode ver a última mensagem na lista.",
+    "photo": "Fotografia",
+    "files_one": "{{count}} ficheiro",
+    "files_other": "{{count}} ficheiros"
   },
   "classmate": {
     "title": "Perfil do estudante",

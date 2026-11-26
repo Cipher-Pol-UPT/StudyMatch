@@ -9,9 +9,9 @@ export function useChatEvents(chatId: number | null, onEvent: (event: ChatEvent)
   useSocketDestination(chatId === null ? null : `/user/queue/chats/${chatId}`, onEvent);
 }
 
-// the user's chat list changing (a new chat, one they left...)
-export function useChatListEvents(onEvent: (event: ChatEvent) => void) {
-  useSocketDestination('/user/queue/chats', onEvent);
+// the user's chat list changing (a new chat, one they left...); off for the roles that have no chats
+export function useChatListEvents(onEvent: (event: ChatEvent) => void, enabled = true) {
+  useSocketDestination(enabled ? '/user/queue/chats' : null, onEvent);
 }
 
 // the latest handler is kept in a ref, so a new function each render doesn't resubscribe

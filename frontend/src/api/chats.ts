@@ -1,4 +1,4 @@
-import type { ChatContactData, DirectChatData, MessageData, MessagePageData } from '../types/chat';
+import type { ChatContactData, ChatSummaryData, DirectChatData, MessageData, MessagePageData } from '../types/chat';
 import type { PageData } from '../types/studentDirectory';
 import { request } from './client';
 
@@ -18,3 +18,9 @@ export const editMessage = (chatId: number, messageId: number, text: string) =>
   request<MessageData>('PUT', `/chats/${chatId}/messages/${messageId}`, { text });
 // delete your own message for everyone
 export const deleteMessage = (chatId: number, messageId: number) => request<void>('DELETE', `/chats/${chatId}/messages/${messageId}`);
+
+// your chats, the latest message first, with what you haven't read (#201)
+export const getChats = () => request<ChatSummaryData[]>('GET', '/chats/');
+
+// how many messages you haven't read across every chat, for the side menu
+export const getUnreadCount = () => request<number>('GET', '/chats/unread-count');

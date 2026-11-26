@@ -153,6 +153,56 @@ export function ChatPeople({ label, children }: { label: string; children: React
   return <ul className="sm-chat__people" aria-label={label}>{children}</ul>;
 }
 
+// the chat list (#201), its rows newest first
+export function ChatRows({ label, children }: { label: string; children: ReactNode }) {
+  return <ul className="sm-chat__row-list" aria-label={label}>{children}</ul>;
+}
+
+export interface ChatRowProps {
+  name: string;
+  avatarSrc?: string;
+  // a group chat's picture is square, a person's round
+  group?: boolean;
+  // a line of the latest message, like "You: on my way"
+  preview: string;
+  time?: string;
+  dateTime?: string;
+  unread: number;
+  // read out with the count, like "3 unread"
+  unreadLabel?: string;
+  href: string;
+  // the chat that's open
+  current?: boolean;
+  // the router's link, like the app shell's
+  linkAs?: ElementType;
+}
+
+// one chat in the list: picture, name, the latest message, when, and how many you haven't read
+export function ChatRow({ name, avatarSrc, group, preview, time, dateTime, unread, unreadLabel, href, current, linkAs }: ChatRowProps) {
+  const LinkAs = linkAs ?? 'a';
+  return (
+    <li>
+      <LinkAs href={href} to={linkAs ? href : undefined} className={`sm-chat__row${unread ? ' sm-chat__row--unread' : ''}`}
+        aria-current={current ? 'page' : undefined}>
+        <Avatar name={name} src={avatarSrc} size={46} shape={group ? 'square' : 'circle'} />
+        <span className="sm-chat__row-text">
+          <span className="sm-chat__row-name">{name}</span>
+          <span className="sm-chat__row-last">{preview}</span>
+        </span>
+        <span className="sm-chat__row-side">
+          {time && <time className="sm-chat__row-time" dateTime={dateTime}>{time}</time>}
+          {unread > 0 && (
+            <span className="sm-chat__badge">
+              <span aria-hidden>{unread}</span>
+              <span className="sm-visually-hidden">{unreadLabel ?? unread}</span>
+            </span>
+          )}
+        </span>
+      </LinkAs>
+    </li>
+  );
+}
+
 export interface ChatMessagesProps {
   label: string;
   children: ReactNode;

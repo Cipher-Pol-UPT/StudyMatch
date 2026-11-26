@@ -6,7 +6,7 @@ import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { CurrentUser } from '../src/types/currentUser';
 import { connectChatSocket } from '../src/api/chatSocket';
 
-vi.mock('../src/api/chatSocket', () => ({ connectChatSocket: vi.fn(), disconnectChatSocket: vi.fn(async () => {}) }));
+vi.mock('../src/api/chatSocket', () => ({ connectChatSocket: vi.fn(), disconnectChatSocket: vi.fn(async () => {}), subscribeToChatEvents: vi.fn(() => () => undefined) }));
 
 const student: CurrentUser = {
   number: 50001,
