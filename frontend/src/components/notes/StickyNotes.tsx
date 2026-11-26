@@ -68,8 +68,9 @@ export function StickyNotes() {
   const [addError, setAddError] = useState<string>();
   // the note whose text is open, with what's typed so far
   const [editing, setEditing] = useState<{ id: number; text: string } | null>(null);
-  // why the last change to a note failed, shown on it
-  const [errors, setErrors] = useState<Record<number, string>>({});
+  // why a note's text didn't save, apart from why anything else didn't (a drop, a colour), so one never clears the other
+  const [textErrors, setTextErrors] = useState<Record<number, string>>({});
+  const [otherErrors, setOtherErrors] = useState<Record<number, string>>({});
   // a text that didn't save (too long), kept on its note until it does
   const [unsaved, setUnsaved] = useState<Record<number, string>>({});
   // a note being dragged, where it is now
@@ -77,6 +78,8 @@ export function StickyNotes() {
   const drag = useRef<Drag | null>(null);
   // the last drop of each note, so an older drop's answer never moves it back
   const drops = useRef(new Map<number, number>());
+  // where the backend last saved each note, and by which drop: a failed drop goes back there
+  const saved = useRef(new Map<number, { x: number; y: number; drop: number }>());
   const board = useRef<HTMLDivElement>(null);
   // the open note's text box, focused when a note opens so you can type straight away
   const editor = useRef<HTMLTextAreaElement>(null);
@@ -89,34 +92,38 @@ export function StickyNotes() {
     let alive = true;
     // an answer that isn't a list of notes counts as a failed load too
     getNotes()
-      .then(loaded => { if (alive) setNotes([...loaded].sort(byChange)); })
+      .then(loaded => {
+        if (!alive) return;
+        loaded.forEach(note => saved.current.set(note.id, { x: note.x, y: note.y, drop: 0 }));
+        setNotes([...loaded].sort(byChange));
+      })
       .catch(() => { if (alive) setLoadFailed(true); });
     return () => { alive = false; };
   }, []);
 
   const describe = (error: unknown) => isBackendError(error) ? t(`errors.${error.code}`, error.params ?? {}) : t('common.unexpectedError');
-  // the backend's version of a note, moved to the end: the one changed last is drawn on top.
-  // One deleted meanwhile stays gone
-  const put = (note: NoteData) => setNotes(current => current && (current.some(other => other.id === note.id)
-    ? [...current.filter(other => other.id !== note.id), note]
-    : current));
+  // only the fields a change sent, on a note moved to the end: the one changed last is drawn on top.
+  // An answer never brings back what another change set meanwhile, and a note deleted meanwhile stays gone
+  const apply = (id: number, fields: Partial<NoteData>) =>
+    setNotes(current => current && [...current.filter(other => other.id !== id), ...current.filter(other => other.id === id).map(other => ({ ...other, ...fields }))]);
   const forget = (id: number) => {
     setNotes(current => current && current.filter(note => note.id !== id));
     setEditing(current => current?.id === id ? null : current);
   };
-  // sets or clears one note's entry in errors or unsaved
-  const setFor = (set: typeof setErrors) => (id: number, text?: string) => set(current => {
+  // sets or clears one note's entry in an error list or unsaved
+  const setFor = (set: typeof setUnsaved) => (id: number, text?: string) => set(current => {
     const next = { ...current };
     if (text === undefined) delete next[id];
     else next[id] = text;
     return next;
   });
-  const showError = setFor(setErrors);
+  const showTextError = setFor(setTextErrors);
+  const showError = setFor(setOtherErrors);
   const keepUnsaved = setFor(setUnsaved);
-  // a note that's gone (deleted in another tab) leaves the board, any other failure shows under it
-  const refused = (id: number, error: unknown) => {
+  // a note that's gone (deleted in another tab) leaves the board, any other failure shows on it
+  const refused = (id: number, error: unknown, show = showError) => {
     if (isBackendError(error) && error.code === 'NOT_FOUND') forget(id);
-    else showError(id, describe(error));
+    else show(id, describe(error));
   };
 
   const add = async () => {
@@ -125,6 +132,7 @@ export function StickyNotes() {
     setAddError(undefined);
     try {
       const created = await createNote({ text: draft, colour, ...freeSpot(notes) });
+      saved.current.set(created.id, { x: created.x, y: created.y, drop: 0 });
       setNotes(current => current && [...current, created]);
       setDraft('');
       // the next one in another colour, like the library's board
@@ -138,30 +146,46 @@ export function StickyNotes() {
 
   const openNote = (note: NoteData) => setEditing({ id: note.id, text: unsaved[note.id] ?? note.text });
 
-  // saves when you click away. A text that doesn't save stays on its note with the error, even once another note is open
+  // saves when you click away. A text that doesn't save stays on its note with the error, even once another note is open.
+  // The answer only closes the note if what's typed is still what was sent
   const saveText = async (note: NoteData) => {
     if (editing?.id !== note.id) return;
     const { text } = editing;
     if (text.trim() === note.text) {
       setEditing(null);
-      showError(note.id);
+      showTextError(note.id);
       keepUnsaved(note.id);
       return;
     }
+    // kept while it saves too, so opening the note again meanwhile shows what you typed
+    keepUnsaved(note.id, text);
     try {
-      put(await updateNote(note.id, { text }));
-      showError(note.id);
-      keepUnsaved(note.id);
-      setEditing(current => current?.id === note.id ? null : current);
+      const answer = await updateNote(note.id, { text });
+      apply(note.id, { text: answer.text, updatedAt: answer.updatedAt });
+      showTextError(note.id);
+      setUnsaved(current => {
+        if (current[note.id] !== text) return current;
+        const next = { ...current };
+        delete next[note.id];
+        return next;
+      });
+      setEditing(current => current?.id === note.id && current.text === text ? null : current);
     } catch (error) {
-      keepUnsaved(note.id, text);
-      refused(note.id, error);
+      refused(note.id, error, showTextError);
     }
+  };
+
+  // Escape goes back to the saved text, dropping one that didn't save and its error
+  const cancelText = (id: number) => {
+    setEditing(null);
+    keepUnsaved(id);
+    showTextError(id);
   };
 
   const recolour = async (note: NoteData, next: NoteColour) => {
     try {
-      put(await updateNote(note.id, { colour: next }));
+      const answer = await updateNote(note.id, { colour: next });
+      apply(note.id, { colour: answer.colour, updatedAt: answer.updatedAt });
     } catch (error) {
       refused(note.id, error);
     }
@@ -209,11 +233,8 @@ export function StickyNotes() {
     setDragged({ id: current.id, ...current.to });
   };
 
-  // only the position changes, whatever else was saved meanwhile
-  const place = (id: number, x: number, y: number) =>
-    setNotes(current => current && [...current.filter(other => other.id !== id), ...current.filter(other => other.id === id).map(other => ({ ...other, x, y }))]);
-
-  // saves once, on drop. If that fails the note goes back where it was; a later drop wins over an earlier one
+  // saves once, on drop. A later drop wins over an earlier one, and if the last one fails the note goes back to where
+  // the backend last saved it
   const endDrag = async (note: NoteData) => {
     const current = drag.current;
     drag.current = null;
@@ -223,15 +244,18 @@ export function StickyNotes() {
     const drop = (drops.current.get(note.id) ?? 0) + 1;
     drops.current.set(note.id, drop);
     const latest = () => drops.current.get(note.id) === drop;
-    place(note.id, x, y);
+    apply(note.id, { x, y });
     try {
-      const saved = await updateNote(note.id, { x, y });
-      if (latest()) put(saved);
+      const answer = await updateNote(note.id, { x, y });
+      // the backend handles the drops in order, so the latest one answered is where it is
+      if (drop > (saved.current.get(note.id)?.drop ?? 0)) saved.current.set(note.id, { x: answer.x, y: answer.y, drop });
+      if (latest()) apply(note.id, { x: answer.x, y: answer.y, updatedAt: answer.updatedAt });
       showError(note.id);
     } catch (error) {
       if (isBackendError(error) && error.code === 'NOT_FOUND') return forget(note.id);
       if (!latest()) return;
-      place(note.id, note.x, note.y);
+      const back = saved.current.get(note.id) ?? note;
+      apply(note.id, { x: back.x, y: back.y });
       showError(note.id, t('notes.moveFailed'));
     }
   };
@@ -261,23 +285,25 @@ export function StickyNotes() {
     const size = onBoard ? NOTE_PX : PHONE_NOTE_PX;
     const style = { '--note-px': `${size}px` } as CSSProperties;
     if (onBoard) Object.assign(style, { left: `min(${where.x}%, calc(100% - var(--note-px)))`, top: `min(${where.y}%, calc(100% - var(--note-px)))` });
-    const error = errors[note.id];
+    // a text's own error first: it's what you're fixing
+    const error = textErrors[note.id] ?? otherErrors[note.id];
+    const errorLine = error && <p className="sticky-notes__error" role="alert">{error}</p>;
     // a text that didn't save shows until it does, so it isn't lost
     const text = unsaved[note.id] ?? note.text;
     return (
-      <div key={note.id} className={`sticky-notes__spot${isDragged ? ' sticky-notes__spot--dragging' : ''}`} style={style}
+      <div key={note.id} className={`sticky-notes__spot${isDragged ? ' sticky-notes__spot--dragging' : ''}${isOpen ? ' sticky-notes__spot--open' : ''}`} style={style}
         onPointerDown={onBoard ? event => startDrag(event, note) : undefined}
         onPointerMove={onBoard ? moveDrag : undefined}
         onPointerUp={onBoard ? () => void endDrag(note) : undefined}
         onPointerCancel={onBoard ? cancelDrag : undefined}>
         {isOpen ? (
           <StickyNote color={paper(note.colour)} size={size} onRemove={() => void remove(note)}
-            footer={swatches(note.colour, next => void recolour(note, next), true)}>
+            footer={<>{errorLine}{swatches(note.colour, next => void recolour(note, next), true)}</>}>
             <textarea className="sticky-notes__input" aria-label={t('notes.text')} value={editing.text} ref={editor}
               aria-invalid={error ? true : undefined}
               onChange={event => setEditing({ id: note.id, text: event.target.value })}
               onBlur={() => void saveText(note)}
-              onKeyDown={event => { if (event.key === 'Escape') setEditing(null); }} />
+              onKeyDown={event => { if (event.key === 'Escape') cancelText(note.id); }} />
           </StickyNote>
         ) : (
           <StickyNote color={paper(note.colour)} size={size} rotate={isDragged || !onBoard ? 0 : tiltFor(String(note.id))}
@@ -286,7 +312,8 @@ export function StickyNotes() {
             {text || <span className="sticky-notes__placeholder">{t('notes.emptyNote')}</span>}
           </StickyNote>
         )}
-        {error && <p className="sticky-notes__error" role="alert">{error}</p>}
+        {/* while it's open the error sits in the note, above the colours, so it covers nothing you're fixing */}
+        {!isOpen && errorLine}
       </div>
     );
   };
