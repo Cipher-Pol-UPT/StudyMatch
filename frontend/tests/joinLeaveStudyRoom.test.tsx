@@ -146,4 +146,58 @@ describe('join and leave a StudyRoom', () => {
     expect(within(dialog).queryByRole('button', { name: 'Join' })).toBeNull();
     expect(within(dialog).queryByRole('button', { name: 'Leave' })).toBeNull();
   });
+
+  it('drops the overlap banner when the card closes, so it is gone the next time', async () => {
+    vi.mocked(joinStudyRoom).mockRejectedValue({
+      code: 'JOINED_STUDYROOM_OVERLAP', params: { id: 7, subject: 'Test Statistics', startsAt: '2026-10-05T14:30:00', endsAt: '2026-10-05T15:30:00' },
+    });
+    renderPage();
+    let dialog = await openRoom();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Join' }));
+    expect(await within(dialog).findByRole('alert')).toBeTruthy();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Selected study room' })).toBeNull());
+    dialog = await openRoom();
+
+    await within(dialog).findByText('Test Tutor');
+    expect(within(dialog).queryByRole('alert')).toBeNull();
+  });
+
+  it('drops the overlap banner after leaving a room', async () => {
+    vi.mocked(getStudyRooms).mockResolvedValue([open(), open({ id: 7, description: 'Test clashing room', link: LINK })]);
+    vi.mocked(joinStudyRoom).mockRejectedValue({
+      code: 'JOINED_STUDYROOM_OVERLAP', params: { id: 7, subject: 'Test Statistics', startsAt: '2026-10-05T14:30:00', endsAt: '2026-10-05T15:30:00' },
+    });
+    vi.mocked(leaveStudyRoom).mockResolvedValue(open({ id: 7, description: 'Test clashing room' }));
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /^Joined/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Calendar/ }));
+    const dialog = await openRoom();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Join' }));
+    expect(await within(dialog).findByRole('alert')).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Selected study room' })).toBeNull());
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Joined/ }));
+    fireEvent.click(within(await screen.findByRole('article', { name: 'Test clashing room' })).getByRole('button', { name: 'Leave' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Leave this StudyRoom?' })).getByRole('button', { name: 'Leave' }));
+
+    expect(await screen.findByText('You left Test clashing room. Your inscriptions have been updated.')).toBeTruthy();
+    expect(screen.queryByText(/This overlaps/)).toBeNull();
+  });
+
+  it('sends one join when Join is pressed twice', async () => {
+    let answer: (room: StudyRoomData) => void = () => {};
+    vi.mocked(joinStudyRoom).mockReturnValue(new Promise(resolve => { answer = resolve; }));
+    renderPage();
+    const dialog = await openRoom();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Join' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: /Join/ }));
+    answer(open({ link: LINK, participantCount: 4, availablePlaces: 4 }));
+
+    expect(await within(dialog).findByRole('button', { name: 'Leave' })).toBeTruthy();
+    expect(joinStudyRoom).toHaveBeenCalledTimes(1);
+  });
 });
