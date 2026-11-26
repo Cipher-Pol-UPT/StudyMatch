@@ -1159,7 +1159,10 @@
     "byYou": "Você: {{text}}",
     "byThem": "{{name}}: {{text}}",
     "groupSoon": "As conversas de grupo abrem aqui em breve",
-    "groupSoonBody": "Por agora pode ver a última mensagem na lista."
+    "groupSoonBody": "Por agora pode ver a última mensagem na lista.",
+    "photo": "Fotografia",
+    "files_one": "{{count}} ficheiro",
+    "files_other": "{{count}} ficheiros"
   },
   "classmate": {
     "title": "Perfil do estudante",

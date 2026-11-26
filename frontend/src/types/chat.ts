@@ -26,7 +26,12 @@ export interface MessageData {
   editedAt: string | null;
   reply: boolean;
   replyTo: MessageQuoteData | null;
+  // its files (#210); text is empty when it only has these
+  attachments?: AttachmentData[];
 }
+
+// a message's file without what's in it, size in bytes
+export interface AttachmentData { id: number; name: string; contentType: string; size: number }
 
 // one person's reaction to a message, replaces the one they had; a null emoji means they took it off
 export interface ReactionData { chatId: number; messageId: number; user: ChatContactData; emoji: string | null }

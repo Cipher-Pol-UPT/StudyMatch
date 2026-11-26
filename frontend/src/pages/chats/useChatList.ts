@@ -30,8 +30,9 @@ export function useChatList(isMine: (message: MessageData) => boolean, isOpen: (
       case 'CHAT_UPDATED': {
         const message = event.payload as MessageData;
         const known = list.chats?.find(chat => chat.chatId === message.chatId);
-        // a chat that's new to the list (their first message in a DM): the backend has its row
-        if (!known) return void reload();
+        // a chat that's new to the list (their first message in a DM): the backend has its row.
+        // Someone else's message in a group chat too, it doesn't count if you blocked them (GR9) and only the backend knows
+        if (!known || (!known.contact && !isMine(message))) return void reload();
         const unread = isMine(message) || isOpen(known) ? known.unread : known.unread + 1;
         return update(chats => [{ ...known, lastMessage: message, unread }, ...chats.filter(chat => chat.chatId !== known.chatId)]);
       }

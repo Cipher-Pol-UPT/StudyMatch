@@ -90,9 +90,18 @@ export function ChatsPage({ me, profilePath }: ChatsPageProps) {
 function previewOf(chat: ChatSummaryData, me: number, t: TFunction) {
   const message: MessageData | null = chat.lastMessage;
   if (!message) return t('chats.noMessagesYet');
-  if (message.author.number === me) return t('chats.byYou', { text: message.text });
-  if (!chat.contact) return t('chats.byThem', { name: message.author.name.split(' ')[0], text: message.text });
-  return message.text;
+  const text = message.text || filesOf(message, t);
+  if (message.author.number === me) return t('chats.byYou', { text });
+  if (!chat.contact) return t('chats.byThem', { name: message.author.name.split(' ')[0], text });
+  return text;
+}
+
+// a message with only files: "Photo", the file's name, or how many
+function filesOf(message: MessageData, t: TFunction) {
+  const files = message.attachments ?? [];
+  if (files.length > 1) return t('chats.files', { count: files.length });
+  if (files.length === 1) return files[0].contentType.startsWith('image/') ? t('chats.photo') : files[0].name;
+  return '';
 }
 
 // the DM with one person: found by their number, then its messages and the message box
