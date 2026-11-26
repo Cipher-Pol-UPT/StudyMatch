@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { getChatMessages, markChatRead } from '../../api/chats';
-import type { MessageData } from '../../types/chat';
+import { getChatMessages, getMessagesAround, markChatRead } from '../../api/chats';
+import type { MessageData, MessagePageData } from '../../types/chat';
 
 export interface ChatHistory {
   // oldest first, each message once
   messages: MessageData[];
   // older messages are still there to load
   hasMore: boolean;
+  // after jumping to an old message the latest aren't loaded: scrolling down loads them, and new ones wait
+  hasNewer: boolean;
   loading: boolean;
   loadingOlder: boolean;
+  loadingNewer: boolean;
+  // where the screen should go once this shows: a message by its id, or the bottom when there's no id.
+  // seq changes every time, so going to the same message twice still moves
+  focus?: { seq: number; id?: number };
   error?: unknown;
 }
 
@@ -20,8 +26,10 @@ function merge(current: MessageData[], more: MessageData[]) {
 }
 
 const ignore = () => undefined;
+let lastFocus = 0;
 
 // an open chat's messages: the 50 newest when it opens, 50 more each time loadOlder is called (#203).
+// jumpTo loads the messages around an old one, and from there loadNewer goes back down to the latest (#219, #221).
 // Opening it marks it as read. A chat that doesn't exist yet (a DM before its first message) has none to load
 export function useChatHistory(chatId: number | null) {
   // something came while the tab was hidden: it's marked as read when you come back, not before you've seen it
@@ -42,11 +50,20 @@ export function useChatHistory(chatId: number | null) {
     return () => document.removeEventListener('visibilitychange', visible);
   }, [markRead]);
 
-  const [history, setHistory] = useState<ChatHistory>(() => ({ messages: [], hasMore: false, loading: chatId !== null, loadingOlder: false }));
-  // what's on screen, for loadOlder to read without being remade on every change.
+  const [history, setHistory] = useState<ChatHistory>(() => ({ messages: [], hasMore: false, hasNewer: false, loading: chatId !== null, loadingOlder: false, loadingNewer: false }));
+  // what's on screen, for the loaders to read without being remade on every change.
   // set before the screen shows it, a scroll right after the messages appear was ignored
   const current = useRef(history);
   useLayoutEffect(() => { current.current = history; });
+  // goes up whenever the messages on screen are swapped for others (a jump, back to the latest), so a page asked for
+  // the old ones isn't put next to the new ones
+  const view = useRef(0);
+
+  // the messages on screen are swapped for this page
+  const show = useCallback((page: MessagePageData, focus: ChatHistory['focus']) => setHistory(state => ({
+    ...state, messages: merge([], page.messages), hasMore: page.hasMore, hasNewer: page.hasNewer ?? false,
+    loading: false, loadingOlder: false, loadingNewer: false, focus,
+  })), []);
 
   useEffect(() => {
     if (chatId === null) return undefined;
@@ -67,21 +84,83 @@ export function useChatHistory(chatId: number | null) {
     if (chatId === null || !hasMore || loading || loadingOlder || !messages.length) return false;
     current.current = { ...current.current, loadingOlder: true };
     setHistory(state => ({ ...state, loadingOlder: true }));
-    getChatMessages(chatId, messages[0].id).then(
-      page => setHistory(state => ({ ...state, messages: merge(page.messages, state.messages), hasMore: page.hasMore, loadingOlder: false })),
+    const asked = view.current;
+    getChatMessages(chatId, { before: messages[0].id }).then(
+      page => { if (asked === view.current) setHistory(state => ({ ...state, messages: merge(page.messages, state.messages), hasMore: page.hasMore, loadingOlder: false })); },
       // scrolling up again tries again
-      () => setHistory(state => ({ ...state, loadingOlder: false })),
+      () => { if (asked === view.current) setHistory(state => ({ ...state, loadingOlder: false })); },
     );
     return true;
   }, [chatId]);
 
-  // a new message, or the answer to one you sent
-  const add = useCallback((message: MessageData) => setHistory(state => ({ ...state, messages: merge(state.messages, [message]) })), []);
-  // a newer version of a message (edited). One that isn't loaded stays out, or it would show out of place above a gap
-  const replace = useCallback((message: MessageData) => setHistory(state => state.messages.some(m => m.id === message.id)
-    ? { ...state, messages: state.messages.map(m => m.id === message.id ? message : m) }
-    : state), []);
-  const remove = useCallback((id: number) => setHistory(state => ({ ...state, messages: state.messages.filter(message => message.id !== id) })), []);
+  // scrolling down after a jump: the 50 after the newest one on screen, until the latest
+  const loadNewer = useCallback(() => {
+    const { messages, hasNewer, loading, loadingNewer } = current.current;
+    if (chatId === null || !hasNewer || loading || loadingNewer || !messages.length) return false;
+    current.current = { ...current.current, loadingNewer: true };
+    setHistory(state => ({ ...state, loadingNewer: true }));
+    const asked = view.current;
+    getChatMessages(chatId, { after: messages[messages.length - 1].id }).then(
+      page => {
+        if (asked !== view.current) return;
+        setHistory(state => ({ ...state, messages: merge(state.messages, page.messages), hasNewer: page.hasNewer ?? false, loadingNewer: false }));
+        // the latest are on screen again
+        if (!page.hasNewer) markRead();
+      },
+      () => { if (asked === view.current) setHistory(state => ({ ...state, loadingNewer: false })); },
+    );
+    return true;
+  }, [chatId, markRead]);
 
-  return { history, loadOlder, add, replace, remove, markRead };
+  // go to a message: straight there if it's loaded, otherwise the messages around it replace the ones on screen.
+  // Fails when it's gone (deleted meanwhile)
+  const jumpTo = useCallback((id: number) => {
+    if (chatId === null) return Promise.reject(new Error('No chat'));
+    const focus = { seq: ++lastFocus, id };
+    if (current.current.messages.some(message => message.id === id)) {
+      setHistory(state => ({ ...state, focus }));
+      return Promise.resolve();
+    }
+    const asked = ++view.current;
+    return getMessagesAround(chatId, id).then(page => { if (asked === view.current) show(page, focus); });
+  }, [chatId, show]);
+
+  // back to the latest messages after a jump, at the bottom
+  const toLatest = useCallback(() => {
+    if (chatId === null || !current.current.hasNewer) return;
+    const asked = ++view.current;
+    // what's on screen is dropped straight away, so a message you send meanwhile isn't left out
+    current.current = { ...current.current, messages: [], hasNewer: false, loading: true };
+    setHistory(state => ({ ...state, messages: [], hasMore: false, hasNewer: false, loading: true, loadingOlder: false, loadingNewer: false }));
+    getChatMessages(chatId).then(
+      page => {
+        if (asked !== view.current) return;
+        setHistory(state => ({ ...state, messages: merge(state.messages, page.messages), hasMore: page.hasMore, loading: false, focus: { seq: ++lastFocus } }));
+        markRead();
+      },
+      error => { if (asked === view.current) setHistory(state => ({ ...state, loading: false, error })); },
+    );
+  }, [chatId, markRead]);
+
+  // the latest messages aren't on screen (after a jump), read as it is now, not as of the last render
+  const behind = useCallback(() => current.current.hasNewer, []);
+  // a new message, or the answer to one you sent. While the latest aren't loaded it waits for them
+  const add = useCallback((message: MessageData) => setHistory(state => state.hasNewer ? state : { ...state, messages: merge(state.messages, [message]) }), []);
+  // a newer version of a message (edited), and of the replies quoting it.
+  // One that isn't loaded stays out, or it would show out of place above a gap
+  const replace = useCallback((message: MessageData) => setHistory(state => ({
+    ...state,
+    messages: state.messages.map(m => {
+      if (m.id === message.id) return message;
+      if (m.replyTo?.id !== message.id) return m;
+      return { ...m, replyTo: { ...m.replyTo, text: message.text, gifId: message.gifId, attachments: message.attachments } };
+    }),
+  })), []);
+  // a deleted message: gone, and the replies to it say the original was deleted
+  const remove = useCallback((id: number) => setHistory(state => ({
+    ...state,
+    messages: state.messages.filter(message => message.id !== id).map(m => m.replyTo?.id === id ? { ...m, replyTo: null } : m),
+  })), []);
+
+  return { history, loadOlder, loadNewer, jumpTo, toLatest, behind, add, replace, remove, markRead };
 }

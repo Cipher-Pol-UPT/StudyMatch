@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import type { MessageQuoteData } from '../../types/chat';
 
 // a message of this conversation: 'sending' until the backend confirms it, 'failed' to retry or discard
 export interface ThreadMessage {
@@ -6,6 +7,8 @@ export interface ThreadMessage {
   text: string;
   sentAt: string;
   status?: 'sending' | 'failed';
+  // the message it answers (#219)
+  replyTo?: MessageQuoteData;
 }
 
 // what's typed and sent in one conversation
@@ -14,6 +17,8 @@ export interface Conversation {
   messages: ThreadMessage[];
   // why the last send failed, shown under the message box
   error?: unknown;
+  // the message the next one answers, shown above the message box
+  replyTo?: MessageQuoteData;
 }
 
 const EMPTY: Conversation = { draft: '', messages: [] };

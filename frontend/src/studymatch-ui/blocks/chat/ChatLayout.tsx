@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronLeft, CircleAlert, Pencil, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronLeft, CircleAlert, CornerUpLeft, Pencil, Reply, Trash2, X } from 'lucide-react';
 import { useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, type ElementType, type MouseEvent, type ReactNode, type Ref, type UIEventHandler } from 'react';
 import { Avatar } from '../../components/avatar/Avatar';
 import { Button, IconButton } from '../../components/button/Button';
@@ -213,7 +213,20 @@ export function ChatMessages({ label, children }: ChatMessagesProps) {
   return <div className="sm-chat__messages" role="log" aria-label={label}>{children}</div>;
 }
 
+// the original a reply quotes, above it: who wrote it and one line of it. Clicking it goes to the original.
+// gone: the original was deleted, so there's only `text` saying so, in grey and not clickable
+export interface ChatQuote {
+  author?: string;
+  text: string;
+  gone?: boolean;
+  // read out for the button, like "Go to Ana's message"
+  label?: string;
+  onClick?: () => void;
+}
+
 export interface ChatMessageProps {
+  // on the message's row, for going to it
+  id?: string;
   text: string;
   // when it was sent: shown as `time`, `dateTime` is the machine-readable one
   time: string;
@@ -243,13 +256,18 @@ export interface ChatMessageProps {
   onDelete?: (shift: boolean) => void;
   // shown instead of the text while it's being edited, a ChatMessageEditor
   editor?: ReactNode;
+  // what it replies to (#219)
+  quote?: ChatQuote;
+  // Reply, on hover or focus, for any message the backend has
+  replyLabel?: string;
+  onReply?: () => void;
 }
 
-export function ChatMessage({ text, time, dateTime, mine = false, first = true, author, avatarSrc, editedLabel, editedTitle, status, statusLabel, retryLabel, discardLabel, onRetry, onDiscard,
-  toolsLabel, editLabel = '', deleteLabel = '', onEdit, onDelete, editor }: ChatMessageProps) {
+export function ChatMessage({ id, text, time, dateTime, mine = false, first = true, author, avatarSrc, editedLabel, editedTitle, status, statusLabel, retryLabel, discardLabel, onRetry, onDiscard,
+  toolsLabel, editLabel = '', deleteLabel = '', onEdit, onDelete, editor, quote, replyLabel = '', onReply }: ChatMessageProps) {
   const cls = ['sm-msg', mine && 'sm-msg--mine', first && 'sm-msg--first', status === 'sending' && 'sm-msg--sending'].filter(Boolean).join(' ');
   return (
-    <div className={cls}>
+    <div className={cls} id={id}>
       {!mine && <div className="sm-msg__avatar">{first && author && <Avatar name={author} src={avatarSrc} size={36} />}</div>}
       <div className="sm-msg__main">
         {first && (
@@ -258,11 +276,13 @@ export function ChatMessage({ text, time, dateTime, mine = false, first = true, 
             <time dateTime={dateTime}>{time}</time>
           </div>
         )}
+        {quote && <ChatMessageQuote {...quote} />}
         {editor ?? (
           <div className="sm-msg__line">
             <div className="sm-msg__bubble">{text}{editedLabel && <span className="sm-msg__edited" title={editedTitle}>{editedLabel}</span>}</div>
-            {(onEdit || onDelete) && (
+            {(onReply || onEdit || onDelete) && (
               <div className="sm-msg__tools" role="toolbar" aria-label={toolsLabel}>
+                {onReply && <IconButton icon={Reply} label={replyLabel} size="sm" variant="ghost" onClick={onReply} />}
                 {onEdit && <IconButton icon={Pencil} label={editLabel} size="sm" variant="ghost" onClick={onEdit} />}
                 {onDelete && <IconButton icon={Trash2} label={deleteLabel} size="sm" variant="ghost" className="sm-msg__delete"
                   onClick={(event: MouseEvent) => onDelete(event.shiftKey)} />}
@@ -279,6 +299,37 @@ export function ChatMessage({ text, time, dateTime, mine = false, first = true, 
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ChatMessageQuote({ author, text, gone, label, onClick }: ChatQuote) {
+  if (gone || !onClick) {
+    return <span className={`sm-msg__quote${gone ? ' sm-msg__quote--gone' : ''}`}><CornerUpLeft size={13} aria-hidden />{author && <b>{author}</b>}<span>{text}</span></span>;
+  }
+  return (
+    <button type="button" className="sm-msg__quote" aria-label={label} onClick={onClick}>
+      <CornerUpLeft size={13} aria-hidden />{author && <b>{author}</b>}<span>{text}</span>
+    </button>
+  );
+}
+
+export interface ChatReplyBarProps {
+  // "Replying to <b>Ana</b>"
+  title: ReactNode;
+  // one line of the message being answered
+  preview: string;
+  cancelLabel: string;
+  onCancel: () => void;
+}
+
+// above the message box while you answer a message, with an X to stop
+export function ChatReplyBar({ title, preview, cancelLabel, onCancel }: ChatReplyBarProps) {
+  return (
+    <div className="sm-composer__bar">
+      <Reply size={15} aria-hidden />
+      <span className="sm-composer__bar-text">{title}<span className="sm-composer__bar-preview"> · {preview}</span></span>
+      <IconButton icon={X} label={cancelLabel} size="sm" variant="ghost" onClick={onCancel} />
     </div>
   );
 }
@@ -347,12 +398,16 @@ export interface ChatComposerProps {
   onEditLast?: () => boolean;
   // lets the page put the cursor back in the box, after editing a message
   inputRef?: Ref<{ focus: () => void }>;
+  // above the box, like the ChatReplyBar
+  above?: ReactNode;
+  // Esc in the box, like stopping a reply; true when it did something
+  onEscape?: () => boolean;
 }
 
 const COMPOSER_MAX_HEIGHT = 160;
 
 // the message box: grows with the text, Enter sends and Shift+Enter adds a line
-export function ChatComposer({ label, placeholder, value, onChange, onSend, sendLabel, max, error, onEditLast, inputRef }: ChatComposerProps) {
+export function ChatComposer({ label, placeholder, value, onChange, onSend, sendLabel, max, error, onEditLast, inputRef, above, onEscape }: ChatComposerProps) {
   const id = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   useImperativeHandle(inputRef, () => ({ focus: () => input.current?.focus() }), []);
@@ -375,12 +430,17 @@ export function ChatComposer({ label, placeholder, value, onChange, onSend, send
 
   return (
     <div className="sm-composer">
+      {above}
       <div className="sm-composer__box">
         <label className="sm-visually-hidden" htmlFor={`${id}-input`}>{label}</label>
         <textarea ref={input} id={`${id}-input`} className="sm-composer__input" rows={1} placeholder={placeholder} value={value}
           aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined}
           onChange={event => onChange(event.target.value)}
           onKeyDown={event => {
+            if (event.key === 'Escape' && onEscape?.()) {
+              event.preventDefault();
+              return;
+            }
             if (event.key === 'ArrowUp' && !value && onEditLast?.()) {
               event.preventDefault();
               return;

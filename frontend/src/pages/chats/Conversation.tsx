@@ -1,15 +1,16 @@
 import type { TFunction } from 'i18next';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { deleteMessage, editMessage, getDirectChat, sendDirectMessage } from '../../api/chats';
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useChatEvents, useChatListEvents } from '../../hooks/useChatEvents';
-import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatStart, ChatThread, ConfirmDialog, useToast } from '../../studymatch-ui';
-import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData } from '../../types/chat';
+import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatReplyBar, ChatStart, ChatThread, ConfirmDialog, flashMessage, useToast, type ChatQuote } from '../../studymatch-ui';
+import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData, type MessageQuoteData } from '../../types/chat';
 import { newMessageKey, useConversation, type ThreadMessage } from './conversations';
+import { lineOf } from './messageText';
 import { useChatHistory } from './useChatHistory';
 
 export interface ConversationProps {
@@ -31,6 +32,9 @@ interface Item {
   author: ChatContactData;
   mine: boolean;
   editedAt?: string | null;
+  // a reply: what it quotes, null when the original was deleted
+  reply: boolean;
+  replyTo: MessageQuoteData | null;
   // the message as the backend has it, for editing and deleting it
   message?: MessageData;
   pending?: ThreadMessage;
@@ -49,7 +53,7 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   const [conversation, update] = useConversation(contact.number);
   // the DM gets its id with its first message, yours or theirs: from then on its history loads and its live events are followed
   const [chatId, setChatId] = useState(chat.chatId);
-  const { history, loadOlder, add, replace, remove, markRead } = useChatHistory(chatId);
+  const { history, loadOlder, loadNewer, jumpTo, toLatest, behind, add, replace, remove, markRead } = useChatHistory(chatId);
   const toast = useToast();
   // a message you sent keeps the key it had while sending, so it doesn't jump when the backend answers.
   // Each key belongs to one message: its live event can take it before the answer, which then puts it right
@@ -65,6 +69,8 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   // while older messages load, the distance from the bottom to keep, so what you're reading stays put
   const keepFromBottom = useRef<number | null>(null);
   const lastKey = useRef<string | undefined>(undefined);
+  // the last place the screen went to (history.focus)
+  const focused = useRef(0);
   const composer = useRef<{ focus: () => void }>(null);
   // the message being edited, with its new text and why saving it failed
   const [editing, setEditing] = useState<{ id: number; text: string; error?: string; saving?: boolean } | null>(null);
@@ -85,10 +91,14 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   const items: Item[] = [
     ...history.messages.map(message => ({
       key: keys.get(message.id) ?? `message-${message.id}`, text: message.text, sentAt: message.sentAt, author: message.author,
-      mine: isMine(message.author), editedAt: message.editedAt, message,
+      mine: isMine(message.author), editedAt: message.editedAt, reply: message.reply, replyTo: message.replyTo, message,
     })),
-    ...conversation.messages.filter(message => !claimed(keys).has(message.key)).map(message => ({ key: message.key, text: message.text, sentAt: message.sentAt, author: contact, mine: true, pending: message })),
+    ...conversation.messages.filter(message => !claimed(keys).has(message.key)).map(message => ({
+      key: message.key, text: message.text, sentAt: message.sentAt, author: contact, mine: true,
+      reply: message.replyTo !== undefined, replyTo: message.replyTo ?? null, pending: message,
+    })),
   ];
+  const nameOf = (author: ChatContactData) => isMine(author) ? t('chats.you') : author.name;
 
   // your live event, which can come before the answer to sending it: it takes the key of one still sending with
   // that text, unless the answer already gave it its own
@@ -132,7 +142,9 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
       // the event was another one's with the same text: it takes that one's key, and this one failed
       claim(next.set(taker, other));
     }
-    return { ...current, error, messages: current.messages.map(m => m.key === key ? { ...m, status: 'failed' } : m) };
+    // the original is gone: Retry sends it as a plain message, the error under the box says why
+    const gone = isBackendError(error) && error.code === 'REPLIED_MESSAGE_NOT_FOUND';
+    return { ...current, error, messages: current.messages.map(m => m.key === key ? { ...m, status: 'failed', replyTo: gone ? undefined : m.replyTo } : m) };
   });
 
   // their first message creates the DM while it's open here. The event comes for every chat and doesn't say which kind,
@@ -150,11 +162,15 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
       remove(messageId);
       // deleted in another tab while you were editing it here
       setEditing(current => current?.id === messageId ? null : current);
+      // the one you were answering is gone, so the reply would be refused
+      if (conversation.replyTo?.id === messageId) update(current => ({ ...current, replyTo: undefined }));
       return;
     }
     if (event.type !== 'MESSAGE_CREATED') return;
     const message = event.payload as MessageData;
     if (isMine(message.author)) return ownEvent(message);
+    // after a jump the latest aren't on screen: it waits for them, behind New messages
+    if (behind()) return setNewBelow(true);
     add(message);
     if (!atBottom.current) setNewBelow(true);
     // you're looking at it, so it's read; otherwise once you come back to the tab
@@ -165,6 +181,23 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   useLayoutEffect(() => {
     const box = scroll.current;
     if (!box) return;
+    // going to a message (a quote, a search result), or back to the bottom
+    const { focus } = history;
+    if (focus && focus.seq !== focused.current && !history.loading) {
+      focused.current = focus.seq;
+      lastKey.current = items.at(-1)?.key;
+      keepFromBottom.current = null;
+      const row = focus.id === undefined ? null : document.getElementById(rowId(focus.id));
+      if (row) {
+        // only the messages scroll, to put it in the middle: scrollIntoView would move the page sideways on a phone
+        box.scrollTop += row.getBoundingClientRect().top - box.getBoundingClientRect().top - (box.clientHeight - row.offsetHeight) / 2;
+        flashMessage(row);
+      } else {
+        box.scrollTop = box.scrollHeight;
+      }
+      atBottom.current = !history.hasNewer && box.scrollHeight - box.scrollTop - box.clientHeight < EDGE_PX;
+      return;
+    }
     if (keepFromBottom.current !== null) {
       box.scrollTop = box.scrollHeight - keepFromBottom.current;
       if (!history.loadingOlder) keepFromBottom.current = null;
@@ -188,18 +221,25 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
     const box = scroll.current;
     if (!box) return;
     atBottom.current = box.scrollHeight - box.scrollTop - box.clientHeight < EDGE_PX;
-    if (atBottom.current && newBelow) setNewBelow(false);
+    if (atBottom.current && newBelow && !history.hasNewer) setNewBelow(false);
     if (box.scrollTop < EDGE_PX) older(box);
+    // after a jump, the ones after it as you scroll down
+    if (box.scrollHeight - box.scrollTop - box.clientHeight < EDGE_PX) loadNewer();
   };
 
   const jump = () => {
+    setNewBelow(false);
+    // the latest aren't loaded after a jump: they come back, at the bottom
+    if (history.hasNewer) return toLatest();
     if (scroll.current) scroll.current.scrollTop = scroll.current.scrollHeight;
     atBottom.current = true;
-    setNewBelow(false);
   };
 
-  const deliver = (key: string, text: string) => {
-    sendDirectMessage(contact.number, text).then(
+  // go to the original of a reply, loading it if it's not on screen
+  const goTo = (id: number) => jumpTo(id).catch(error => toast.danger(isBackendError(error) && error.code === 'NOT_FOUND' ? t('chats.originalGone') : t('common.unexpectedError')));
+
+  const deliver = (key: string, text: string, replyTo?: MessageQuoteData) => {
+    sendDirectMessage(contact.number, text, replyTo?.id).then(
       message => {
         answered(key, message);
         setChatId(id => id ?? message.chatId);
@@ -210,16 +250,44 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   const send = () => {
     const text = conversation.draft.trim();
     const key = newMessageKey();
+    const { replyTo } = conversation;
     update(current => ({
       draft: '',
       error: undefined,
-      messages: [...current.messages, { key, text, sentAt: new Date().toISOString(), status: 'sending' }],
+      replyTo: undefined,
+      messages: [...current.messages, { key, text, sentAt: new Date().toISOString(), status: 'sending', replyTo }],
     }));
-    deliver(key, text);
+    // what you send goes at the end of the chat, so the latest come back if you'd jumped to an old message
+    toLatest();
+    deliver(key, text, replyTo);
   };
   const retry = (message: ThreadMessage) => {
     update(current => ({ ...current, error: undefined, messages: current.messages.map(m => m.key === message.key ? { ...m, status: 'sending' } : m) }));
-    deliver(message.key, message.text);
+    deliver(message.key, message.text, message.replyTo);
+  };
+
+  // answering a message: it shows above the message box until it's sent, or Esc or the X stops it
+  const startReply = (message: MessageData) => {
+    update(current => ({ ...current, replyTo: { id: message.id, author: message.author, text: message.text, gifId: message.gifId, attachments: message.attachments } }));
+    composer.current?.focus();
+  };
+  const stopReply = () => {
+    if (!conversation.replyTo) return false;
+    update(current => ({ ...current, replyTo: undefined }));
+    composer.current?.focus();
+    return true;
+  };
+  const replyBar = conversation.replyTo && (
+    <ChatReplyBar title={isMine(conversation.replyTo.author) ? t('chats.replyingToYourself')
+      : <Trans i18nKey="chats.replyingTo" values={{ name: conversation.replyTo.author.name }} components={{ b: <b /> }} />}
+      preview={lineOf(conversation.replyTo, t)} cancelLabel={t('chats.cancelReply')} onCancel={stopReply} />
+  );
+  // what a reply shows above it: one line of the original, or that it was deleted
+  const quoteOf = (item: Item): ChatQuote | undefined => {
+    if (!item.reply) return undefined;
+    const original = item.replyTo;
+    if (!original) return { text: t('chats.originalDeleted'), gone: true };
+    return { author: nameOf(original.author), text: lineOf(original, t), label: t('chats.goToOriginal', { name: nameOf(original.author) }), onClick: () => goTo(original.id) };
   };
   const discard = (message: ThreadMessage) =>
     update(current => ({ ...current, error: undefined, messages: current.messages.filter(m => m.key !== message.key) }));
@@ -293,12 +361,13 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
 
   return (
     <ChatThread label={t('chats.with', { name: contact.name })} scrollRef={scroll} onScroll={onScroll} head={head}
-      overlay={newBelow && <ChatJump label={t('chats.newMessages')} onClick={jump} />}
+      // after a jump the latest aren't on screen, so the button stays until they're back
+      overlay={(newBelow || history.hasNewer) && <ChatJump label={t(newBelow ? 'chats.newMessages' : 'chats.backToLatest')} onClick={jump} />}
       composer={(
         <ChatComposer label={t('chats.messageLabel', { name: contact.name })} placeholder={t('chats.messageLabel', { name: firstName })}
           value={conversation.draft} onChange={draft => update(current => ({ ...current, draft }))} onSend={send}
           sendLabel={t('chats.send')} max={MESSAGE_MAX_LENGTH} error={conversation.error === undefined ? undefined : sendError(conversation.error, t)}
-          onEditLast={editLast} inputRef={composer} />
+          onEditLast={editLast} inputRef={composer} above={replyBar} onEscape={stopReply} />
       )}>
       {history.loading && <DataLoadState />}
       {history.loadingOlder && <ChatOlder label={t('chats.loadingOlder')} />}
@@ -310,7 +379,8 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
             const sentAt = new Date(item.sentAt);
             const newDay = !previous || !sameDay(new Date(previous.sentAt), sentAt);
             // yours still sending have no author of their own, so a run changes when the side does
-            const first = newDay || previous.mine !== item.mine || (!item.mine && previous.author.number !== item.author.number)
+            // a reply starts a run of its own, so its quote doesn't sit between someone's messages
+            const first = newDay || item.reply || previous.mine !== item.mine || (!item.mine && previous.author.number !== item.author.number)
               || sentAt.getTime() - new Date(previous.sentAt).getTime() > RUN_MS;
             const status = item.pending?.status;
             const own = item.mine ? item.message : undefined;
@@ -322,7 +392,7 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
             return (
               <div key={item.key}>
                 {newDay && <ChatDay label={dayLabel(sentAt)} />}
-                <ChatMessage mine={item.mine} text={item.text} first={first} author={item.author.name} avatarSrc={photoOf(item.author)}
+                <ChatMessage id={item.message && rowId(item.message.id)} mine={item.mine} text={item.text} quote={quoteOf(item)} first={first} author={item.author.name} avatarSrc={photoOf(item.author)}
                   time={timeFormat.format(sentAt)} dateTime={item.sentAt} status={status}
                   editedLabel={item.editedAt ? t('chats.edited') : undefined}
                   editedTitle={item.editedAt ? t('chats.editedAt', { when: editedFormat.format(new Date(item.editedAt)) }) : undefined}
@@ -330,12 +400,14 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
                   retryLabel={t('chats.retry')} discardLabel={t('chats.discard')}
                   onRetry={item.pending && (() => retry(item.pending!))} onDiscard={item.pending && (() => discard(item.pending!))}
                   toolsLabel={t('chats.messageActions')} editLabel={t('chats.edit')} deleteLabel={t('chats.delete')}
+                  replyLabel={t('chats.reply')} onReply={item.message && (() => startReply(item.message!))}
                   onEdit={own && (() => startEditing(own))} onDelete={own && (shift => askToDelete(own, shift))} editor={editor || undefined} />
               </div>
             );
           })}
         </ChatMessages>
       )}
+      {history.loadingNewer && <ChatOlder label={t('chats.loadingNewer')} />}
       <ConfirmDialog open={deleting !== null} onClose={() => setDeleting(null)} tone="danger"
         title={t('chats.deleteTitle')} confirmLabel={t('chats.delete')}
         description={deleting && (
@@ -352,6 +424,9 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
     </ChatThread>
   );
 }
+
+// a message's row, to go to it
+const rowId = (id: number) => `message-${id}`;
 
 // the keys messages already have
 const claimed = (claims: ReadonlyMap<number, string>) => new Set(claims.values());

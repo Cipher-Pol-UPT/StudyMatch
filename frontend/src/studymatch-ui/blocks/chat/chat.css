@@ -80,7 +80,8 @@
 .sm-chat__day::before, .sm-chat__day::after { content: ""; flex: 1; height: 1px; background: var(--sm-hairline); }
 .sm-chat__older { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 4px 0 14px; font-size: 12.5px; color: var(--sm-text-3); }
 /* above the message box, in the middle */
-.sm-chat__jump { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 4; box-shadow: var(--sm-shadow-md); }
+/* at the bottom of the messages, so a taller message box (replying, an error) never covers it */
+.sm-chat__jump { grid-area: 2 / 1; align-self: end; justify-self: center; z-index: 4; margin-bottom: 12px; box-shadow: var(--sm-shadow-md); }
 /* the bubble with Edit and Delete beside it, on the side away from the edge */
 .sm-msg__line { position: relative; max-width: min(560px, 100%); }
 .sm-msg__line .sm-msg__bubble { max-width: 100%; }
@@ -92,6 +93,19 @@
 .sm-msg__edit textarea { width: 100%; min-height: 44px; padding: 10px 13px; border: 0; border-radius: 16px; background: var(--sm-surface); color: var(--sm-text); box-shadow: inset 0 0 0 2px var(--sm-violet); font: inherit; line-height: 1.45; resize: none; outline: none; }
 .sm-msg__edit-hint { font-size: 12px; color: var(--sm-text-3); }
 .sm-msg__edit-hint kbd { font-family: var(--sm-mono); font-size: 11px; padding: 1px 5px; border-radius: 5px; background: var(--sm-fill); color: var(--sm-text-2); }
+/* Edit and Delete sit left of your messages, Reply right of someone else's */
+.sm-msg:not(.sm-msg--mine) .sm-msg__tools { right: auto; left: calc(100% + 6px); }
+/* the original a reply quotes, above it (#219) */
+.sm-msg__quote { display: flex; align-items: center; gap: 6px; max-width: min(420px, 100%); padding: 4px 10px 4px 8px; border: 0; border-left: 3px solid var(--sm-violet); border-radius: 4px 10px 10px 4px; background: var(--sm-fill); color: var(--sm-text-2); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; transition: background var(--sm-dur-1); }
+.sm-msg__quote b { flex-shrink: 0; font-weight: 500; color: var(--sm-text); }
+.sm-msg__quote span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-msg__quote svg { flex-shrink: 0; }
+.sm-msg__quote:hover { background: var(--sm-fill-hover); }
+.sm-msg__quote:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-msg__quote--gone, .sm-msg__quote--gone:hover { border-left-color: var(--sm-text-3); background: var(--sm-fill); font-style: italic; cursor: default; }
+/* the message you went to, for a moment */
+.sm-msg--flash { animation: sm-msg-flash 1.4s var(--sm-ease-out); }
+@keyframes sm-msg-flash { from, 30% { background: color-mix(in srgb, var(--sm-spark) 45%, transparent); } }
 /* the message about to be deleted, in the question */
 .sm-chat__preview { margin-top: 12px; padding: 10px 12px; border-radius: var(--sm-r-sm); background: var(--sm-fill); color: var(--sm-text); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 /* greyed out until the backend confirms it */
@@ -102,7 +116,13 @@
 .sm-msg__failed button:focus-visible { outline: none; border-radius: var(--sm-r-sm); box-shadow: var(--sm-focus-ring); }
 
 /* the message box */
-.sm-composer { display: grid; gap: 8px; padding: 6px var(--sm-chat-gutter) 14px; }
+.sm-composer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 6px var(--sm-chat-gutter) 14px; }
+/* Replying to someone, above the box */
+.sm-composer__bar { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: var(--sm-r-md); background: var(--sm-violet-a12); color: var(--sm-violet-ink); font-size: 13px; }
+.sm-composer__bar > svg { flex-shrink: 0; }
+.sm-composer__bar-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-composer__bar-text b { font-weight: 500; }
+.sm-composer__bar-preview { color: var(--sm-text-2); }
 .sm-composer__box { display: flex; align-items: flex-end; gap: 4px; padding: 6px 6px 6px 14px; border-radius: var(--sm-r-xl); background: var(--sm-surface); box-shadow: var(--sm-shadow-md); transition: box-shadow var(--sm-dur-1); }
 .sm-composer__box:focus-within { box-shadow: 0 0 0 2px var(--sm-violet), var(--sm-shadow-md); }
 .sm-composer__input { flex: 1; min-width: 0; max-height: 160px; min-height: 36px; padding: 8px 4px; border: 0; background: none; resize: none; outline: none; color: var(--sm-text); font: inherit; font-size: 14.5px; line-height: 1.4; }
@@ -135,4 +155,5 @@
   .sm-chat { --sm-chat-gutter: 12px; }
   /* a long message fills the width, so there's no room on its left: Edit and Delete sit above its corner */
   .sm-msg__tools { top: auto; bottom: 100%; right: 0; transform: none; }
+  .sm-msg:not(.sm-msg--mine) .sm-msg__tools { right: auto; left: 0; }
 }

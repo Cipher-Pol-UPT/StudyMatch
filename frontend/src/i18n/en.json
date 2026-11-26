@@ -1150,6 +1150,7 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "newMessages": "New messages",
+    "backToLatest": "Back to the latest",
     "loadingOlder": "Loading older messages",
     "edited": "(edited)",
     "editedAt": "Edited {{when}}",
@@ -1171,7 +1172,17 @@
     "groupSoonBody": "For now you can read their latest message in the list.",
     "photo": "Photo",
     "files_one": "{{count}} file",
-    "files_other": "{{count}} files"
+    "files_other": "{{count}} files",
+    "you": "You",
+    "reply": "Reply",
+    "replyingTo": "Replying to <b>{{name}}</b>",
+    "replyingToYourself": "Replying to your own message",
+    "cancelReply": "Cancel reply",
+    "goToOriginal": "Go to {{name}}'s message",
+    "originalDeleted": "Original message was deleted",
+    "originalGone": "The original message isn't there anymore.",
+    "loadingNewer": "Loading newer messages",
+    "gif": "GIF"
   },
   "classmate": {
     "title": "Student profile",

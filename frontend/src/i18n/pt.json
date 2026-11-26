@@ -1150,6 +1150,7 @@
     "today": "Hoje",
     "yesterday": "Ontem",
     "newMessages": "Novas mensagens",
+    "backToLatest": "Voltar às mais recentes",
     "loadingOlder": "A carregar mensagens anteriores",
     "edited": "(editada)",
     "editedAt": "Editada a {{when}}",
@@ -1171,7 +1172,17 @@
     "groupSoonBody": "Por agora pode ver a última mensagem na lista.",
     "photo": "Fotografia",
     "files_one": "{{count}} ficheiro",
-    "files_other": "{{count}} ficheiros"
+    "files_other": "{{count}} ficheiros",
+    "you": "Você",
+    "reply": "Responder",
+    "replyingTo": "A responder a <b>{{name}}</b>",
+    "replyingToYourself": "A responder à sua própria mensagem",
+    "cancelReply": "Cancelar resposta",
+    "goToOriginal": "Ir para a mensagem de {{name}}",
+    "originalDeleted": "A mensagem original foi eliminada",
+    "originalGone": "A mensagem original já não existe.",
+    "loadingNewer": "A carregar mensagens mais recentes",
+    "gif": "GIF"
   },
   "classmate": {
     "title": "Perfil do estudante",

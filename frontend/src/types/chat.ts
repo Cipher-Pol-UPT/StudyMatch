@@ -12,8 +12,8 @@ export interface ChatContactData { number: number; name: string; role: Role }
 // your DM with someone: chatId is null until the first message creates it, or while you've blocked them
 export interface DirectChatData { chatId: number | null; contact: ChatContactData; blocked: boolean }
 
-// the message a reply quotes
-export interface MessageQuoteData { id: number; author: ChatContactData; text: string }
+// the message a reply quotes, as it is now: its text, or the GIF or files it has instead
+export interface MessageQuoteData { id: number; author: ChatContactData; text: string; gifId?: string | null; attachments?: AttachmentData[] }
 
 // a message as the chat shows it; editedAt is null until it's edited.
 // a reply with a null replyTo shows that the original was deleted
@@ -22,6 +22,8 @@ export interface MessageData {
   chatId: number;
   author: ChatContactData;
   text: string;
+  // a GIPHY GIF instead of a text (#212)
+  gifId?: string | null;
   sentAt: string;
   editedAt: string | null;
   reply: boolean;
@@ -39,8 +41,9 @@ export interface ReactionData { chatId: number; messageId: number; user: ChatCon
 // the most characters a message can have (GR10)
 export const MESSAGE_MAX_LENGTH = 2000;
 
-// a page of an open chat, oldest first; hasMore is false once the first message is in
-export interface MessagePageData { messages: MessageData[]; hasMore: boolean }
+// a page of an open chat, oldest first, with the reactions to its messages. hasMore is false once the first message
+// is in, hasNewer once the latest is (after jumping to an old message the latest aren't loaded)
+export interface MessagePageData { messages: MessageData[]; reactions?: ReactionData[]; hasMore: boolean; hasNewer?: boolean }
 
 // what MESSAGE_DELETED carries: the message is gone, only its id is left
 export interface MessageDeletedData { chatId: number; messageId: number }
