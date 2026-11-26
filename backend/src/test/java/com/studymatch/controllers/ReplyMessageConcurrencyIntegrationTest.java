@@ -104,7 +104,7 @@ class ReplyMessageConcurrencyIntegrationTest {
   }
 
   private MessageDTO reply() {
-    return messageService.send(chat.getId(), ana, new SendMessageRequestDTO("at one", original.getId()));
+    return messageService.send(chat.getId(), ana, new SendMessageRequestDTO("at one", null, original.getId()));
   }
 
   private MessageDTO edit(Long replyId) {

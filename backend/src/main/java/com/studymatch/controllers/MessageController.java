@@ -39,8 +39,8 @@ public class MessageController {
 
   // swagger shows the JSON and the form as one endpoint, so they share what it says
   private static final String SEND = "Send a message to a chat you're in, pushed to its members. replyToId makes it a "
-      + "reply. As JSON it's only text. As a form it has up to 5 files of 10 MB and the text is optional, and the file "
-      + "errors say which one it was, by name and index";
+      + "reply. As JSON it's a text or the id of a GIPHY GIF, not both. As a form it has up to 5 files of 10 MB and the "
+      + "text is optional, and the file errors say which one it was, by name and index";
   private static final String SEND_DIRECT = "Send a DM, the first one creates the chat. Someone you blocked needs "
       + "unblocking first. As JSON or as a form with files, like in a chat";
 
@@ -116,8 +116,9 @@ public class MessageController {
   @PutMapping("{chatId}/messages/{messageId}")
   @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
   @Operation(summary = "Change the text of a message you sent, it shows \"(edited)\" and the open chat gets the new "
-      + "text. Nobody is notified again. It can only be left empty if it has attachments")
-  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NOT_MESSAGE_AUTHOR, ErrorCode.MESSAGE_EMPTY })
+      + "text. Nobody is notified again. It can only be left empty if it has attachments, and a GIF can't be edited")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NOT_MESSAGE_AUTHOR, ErrorCode.MESSAGE_EMPTY,
+      ErrorCode.MESSAGE_NOT_EDITABLE })
   public ResponseEntity<MessageDTO> edit(@PathVariable Long chatId, @PathVariable Long messageId,
       @Valid @RequestBody EditMessageRequestDTO editRequest, Authentication authentication) {
     User user = userService.getByInstitutionalEmail(authentication.getName());
