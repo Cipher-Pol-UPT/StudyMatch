@@ -20,9 +20,11 @@ interface StudyRoomPreviewProps {
   started?: boolean;
   // above the card, like the room a join clashed with (#44)
   notice?: ReactNode;
+  // Join was pressed and the backend hasn't answered yet
+  joining?: boolean;
 }
 
-export function StudyRoomPreview({ room, studentNumber, rating, ratingCount, onToggleMembership, actions, attendees, started, notice }: StudyRoomPreviewProps) {
+export function StudyRoomPreview({ room, studentNumber, rating, ratingCount, onToggleMembership, actions, attendees, started, notice, joining }: StudyRoomPreviewProps) {
   const { t, i18n } = useTranslation();
   const titleId = useId();
   const start = new Date(room.startsAt);
@@ -81,6 +83,7 @@ export function StudyRoomPreview({ room, studentNumber, rating, ratingCount, onT
             variant={joined ? 'danger' : 'tinted'}
             size="sm"
             disabled={!joined && remaining === 0}
+            loading={joining}
             onClick={() => onToggleMembership(room)}
           >
             {joined ? t('rooms.leave') : remaining === 0 ? t('studyRooms.full') : t('rooms.join')}

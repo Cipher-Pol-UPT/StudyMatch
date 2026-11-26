@@ -37,6 +37,8 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
   // a joined room waiting for Leave to be confirmed, and the room a join clashed with (#44)
   const [leaving, setLeaving] = useState<StudyRoomData | null>(null);
   const [clash, setClash] = useState<{ roomId: number; text: string } | null>(null);
+  // the rooms being joined right now, so a double click sends one POST
+  const [joining, setJoining] = useState<ReadonlySet<number>>(() => new Set());
   const toast = useToast();
   const tutorSubjects = useTutorSubjects();
   const [creating, setCreating] = useState(false);
@@ -95,9 +97,11 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
     .filter((room) => subjectId == null || room.subjectId === subjectId);
 
   // clears the stale detail first, so the old room's rating never flashes while the new one loads
+  // an overlap banner belongs to the card it was shown on, so it goes when the card closes
   const openRoom = (roomId: number | null) => {
     setDetail(null);
     setSelectedId(roomId);
+    setClash(null);
   };
 
   const selectSubject = (id: number | null) => {
@@ -255,11 +259,15 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
   };
 
   const join = async (room: StudyRoomData) => {
+    if (joining.has(room.id)) return;
     setClash(null);
+    setJoining((previous) => new Set(previous).add(room.id));
     try {
       joinedOrLeft(await joinStudyRoom(room.id), true);
     } catch (error) {
       membershipFailed(room, error);
+    } finally {
+      setJoining((previous) => { const next = new Set(previous); next.delete(room.id); return next; });
     }
   };
 
@@ -267,6 +275,8 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
     if (!leaving) return;
     try {
       joinedOrLeft(await leaveStudyRoom(leaving.id), false);
+      // the room it clashed with may be this one, so the banner no longer holds
+      setClash(null);
     } catch (error) {
       membershipFailed(leaving, error);
     }
@@ -281,7 +291,7 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
 
   const preview = (room: StudyRoomData, extra: Partial<Parameters<typeof StudyRoomPreview>[0]> = {}) => (
     <StudyRoomPreview key={room.id} room={room} studentNumber={studentNumber} onToggleMembership={toggleMembership}
-      started={started(room)} actions={manage(room)} notice={clash?.roomId === room.id ? <Banner tone="danger">{clash.text}</Banner> : undefined} {...extra} />
+      started={started(room)} joining={joining.has(room.id)} actions={manage(room)} notice={clash?.roomId === room.id ? <Banner tone="danger">{clash.text}</Banner> : undefined} {...extra} />
   );
 
   return (
