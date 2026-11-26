@@ -31,6 +31,7 @@ import jakarta.validation.constraints.Size;
 public class Message {
 
   public static final int MAX_TEXT_LENGTH = 2000;
+  public static final int MAX_GIF_ID_LENGTH = 64;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,11 +45,16 @@ public class Message {
   @NotNull
   private User author;
 
-  // empty when it only has attachments (#210), the service makes sure it has something
+  // empty when it only has attachments (#210) or is a GIF (#212), the service makes sure it has something
   @NotNull
   @Size(max = MAX_TEXT_LENGTH)
   @Column(length = MAX_TEXT_LENGTH)
   private String text;
+
+  // GIPHY's id, null when it isn't a GIF. only the frontend talks to GIPHY, it doesn't allow a backend in between (#212)
+  @Size(max = MAX_GIF_ID_LENGTH)
+  @Column(length = MAX_GIF_ID_LENGTH, updatable = false)
+  private String gifId;
 
   @NotNull
   private LocalDateTime sentAt;
@@ -94,6 +100,12 @@ public class Message {
     this.reply = replyTo != null;
   }
 
+  // a GIF is a message on its own, without text (GR10). gifId null is a normal one
+  public Message(Chat chat, User author, String text, Message replyTo, String gifId) {
+    this(chat, author, text, replyTo);
+    this.gifId = gifId;
+  }
+
   public Long getId() {
     return id;
   }
@@ -108,6 +120,14 @@ public class Message {
 
   public String getText() {
     return text;
+  }
+
+  public String getGifId() {
+    return gifId;
+  }
+
+  public boolean isGif() {
+    return gifId != null;
   }
 
   public LocalDateTime getSentAt() {

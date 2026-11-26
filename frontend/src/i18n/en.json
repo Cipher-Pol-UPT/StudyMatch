@@ -2,8 +2,6 @@
   "workspace": {
     "welcome": "Choose an area to get started.",
     "open": "Open",
-    "noActivity": "No activity yet",
-    "noActivityBody": "Updates will appear here as the remaining features become available.",
     "loggedOut": "You have been logged out.",
     "logoutFailed": "Could not end your session. Check your connection and try again.",
     "roles": {
@@ -296,7 +294,10 @@
     "attendanceConfirmed": "Attendance confirmed. The StudyRoom is completed.",
     "meetLinkEmpty": "Leave it empty and a new Meet link is made for you.",
     "nobodyJoined": "Nobody joined this StudyRoom.",
-    "confirmAttendees_zero": "Confirm nobody came"
+    "confirmAttendees_zero": "Confirm nobody came",
+    "leaveTitle": "Leave this StudyRoom?",
+    "leaveBody": "{{room}}. Your place goes back to the other students.",
+    "stay": "Stay"
   },
   "studyRooms": {
     "heading": "StudyRooms",
@@ -650,6 +651,7 @@
     "INVALID_EMOJI": "React with a single emoji.",
     "SEARCH_TOO_SHORT": "Type at least {{min}} characters to search.",
     "MESSAGE_EMPTY": "A message can't be empty. Delete it instead.",
+    "MESSAGE_NOT_EDITABLE": "This message has no text to edit.",
     "TOO_MANY_ATTACHMENTS": "A message can have at most {{max}} files.",
     "ATTACHMENT_TOO_LARGE": "{{name}} is over {{max}} MB.",
     "ATTACHMENT_TYPE_NOT_ALLOWED": "{{name}} can't be sent. Use a PNG, JPG, GIF, WebP, PDF, Word, Excel, PowerPoint or text file.",
@@ -660,7 +662,10 @@
     "CANNOT_ADD_TO_GROUP_CHAT": "Some of the people you picked can't be added to this group chat.",
     "CHAT_MEMBERS_FIXED": "The members of this chat can't be changed.",
     "NOT_CHAT_OWNER": "Only the owner of this group chat can do that.",
-    "CANNOT_REMOVE_YOURSELF": "You can't remove yourself. Leave the group chat instead."
+    "CANNOT_REMOVE_YOURSELF": "You can't remove yourself. Leave the group chat instead.",
+    "NOTE_TOO_LONG": "A note can have up to {{max}} characters.",
+    "INVALID_NOTE_POSITION": "The note has to stay on the board.",
+    "NOTE_LIMIT_REACHED": "You can have up to {{max}} notes. Delete one to add another."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",
@@ -1168,5 +1173,16 @@
     "title": "Student profile",
     "back": "Back",
     "message": "Message"
+  },
+  "notes": {
+    "title": "Notes",
+    "intro": "Quick notes only you can see.",
+    "none": "No notes yet. Add one for anything you want to keep in mind.",
+    "emptyNote": "Empty note",
+    "text": "Note text",
+    "moveFailed": "Couldn't move the note. It's back where it was.",
+    "loadFailed": "Couldn't load your notes. Try again later.",
+    "loading": "Loading your notes…",
+    "open": "Open note: {{text}}"
   }
 }

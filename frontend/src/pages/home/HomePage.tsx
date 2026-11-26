@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { StickyNotes } from '../../components/notes/StickyNotes';
 import { Card, IconTile, StudentPass, type StudentProfile } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { SECTIONS } from '../student/sections';
@@ -70,6 +71,8 @@ export function HomePage({ currentUser, profile, failed, tasks = [], onTaskClick
           {tasks.length === 0 && <p className="home__hint">{t('home.noTasksBody')}</p>}
         </Card>
       </section>
+
+      <StickyNotes />
     </div>
   );
 }

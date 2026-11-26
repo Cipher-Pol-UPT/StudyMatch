@@ -2,8 +2,6 @@
   "workspace": {
     "welcome": "Escolha uma área para começar.",
     "open": "Abrir",
-    "noActivity": "Ainda sem atividade",
-    "noActivityBody": "As novidades aparecerão aqui à medida que as restantes funcionalidades ficarem disponíveis.",
     "loggedOut": "A sessão foi terminada.",
     "logoutFailed": "Não foi possível terminar a sessão. Verifique a ligação e tente novamente.",
     "roles": {
@@ -296,7 +294,10 @@
     "attendanceConfirmed": "Presenças confirmadas. A sala de estudo foi concluída.",
     "meetLinkEmpty": "Se o deixar vazio, é criada uma nova ligação do Meet.",
     "nobodyJoined": "Ninguém se inscreveu nesta sala de estudo.",
-    "confirmAttendees_zero": "Confirmar que ninguém compareceu"
+    "confirmAttendees_zero": "Confirmar que ninguém compareceu",
+    "leaveTitle": "Sair desta sala de estudo?",
+    "leaveBody": "{{room}}. O seu lugar fica livre para outros estudantes.",
+    "stay": "Ficar"
   },
   "studyRooms": {
     "heading": "Salas de estudo",
@@ -650,6 +651,7 @@
     "INVALID_EMOJI": "Reaja com um único emoji.",
     "SEARCH_TOO_SHORT": "Escreva pelo menos {{min}} caracteres para pesquisar.",
     "MESSAGE_EMPTY": "Uma mensagem não pode ficar vazia. Elimine-a.",
+    "MESSAGE_NOT_EDITABLE": "Esta mensagem não tem texto para editar.",
     "TOO_MANY_ATTACHMENTS": "Uma mensagem pode ter no máximo {{max}} ficheiros.",
     "ATTACHMENT_TOO_LARGE": "{{name}} tem mais de {{max}} MB.",
     "ATTACHMENT_TYPE_NOT_ALLOWED": "Não é possível enviar {{name}}. Utilize um ficheiro PNG, JPG, GIF, WebP, PDF, Word, Excel, PowerPoint ou de texto.",
@@ -660,7 +662,10 @@
     "CANNOT_ADD_TO_GROUP_CHAT": "Algumas das pessoas que escolheu não podem ser adicionadas a esta conversa de grupo.",
     "CHAT_MEMBERS_FIXED": "Os membros desta conversa não podem ser alterados.",
     "NOT_CHAT_OWNER": "Só o dono desta conversa de grupo pode fazer isso.",
-    "CANNOT_REMOVE_YOURSELF": "Não se pode remover a si próprio. Saia da conversa de grupo."
+    "CANNOT_REMOVE_YOURSELF": "Não se pode remover a si próprio. Saia da conversa de grupo.",
+    "NOTE_TOO_LONG": "Uma nota pode ter até {{max}} caracteres.",
+    "INVALID_NOTE_POSITION": "A nota tem de ficar dentro do quadro.",
+    "NOTE_LIMIT_REACHED": "Pode ter até {{max}} notas. Apague uma para adicionar outra."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",
@@ -1168,5 +1173,16 @@
     "title": "Perfil do estudante",
     "back": "Voltar",
     "message": "Enviar mensagem"
+  },
+  "notes": {
+    "title": "Notas",
+    "intro": "Notas rápidas que só o próprio vê.",
+    "none": "Ainda não tem notas. Adicione uma para o que quiser lembrar.",
+    "emptyNote": "Nota vazia",
+    "text": "Texto da nota",
+    "moveFailed": "Não foi possível mover a nota. Voltou ao sítio onde estava.",
+    "loadFailed": "Não foi possível carregar as suas notas. Tente mais tarde.",
+    "loading": "A carregar as suas notas…",
+    "open": "Abrir nota: {{text}}"
   }
 }

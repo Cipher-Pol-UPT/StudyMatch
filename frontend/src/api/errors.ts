@@ -94,6 +94,7 @@ export const ERROR_CODES = [
   "INVALID_EMOJI",
   "SEARCH_TOO_SHORT",
   "MESSAGE_EMPTY",
+  "MESSAGE_NOT_EDITABLE",
   "TOO_MANY_ATTACHMENTS",
   "ATTACHMENT_TOO_LARGE",
   "ATTACHMENT_TYPE_NOT_ALLOWED",
@@ -105,6 +106,9 @@ export const ERROR_CODES = [
   "CHAT_MEMBERS_FIXED",
   "NOT_CHAT_OWNER",
   "CANNOT_REMOVE_YOURSELF",
+  "NOTE_TOO_LONG",
+  "INVALID_NOTE_POSITION",
+  "NOTE_LIMIT_REACHED",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;

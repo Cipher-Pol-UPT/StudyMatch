@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getChatMessages, markChatRead } from '../../api/chats';
 import type { MessageData } from '../../types/chat';
 
@@ -43,9 +43,10 @@ export function useChatHistory(chatId: number | null) {
   }, [markRead]);
 
   const [history, setHistory] = useState<ChatHistory>(() => ({ messages: [], hasMore: false, loading: chatId !== null, loadingOlder: false }));
-  // what's on screen, for loadOlder to read without being remade on every change
+  // what's on screen, for loadOlder to read without being remade on every change.
+  // set before the screen shows it, a scroll right after the messages appear was ignored
   const current = useRef(history);
-  useEffect(() => { current.current = history; });
+  useLayoutEffect(() => { current.current = history; });
 
   useEffect(() => {
     if (chatId === null) return undefined;

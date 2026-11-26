@@ -62,7 +62,7 @@ async function pushToList(event: unknown) {
 const settle = () => act(() => new Promise(resolve => setTimeout(resolve, 50)));
 
 beforeEach(async () => { await i18n.changeLanguage('en'); });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); forgetConversations(); live.listeners.clear(); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); forgetConversations(); live.listeners.clear(); });
 
 describe('open a chat', () => {
   it('shows the newest messages oldest first, one name per run, and marks the chat as read', async () => {
@@ -102,6 +102,17 @@ describe('open a chat', () => {
 
     fireEvent.scroll(document.querySelector('.sm-chat__scroll')!);
     expect(calls.filter(call => call.startsWith(`GET /api/chats/${CHAT}/messages`))).toHaveLength(2);
+  });
+
+  it('loads the older ones by itself when the first page is too short to scroll', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(300);
+    const calls = backend(before => before === null
+      ? reply({ hasMore: true, messages: [message(60, ana, 'The newest one', '2026-11-21T09:00:00')] })
+      : reply({ hasMore: false, messages: [message(10, ana, 'The very first one', '2026-11-19T09:00:00')] }));
+    open();
+
+    expect(await screen.findByText('The very first one', {}, { timeout: 1500 })).toBeTruthy();
+    expect(calls).toContain(`GET /api/chats/${CHAT}/messages?before=60`);
   });
 
   it('with no messages yet, says so in the middle', async () => {

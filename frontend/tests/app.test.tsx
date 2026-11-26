@@ -17,8 +17,11 @@ const student: CurrentUser = {
   personalityTestRequired: false,
 };
 
+// the home page's sticky notes ask for /notes/ too, which answers an empty board
 function mockCurrentUserResponse(status: number, body: unknown) {
-  vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(body), { status })));
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => String(url).startsWith('/api/notes/')
+    ? new Response('[]', { status: 200 })
+    : new Response(JSON.stringify(body), { status })));
 }
 
 function renderApp() {
