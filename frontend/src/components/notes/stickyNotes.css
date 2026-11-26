@@ -1,0 +1,48 @@
+/* sticky notes on the home page (#304). The paper, board and composer are the library's (sm-note, sm-board, sm-note-composer) */
+.sticky-notes__head { margin-bottom: 16px; }
+.sticky-notes__head h2 { margin: 0 0 4px; }
+.sticky-notes__head .sm-caption { margin: 0; }
+/* the composer sits on the card, so it gets the card's second surface instead of a shadow */
+.sticky-notes .sm-note-composer { background: var(--sm-surface-2); box-shadow: inset 0 0 0 1px var(--sm-hairline); }
+.sticky-notes .sm-note-composer input:disabled { cursor: not-allowed; }
+.sticky-notes .sm-note-swatches button { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); }
+.sticky-notes .sm-note-swatches .sticky-notes__swatch--on { box-shadow: 0 0 0 2px var(--sm-surface), 0 0 0 4px var(--sm-text); }
+.sticky-notes__add-error { margin: -8px 0 12px 20px; font-size: 13px; color: var(--sm-text-3); }
+.sticky-notes__add-error[role='alert'] { color: var(--sm-danger-text); }
+
+/* the board: positions are percentages of it, so notes stay put when the window changes */
+/* only the notes take over touches, so the page still scrolls when you swipe over the board */
+.sticky-notes__board { display: block; height: 460px; padding: 0; overflow: hidden; }
+.sticky-notes__board .sm-board__empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; }
+.sticky-notes__spot { position: relative; width: var(--note-px); }
+.sticky-notes__board .sticky-notes__spot { position: absolute; }
+.sticky-notes__spot--dragging { z-index: 1; cursor: grabbing; }
+.sticky-notes__spot--dragging .sm-note-wrap { cursor: grabbing; }
+
+/* while a note is open its footer holds the colours, at full strength */
+.sticky-notes .sm-note__foot { opacity: 1; }
+.sticky-notes .sm-note__foot .sm-note-swatches button { width: 18px; height: 18px; border-radius: 5px; }
+/* on the paper the ring is the paper's ink, whatever the theme */
+.sticky-notes .sm-note__foot .sticky-notes__swatch--on { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink); }
+.sticky-notes__input { width: 100%; height: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; line-height: inherit; resize: none; outline: none; }
+.sticky-notes__placeholder { opacity: 0.45; }
+/* a long note fades out at the bottom instead of stopping mid-line, and a long word (a link) wraps */
+.sticky-notes .sm-note__body { overflow-wrap: anywhere; }
+/* only on a closed note, the text you're typing never fades */
+.sticky-notes__spot:not(.sticky-notes__spot--open) .sm-note__body { -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent); mask-image: linear-gradient(to bottom, #000 78%, transparent); }
+/* on the note's own bottom edge, so the board never cuts it off */
+.sticky-notes__error { position: absolute; z-index: 3; left: 8px; right: 8px; bottom: 8px; margin: 0; padding: 4px 8px; border-radius: var(--sm-r-sm); background: var(--sm-surface); box-shadow: var(--sm-shadow-sm); font-size: 12px; line-height: 1.3; color: var(--sm-danger-text); }
+
+/* a phone: the same notes as full-width cards, newest first, no dragging. The whole text shows */
+.sticky-notes__notebook { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.sticky-notes__notebook .sticky-notes__spot { width: 100%; }
+.sticky-notes__notebook .sm-note-wrap { width: 100%; aspect-ratio: auto; touch-action: auto; }
+.sticky-notes__notebook .sm-note { position: relative; min-height: 120px; padding: 18px 44px 18px 18px; }
+.sticky-notes__notebook .sm-note__body { overflow: visible; -webkit-mask-image: none; mask-image: none; }
+.sticky-notes__notebook .sm-note__remove { top: 8px; right: 8px; opacity: 1; transform: none; }
+.sticky-notes__notebook .sticky-notes__error { position: static; margin-top: 8px; }
+.sticky-notes__notebook .sticky-notes__input { min-height: 80px; }
+.sticky-notes__empty { padding: 24px 0; text-align: center; color: var(--sm-text-2); }
+/* in an open note the error is part of the footer, above the colours */
+.sticky-notes .sm-note__foot { flex-direction: column; align-items: stretch; gap: 6px; }
+.sticky-notes .sm-note__foot .sticky-notes__error { position: static; }

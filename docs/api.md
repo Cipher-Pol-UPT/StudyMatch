@@ -160,6 +160,15 @@ The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and 
 | --- | --- | --- | --- |
 | GET | `/groups/analytics?academicYear=&subjectEditionId=&classSection=&groupId=` | Staff | a year's indicators (students, active subjects, average attendance), attendance per month, students by strongest Big Five trait and the published groups' balance, with what each filter offers. Every filter is optional, the year defaults to the current one |
 
+## Notes
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/notes/` | anyone logged in | your sticky notes, oldest change first so the last one touched is on top |
+| POST | `/notes/` | anyone logged in | add a note with `text` (up to 500 characters without the spaces around it, can be empty), `colour` (`YELLOW`, `PINK`, `BLUE`, `GREEN`) and `x`, `y` as percentages of the board, 0 to 100 (201). `NOTE_TOO_LONG`, `INVALID_NOTE_POSITION`, and `NOTE_LIMIT_REACHED` past 20 notes |
+| PATCH | `/notes/{id}` | the note's owner | change its text, colour or position, only the fields sent change. Someone else's note is `NOT_FOUND`, like one that doesn't exist |
+| DELETE | `/notes/{id}` | the note's owner | delete it for good (204). Someone else's note is `NOT_FOUND` |
+
 ## Coming next
 
 The other use cases (editing groups, tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
