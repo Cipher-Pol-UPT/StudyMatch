@@ -1,4 +1,4 @@
-import { act, cleanup, configure, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
@@ -33,6 +33,9 @@ const message = (id: number, chatId: number, author: ChatContactData, text: stri
   ({ id, chatId, author, text, sentAt, editedAt: null, reply: false, replyTo: null });
 const dm = (chatId: number, contact: ChatContactData, last: MessageData | null, unread = 0): ChatSummaryData =>
   ({ chatId, name: contact.name, contact, picture: false, pictureUpdatedAt: null, lastMessage: last, unread });
+const group = (chatId: number, name: string, last: MessageData | null, picture = false): ChatSummaryData =>
+  ({ chatId, name, contact: null, picture, pictureUpdatedAt: picture ? '2026-11-20T10:00:00' : null, lastMessage: last, unread: 0 });
+const daysAgo = (days: number) => { const d = new Date(); d.setDate(d.getDate() - days); d.setHours(10, 0, 0, 0); return d.toISOString().slice(0, 19); };
 
 // the chat list and the unread count; `lists` answers each GET /chats/ in turn
 function backend(lists: ChatSummaryData[][], unread: number[] = [0]) {
@@ -148,5 +151,70 @@ describe('view chats', () => {
     await push({ type: 'CHAT_UPDATED', payload: message(11, 1, ana, 'Again', today(12)) });
 
     await waitFor(() => expect(chatsItem().textContent).toContain('5'));
+  });
+
+  it('says when older messages were sent, and how a group chat reads', async () => {
+    backend([[
+      dm(1, ana, message(10, 1, ana, 'From yesterday', daysAgo(1))),
+      group(5, 'Test Study Group', message(50, 5, rui, 'Bring the slides', daysAgo(1)), true),
+      group(6, 'Test Empty Group', null),
+      dm(2, rui, message(20, 2, rui, 'Long ago', '2026-10-05T10:00:00')),
+    ]]);
+    open();
+
+    const rows = within(await list()).getAllByRole('link');
+
+    expect(rows[0].textContent).toContain('Yesterday');
+    expect(rows[1].textContent).toContain('Test: Bring the slides');
+    expect(rows[1].getAttribute('href')).toBe('/chats/group/5');
+    expect(rows[1].querySelector('img')?.getAttribute('src')).toBe('/api/chats/5/picture?v=2026-11-20T10:00:00');
+    expect(rows[2].textContent).toContain('No messages yet');
+    expect(rows[3].textContent).toMatch(/5 Oct|Oct 5/);
+  });
+
+  it('opens a group chat as coming soon, keeping it in the list', async () => {
+    backend([[group(5, 'Test Study Group', message(50, 5, rui, 'Hi all'))]]);
+    open();
+
+    fireEvent.click(within(await list()).getByRole('link'));
+
+    expect(await screen.findByText('Group chats open here soon')).toBeTruthy();
+    expect(within(await list()).getByRole('link').getAttribute('aria-current')).toBe('page');
+  });
+
+  it('adds a chat you were added to, renames a group chat and shows an edited last message', async () => {
+    backend([[group(5, 'Test Old Name', message(50, 5, rui, 'Typo hree'))]]);
+    open();
+    await list();
+
+    await push({ type: 'CHAT_ADDED', payload: dm(7, ana, message(70, 7, ana, 'Welcome')) });
+    await push({ type: 'CHAT_EDITED', payload: { chatId: 5, name: 'Test New Name', picture: false, pictureUpdatedAt: null } });
+    await push({ type: 'MESSAGE_EDITED', payload: message(50, 5, rui, 'Typo here') });
+    await push({ type: 'TYPING', payload: { chatId: 5 } });
+
+    const box = await list();
+    await waitFor(() => expect(rowNames(box)).toEqual(['Test Ana', 'Test New Name']));
+    expect(within(box).getAllByRole('link')[1].textContent).toContain('Test: Typo here');
+  });
+
+  it('asks for the list again when a message in it is deleted', async () => {
+    const calls = backend([[dm(1, ana, message(10, 1, ana, 'Oops'), 1)], [dm(1, ana, message(9, 1, ana, 'Before'))]]);
+    open();
+    await list();
+
+    await push({ type: 'MESSAGE_DELETED', payload: { chatId: 1, messageId: 10 } });
+    await push({ type: 'MESSAGE_DELETED', payload: { chatId: 99, messageId: 1 } });
+
+    await waitFor(() => expect(within(screen.getByRole('list', { name: 'Chats' })).getByRole('link').textContent).toContain('Before'));
+    expect(calls.filter(call => call === '/api/chats/')).toHaveLength(2);
+  });
+
+  it("shows the backend's error when the list can't load", async () => {
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>(async input => String(input).endsWith('/chats/')
+      ? new Response(JSON.stringify({ code: 'ACCESS_DENIED' }), { status: 403 })
+      : new Response('0', { status: 200 })));
+    open();
+
+    expect((await screen.findByRole('alert')).textContent).toBe(i18n.t('errors.ACCESS_DENIED'));
   });
 });
