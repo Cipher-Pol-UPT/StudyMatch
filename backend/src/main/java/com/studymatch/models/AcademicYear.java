@@ -2,8 +2,13 @@ package com.studymatch.models;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import org.springframework.data.domain.Persistable;
+
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.StudyMatchException;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -19,6 +24,15 @@ public class AcademicYear implements Persistable<Integer> {
 
   @Id
   private int startYear;
+
+  // all four or none: years from before #334 have none, every year started or edited since has all four
+  private LocalDate semester1Start;
+
+  private LocalDate semester1End;
+
+  private LocalDate semester2Start;
+
+  private LocalDate semester2End;
 
   @Transient
   private boolean isNew = true;
@@ -41,6 +55,62 @@ public class AcademicYear implements Persistable<Integer> {
 
   public AcademicYear next() {
     return new AcademicYear(startYear + 1);
+  }
+
+  // 1 September to 31 August
+  public LocalDate firstDay() {
+    return LocalDate.of(startYear, FIRST_MONTH, 1);
+  }
+
+  public LocalDate lastDay() {
+    return firstDay().plusYears(1).minusDays(1);
+  }
+
+  public boolean hasSemesters() {
+    return semester1Start != null;
+  }
+
+  public LocalDate getSemester1Start() {
+    return semester1Start;
+  }
+
+  public LocalDate getSemester1End() {
+    return semester1End;
+  }
+
+  public LocalDate getSemester2Start() {
+    return semester2Start;
+  }
+
+  public LocalDate getSemester2End() {
+    return semester2End;
+  }
+
+  // checked in this order so several problems always give the same code: inside the year, each semester the
+  // right way round, then semester 2 after semester 1. nothing changes if one fails
+  public void setSemesters(LocalDate semester1Start, LocalDate semester1End, LocalDate semester2Start,
+      LocalDate semester2End) {
+    if (Stream.of(semester1Start, semester1End, semester2Start, semester2End).anyMatch(this::outside)) {
+      throw new StudyMatchException(ErrorCode.SEMESTER_OUTSIDE_YEAR,
+          Map.of("from", firstDay().toString(), "to", lastDay().toString()));
+    }
+    if (!semester1End.isAfter(semester1Start)) {
+      throw new StudyMatchException(ErrorCode.SEMESTER_ENDS_BEFORE_START, Map.of("semester", 1));
+    }
+    if (!semester2End.isAfter(semester2Start)) {
+      throw new StudyMatchException(ErrorCode.SEMESTER_ENDS_BEFORE_START, Map.of("semester", 2));
+    }
+    if (!semester2Start.isAfter(semester1End)) {
+      throw new StudyMatchException(ErrorCode.SEMESTERS_OVERLAP);
+    }
+    this.semester1Start = semester1Start;
+    this.semester1End = semester1End;
+    this.semester2Start = semester2Start;
+    this.semester2End = semester2End;
+  }
+
+  private boolean outside(LocalDate date) {
+    return date.isBefore(firstDay()) || date.isAfter(lastDay());
   }
 
   @Override

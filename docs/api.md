@@ -61,9 +61,10 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | PUT | `/subjects/{id}` | Staff | change name and ECTS (code and category stay), and optionally this year's edition's teachers, keeping at least one |
 | POST | `/subjects/{id}/editions` | Staff | add an edition of an existing subject for another year |
 | GET | `/subjects/{id}/editions/current` | Staff | the subject's edition this year with its teachers, to edit them |
-| GET | `/academic-years/` | logged in | academic years, newest (the current one) first |
+| GET | `/academic-years/` | logged in | academic years, newest (the current one) first, each with its `semesters` (null for a year from before #334) |
 | GET | `/academic-years/next` | Staff | the year Start Academic Year would create, and the current year's enrolments with no final grade |
-| POST | `/academic-years/` | Staff | start the next academic year (the body repeats its start year), everyone retakes the personality test |
+| POST | `/academic-years/` | Staff | start the next academic year (the body repeats its `startYear` and has its `semesters`: `semester1Start`, `semester1End`, `semester2Start`, `semester2End`), everyone retakes the personality test. `SEMESTER_OUTSIDE_YEAR` for a date outside 1 September to 31 August (with `from` and `to`), `SEMESTER_ENDS_BEFORE_START` with the `semester`, `SEMESTERS_OVERLAP` when semester 2 doesn't start after semester 1 ends |
+| PUT | `/academic-years/{startYear}/semesters` | Staff | change the current year's four dates, same rules as starting it. An older year is `ACADEMIC_YEAR_NOT_CURRENT` |
 | GET | `/teachers/` | Staff | every teacher, to pick an edition's teachers |
 
 ## Subject editions
