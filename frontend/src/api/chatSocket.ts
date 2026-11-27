@@ -12,6 +12,14 @@ interface Listener {
 
 let client: Client | null = null;
 const listeners = new Set<Listener>();
+// whether the connection is up, for the online dots: they go while it's down (#223)
+let connected = false;
+const connectionListeners = new Set<() => void>();
+function setConnected(value: boolean) {
+  if (connected === value) return;
+  connected = value;
+  connectionListeners.forEach(listener => listener());
+}
 
 // one connection for the whole app, opened after login. stompjs reconnects by itself
 export function connectChatSocket(): void {
@@ -26,7 +34,11 @@ export function connectChatSocket(): void {
       connecting.connectHeaders = { 'X-XSRF-TOKEN': readCsrfToken() ?? '' };
     },
     // a reconnect is a new session on the server, so every subscription is made again
-    onConnect: () => listeners.forEach(listen),
+    onConnect: () => {
+      listeners.forEach(listen);
+      setConnected(true);
+    },
+    onWebSocketClose: () => setConnected(false),
   });
   client.activate();
 }
@@ -34,6 +46,7 @@ export function connectChatSocket(): void {
 export async function disconnectChatSocket(): Promise<void> {
   const closing = client;
   client = null;
+  setConnected(false);
   listeners.forEach(listener => { listener.subscription = undefined; });
   await closing?.deactivate();
 }
@@ -51,6 +64,19 @@ export function subscribeToChatEvents(destination: string, onEvent: (event: Chat
       listener.subscription?.unsubscribe();
     }
   };
+}
+
+// tells the chat's members you're typing; nothing while the connection is down (#223)
+export function sendTyping(chatId: number): void {
+  if (client?.connected) client.publish({ destination: `/app/chats/${chatId}/typing`, body: '' });
+}
+
+export const isChatSocketConnected = () => connected;
+
+// returns the unsubscribe, for useSyncExternalStore
+export function onChatSocketConnection(listener: () => void): () => void {
+  connectionListeners.add(listener);
+  return () => { connectionListeners.delete(listener); };
 }
 
 function listen(listener: Listener) {

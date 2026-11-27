@@ -7,7 +7,8 @@ import { deleteMessage, editMessage, getDirectChat, reactToMessage, removeReacti
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useChatEvents, useChatListEvents } from '../../hooks/useChatEvents';
-import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatStart, ChatThread, ConfirmDialog, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction } from '../../studymatch-ui';
+import { typingLine, useTyping } from './useTyping';
+import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatTyping, ChatStart, ChatThread, ConfirmDialog, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction } from '../../studymatch-ui';
 import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData, type MessageQuoteData, type ReactionData } from '../../types/chat';
 import { ChatSearch } from './ChatSearch';
 import { newMessageKey, useConversation, type ThreadMessage } from './conversations';
@@ -25,6 +26,8 @@ export interface ConversationProps {
   me: number;
   // where someone's profile is, for the people who have one you can open
   profilePath?: (contact: ChatContactData) => string | undefined;
+  // who has the app open, for the green dots (#223)
+  online?: ReadonlySet<number>;
 }
 
 // what double tapping a message reacts with
@@ -57,7 +60,7 @@ const photoOf = (author: ChatContactData) => author.role === 'STUDENT' ? `/api/s
 
 // a DM or a group chat: its history, live messages while it's open, editing and deleting your own, and the message box
 // (#203, #205, #207, #209, #227)
-export function Conversation({ chat, me, profilePath }: ConversationProps) {
+export function Conversation({ chat, me, profilePath, online }: ConversationProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   // the other person in a DM; a group chat has none
@@ -105,8 +108,12 @@ export function Conversation({ chat, me, profilePath }: ConversationProps) {
   const [deleting, setDeleting] = useState<MessageData | null>(null);
 
   const name = contact ? contact.name : chat.kind === 'group' ? chat.name : '';
+  const members = chat.kind === 'group' ? chat.members : [];
+  // how many of the others in a group chat have the app open (#223)
+  const othersOnline = members.filter(member => member.number !== me && online?.has(member.number)).length;
+  const memberLine = t('chats.memberCount', { count: members.length });
   const line = contact ? t('chats.contactLine', { role: t(`roles.${contact.role}`), number: contact.number })
-    : t('chats.memberCount', { count: chat.kind === 'group' ? chat.members.length : 0 });
+    : othersOnline ? t('chats.membersOnline', { members: memberLine, count: othersOnline }) : memberLine;
   // a person is called by their first name, a group chat by its whole name
   const firstName = contact ? contact.name.split(' ')[0] : name;
   const avatarSrc = contact ? photoOf(contact) : chat.kind === 'group' ? chat.pictureSrc : undefined;
@@ -183,7 +190,10 @@ export function Conversation({ chat, me, profilePath }: ConversationProps) {
     getDirectChat(contact.number).then(dm => { if (dm.chatId !== null) setChatId(id => id ?? dm.chatId); }, ignore);
   });
 
+  const typing = useTyping(chatId, person => isMine(person));
+
   useChatEvents(chatId, event => {
+    if (typing.onEvent(event)) return;
     if (event.type === 'MESSAGE_EDITED') return replace(event.payload as MessageData);
     if (event.type === 'MESSAGE_REACTED') return applyReaction(event.payload as ReactionData);
     if (event.type === 'MESSAGE_DELETED') {
@@ -280,6 +290,7 @@ export function Conversation({ chat, me, profilePath }: ConversationProps) {
     const text = conversation.draft.trim();
     const key = newMessageKey();
     const { replyTo } = conversation;
+    typing.sent();
     update(current => ({
       draft: '',
       error: undefined,
@@ -348,6 +359,8 @@ export function Conversation({ chat, me, profilePath }: ConversationProps) {
     composer.current?.focus();
     return true;
   };
+  const isOnline = (person: ChatContactData) => online?.has(person.number) ?? false;
+
   const replyBar = conversation.replyTo && (
     <ChatReplyBar title={isMine(conversation.replyTo.author) ? t('chats.replyingToYourself')
       : <Trans i18nKey="chats.replyingTo" values={{ name: conversation.replyTo.author.name }} components={{ b: <b /> }} />}
@@ -403,7 +416,8 @@ export function Conversation({ chat, me, profilePath }: ConversationProps) {
   const askToDelete = (message: MessageData, shift: boolean) => shift ? deleteForGood(message) : setDeleting(message);
 
   const head = (
-    <ChatHead name={name} avatarSrc={avatarSrc} subtitle={line} backLabel={t('chats.back')} onBack={() => navigate('/chats')} group={!contact}
+    <ChatHead name={name} avatarSrc={avatarSrc} subtitle={contact && isOnline(contact) ? t('chats.online') : line} online={!!contact && isOnline(contact)}
+      backLabel={t('chats.back')} onBack={() => navigate('/chats')} group={!contact}
       profileHref={contact ? profilePath?.(contact) : undefined} linkAs={Link} profileLabel={t('chats.openProfile', { name })}
       actions={chatId !== null && (searching
         ? <SearchField ref={searchInput} size="sm" className="sm-chat__head-search" value={query} onValueChange={setQuery}
@@ -446,9 +460,9 @@ export function Conversation({ chat, me, profilePath }: ConversationProps) {
       side={searching && chatId !== null && <ChatSearch chatId={chatId} query={query} onClose={stopSearching} onJump={jumpTo} nameOf={nameOf} />}
       composer={(
         <ChatComposer label={t('chats.messageLabel', { name })} placeholder={t('chats.messageLabel', { name: firstName })}
-          value={conversation.draft} onChange={draft => update(current => ({ ...current, draft }))} onSend={send}
+          value={conversation.draft} onChange={draft => { update(current => ({ ...current, draft })); if (draft.trim()) typing.typed(); }} onSend={send}
           sendLabel={t('chats.send')} max={MESSAGE_MAX_LENGTH} error={conversation.error === undefined ? undefined : sendError(conversation.error, t)}
-          onEditLast={editLast} inputRef={composer} above={replyBar} onEscape={stopReply} />
+          onEditLast={editLast} inputRef={composer} above={<><ChatTyping text={typingLine(typing.typing, t)} />{replyBar}</>} onEscape={stopReply} />
       )}>
       {history.loading && <DataLoadState />}
       {history.loadingOlder && <ChatOlder label={t('chats.loadingOlder')} />}
@@ -473,7 +487,7 @@ export function Conversation({ chat, me, profilePath }: ConversationProps) {
             return (
               <div key={item.key}>
                 {newDay && <ChatDay label={dayLabel(sentAt)} />}
-                <ChatMessage id={item.message && rowId(item.message.id)} mine={item.mine} text={item.text} quote={quoteOf(item)} first={first} author={item.author.name} avatarSrc={photoOf(item.author)}
+                <ChatMessage id={item.message && rowId(item.message.id)} mine={item.mine} text={item.text} quote={quoteOf(item)} first={first} author={item.author.name} online={isOnline(item.author)} avatarSrc={photoOf(item.author)}
                   time={timeFormat.format(sentAt)} dateTime={item.sentAt} status={status}
                   editedLabel={item.editedAt ? t('chats.edited') : undefined}
                   editedTitle={item.editedAt ? t('chats.editedAt', { when: editedFormat.format(new Date(item.editedAt)) }) : undefined}

@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { subscribeToChatEvents } from '../api/chatSocket';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { isChatSocketConnected, onChatSocketConnection, subscribeToChatEvents } from '../api/chatSocket';
 import type { ChatEvent } from '../types/chat';
 
 // a chat's messages being sent, edited or deleted, while the component is on screen; nothing while there's no chat yet
@@ -21,4 +21,9 @@ function useSocketDestination(destination: string | null, onEvent: (event: ChatE
     handler.current = onEvent;
   });
   useEffect(() => destination === null ? undefined : subscribeToChatEvents(destination, event => handler.current(event)), [destination]);
+}
+
+// whether the live connection is up right now (#223)
+export function useChatSocketConnected() {
+  return useSyncExternalStore(onChatSocketConnection, isChatSocketConnected);
 }

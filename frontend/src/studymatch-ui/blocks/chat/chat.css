@@ -46,6 +46,7 @@
 .sm-chat__head-text { flex: 1; min-width: 0; }
 .sm-chat__head-name { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sm-chat__head-sub { font-size: 12.5px; color: var(--sm-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-chat__head-sub--online { color: var(--sm-success-ink); }
 .sm-chat__back { display: none; }
 .sm-chat__head-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
 .sm-chat__head-search { width: 220px; }
@@ -170,6 +171,14 @@
 
 /* the message box */
 .sm-composer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 6px var(--sm-chat-gutter) 14px; }
+/* someone typing, above the box */
+.sm-chat__typing { display: flex; align-items: center; gap: 8px; min-height: 18px; margin-bottom: -4px; padding: 0 4px; font-size: 12.5px; color: var(--sm-text-2); }
+.sm-dots { display: inline-flex; gap: 3px; }
+.sm-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--sm-violet); animation: sm-dots 1.2s infinite; }
+.sm-dots i:nth-child(2) { animation-delay: .15s; }
+.sm-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes sm-dots { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-4px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sm-dots i { animation: none; opacity: .7; } }
 /* Replying to someone, above the box */
 .sm-composer__bar { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: var(--sm-r-md); background: var(--sm-violet-a12); color: var(--sm-violet-ink); font-size: 13px; }
 .sm-composer__bar > svg { flex-shrink: 0; }

@@ -44,6 +44,8 @@ export const createGroupChat = (name: string, memberNumbers: number[], picture: 
   request<ChatSummaryData>('POST', '/chats/groups', { name, memberNumbers, picture });
 // who's in a chat, the owner first then in the order they joined
 export const getChatMembers = (chatId: number) => request<ChatContactData[]>('GET', `/chats/${chatId}/members`);
+// the numbers of the people you share a chat with who have the app open, for the first load; the pushes keep it up to date (#223)
+export const getOnlineContacts = () => request<number[]>('GET', '/chats/online');
 
 // how many messages you haven't read across every chat, for the side menu
 export const getUnreadCount = () => request<number>('GET', '/chats/unread-count');
