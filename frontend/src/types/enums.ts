@@ -39,3 +39,6 @@ export type NotificationLevel = typeof NotificationLevel[number];
 
 export const NoteColour = ["YELLOW", "PINK", "BLUE", "GREEN"] as const;
 export type NoteColour = typeof NoteColour[number];
+
+export const RoomType = ["CLASSROOM", "LAB", "AUDITORIUM"] as const;
+export type RoomType = typeof RoomType[number];

@@ -173,6 +173,16 @@ The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and 
 | PATCH | `/notes/{id}` | the note's owner | change its text, colour or position, only the fields sent change. Someone else's note is `NOT_FOUND`, like one that doesn't exist |
 | DELETE | `/notes/{id}` | the note's owner | delete it for good (204). Someone else's note is `NOT_FOUND` |
 
+## Rooms
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/rooms/`, `/rooms/{id}` | logged in | every room by building, floor and code, inactive ones included, or one |
+| POST | `/rooms/` | Staff | register a room with `code`, `building`, `floor` (-5 to 50), `type` (`CLASSROOM`, `LAB`, `AUDITORIUM`), `capacity` (1 to 1000) and its place on the floor's 100 × 100 grid: `x`, `y` (0 to 99), `width`, `depth` (1 to 100) (201). `ROOM_ALREADY_EXISTS` for a taken code whatever its case, `ROOM_OUTSIDE_FLOOR` past the edge of the grid, `ROOM_OVERLAP` with the code of the active room it overlaps |
+| PUT | `/rooms/{id}` | Staff | edit every field of a room with the same rules, its own old place doesn't count. An inactive room isn't checked for overlaps until it's activated |
+| PUT | `/rooms/{id}/deactivate` | Staff | mark it inactive: new schedules and sessions leave it out, what already uses it keeps it, and its place is free |
+| PUT | `/rooms/{id}/activate` | Staff | make it active again, `ROOM_OVERLAP` if another room took its place meanwhile |
+
 ## Coming next
 
 The other use cases (tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

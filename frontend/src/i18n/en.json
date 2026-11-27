@@ -671,7 +671,10 @@
     "CANNOT_REMOVE_YOURSELF": "You can't remove yourself. Leave the group chat instead.",
     "NOTE_TOO_LONG": "A note can have up to {{max}} characters.",
     "INVALID_NOTE_POSITION": "The note has to stay on the board.",
-    "NOTE_LIMIT_REACHED": "You can have up to {{max}} notes. Delete one to add another."
+    "NOTE_LIMIT_REACHED": "You can have up to {{max}} notes. Delete one to add another.",
+    "ROOM_ALREADY_EXISTS": "A room with this code already exists.",
+    "ROOM_OVERLAP": "This position overlaps room {{code}} on the same floor.",
+    "ROOM_OUTSIDE_FLOOR": "The room has to fit inside the floor's {{size}} × {{size}} grid."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

@@ -671,7 +671,10 @@
     "CANNOT_REMOVE_YOURSELF": "Não se pode remover a si próprio. Saia da conversa de grupo.",
     "NOTE_TOO_LONG": "Uma nota pode ter até {{max}} caracteres.",
     "INVALID_NOTE_POSITION": "A nota tem de ficar dentro do quadro.",
-    "NOTE_LIMIT_REACHED": "Pode ter até {{max}} notas. Apague uma para adicionar outra."
+    "NOTE_LIMIT_REACHED": "Pode ter até {{max}} notas. Apague uma para adicionar outra.",
+    "ROOM_ALREADY_EXISTS": "Já existe uma sala com este código.",
+    "ROOM_OVERLAP": "Esta posição sobrepõe-se à sala {{code}} no mesmo piso.",
+    "ROOM_OUTSIDE_FLOOR": "A sala tem de caber na grelha de {{size}} × {{size}} do piso."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",
