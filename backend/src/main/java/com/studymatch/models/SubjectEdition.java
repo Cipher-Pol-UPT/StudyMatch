@@ -2,7 +2,9 @@ package com.studymatch.models;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -73,6 +75,15 @@ public class SubjectEdition {
     if (teachers.isEmpty()) {
       throw new StudyMatchException(ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED);
     }
+    // a removed teacher's sections need another teacher first, sorted so the message is always the same
+    String stillTaught = classSections.stream()
+        .filter(cs -> cs.getTeacher() != null && !teachers.contains(cs.getTeacher()))
+        .map(ClassSection::getCode)
+        .sorted()
+        .collect(Collectors.joining(", "));
+    if (!stillTaught.isEmpty()) {
+      throw new StudyMatchException(ErrorCode.TEACHER_STILL_TEACHES_SECTION, Map.of("classSections", stillTaught));
+    }
     this.teachers.clear();
     this.teachers.addAll(teachers);
   }
@@ -93,6 +104,15 @@ public class SubjectEdition {
         .filter(cs -> cs.getCode().equals(code))
         .findFirst()
         .orElseThrow(() -> new StudyMatchException(ErrorCode.CLASS_SECTION_NOT_IN_SUBJECT_EDITION));
+  }
+
+  public ClassSection assignTeacher(String code, Teacher teacher) {
+    ClassSection classSection = getClassSection(code);
+    if (!teachers.contains(teacher)) {
+      throw new StudyMatchException(ErrorCode.TEACHER_NOT_IN_SUBJECT_EDITION);
+    }
+    classSection.setTeacher(teacher);
+    return classSection;
   }
 
 }

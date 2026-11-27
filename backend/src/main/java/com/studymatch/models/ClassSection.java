@@ -28,6 +28,11 @@ public class ClassSection {
   @NotBlank
   private String code;
 
+  // null until Staff picks one, and a section without one can't be scheduled
+  @ManyToOne
+  @JoinColumn(name = "teacher_number")
+  private Teacher teacher;
+
   protected ClassSection() {
   }
 
@@ -46,6 +51,15 @@ public class ClassSection {
 
   public String getCode() {
     return code;
+  }
+
+  public Teacher getTeacher() {
+    return teacher;
+  }
+
+  // only through the edition, which checks the teacher is one of its own
+  void setTeacher(Teacher teacher) {
+    this.teacher = teacher;
   }
 
 }
