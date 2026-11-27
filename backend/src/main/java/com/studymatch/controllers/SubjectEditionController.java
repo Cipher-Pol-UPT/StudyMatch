@@ -42,6 +42,7 @@ import com.studymatch.dtos.GradeResponseDTO;
 import com.studymatch.dtos.GradeSheetDTO;
 import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.GroupGenerationDTO;
+import com.studymatch.dtos.GroupImportDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.enums.ExportFormat;
 import com.studymatch.enums.GroupStatus;
@@ -57,6 +58,7 @@ import com.studymatch.services.StudentService;
 import com.studymatch.services.SubjectEditionService;
 import com.studymatch.services.UserService;
 import com.studymatch.utils.EnrolmentCsvReader;
+import com.studymatch.utils.GroupCsvReader;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -73,18 +75,21 @@ public class SubjectEditionController {
   private final AssignmentService assignmentService;
   private final StudentService studentService;
   private final EnrolmentCsvReader enrolmentCsvReader;
+  private final GroupCsvReader groupCsvReader;
   private final GradeService gradeService;
   private final GroupService groupService;
 
   public SubjectEditionController(SubjectEditionService subjectEditionService, EnrolmentService enrolmentService,
       UserService userService, AssignmentService assignmentService, StudentService studentService,
-      EnrolmentCsvReader enrolmentCsvReader, GradeService gradeService, GroupService groupService) {
+      EnrolmentCsvReader enrolmentCsvReader, GroupCsvReader groupCsvReader, GradeService gradeService,
+      GroupService groupService) {
     this.subjectEditionService = subjectEditionService;
     this.enrolmentService = enrolmentService;
     this.userService = userService;
     this.assignmentService = assignmentService;
     this.studentService = studentService;
     this.enrolmentCsvReader = enrolmentCsvReader;
+    this.groupCsvReader = groupCsvReader;
     this.gradeService = gradeService;
     this.groupService = groupService;
   }
@@ -238,6 +243,40 @@ public class SubjectEditionController {
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"groups." + (csv ? "csv" : "pdf") + "\"")
         .contentType(csv ? new MediaType("text", "csv", StandardCharsets.UTF_8) : MediaType.APPLICATION_PDF)
         .body(file);
+  }
+
+  @GetMapping("groups/import/template")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Empty groups.csv with the export's columns, only groupNumber and studentNumber are read")
+  public ResponseEntity<String> groupsTemplate() {
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"groups.csv\"")
+        .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+        .body(groupCsvReader.template());
+  }
+
+  // import groups: previews them as drafts, confirming and cancelling are generate's publish and discard
+  @PostMapping(value = "{id}/assignments/{assignmentId}/groups/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Import the groups of a CSV as drafts and preview them. Students not enrolled or blocked are "
+      + "skipped, the enrolled ones the file leaves out form leftover groups. An invalid row blocks the whole file. "
+      + "With published groups already, replacePublished=true confirms they'll be replaced once these are confirmed")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, ErrorCode.GROUPS_ALREADY_PUBLISHED,
+      ErrorCode.GROUP_IMPORT_INVALID_ROWS, ErrorCode.GROUP_FILE_NOT_THIS_EDITION,
+      ErrorCode.NOT_ENOUGH_STUDENTS_FOR_GROUPS, ErrorCode.CSV_EMPTY, ErrorCode.CSV_MISSING_COLUMNS,
+      ErrorCode.CSV_TOO_MANY_ROWS, ErrorCode.CSV_WRONG_ENCODING, ErrorCode.CSV_INVALID, ErrorCode.FILE_TOO_LARGE })
+  public ResponseEntity<GroupImportDTO> importGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      @RequestPart("file") MultipartFile file, @RequestParam(defaultValue = "false") boolean replacePublished,
+      Authentication authentication) throws IOException {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    List<GroupCsvReader.Row> rows = groupCsvReader.read(file.getBytes());
+    Map<Long, Student> students = studentService.findByNumbers(rows.stream()
+        .map(GroupCsvReader.Row::studentNumber)
+        .filter(Objects::nonNull)
+        .toList());
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(groupService.importGroups(id, assignmentId, rows, students.keySet(), replacePublished));
   }
 
   // generate groups: regenerating is the same call, the new drafts replace the old ones

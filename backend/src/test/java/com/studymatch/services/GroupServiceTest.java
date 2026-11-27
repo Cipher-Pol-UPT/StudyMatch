@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,6 +33,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.studymatch.dtos.AssignmentGroupsDTO;
 import com.studymatch.dtos.EditGroupsRequestDTO;
 import com.studymatch.dtos.GroupDTO;
+import com.studymatch.dtos.GroupImportDTO;
 import com.studymatch.dtos.MyGroupDTO;
 import com.studymatch.enums.AssignmentType;
 import com.studymatch.enums.ExportFormat;
@@ -48,6 +50,7 @@ import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.GroupRepository;
+import com.studymatch.utils.GroupCsvReader;
 import com.studymatch.utils.GroupCsvWriter;
 import com.studymatch.utils.GroupPdfWriter;
 
@@ -690,6 +693,243 @@ class GroupServiceTest {
     // Act + Assert
     assertEquals(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK,
         editFails(GroupStatus.DRAFT, List.of(edited(null, ana))).getCode());
+  }
+
+  // import groups: an assignment with that size range and who is enrolled
+  private Assignment importing(GroupingRule rule, Student... enrolled) {
+    Assignment assignment = new Assignment(edition, "Project", AssignmentType.PROJECT, LocalDate.of(2026, 1, 10),
+        new BigDecimal("0.20"), rule);
+    when(assignmentService.getLockedAssignment(1L, 2L)).thenReturn(assignment);
+    when(enrolmentService.listEnrolments(1L))
+        .thenReturn(List.of(enrolled).stream().map(ModelTestData::enrolment).toList());
+    when(groupRepository.save(any(Group.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    return assignment;
+  }
+
+  // pairs of group and student number, the rows start at 2 like a spreadsheet's under its header
+  private static List<GroupCsvReader.Row> rows(Object... values) {
+    List<GroupCsvReader.Row> rows = new ArrayList<>();
+    for (int i = 0; i < values.length; i += 2) {
+      rows.add(new GroupCsvReader.Row(rows.size() + 2, (Integer) values[i], (Long) values[i + 1]));
+    }
+    return rows;
+  }
+
+  // every number in the file exists, unless the test says otherwise
+  private GroupImportDTO importAll(List<GroupCsvReader.Row> rows) {
+    Set<Long> known = rows.stream().map(GroupCsvReader.Row::studentNumber).collect(Collectors.toSet());
+    return groupService.importGroups(1L, 2L, rows, known, false);
+  }
+
+  private static List<Set<Long>> members(GroupImportDTO preview) {
+    return preview.groups().stream()
+        .map(group -> group.group().members().stream().map(GroupDTO.Member::number).collect(Collectors.toSet()))
+        .toList();
+  }
+
+  private static List<GroupImportDTO.Origin> origins(GroupImportDTO preview) {
+    return preview.groups().stream().map(GroupImportDTO.ImportedGroup::origin).toList();
+  }
+
+  @Test
+  @DisplayName("Import groups: the file's groups keep their order numbered from 1, the students left out form a "
+      + "leftover group after them")
+  void importKeepsGroupsAndGroupsLeftovers() {
+    // Arrange
+    Student bia = student("Bia", 1003L);
+    Student caio = student("Caio", 1004L);
+    Student dina = student("Dina", 1005L);
+    Student edu = student("Edu", 1006L);
+    Assignment assignment = importing(new GroupingRule(2, 2, 3, false), ana, rui, bia, caio, dina, edu);
+
+    // Act - groups 7 and 3 in the file, Dina and Edu aren't in it
+    GroupImportDTO preview = importAll(rows(7, 1003L, 3, ANA, 7, 1004L, 3, 1002L));
+
+    // Assert
+    assertEquals(List.of(1, 2, 3), preview.groups().stream().map(group -> group.group().number()).toList());
+    assertEquals(List.of(Set.of(ANA, 1002L), Set.of(1003L, 1004L), Set.of(1005L, 1006L)), members(preview));
+    assertEquals(List.of(GroupImportDTO.Origin.IMPORTED, GroupImportDTO.Origin.IMPORTED,
+        GroupImportDTO.Origin.LEFTOVER), origins(preview));
+    assertTrue(preview.groups().stream().allMatch(group -> group.group().status() == GroupStatus.DRAFT));
+    assertEquals(4, preview.imported());
+    assertEquals(2, preview.leftover());
+    assertTrue(preview.skipped().isEmpty());
+    assertTrue(preview.placed().isEmpty());
+    verify(groupRepository).deleteByAssignmentAndStatus(assignment, GroupStatus.DRAFT);
+    verify(groupRepository, never()).deleteByAssignmentAndStatus(assignment, GroupStatus.PUBLISHED);
+  }
+
+  @Test
+  @DisplayName("Import groups: students not enrolled or blocked are skipped with their row and reason, and a "
+      + "blocked student isn't put in a leftover group either (GR5)")
+  void importSkipsNotEnrolledAndBlocked() {
+    // Arrange
+    Student bia = student("Bia", 1003L);
+    bia.block("test");
+    importing(new GroupingRule(2, 2, 3, false), ana, rui, bia);
+
+    // Act
+    GroupImportDTO preview = importAll(rows(1, ANA, 1, 9999L, 1, 1002L, 2, 1003L));
+
+    // Assert
+    assertEquals(List.of(new GroupImportDTO.Problem(3, 9999L, GroupImportDTO.Reason.NOT_ENROLLED),
+        new GroupImportDTO.Problem(5, 1003L, GroupImportDTO.Reason.BLOCKED)), preview.skipped());
+    assertEquals(List.of(Set.of(ANA, 1002L)), members(preview));
+    assertEquals(0, preview.leftover());
+  }
+
+  @Test
+  @DisplayName("Import groups: a group left with one student is dissolved and the student joins the leftover ones")
+  void importDissolvesGroupOfOne() {
+    // Arrange - Caio's partner isn't enrolled, Bia isn't in the file
+    Student bia = student("Bia", 1003L);
+    Student caio = student("Caio", 1004L);
+    importing(new GroupingRule(2, 2, 3, false), ana, rui, bia, caio);
+
+    // Act
+    GroupImportDTO preview = importAll(rows(1, ANA, 1, 1002L, 2, 1004L, 2, 9999L));
+
+    // Assert
+    assertEquals(List.of(Set.of(ANA, 1002L), Set.of(1003L, 1004L)), members(preview));
+    assertEquals(List.of(GroupImportDTO.Origin.IMPORTED, GroupImportDTO.Origin.LEFTOVER), origins(preview));
+    assertEquals(2, preview.imported());
+    assertEquals(2, preview.leftover());
+  }
+
+  @Test
+  @DisplayName("Import groups: too few leftover students for a group go into the smallest imported group, "
+      + "and are marked as placed")
+  void importPlacesTooFewLeftovers() {
+    // Arrange - groups of 3 to 4, one group of 4 and one of 3 in the file, Gil left out
+    Student bia = student("Bia", 1003L);
+    Student caio = student("Caio", 1004L);
+    Student dina = student("Dina", 1005L);
+    Student edu = student("Edu", 1006L);
+    Student gil = student("Gil", 1007L);
+    Student ivo = student("Ivo", 1008L);
+    importing(new GroupingRule(3, 3, 4, false), ana, rui, bia, caio, dina, edu, gil, ivo);
+
+    // Act
+    GroupImportDTO preview = importAll(rows(1, ANA, 1, 1002L, 1, 1003L, 1, 1008L, 2, 1004L, 2, 1005L, 2, 1006L));
+
+    // Assert
+    assertEquals(List.of(Set.of(ANA, 1002L, 1003L, 1008L), Set.of(1004L, 1005L, 1006L, 1007L)), members(preview));
+    assertEquals(List.of(1007L), preview.placed());
+    assertEquals(1, preview.leftover());
+    assertEquals(List.of(GroupImportDTO.Origin.IMPORTED, GroupImportDTO.Origin.IMPORTED), origins(preview));
+  }
+
+  @Test
+  @DisplayName("Import groups: leftovers that don't split form as many groups as the sizes allow, the rest is placed")
+  void importSplitsWhatItCan() {
+    // Arrange - groups of exactly 2, three students left out
+    Student bia = student("Bia", 1003L);
+    Student caio = student("Caio", 1004L);
+    Student dina = student("Dina", 1005L);
+    importing(new GroupingRule(2, 2, 2, false), ana, rui, bia, caio, dina);
+
+    // Act
+    GroupImportDTO preview = importAll(rows(1, ANA, 1, 1002L));
+
+    // Assert - Bia and Caio form a group, Dina goes into the imported one
+    assertEquals(List.of(Set.of(ANA, 1002L, 1005L), Set.of(1003L, 1004L)), members(preview));
+    assertEquals(List.of(1005L), preview.placed());
+    assertEquals(3, preview.leftover());
+  }
+
+  @Test
+  @DisplayName("Import groups: every invalid row is listed with its line and reason, and nothing is saved")
+  void importInvalidRows() {
+    // Arrange - 1003 doesn't exist, 1002 is in two groups, the third row has no group number
+    importing(new GroupingRule(2, 2, 3, false), ana, rui);
+    List<GroupCsvReader.Row> rows = rows(1, ANA, 1, 1002L, null, ANA, 2, 1003L, 2, 1002L);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> groupService.importGroups(1L, 2L, rows, Set.of(ANA, 1002L), false));
+
+    // Assert
+    assertEquals(ErrorCode.GROUP_IMPORT_INVALID_ROWS, e.getCode());
+    assertEquals(Map.of("rows", List.of(new GroupImportDTO.Problem(4, ANA, GroupImportDTO.Reason.INVALID),
+        new GroupImportDTO.Problem(5, 1003L, GroupImportDTO.Reason.UNKNOWN_STUDENT),
+        new GroupImportDTO.Problem(6, 1002L, GroupImportDTO.Reason.IN_TWO_GROUPS))), e.getParams());
+    verify(groupRepository, never()).save(any());
+    verify(groupRepository, never()).deleteByAssignmentAndStatus(any(), any());
+  }
+
+  @Test
+  @DisplayName("Import groups: the same student twice in the same group counts once")
+  void importSameGroupTwice() {
+    // Arrange
+    importing(new GroupingRule(2, 2, 3, false), ana, rui);
+
+    // Act
+    GroupImportDTO preview = importAll(rows(1, ANA, 1, 1002L, 1, ANA));
+
+    // Assert
+    assertEquals(List.of(Set.of(ANA, 1002L)), members(preview));
+    assertEquals(2, preview.imported());
+  }
+
+  @Test
+  @DisplayName("Import groups: a file with nobody enrolled here is GROUP_FILE_NOT_THIS_EDITION")
+  void importNobodyEnrolled() {
+    // Arrange
+    importing(new GroupingRule(2, 2, 3, false), ana, rui);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> importAll(rows(1, 9998L, 1, 9999L)));
+
+    // Assert
+    assertEquals(ErrorCode.GROUP_FILE_NOT_THIS_EDITION, e.getCode());
+    verify(groupRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("Import groups: with published groups it's GROUPS_ALREADY_PUBLISHED unless replacing is confirmed, "
+      + "and even then the published ones stay until publishing")
+  void importOverPublished() {
+    // Arrange
+    Assignment assignment = importing(new GroupingRule(2, 2, 3, false), ana, rui);
+    when(groupRepository.existsByAssignmentAndStatus(assignment, GroupStatus.PUBLISHED)).thenReturn(true);
+    List<GroupCsvReader.Row> rows = rows(1, ANA, 1, 1002L);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> importAll(rows));
+    GroupImportDTO preview = groupService.importGroups(1L, 2L, rows, Set.of(ANA, 1002L), true);
+
+    // Assert
+    assertEquals(ErrorCode.GROUPS_ALREADY_PUBLISHED, e.getCode());
+    assertEquals(1, preview.groups().size());
+    verify(groupRepository, never()).deleteByAssignmentAndStatus(assignment, GroupStatus.PUBLISHED);
+  }
+
+  @Test
+  @DisplayName("Import groups: with no group from the file and too few students left, it's "
+      + "NOT_ENOUGH_STUDENTS_FOR_GROUPS")
+  void importNothingToGroup() {
+    // Arrange - groups of 3 to 4, both groups in the file are of one
+    importing(new GroupingRule(3, 3, 4, false), ana, rui);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> importAll(rows(1, ANA, 2, 1002L)));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_ENOUGH_STUDENTS_FOR_GROUPS, e.getCode());
+    verify(groupRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("Import groups: an assignment without a grouping rule is ASSIGNMENT_NOT_GROUP_WORK")
+  void importNotGroupWork() {
+    // Arrange
+    importing(null, ana, rui);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> importAll(rows(1, ANA, 1, 1002L)));
+
+    // Assert
+    assertEquals(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, e.getCode());
   }
 
 }

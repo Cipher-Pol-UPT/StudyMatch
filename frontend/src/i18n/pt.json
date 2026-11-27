@@ -613,6 +613,8 @@
     "STUDENT_IN_TWO_GROUPS": "O estudante {{number}} está em mais do que um grupo.",
     "BLOCKED_STUDENT_MOVED": "O estudante {{number}} está bloqueado e só pode ficar no grupo em que já estava.",
     "NO_GROUPS_TO_EXPORT": "Esta avaliação ainda não tem grupos publicados para exportar.",
+    "GROUP_IMPORT_INVALID_ROWS": "Algumas linhas do ficheiro têm de ser corrigidas, por isso nada foi importado.",
+    "GROUP_FILE_NOT_THIS_EDITION": "Nenhum estudante deste ficheiro está inscrito nesta unidade curricular, por isso não parece ser para ela.",
     "ASSIGNMENT_ALREADY_EXISTS": "Esta unidade curricular já tem uma avaliação com este nome.",
     "ASSIGNMENT_WEIGHT_EXCEEDED": "Os pesos das avaliações ultrapassariam os 100%. Peso disponível: {{remaining}}%.",
     "STUDENT_NOT_ENROLLED": "O estudante {{number}} não está inscrito nesta unidade curricular.",

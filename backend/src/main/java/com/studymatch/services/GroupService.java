@@ -34,6 +34,7 @@ import com.studymatch.dtos.AssignmentGroupsDTO;
 import com.studymatch.dtos.EditGroupsRequestDTO;
 import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.GroupGenerationDTO;
+import com.studymatch.dtos.GroupImportDTO;
 import com.studymatch.dtos.MyGroupDTO;
 import com.studymatch.enums.ExportFormat;
 import com.studymatch.enums.GroupStatus;
@@ -42,6 +43,7 @@ import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.matching.Candidate;
 import com.studymatch.matching.GroupGenerator;
+import com.studymatch.matching.MatchingProblem;
 import com.studymatch.matching.NoValidSplitException;
 import com.studymatch.matching.UnmetSeparationsException;
 import com.studymatch.models.Absence;
@@ -57,6 +59,7 @@ import com.studymatch.models.Separation;
 import com.studymatch.models.Student;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.GroupRepository;
+import com.studymatch.utils.GroupCsvReader;
 import com.studymatch.utils.GroupCsvWriter;
 import com.studymatch.utils.GroupPdfWriter;
 
@@ -125,6 +128,118 @@ public class GroupService {
       previews.add(toDTO(groupRepository.save(group), classOf));
     }
     return previews;
+  }
+
+  // import groups: the file's groups become drafts, confirming and cancelling are generate's publish and discard.
+  // the matching algorithm doesn't run, the students the file leaves out are grouped among themselves
+  @Transactional
+  public GroupImportDTO importGroups(Long subjectEditionId, Long assignmentId, List<GroupCsvReader.Row> rows,
+      Set<Long> knownStudents, boolean replacePublished) {
+    Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
+    GroupingRule rule = assignment.getGroupingRule();
+    if (rule == null) {
+      throw new StudyMatchException(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK);
+    }
+    if (!replacePublished && groupRepository.existsByAssignmentAndStatus(assignment, GroupStatus.PUBLISHED)) {
+      throw new StudyMatchException(ErrorCode.GROUPS_ALREADY_PUBLISHED);
+    }
+    checkImportRows(rows, knownStudents);
+
+    List<Enrolment> enrolments = enrolmentService.listEnrolments(subjectEditionId);
+    Map<Long, Student> enrolled = enrolments.stream().map(Enrolment::getStudent)
+        .collect(Collectors.toMap(Student::getNumber, Function.identity()));
+    if (rows.stream().noneMatch(row -> enrolled.containsKey(row.studentNumber()))) {
+      throw new StudyMatchException(ErrorCode.GROUP_FILE_NOT_THIS_EDITION);
+    }
+    List<GroupImportDTO.Problem> skipped = new ArrayList<>();
+    Map<Integer, List<Student>> fromFile = new TreeMap<>();
+    Set<Long> seen = new HashSet<>();
+    for (GroupCsvReader.Row row : rows) {
+      Student student = enrolled.get(row.studentNumber());
+      if (student == null) {
+        skipped.add(new GroupImportDTO.Problem(row.row(), row.studentNumber(), GroupImportDTO.Reason.NOT_ENROLLED));
+      } else if (student.isBlocked()) {
+        // blocked accounts aren't placed in new groups (GR5)
+        skipped.add(new GroupImportDTO.Problem(row.row(), row.studentNumber(), GroupImportDTO.Reason.BLOCKED));
+      } else if (seen.add(student.getNumber())) { // twice in the same group counts once
+        fromFile.computeIfAbsent(row.groupNumber(), number -> new ArrayList<>()).add(student);
+      }
+    }
+
+    // a group of one isn't a group, its student joins the leftover ones
+    List<List<Student>> imported = fromFile.values().stream().filter(members -> members.size() > 1).toList();
+    Set<Long> grouped = imported.stream().flatMap(List::stream).map(Student::getNumber).collect(Collectors.toSet());
+    List<Student> leftover = enrolled.values().stream()
+        .filter(student -> !student.isBlocked() && !grouped.contains(student.getNumber()))
+        .sorted(Comparator.comparing(Student::getNumber))
+        .toList();
+
+    // as many leftover students as the sizes allow form groups, the rest go where members are missing
+    int formed = leftover.size();
+    while (formed > 0
+        && MatchingProblem.groupCount(formed, rule.getMinSize(), rule.getOptimalSize(), rule.getMaxSize()) < 1) {
+      formed--;
+    }
+    List<List<Student>> leftoverGroups = new ArrayList<>();
+    int start = 0;
+    for (int size : MatchingProblem.groupSizes(formed, rule.getMinSize(), rule.getOptimalSize(), rule.getMaxSize())) {
+      leftoverGroups.add(new ArrayList<>(leftover.subList(start, start + size)));
+      start += size;
+    }
+    List<Student> placed = leftover.subList(formed, leftover.size());
+    List<List<Student>> needMembers = imported.isEmpty() ? leftoverGroups : imported;
+    if (!placed.isEmpty() && needMembers.isEmpty()) {
+      throw new StudyMatchException(ErrorCode.NOT_ENOUGH_STUDENTS_FOR_GROUPS);
+    }
+    // always the smallest group, the first one on a tie, like generate fills them
+    for (Student student : placed) {
+      needMembers.stream().min(Comparator.comparingInt(List::size)).orElseThrow().add(student);
+    }
+
+    groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.DRAFT);
+    // the old drafts have to be gone before the new ones take their numbers
+    groupRepository.flush();
+    Map<Long, String> classOf = classSections(enrolments);
+    List<GroupImportDTO.ImportedGroup> groups = new ArrayList<>();
+    for (List<Student> members : imported) {
+      groups.add(new GroupImportDTO.ImportedGroup(GroupImportDTO.Origin.IMPORTED,
+          toDTO(saveDraft(assignment, groups.size() + 1, members), classOf)));
+    }
+    for (List<Student> members : leftoverGroups) {
+      groups.add(new GroupImportDTO.ImportedGroup(GroupImportDTO.Origin.LEFTOVER,
+          toDTO(saveDraft(assignment, groups.size() + 1, members), classOf)));
+    }
+    return new GroupImportDTO(grouped.size(), skipped, leftover.size(),
+        placed.stream().map(Student::getNumber).toList(), groups);
+  }
+
+  // every problem at once with its row, so the teacher fixes the file in one go
+  private static void checkImportRows(List<GroupCsvReader.Row> rows, Set<Long> knownStudents) {
+    List<GroupImportDTO.Problem> problems = new ArrayList<>();
+    Map<Long, Integer> groupOf = new HashMap<>();
+    for (GroupCsvReader.Row row : rows) {
+      if (row.groupNumber() == null || row.studentNumber() == null) {
+        problems.add(new GroupImportDTO.Problem(row.row(), row.studentNumber(), GroupImportDTO.Reason.INVALID));
+      } else if (!knownStudents.contains(row.studentNumber())) {
+        problems.add(new GroupImportDTO.Problem(row.row(), row.studentNumber(),
+            GroupImportDTO.Reason.UNKNOWN_STUDENT));
+      } else {
+        Integer group = groupOf.putIfAbsent(row.studentNumber(), row.groupNumber());
+        if (group != null && !group.equals(row.groupNumber())) {
+          problems.add(new GroupImportDTO.Problem(row.row(), row.studentNumber(),
+              GroupImportDTO.Reason.IN_TWO_GROUPS));
+        }
+      }
+    }
+    if (!problems.isEmpty()) {
+      throw new StudyMatchException(ErrorCode.GROUP_IMPORT_INVALID_ROWS, Map.of("rows", problems));
+    }
+  }
+
+  private Group saveDraft(Assignment assignment, int number, List<Student> members) {
+    Group group = new Group(assignment, number);
+    members.forEach(group::addMember);
+    return groupRepository.save(group);
   }
 
   // view groups: the drafts and the published groups, no groups yet is two empty lists
