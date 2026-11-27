@@ -11,6 +11,8 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,6 +25,8 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import com.studymatch.enums.Sticker;
 
 // deleting a message looks for its replies, the foreign key alone has no index (#218).
 // and a chat's pages and search go through its messages by id, without reading the other chats' (#220)
@@ -45,7 +49,7 @@ public class Message {
   @NotNull
   private User author;
 
-  // empty when it only has attachments (#210) or is a GIF (#212), the service makes sure it has something
+  // empty when it only has attachments (#210), is a GIF (#212) or a sticker (#214), the service makes sure it has something
   @NotNull
   @Size(max = MAX_TEXT_LENGTH)
   @Column(length = MAX_TEXT_LENGTH)
@@ -55,6 +59,11 @@ public class Message {
   @Size(max = MAX_GIF_ID_LENGTH)
   @Column(length = MAX_GIF_ID_LENGTH, updatable = false)
   private String gifId;
+
+  // one of our stickers, null when it isn't one. stored by name so the order of the enum can change (#214)
+  @Enumerated(EnumType.STRING)
+  @Column(length = Sticker.MAX_NAME_LENGTH, updatable = false)
+  private Sticker sticker;
 
   @NotNull
   private LocalDateTime sentAt;
@@ -106,6 +115,12 @@ public class Message {
     this.gifId = gifId;
   }
 
+  // a sticker is a message on its own too, without text (GR10, #214)
+  public Message(Chat chat, User author, Message replyTo, Sticker sticker) {
+    this(chat, author, "", replyTo);
+    this.sticker = sticker;
+  }
+
   public Long getId() {
     return id;
   }
@@ -128,6 +143,14 @@ public class Message {
 
   public boolean isGif() {
     return gifId != null;
+  }
+
+  public Sticker getSticker() {
+    return sticker;
+  }
+
+  public boolean isSticker() {
+    return sticker != null;
   }
 
   public LocalDateTime getSentAt() {
