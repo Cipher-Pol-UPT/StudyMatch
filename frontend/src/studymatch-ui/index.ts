@@ -127,3 +127,6 @@ type StudyRoomDetailsProps,
 type StudyRoomDraft
 } from './blocks/studyroom/StudyRoomBoard';
 export { MeetButton,StudyRoomCard,StudyRoomStatusPill,type MeetButtonProps,type StudyRoomCardProps } from './blocks/studyroom/StudyRoomCard';
+export { ChatFile,ChatFilePaper,ChatFiles,ChatImage,ChatUpload,ChatUploads,type ChatFileProps,type ChatImageProps,type ChatUploadProps } from './blocks/chat/ChatFiles';
+export { chatFileKind,chatFileTag,type ChatFileKind } from './blocks/chat/fileKinds';
+export type { ChatDropProps } from './blocks/chat/useChatDrop';
