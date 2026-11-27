@@ -465,6 +465,65 @@ class GroupServiceTest {
   }
 
   @Test
+  @DisplayName("Edit groups: a blocked student can stay in the group they were in (GR5)")
+  void editKeepsBlockedInGroup() {
+    // Arrange
+    Student bia = student("Bia", 1003L);
+    rui.block("test");
+    List<Group> current = editing(GroupStatus.DRAFT, List.of(List.of(ana, rui), List.of(bia)), ana, rui, bia);
+
+    // Act
+    groupService.editGroups(1L, 2L, GroupStatus.DRAFT, List.of(edited(11L, rui), edited(12L, ana, bia)));
+
+    // Assert
+    assertEquals(Set.of(rui), current.get(0).getMembers());
+  }
+
+  @Test
+  @DisplayName("Edit groups: a blocked student moved to another group is BLOCKED_STUDENT_MOVED (GR5)")
+  void editMovesBlockedStudent() {
+    // Arrange
+    rui.block("test");
+    editing(GroupStatus.DRAFT, List.of(List.of(ana, rui), List.of()), ana, rui);
+
+    // Act
+    StudyMatchException exception = editFails(GroupStatus.DRAFT, List.of(edited(11L, ana), edited(12L, rui)));
+
+    // Assert
+    assertEquals(ErrorCode.BLOCKED_STUDENT_MOVED, exception.getCode());
+    assertEquals(1002L, exception.getParams().get("number"));
+    verify(groupRepository, never()).save(any(Group.class));
+  }
+
+  @Test
+  @DisplayName("Edit groups: a blocked student put in a new group is BLOCKED_STUDENT_MOVED (GR5)")
+  void editPutsBlockedInNewGroup() {
+    // Arrange
+    rui.block("test");
+    editing(GroupStatus.DRAFT, List.of(List.of(ana, rui)), ana, rui);
+
+    // Act
+    StudyMatchException exception = editFails(GroupStatus.DRAFT, List.of(edited(11L, ana), edited(null, rui)));
+
+    // Assert
+    assertEquals(ErrorCode.BLOCKED_STUDENT_MOVED, exception.getCode());
+  }
+
+  @Test
+  @DisplayName("Edit groups: a blocked student who had no group can't be added to one (GR5)")
+  void editAddsBlockedWithoutGroup() {
+    // Arrange
+    rui.block("test");
+    editing(GroupStatus.DRAFT, List.of(List.of(ana)), ana, rui);
+
+    // Act
+    StudyMatchException exception = editFails(GroupStatus.DRAFT, List.of(edited(11L, ana, rui)));
+
+    // Assert
+    assertEquals(ErrorCode.BLOCKED_STUDENT_MOVED, exception.getCode());
+  }
+
+  @Test
   @DisplayName("Edit groups: a student in two groups is STUDENT_IN_TWO_GROUPS")
   void editStudentTwice() {
     // Arrange

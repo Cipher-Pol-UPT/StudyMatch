@@ -253,6 +253,23 @@ class EditGroupsIntegrationTest {
   }
 
   @Test
+  @DisplayName("Adding a blocked student to a group is 400 BLOCKED_STUDENT_MOVED with their number (GR5)")
+  void blockedStudentAdded() throws Exception {
+    // Arrange
+    List<Group> drafts = saveGroups(GroupStatus.DRAFT, new int[] { 0, 1, 2 }, new int[] { 3, 4, 5 });
+
+    // Act
+    edit("draft", group(drafts.get(0).getId(), student(0), student(1), student(2), blocked),
+        group(drafts.get(1).getId(), student(3), student(4), student(5)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("BLOCKED_STUDENT_MOVED"))
+        .andExpect(jsonPath("$.params.number").value(blocked.getNumber()));
+
+    // Assert
+    assertEquals(3, members(drafts.get(0)).size());
+  }
+
+  @Test
   @DisplayName("An empty group is 400 VALIDATION_FAILED")
   void emptyGroup() throws Exception {
     // Arrange
