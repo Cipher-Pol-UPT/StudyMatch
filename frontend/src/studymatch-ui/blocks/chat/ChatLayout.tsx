@@ -1,8 +1,9 @@
-import { ArrowDown, ArrowUp, Camera, Check, ChevronLeft, CircleAlert, CornerUpLeft, EyeOff, Pencil, Reply, SmilePlus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Camera, Paperclip, Check, ChevronLeft, CircleAlert, CornerUpLeft, EyeOff, Pencil, Reply, SmilePlus, Trash2, X } from 'lucide-react';
 import { useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, type ElementType, type MouseEvent, type PointerEvent, type ReactNode, type Ref, type UIEventHandler } from 'react';
 import { Avatar } from '../../components/avatar/Avatar';
 import { Button, IconButton } from '../../components/button/Button';
 import { Spinner } from '../../components/progress/Progress';
+import { useChatDrop, type ChatDropProps } from './useChatDrop';
 import './chat.css';
 
 export interface ChatLayoutProps {
@@ -49,12 +50,16 @@ export interface ChatThreadProps {
   overlay?: ReactNode;
   // a panel on the right of the messages, like the search results; it stops above the message box
   side?: ReactNode;
+  // files can be dropped anywhere on it, to send them (#211)
+  drop?: ChatDropProps;
   children?: ReactNode;
 }
 
-export function ChatThread({ label, head, composer, scrollRef, onScroll, overlay, side, children }: ChatThreadProps) {
+export function ChatThread({ label, head, composer, scrollRef, onScroll, overlay, side, drop, children }: ChatThreadProps) {
+  const { handlers, zone } = useChatDrop(drop);
   return (
-    <section className={side ? 'sm-chat__thread sm-chat__thread--side' : 'sm-chat__thread'} aria-label={label}>
+    <section className={side ? 'sm-chat__thread sm-chat__thread--side' : 'sm-chat__thread'} aria-label={label} {...handlers}>
+      {zone}
       {head}
       <div className="sm-chat__scroll" ref={scrollRef} onScroll={onScroll}>{children}</div>
       {side}
@@ -380,6 +385,8 @@ export interface ChatMessageProps {
   editor?: ReactNode;
   // what it replies to (#219)
   quote?: ChatQuote;
+  // its files, a ChatFiles under the text; without text there's no bubble (#211)
+  files?: ReactNode;
   // Reply, on hover or focus, for any message the backend has
   replyLabel?: string;
   onReply?: () => void;
@@ -402,7 +409,7 @@ const OWN_CLICKS = 'button, a, textarea, input';
 
 export function ChatMessage({ id, text, time, dateTime, mine = false, first = true, author, avatarSrc, online, hidden, editedLabel, editedTitle, status, statusLabel, retryLabel, discardLabel, onRetry, onDiscard,
   toolsLabel, editLabel = '', deleteLabel = '', onEdit, onDelete, editor, quote, replyLabel = '', onReply,
-  reactions, onReaction, reactLabel = '', onAddReaction, onDoubleTap, picking }: ChatMessageProps) {
+  reactions, onReaction, reactLabel = '', onAddReaction, onDoubleTap, picking, files }: ChatMessageProps) {
   const cls = ['sm-msg', mine && 'sm-msg--mine', first && 'sm-msg--first', status === 'sending' && 'sm-msg--sending', picking && 'sm-msg--picking'].filter(Boolean).join(' ');
   // touch screens don't always send a double click, so two taps are counted here
   const lastTap = useRef(0);
@@ -447,7 +454,12 @@ export function ChatMessage({ id, text, time, dateTime, mine = false, first = tr
         {!hidden && quote && <ChatMessageQuote {...quote} />}
         {hidden ? null : editor ?? (
           <div className="sm-msg__line" ref={line} onPointerUp={tapped} onDoubleClick={doubleClicked}>
-            <div className="sm-msg__bubble">{text}{editedLabel && <span className="sm-msg__edited" title={editedTitle}>{editedLabel}</span>}</div>
+            {files ? (
+              <div className="sm-msg__stack">
+                {text && <div className="sm-msg__bubble">{text}{editedLabel && <span className="sm-msg__edited" title={editedTitle}>{editedLabel}</span>}</div>}
+                {files}
+              </div>
+            ) : <div className="sm-msg__bubble">{text}{editedLabel && <span className="sm-msg__edited" title={editedTitle}>{editedLabel}</span>}</div>}
             {(onAddReaction || onReply || onEdit || onDelete) && (
               <div className="sm-msg__tools" role="toolbar" aria-label={toolsLabel}>
                 {onAddReaction && <IconButton icon={SmilePlus} label={reactLabel} size="sm" variant="ghost" aria-haspopup="dialog" aria-expanded={picking ?? false}
@@ -597,19 +609,30 @@ export interface ChatComposerProps {
   above?: ReactNode;
   // Esc in the box, like stopping a reply; true when it did something
   onEscape?: () => boolean;
+  // files (#211): the paperclip, pasting them, and the cards of the ones added
+  onAddFiles?: (files: File[]) => void;
+  addFilesLabel?: string;
+  accept?: string;
+  files?: ReactNode;
+  // some are added and all can be sent, so the text can be empty
+  filesReady?: boolean;
+  // one of them can't be sent, so nothing can until it's taken off
+  filesInvalid?: boolean;
 }
 
 const COMPOSER_MAX_HEIGHT = 160;
 
 // the message box: grows with the text, Enter sends and Shift+Enter adds a line
-export function ChatComposer({ label, placeholder, value, onChange, onSend, sendLabel, max, error, onEditLast, inputRef, above, onEscape }: ChatComposerProps) {
+export function ChatComposer({ label, placeholder, value, onChange, onSend, sendLabel, max, error, onEditLast, inputRef, above, onEscape,
+  onAddFiles, addFilesLabel = '', accept, files, filesReady, filesInvalid }: ChatComposerProps) {
   const id = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   useImperativeHandle(inputRef, () => ({ focus: () => input.current?.focus() }), []);
   // counted without the spaces around it, like the backend does before its limit
   const length = value.trim().length;
   const over = length > max;
-  const canSend = length > 0 && !over;
+  const canSend = (length > 0 || !!filesReady) && !over && !filesInvalid;
+  const picker = useRef<HTMLInputElement>(null);
 
   useLayoutEffect(() => {
     const box = input.current;
@@ -626,11 +649,27 @@ export function ChatComposer({ label, placeholder, value, onChange, onSend, send
   return (
     <div className="sm-composer">
       {above}
+      {files}
       <div className="sm-composer__box">
+        {onAddFiles && (
+          <>
+            <IconButton icon={Paperclip} label={addFilesLabel} variant="ghost" className="sm-composer__attach" title={addFilesLabel}
+              onClick={() => picker.current?.click()} />
+            <input ref={picker} type="file" multiple hidden accept={accept} tabIndex={-1}
+              onChange={event => { onAddFiles(Array.from(event.target.files ?? [])); event.target.value = ''; }} />
+          </>
+        )}
         <label className="sm-visually-hidden" htmlFor={`${id}-input`}>{label}</label>
         <textarea ref={input} id={`${id}-input`} className="sm-composer__input" rows={1} placeholder={placeholder} value={value}
           aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined}
           onChange={event => onChange(event.target.value)}
+          // a pasted image (a screenshot) is added as a file, text pastes as usual
+          onPaste={event => {
+            const pasted = Array.from(event.clipboardData.files);
+            if (!onAddFiles || !pasted.length) return;
+            event.preventDefault();
+            onAddFiles(pasted);
+          }}
           onKeyDown={event => {
             if (event.key === 'Escape' && onEscape?.()) {
               event.preventDefault();

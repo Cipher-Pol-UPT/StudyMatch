@@ -9,6 +9,9 @@ export interface ThreadMessage {
   status?: 'sending' | 'failed';
   // the message it answers (#219)
   replyTo?: MessageQuoteData;
+  // its files while they go up, and how much of them has (#211)
+  files?: File[];
+  progress?: number;
 }
 
 // what's typed and sent in one conversation
@@ -19,6 +22,8 @@ export interface Conversation {
   error?: unknown;
   // the message the next one answers, shown above the message box
   replyTo?: MessageQuoteData;
+  // added to the next one, shown above the message box (#211)
+  files?: File[];
 }
 
 const EMPTY: Conversation = { draft: '', messages: [] };

@@ -1,6 +1,6 @@
 import type { ChatContactData, ChatSummaryData, DirectChatData, MessageData, MessagePageData, MessageSearchData, ReactionData } from '../types/chat';
 import type { PageData } from '../types/studentDirectory';
-import { request } from './client';
+import { request, uploadWithProgress } from './client';
 
 // who you can message, by name, institutional email or number, 20 a page
 export const searchChatContacts = (query: string) => request<PageData<ChatContactData>>('GET', `/users/chat-contacts?${query}`);
@@ -13,6 +13,19 @@ export const sendDirectMessage = (number: number, text: string, replyToId?: numb
 // send to a chat you're in by its id, a group chat (#227)
 export const sendMessage = (chatId: number, text: string, replyToId?: number) =>
   request<MessageData>('POST', `/chats/${chatId}/messages`, replyToId === undefined ? { text } : { text, replyToId });
+// a message with files (#211), to a chat by its id or to a DM by the person's number; the text can be empty
+export function sendFiles(to: { chatId: number } | { number: number }, text: string, files: File[], replyToId: number | undefined,
+  onProgress: (percent: number) => void) {
+  const form = new FormData();
+  files.forEach(file => form.append('files', file, file.name));
+  if (text) form.append('text', text);
+  if (replyToId !== undefined) form.append('replyToId', String(replyToId));
+  const path = 'chatId' in to ? `/chats/${to.chatId}/messages` : `/chats/direct/${to.number}/messages`;
+  return uploadWithProgress<MessageData>(path, form, onProgress);
+}
+// the address of a message's file, for <img src> and downloading it
+export const attachmentUrl = (chatId: number, messageId: number, attachmentId: number) =>
+  `/api/chats/${chatId}/messages/${messageId}/attachments/${attachmentId}`;
 // a chat's 50 newest messages, the 50 before a message when scrolling up, or the 50 after one when scrolling down
 // from an old message you jumped to
 export const getChatMessages = (chatId: number, from?: { before: number } | { after: number }) =>

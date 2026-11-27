@@ -4,13 +4,15 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { blockUser, unblockUser } from '../../api/blocks';
-import { deleteMessage, editMessage, getDirectChat, reactToMessage, removeReaction, sendDirectMessage, sendMessage } from '../../api/chats';
+import { deleteMessage, editMessage, getDirectChat, reactToMessage, removeReaction, sendDirectMessage, sendFiles, sendMessage } from '../../api/chats';
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useChatEvents, useChatListEvents, useChatSocketReconnect } from '../../hooks/useChatEvents';
 import { typingLine, useTyping } from './useTyping';
-import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatTyping, ChatStart, ChatThread, ConfirmDialog, Button, Menu, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction, type MenuEntry } from '../../studymatch-ui';
+import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatTyping, ChatStart, ChatThread, ConfirmDialog, Dialog, Button, Menu, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction, type MenuEntry } from '../../studymatch-ui';
 import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData, type MessageQuoteData, type ReactionData } from '../../types/chat';
+import { ACCEPT, fileProblem, MAX_FILE_MB, MAX_FILES } from './attachmentFiles';
+import { ComposerFiles, MessageFiles, PendingFiles, type OpenImage } from './AttachmentViews';
 import { ChatSearch } from './ChatSearch';
 import { newMessageKey, useConversation, type ThreadMessage } from './conversations';
 import { lineOf } from './messageText';
@@ -109,6 +111,8 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
   const [askingToBlock, setAskingToBlock] = useState(false);
   // messages from someone you blocked that you clicked to see
   const [shown, setShown] = useState<ReadonlySet<number>>(new Set());
+  // an image opened bigger (#211)
+  const [viewing, setViewing] = useState<OpenImage | null>(null);
   const [query, setQuery] = useState('');
   const searchInput = useRef<HTMLInputElement>(null);
   useEffect(() => { if (searching) searchInput.current?.focus(); }, [searching]);
@@ -263,6 +267,17 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
     if (opening && box.clientHeight > 0 && box.scrollHeight <= box.clientHeight) older(box);
   });
 
+  // something on screen grew after it was shown, like an image or a file card loading (#211): at the bottom, it stays there
+  useEffect(() => {
+    const box = scroll.current;
+    if (!box || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => {
+      if (atBottom.current && keepFromBottom.current === null && !history.hasNewer) box.scrollTop = box.scrollHeight;
+    });
+    Array.from(box.children).forEach(child => observer.observe(child));
+    return () => observer.disconnect();
+  });
+
   function older(box: HTMLDivElement) {
     const distance = box.scrollHeight - box.scrollTop;
     if (loadOlder()) keepFromBottom.current = distance;
@@ -289,8 +304,13 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
   // go to the original of a reply, loading it if it's not on screen
   const goTo = (id: number) => jumpTo(id).catch(error => toast.danger(isBackendError(error) && error.code === 'NOT_FOUND' ? t('chats.originalGone') : t('common.unexpectedError')));
 
-  const deliver = (key: string, text: string, replyTo?: MessageQuoteData) => {
-    (contact ? sendDirectMessage(contact.number, text, replyTo?.id) : sendMessage(chatId!, text, replyTo?.id)).then(
+  // how much of a message's files went up, on its cards
+  const progressed = (key: string, progress: number) =>
+    update(current => ({ ...current, messages: current.messages.map(m => m.key === key ? { ...m, progress } : m) }));
+  const deliver = (key: string, text: string, replyTo?: MessageQuoteData, files?: File[]) => {
+    const to = contact ? { number: contact.number } : { chatId: chatId! };
+    (files?.length ? sendFiles(to, text, files, replyTo?.id, progress => progressed(key, progress))
+      : contact ? sendDirectMessage(contact.number, text, replyTo?.id) : sendMessage(chatId!, text, replyTo?.id)).then(
       message => {
         answered(key, message);
         setChatId(id => id ?? message.chatId);
@@ -302,21 +322,35 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
     const text = conversation.draft.trim();
     const key = newMessageKey();
     const { replyTo } = conversation;
+    const files = conversation.files?.length ? conversation.files : undefined;
     typing.sent();
     update(current => ({
       draft: '',
       error: undefined,
       replyTo: undefined,
-      messages: [...current.messages, { key, text, sentAt: new Date().toISOString(), status: 'sending', replyTo }],
+      files: undefined,
+      messages: [...current.messages, { key, text, sentAt: new Date().toISOString(), status: 'sending', replyTo, files, progress: files && 0 }],
     }));
     // what you send goes at the end of the chat, so the latest come back if you'd jumped to an old message
     toLatest();
-    deliver(key, text, replyTo);
+    deliver(key, text, replyTo, files);
   };
   const retry = (message: ThreadMessage) => {
-    update(current => ({ ...current, error: undefined, messages: current.messages.map(m => m.key === message.key ? { ...m, status: 'sending' } : m) }));
-    deliver(message.key, message.text, message.replyTo);
+    update(current => ({ ...current, error: undefined, messages: current.messages.map(m => m.key === message.key
+      ? { ...m, status: 'sending', progress: m.files && 0 } : m) }));
+    deliver(message.key, message.text, message.replyTo, message.files);
   };
+
+  // files picked, dropped or pasted: they show as cards above the box, the ones that can't be sent say why (#211)
+  const addFiles = (files: File[]) => {
+    if (!files.length) return;
+    update(current => ({ ...current, error: undefined, files: [...(current.files ?? []), ...files] }));
+    composer.current?.focus();
+  };
+  const removeFile = (index: number) =>
+    update(current => ({ ...current, files: current.files?.filter((_, at) => at !== index) }));
+  const added = conversation.files ?? [];
+  const filesInvalid = added.some((file, index) => fileProblem(file, index, t) !== undefined);
 
   // your reaction to a message, if you have one
   const yoursOn = (id: number) => history.reactions.find(reaction => reaction.messageId === id && isMine(reaction.user));
@@ -490,6 +524,7 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
     <ChatThread label={t('chats.with', { name })} scrollRef={scroll} onScroll={onScroll} head={head}
       // after a jump the latest aren't on screen, so the button stays until they're back
       overlay={(newBelow || history.hasNewer) && <ChatJump label={t(newBelow ? 'chats.newMessages' : 'chats.backToLatest')} onClick={jump} />}
+      drop={youBlocked ? undefined : { title: t('chats.dropTitle', { name: firstName }), hint: t('chats.dropHint', { max: MAX_FILES, size: MAX_FILE_MB }), onDrop: addFiles }}
       side={searching && chatId !== null && <ChatSearch chatId={chatId} query={query} onClose={stopSearching} onJump={jumpTo} nameOf={nameOf} />}
       composer={youBlocked ? (
         <div className="sm-chat__blocked-bar" role="status">
@@ -500,7 +535,9 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
         <ChatComposer label={t('chats.messageLabel', { name })} placeholder={t('chats.messageLabel', { name: firstName })}
           value={conversation.draft} onChange={draft => { update(current => ({ ...current, draft })); if (draft.trim()) typing.typed(); }} onSend={send}
           sendLabel={t('chats.send')} max={MESSAGE_MAX_LENGTH} error={conversation.error === undefined ? undefined : sendError(conversation.error, t)}
-          onEditLast={editLast} inputRef={composer} above={<><ChatTyping text={typingLine(typing.typing, t)} />{replyBar}</>} onEscape={stopReply} />
+          onEditLast={editLast} inputRef={composer} above={<><ChatTyping text={typingLine(typing.typing, t)} />{replyBar}</>} onEscape={stopReply}
+          onAddFiles={addFiles} addFilesLabel={t('chats.addFiles')} accept={ACCEPT}
+          files={added.length > 0 && <ComposerFiles files={added} onRemove={removeFile} />} filesReady={added.length > 0} filesInvalid={filesInvalid} />
       )}>
       {history.loading && <DataLoadState />}
       {history.loadingOlder && <ChatOlder label={t('chats.loadingOlder')} />}
@@ -540,7 +577,10 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
                   reactLabel={t('chats.addReaction')} picking={picking !== null && picking.message.id === item.message?.id}
                   onAddReaction={item.message && (anchor => setPicking(current => current?.message.id === item.message!.id ? null : { message: item.message!, anchor }))}
                   onDoubleTap={item.message && (() => react(item.message!, HEART))}
-                  onEdit={own && (() => startEditing(own))} onDelete={own && (shift => askToDelete(own, shift))} editor={editor || undefined} />
+                  onEdit={own && (() => startEditing(own))} onDelete={own && (shift => askToDelete(own, shift))} editor={editor || undefined}
+                  files={item.message?.attachments?.length
+                    ? <MessageFiles chatId={item.message.chatId} messageId={item.message.id} attachments={item.message.attachments} onOpen={setViewing} />
+                    : item.pending?.files?.length ? <PendingFiles files={item.pending.files} progress={item.pending.status === 'sending' ? item.pending.progress : undefined} /> : undefined} />
               </div>
             );
           })}
@@ -548,6 +588,9 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
       )}
       {history.loadingNewer && <ChatOlder label={t('chats.loadingNewer')} />}
       {picker}
+      <Dialog open={viewing !== null} onClose={() => setViewing(null)} title={viewing?.name ?? ''} size="lg">
+        {viewing && <img className="sm-msg__lightbox" src={viewing.src} alt={viewing.name} />}
+      </Dialog>
       {contact && (
         <ConfirmDialog open={askingToBlock} onClose={() => setAskingToBlock(false)} tone="danger" icon={Ban}
           title={t('chats.blockTitle', { name: contact.name })} description={t('chats.blockBody')} confirmLabel={t('chats.blockConfirm')}

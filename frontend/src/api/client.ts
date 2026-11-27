@@ -22,6 +22,34 @@ export async function upload<T>(path: string, form: FormData): Promise<T> {
   return response.json();
 }
 
+// a form with files, telling how much of it went up (0 to 100); fetch can't, so it's an XMLHttpRequest (#211).
+// It answers with the status and the body, and the error is thrown here like in send
+export async function uploadWithProgress<T>(path: string, form: FormData, onProgress: (percent: number) => void): Promise<T> {
+  const { status, body } = await postWithProgress(path, form, onProgress);
+  if (status < 200 || status >= 300) {
+    throw isBackendError(body) ? body : new Error(`POST ${path} failed with status ${status}`);
+  }
+  return body as T;
+}
+
+function postWithProgress(path: string, form: FormData, onProgress: (percent: number) => void) {
+  return new Promise<{ status: number; body: unknown }>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_PREFIX}${path}`);
+    xhr.withCredentials = true;
+    const csrfToken = readCsrfToken();
+    if (csrfToken !== undefined) xhr.setRequestHeader(CSRF_HEADER, csrfToken);
+    xhr.upload.onprogress = event => { if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100)); };
+    xhr.onload = () => {
+      let body: unknown = null;
+      try { body = JSON.parse(xhr.responseText); } catch { /* not JSON, like a proxy's error page */ }
+      resolve({ status: xhr.status, body });
+    };
+    xhr.onerror = () => reject(new Error(`POST ${path} failed`));
+    xhr.send(form);
+  });
+}
+
 // with a body it's a POST, for files the backend builds from what was sent
 export async function download(path: string, body?: unknown): Promise<Blob> {
   const response = body === undefined
