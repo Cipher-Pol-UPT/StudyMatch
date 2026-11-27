@@ -42,6 +42,9 @@ export const getChats = () => request<ChatSummaryData[]>('GET', '/chats/');
 // a group chat you own with 2 to 19 others; picture is an optional data URL like the profile photo (#227)
 export const createGroupChat = (name: string, memberNumbers: number[], picture: string | null) =>
   request<ChatSummaryData>('POST', '/chats/groups', { name, memberNumbers, picture });
+// add people to a group chat you're in, anyone already in is skipped; the members come back (#229)
+export const addChatMembers = (chatId: number, memberNumbers: number[]) =>
+  request<ChatContactData[]>('POST', `/chats/${chatId}/members`, { memberNumbers });
 // who's in a chat, the owner first then in the order they joined
 export const getChatMembers = (chatId: number) => request<ChatContactData[]>('GET', `/chats/${chatId}/members`);
 // the numbers of the people you share a chat with who have the app open, for the first load; the pushes keep it up to date (#223)

@@ -1,16 +1,17 @@
 import type { TFunction } from 'i18next';
-import { ArrowLeft, Ban, MessagesSquare, ShieldCheck, SquarePen, UsersRound } from 'lucide-react';
+import { ArrowLeft, Ban, MessagesSquare, ShieldCheck, SquarePen, UserPlus, UsersRound } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getBlocked, unblockUser } from '../../api/blocks';
 import { getChatMembers, getDirectChat } from '../../api/chats';
+import { AddMembersDialog } from '../../components/chat/AddMembersDialog';
 import { isBackendError } from '../../api/errors';
 import { NewGroupChatDialog } from '../../components/chat/NewGroupChatDialog';
 import { NewMessageDialog } from '../../components/chat/NewMessageDialog';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
-import { Banner, Button, buttonClass, ChatHead, ChatLayout, ChatListPane, ChatPersonRow, ChatRow, ChatRows, ChatThread, EmptyState, IconButton, useToast } from '../../studymatch-ui';
+import { Banner, Button, buttonClass, ChatHead, ChatLayout, ChatListPane, ChatPersonRow, ChatRow, ChatRows, ChatThread, EmptyState, IconButton, useToast, type MenuEntry } from '../../studymatch-ui';
 import { type ChatContactData, type ChatSummaryData, type MessageData } from '../../types/chat';
 import { Conversation } from './Conversation';
 import { lineOf } from './messageText';
@@ -170,6 +171,10 @@ function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listE
   const { t } = useTranslation();
   const load = useCallback(() => Number.isInteger(chatId) ? getChatMembers(chatId) : Promise.reject(notFound()), [chatId]);
   const members = useRemoteData(`chat-members:${chatId}`, load);
+  // the members after you added people here (#229)
+  const [latest, setLatest] = useState<ChatContactData[]>();
+  const [adding, setAdding] = useState(false);
+  const toast = useToast();
 
   // not in your list once it has loaded: it isn't yours, or it isn't there anymore
   const error = members.error ?? listError ?? (listLoaded && !summary ? notFound() : undefined);
@@ -178,7 +183,20 @@ function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listE
     return <ChatThread label={t('chats.conversation')}><DataLoadState /></ChatThread>;
   }
 
-  return <Conversation chat={{ kind: 'group', chatId, name: summary.name, pictureSrc: pictureOf(summary), members: members.data }} me={me} profilePath={profilePath} online={online} blocked={blocked} />;
+  // an assignment group's members follow its group, nobody changes them by hand (#236)
+  const menuItems: MenuEntry[] = summary.assignment ? [] : [{ label: t('chats.addMembers'), icon: UserPlus, onSelect: () => setAdding(true) }];
+  return (
+    <>
+      <Conversation chat={{ kind: 'group', chatId, name: summary.name, pictureSrc: pictureOf(summary), members: latest ?? members.data }} me={me}
+        profilePath={profilePath} online={online} blocked={blocked} menuItems={menuItems} />
+      <AddMembersDialog open={adding} chatId={chatId} name={summary.name} onClose={() => setAdding(false)}
+        onAdded={(now, added) => {
+          setAdding(false);
+          setLatest(now);
+          toast.success(t('chats.membersAdded', { count: added.length, name: added[0]?.name }));
+        }} />
+    </>
+  );
 }
 
 // a chat that can't be opened: why, and the way back to the list

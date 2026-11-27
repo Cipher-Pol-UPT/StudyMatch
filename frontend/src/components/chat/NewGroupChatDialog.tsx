@@ -47,7 +47,6 @@ function GroupChatForm({ onCancel, onCreated }: { onCancel: () => void; onCreate
   });
   // you count too
   const members = picked.length + 1;
-  const full = members >= GROUP_CHAT_MAX_MEMBERS;
   const isPicked = (contact: ChatContactData) => picked.some(person => person.number === contact.number);
 
   const toggle = (contact: ChatContactData) => {
@@ -102,25 +101,8 @@ function GroupChatForm({ onCancel, onCreated }: { onCancel: () => void; onCreate
       </div>
       {pictureError && <p className="sm-chat__group-error" role="alert">{pictureError}</p>}
 
-      {picked.length > 0 && (
-        <div className="sm-chat__picked" role="list" aria-label={t('chats.pickedPeople')}>
-          {picked.map(person => (
-            <span role="listitem" key={person.number}>
-              <Chip size="sm" className={refused.includes(person.number) ? 'sm-chip--refused' : undefined}
-                onRemove={() => toggle(person)} removeLabel={t('chats.unpick', { name: person.name })}>{person.name}</Chip>
-            </span>
-          ))}
-        </div>
-      )}
-      <div className="sm-chat__counter">
-        <span>{t('chats.members')}</span>
-        <span><b>{members}</b> / {GROUP_CHAT_MAX_MEMBERS}</span>
-      </div>
-      <ProgressBar size="sm" value={members} max={GROUP_CHAT_MAX_MEMBERS} label={t('chats.membersUsed', { count: members, max: GROUP_CHAT_MAX_MEMBERS })} />
-      {membersError && <p className="sm-chat__group-error" role="alert">{membersError}</p>}
-      {full && <p className="sm-caption" role="status">{t('chats.groupFull', { max: GROUP_CHAT_MAX_MEMBERS })}</p>}
-
-      <PeopleSearch isPicked={isPicked} full={full} refused={refused} onToggle={toggle} />
+      <PeoplePicker picked={picked} refused={refused} members={members} counterLabel={t('chats.members')} error={membersError}
+        isPicked={isPicked} onToggle={toggle} />
 
       <div className="sm-dialog__actions">
         <Button type="button" variant="secondary" size="sm" onClick={onCancel}>{t('common.cancel')}</Button>
@@ -130,32 +112,77 @@ function GroupChatForm({ onCancel, onCreated }: { onCancel: () => void; onCreate
   );
 }
 
+interface PeoplePickerProps {
+  picked: ChatContactData[];
+  refused: number[];
+  // how many the chat would have, counting the picked ones
+  members: number;
+  counterLabel: string;
+  error?: string;
+  // left out of the search, like the people already in the chat
+  hidden?: ReadonlySet<number>;
+  isPicked: (contact: ChatContactData) => boolean;
+  onToggle: (contact: ChatContactData) => void;
+}
+
+// the picked people as chips, how many of the 20 places that is, and the search: New group chat and Add members (#227, #229)
+export function PeoplePicker({ picked, refused, members, counterLabel, error, hidden, isPicked, onToggle }: PeoplePickerProps) {
+  const { t } = useTranslation();
+  const full = members >= GROUP_CHAT_MAX_MEMBERS;
+  return (
+    <>
+      {picked.length > 0 && (
+        <div className="sm-chat__picked" role="list" aria-label={t('chats.pickedPeople')}>
+          {picked.map(person => (
+            <span role="listitem" key={person.number}>
+              <Chip size="sm" className={refused.includes(person.number) ? 'sm-chip--refused' : undefined}
+                onRemove={() => onToggle(person)} removeLabel={t('chats.unpick', { name: person.name })}>{person.name}</Chip>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="sm-chat__counter">
+        <span>{counterLabel}</span>
+        <span><b>{members}</b> / {GROUP_CHAT_MAX_MEMBERS}</span>
+      </div>
+      <ProgressBar size="sm" value={members} max={GROUP_CHAT_MAX_MEMBERS} label={t('chats.membersUsed', { count: members, max: GROUP_CHAT_MAX_MEMBERS })} />
+      {error && <p className="sm-chat__group-error" role="alert">{error}</p>}
+      {full && <p className="sm-caption" role="status">{t('chats.groupFull', { max: GROUP_CHAT_MAX_MEMBERS })}</p>}
+
+      <PeopleSearch isPicked={isPicked} hidden={hidden} full={full} refused={refused} onToggle={onToggle} />
+    </>
+  );
+}
+
 interface PeopleSearchProps {
   isPicked: (contact: ChatContactData) => boolean;
+  // left out of the results, like the people already in the chat (#229)
+  hidden?: ReadonlySet<number>;
   // nobody else fits, so only the picked ones can be clicked (to take them off)
   full: boolean;
   refused: number[];
   onToggle: (contact: ChatContactData) => void;
 }
 
-function PeopleSearch({ isPicked, full, refused, onToggle }: PeopleSearchProps) {
+// who you can message, to pick for a group chat
+function PeopleSearch({ isPicked, hidden, full, refused, onToggle }: PeopleSearchProps) {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const query = new URLSearchParams({ ...(search.trim() ? { search: search.trim() } : {}), page: '0' }).toString();
   const load = useCallback(() => searchChatContacts(query), [query]);
   const contacts = useRemoteData(`chat-contacts?${query}`, load);
-  const people = contacts.data;
+  const people = contacts.data?.content.filter(contact => !hidden?.has(contact.number));
 
   return (
     <>
       <SearchField label={t('chats.searchPeople')} placeholder={t('chats.searchPlaceholder')} value={search} onValueChange={setSearch} />
       {contacts.loading || contacts.error !== undefined || !people ? (
         <DataLoadState error={contacts.error} retry={contacts.retry} />
-      ) : people.content.length === 0 ? (
+      ) : people.length === 0 ? (
         <p className="sm-caption" role="status">{t('chats.noOneFound')}</p>
       ) : (
         <ChatPeople label={t('chats.people')}>
-          {people.content.map(contact => {
+          {people.map(contact => {
             const on = isPicked(contact);
             return (
               <ChatPerson key={contact.number} name={contact.name} picked={on} disabled={!on && full}
