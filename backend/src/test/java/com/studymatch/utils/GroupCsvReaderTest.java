@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +39,41 @@ class GroupCsvReaderTest {
 
     // Assert
     assertEquals(List.of(new GroupCsvReader.Row(2, 1, 50001L), new GroupCsvReader.Row(3, 2, 50002L)), rows);
+  }
+
+  // the other imports stop at 200 rows, the export doesn't: 201 is one past their limit
+  @Test
+  @DisplayName("An export of more than 200 students still reads back, up to the groups' own limit")
+  void moreThanTheOtherImports() {
+    // Arrange
+    List<GroupCsvWriter.Row> students = new ArrayList<>();
+    for (int i = 0; i < CsvFiles.MAX_ROWS + 1; i++) {
+      students.add(new GroupCsvWriter.Row(i / 3 + 1, 50001L + i, "Student " + i, (50001 + i) + "@uni.pt"));
+    }
+
+    // Act
+    List<GroupCsvReader.Row> rows = reader.read(new GroupCsvWriter().write(students));
+
+    // Assert
+    assertEquals(CsvFiles.MAX_ROWS + 1, rows.size());
+    assertEquals(new GroupCsvReader.Row(CsvFiles.MAX_ROWS + 2, 67, 50201L), rows.getLast());
+  }
+
+  @Test
+  @DisplayName("One row past the groups' limit is CSV_TOO_MANY_ROWS with the limit")
+  void tooManyRows() {
+    // Arrange
+    StringBuilder csv = new StringBuilder(HEADER);
+    for (int i = 0; i < GroupCsvReader.MAX_ROWS + 1; i++) {
+      csv.append("1,").append(50001 + i).append('\n');
+    }
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> read(csv.toString()));
+
+    // Assert
+    assertEquals(ErrorCode.CSV_TOO_MANY_ROWS, e.getCode());
+    assertEquals(Map.of("max", GroupCsvReader.MAX_ROWS), e.getParams());
   }
 
   @Test
