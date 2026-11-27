@@ -58,7 +58,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | PUT | `/categories/{id}` | Staff | rename a category, its subjects (and so the students' levels in it) stay linked |
 | GET | `/subjects/`, `/subjects/{id}` | logged in | list subjects with their category and degrees, or one |
 | POST | `/subjects/` | Staff | register a subject and its first edition |
-| PUT | `/subjects/{id}` | Staff | change name and ECTS (code and category stay), and optionally this year's edition's teachers, keeping at least one |
+| PUT | `/subjects/{id}` | Staff | change name and ECTS (code and category stay), and optionally this year's edition's teachers, keeping at least one. Removing one who still teaches a class is `TEACHER_STILL_TEACHES_SECTION`, with those classes in `classSections` |
 | POST | `/subjects/{id}/editions` | Staff | add an edition of an existing subject for another year |
 | GET | `/subjects/{id}/editions/current` | Staff | the subject's edition this year with its teachers, to edit them |
 | GET | `/academic-years/` | logged in | academic years, newest (the current one) first, each with its `semesters` (null for a year from before #334) |
@@ -73,6 +73,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | --- | --- | --- | --- |
 | GET | `/subject-editions/` | Teacher | the editions you teach |
 | GET | `/subject-editions/current` | Staff | this year's editions, the ones open for enrolment |
+| PUT | `/subject-editions/{id}/class-sections/{classSection}/teacher` | Staff | pick the teacher of a class this year, `{ teacherNumber }`, one of the edition's teachers (`TEACHER_NOT_IN_SUBJECT_EDITION` otherwise). Answers with the edition, whose `sectionTeachers` lists each class with its teacher or null |
 | POST | `/subject-editions/{id}/enrolments` | Staff | enrol students by number in one class, with a result per student |
 | PUT | `/subject-editions/{id}/enrolments/{studentNumber}/class-section` | Staff | move an enrolled student to another class of the edition, keeping their grades and absences |
 | GET | `/subject-editions/enrolments/import/template` | Staff | the empty CSV for enrolments |

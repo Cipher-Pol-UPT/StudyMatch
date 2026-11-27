@@ -7,7 +7,7 @@ import com.studymatch.models.ClassSection;
 import com.studymatch.models.SubjectEdition;
 
 public record SubjectEditionResponseDTO(Long id, int academicYear, SubjectResponseDTO subject,
-    List<TeacherSummaryDTO> teachers, List<String> classSections) {
+    List<TeacherSummaryDTO> teachers, List<String> classSections, List<SectionTeacherDTO> sectionTeachers) {
 
   // teachers and classes are kept in sets, so sort them to always answer in the same order
   public static SubjectEditionResponseDTO from(SubjectEdition edition) {
@@ -19,8 +19,12 @@ public record SubjectEditionResponseDTO(Long id, int academicYear, SubjectRespon
         .map(ClassSection::getCode)
         .sorted()
         .toList();
+    List<SectionTeacherDTO> sectionTeachers = edition.getClassSections().stream()
+        .map(SectionTeacherDTO::from)
+        .sorted(Comparator.comparing(SectionTeacherDTO::classSection))
+        .toList();
     return new SubjectEditionResponseDTO(edition.getId(), edition.getAcademicYear().getStartYear(),
-        SubjectResponseDTO.from(edition.getSubject()), teachers, classSections);
+        SubjectResponseDTO.from(edition.getSubject()), teachers, classSections, sectionTeachers);
   }
 
 }

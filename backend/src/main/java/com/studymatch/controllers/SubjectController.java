@@ -89,7 +89,8 @@ public class SubjectController {
   @PreAuthorize("hasRole('STAFF')")
   @Operation(summary = "Change a subject's name and ECTS, and optionally the teachers of its edition this year. "
       + "Code and category can't change")
-  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED })
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED,
+      ErrorCode.TEACHER_STILL_TEACHES_SECTION })
   public ResponseEntity<SubjectResponseDTO> updateSubject(@PathVariable Long id,
       @Valid @RequestBody UpdateSubjectRequestDTO updateRequest) {
     return ResponseEntity.ok(SubjectResponseDTO.from(subjectService.updateSubject(id, updateRequest)));

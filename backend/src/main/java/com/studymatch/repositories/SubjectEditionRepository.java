@@ -29,4 +29,7 @@ public interface SubjectEditionRepository extends JpaRepository<SubjectEdition, 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   Optional<SubjectEdition> findLockedById(Long id);
 
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  Optional<SubjectEdition> findLockedBySubjectAndAcademicYear(Subject subject, AcademicYear academicYear);
+
 }

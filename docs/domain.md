@@ -103,6 +103,12 @@ A student is enrolled in one class of an edition. Enrolling skips anyone already
 
 Staff can move an enrolled student to another class of the same edition (the student record's enrolments carry the edition id for that). A class of another edition gives `CLASS_SECTION_NOT_IN_SUBJECT_EDITION`, and like enrolling, only editions of the current year can change (`SUBJECT_EDITION_NOT_CURRENT`). The enrolment itself moves, so its grades and final grade stay. Its absences stay stored too, but attendance only counts the lessons and absences of the class the student is in now, so after the move it starts again from the new class's lessons. Correcting a lesson of the old class doesn't touch the absences of someone who left it.
 
+## Class teachers
+
+Each class of an edition has one teacher, picked by Staff from the edition's teachers (#340). Anyone else gives `TEACHER_NOT_IN_SUBJECT_EDITION`, and as with enrolling, only editions of the current year can change (`SUBJECT_EDITION_NOT_CURRENT`). A new class starts without a teacher. That's allowed, but the timetable needs one for every class, so Generate Schedule lists the ones still missing (#345). The edition answers with `sectionTeachers`, each class with its teacher or null, next to the plain list of codes the pages already use.
+
+A teacher who still teaches a class can't be removed from the edition. Updating the subject's teachers then gives `TEACHER_STILL_TEACHES_SECTION`, naming those classes, and nothing changes until they have another teacher. Picking a teacher and changing the edition's teachers both lock the edition, so a removal and a pick at the same moment can't leave a class with a teacher who left. The demo data gives every 2026 class its edition's teacher.
+
 ## Tutors and StudyRooms
 
 A student can apply to tutor a subject they passed if their final grade is in the top 5% of the edition they took it in, rounded up with at least one student, and everyone tied at the cut-off is eligible (no minimum grade). `GET /tutors/me/applicable-subjects` lists the subjects they passed with their grade, position and eligibility, and `POST /tutor-applications/` creates the Pending application. A Pending application (`TUTOR_APPLICATION_ALREADY_PENDING`) or an existing Tutor Role (`TUTOR_ROLE_ALREADY_EXISTS`) blocks a new one, but a Rejected application doesn't. A subject with no edition this year can't be applied to (`SUBJECT_NOT_TAUGHT_THIS_YEAR`).

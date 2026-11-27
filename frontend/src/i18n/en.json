@@ -624,6 +624,8 @@
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Select at least one teacher.",
     "CLASS_SECTION_ALREADY_EXISTS": "This class section already exists.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "The class section does not belong to this subject edition.",
+    "TEACHER_NOT_IN_SUBJECT_EDITION": "Only one of this subject edition's teachers can teach its class sections.",
+    "TEACHER_STILL_TEACHES_SECTION": "A teacher you removed still teaches {{classSections}}. Give those class sections another teacher first.",
     "SUBJECT_EDITION_NOT_CURRENT": "Only subject editions of the current academic year can be changed.",
     "GROUP_WORK_NOT_ALLOWED_FOR_EXAMS": "Group work is not allowed for exams.",
     "INVALID_GROUP_SIZES": "The group sizes are invalid.",

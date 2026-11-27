@@ -1,11 +1,13 @@
 package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -86,6 +88,28 @@ class TeacherServiceTest {
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class, () -> teacherService.getTeachers(List.of(1L, 99L)));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // get one teacher by number
+
+  @Test
+  @DisplayName("One teacher is found by number")
+  void teacherIsFound() {
+    // Arrange
+    when(teacherRepository.findById(1L)).thenReturn(Optional.of(ana));
+
+    // Act + Assert
+    assertSame(ana, teacherService.getTeacher(1L));
+  }
+
+  @Test
+  @DisplayName("A number with no teacher gets NOT_FOUND")
+  void unknownTeacherIsNotFound() {
+    // Act - findById is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> teacherService.getTeacher(99L));
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
