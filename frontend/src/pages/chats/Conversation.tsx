@@ -9,7 +9,7 @@ import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useChatEvents, useChatListEvents, useChatSocketReconnect } from '../../hooks/useChatEvents';
 import { typingLine, useTyping } from './useTyping';
-import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatTyping, ChatStart, ChatThread, ConfirmDialog, Button, Menu, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction } from '../../studymatch-ui';
+import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatTyping, ChatStart, ChatThread, ConfirmDialog, Button, Menu, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction, type MenuEntry } from '../../studymatch-ui';
 import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData, type MessageQuoteData, type ReactionData } from '../../types/chat';
 import { ChatSearch } from './ChatSearch';
 import { newMessageKey, useConversation, type ThreadMessage } from './conversations';
@@ -33,6 +33,8 @@ export interface ConversationProps {
   blocked?: ReadonlySet<number>;
   // after you block or unblock someone here
   onBlocksChanged?: () => void;
+  // the head's menu, like a group chat's Add members (#229)
+  menuItems?: MenuEntry[];
 }
 
 // what double tapping a message reacts with
@@ -65,7 +67,7 @@ const photoOf = (author: ChatContactData) => author.role === 'STUDENT' ? `/api/s
 
 // a DM or a group chat: its history, live messages while it's open, editing and deleting your own, and the message box
 // (#203, #205, #207, #209, #227)
-export function Conversation({ chat, me, profilePath, online, blocked, onBlocksChanged }: ConversationProps) {
+export function Conversation({ chat, me, profilePath, online, blocked, onBlocksChanged, menuItems }: ConversationProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   // the other person in a DM; a group chat has none
@@ -437,9 +439,13 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
     error => { toast.danger(isBackendError(error) ? t(`errors.${error.code}`, error.params ?? {}) : t('common.unexpectedError')); },
   );
   // only a DM has it for now, blocking from a group chat comes with its member list (#231)
-  const menu = contact && !youBlocked && (
-    <Menu label={t('chats.chatOptions')} trigger={<IconButton icon={Ellipsis} label={t('chats.chatOptions')} variant="ghost" />}
-      items={[{ label: t('chats.block', { name: firstName }), icon: Ban, danger: true, onSelect: () => setAskingToBlock(true) }]} />
+  // what the page adds (a group chat's Add members, #229), then Block in a DM
+  const menuEntries: MenuEntry[] = [
+    ...(menuItems ?? []),
+    ...(contact && !youBlocked ? [{ label: t('chats.block', { name: firstName }), icon: Ban, danger: true, onSelect: () => setAskingToBlock(true) }] : []),
+  ];
+  const menu = menuEntries.length > 0 && (
+    <Menu label={t('chats.chatOptions')} trigger={<IconButton icon={Ellipsis} label={t('chats.chatOptions')} variant="ghost" />} items={menuEntries} />
   );
 
   const head = (
