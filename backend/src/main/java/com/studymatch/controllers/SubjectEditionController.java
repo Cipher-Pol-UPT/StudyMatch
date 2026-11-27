@@ -310,7 +310,8 @@ public class SubjectEditionController {
   // generate groups, confirm
   @PostMapping("{id}/assignments/{assignmentId}/groups/publish")
   @PreAuthorize("hasRole('TEACHER')")
-  @Operation(summary = "Publish the draft groups, replacing the ones published before")
+  @Operation(summary = "Publish the draft groups, replacing the ones published before. Each group gets its own chat, "
+      + "the old groups' chats go with their messages")
   @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NO_DRAFT_GROUPS })
   public ResponseEntity<Void> publishGroups(@PathVariable Long id, @PathVariable Long assignmentId,
       Authentication authentication) {

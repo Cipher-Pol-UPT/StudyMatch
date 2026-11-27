@@ -2,6 +2,7 @@ package com.studymatch.services;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,10 @@ import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Chat;
 import com.studymatch.models.CustomChat;
 import com.studymatch.models.DirectChat;
+import com.studymatch.models.Group;
+import com.studymatch.models.GroupChat;
 import com.studymatch.models.Message;
+import com.studymatch.models.Student;
 import com.studymatch.models.User;
 import com.studymatch.repositories.MessageRepository;
 import com.studymatch.repositories.MessageRepository.ChatActivity;
@@ -235,7 +239,7 @@ public class MessageService {
     Map<Long, ChatActivity> activities = messageRepository.findActivity(chats, user.getNumber()).stream()
         .collect(Collectors.toMap(activity -> activity.getLastMessage().getChat().getId(), Function.identity()));
     return chats.stream()
-        .filter(chat -> chat instanceof CustomChat || activities.containsKey(chat.getId()))
+        .filter(chat -> !(chat instanceof DirectChat) || activities.containsKey(chat.getId()))
         .sorted(Comparator.comparing((Chat chat) -> lastActivity(chat, activities.get(chat.getId())))
             .thenComparing(chat -> lastMessageId(activities.get(chat.getId())))
             .thenComparing(Chat::getId)
@@ -270,6 +274,42 @@ public class MessageService {
     if (chat.getMembers().isEmpty()) {
       messageRepository.deleteByChat(chat);
       chatService.deleteWithSettings(chat);
+    }
+  }
+
+  // the teacher removed published groups, their chats go with the messages and attachments (#236).
+  // here because of the messages, before the groups, the chat points at them
+  @Transactional
+  public void deleteGroupChats(Collection<Group> groups) {
+    List<GroupChat> chats = chatService.getGroupChatsFor(groups);
+    if (chats.isEmpty()) {
+      return;
+    }
+    messageRepository.deleteByChatIn(chats);
+    chatService.deleteGroupChats(chats);
+  }
+
+  // the teacher edited published groups, before is who each one had. whoever left loses the chat, whoever joined
+  // gets it with the whole history, here for their row's last message like addMembers (#236)
+  @Transactional
+  public void groupMembersChanged(Map<Group, List<Student>> before) {
+    for (GroupChat chat : chatService.getGroupChatsFor(before.keySet())) {
+      List<Student> was = before.get(chat.getGroup());
+      List<User> left = was.stream().filter(student -> !chat.hasMember(student)).map(User.class::cast).toList();
+      List<User> joined = chat.getMembers().stream()
+          .filter(member -> was.stream().noneMatch(student -> student.getNumber().equals(member.getNumber())))
+          .toList();
+      chatService.groupMembersChanged(chat, left, joined);
+      if (joined.isEmpty()) {
+        continue;
+      }
+      Optional<Message> lastMessage = messageRepository.findActivity(List.of(chat), joined.getFirst().getNumber())
+          .stream().findFirst().map(ChatActivity::getLastMessage);
+      for (User member : joined) {
+        eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_ADDED,
+            ChatSummaryDTO.from(chat, member, lastMessage.map(message -> MessageDTO.from(message, member))
+                .orElse(null), 0)));
+      }
     }
   }
 
