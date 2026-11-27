@@ -302,7 +302,7 @@ public class SubjectEditionController {
       + "isn't blocked has to be in exactly one group")
   @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.VALIDATION_FAILED, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK,
       ErrorCode.NO_DRAFT_GROUPS, ErrorCode.STUDENT_NOT_ENROLLED, ErrorCode.STUDENT_IN_TWO_GROUPS,
-      ErrorCode.STUDENT_WITHOUT_GROUP })
+      ErrorCode.STUDENT_WITHOUT_GROUP, ErrorCode.BLOCKED_STUDENT_MOVED })
   public ResponseEntity<List<GroupDTO>> editDraftGroups(@PathVariable Long id, @PathVariable Long assignmentId,
       @Valid @RequestBody EditGroupsRequestDTO request, Authentication authentication) {
     User teacher = userService.getByInstitutionalEmail(authentication.getName());
@@ -317,7 +317,7 @@ public class SubjectEditionController {
       + "group, a new one is published straight away")
   @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.VALIDATION_FAILED, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK,
       ErrorCode.NO_PUBLISHED_GROUPS, ErrorCode.STUDENT_NOT_ENROLLED, ErrorCode.STUDENT_IN_TWO_GROUPS,
-      ErrorCode.STUDENT_WITHOUT_GROUP })
+      ErrorCode.STUDENT_WITHOUT_GROUP, ErrorCode.BLOCKED_STUDENT_MOVED })
   public ResponseEntity<List<GroupDTO>> editPublishedGroups(@PathVariable Long id, @PathVariable Long assignmentId,
       @Valid @RequestBody EditGroupsRequestDTO request, Authentication authentication) {
     User teacher = userService.getByInstitutionalEmail(authentication.getName());
