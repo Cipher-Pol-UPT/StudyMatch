@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
@@ -7,8 +7,9 @@ import { deleteMessage, editMessage, getDirectChat, reactToMessage, removeReacti
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useChatEvents, useChatListEvents } from '../../hooks/useChatEvents';
-import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatStart, ChatThread, ConfirmDialog, EMOJI_CATEGORIES, flashMessage, useToast, type ChatQuote, type ChatReaction } from '../../studymatch-ui';
+import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatStart, ChatThread, ConfirmDialog, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction } from '../../studymatch-ui';
 import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData, type MessageQuoteData, type ReactionData } from '../../types/chat';
+import { ChatSearch } from './ChatSearch';
 import { newMessageKey, useConversation, type ThreadMessage } from './conversations';
 import { lineOf } from './messageText';
 import { useChatHistory } from './useChatHistory';
@@ -82,6 +83,15 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   // the message the emoji picker is open for, and the button it sits by
   const [picking, setPicking] = useState<{ message: MessageData; anchor: HTMLElement } | null>(null);
   const closePicker = useCallback(() => setPicking(null), []);
+  // the search in the head and its results on the right (#221)
+  const [searching, setSearching] = useState(false);
+  const [query, setQuery] = useState('');
+  const searchInput = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (searching) searchInput.current?.focus(); }, [searching]);
+  const stopSearching = () => {
+    setSearching(false);
+    setQuery('');
+  };
   // the message waiting for Delete to be confirmed
   const [deleting, setDeleting] = useState<MessageData | null>(null);
 
@@ -381,7 +391,13 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
 
   const head = (
     <ChatHead name={contact.name} avatarSrc={photoOf(contact)} subtitle={line} backLabel={t('chats.back')} onBack={() => navigate('/chats')}
-      profileHref={profilePath?.(contact)} linkAs={Link} profileLabel={t('chats.openProfile', { name: contact.name })} />
+      profileHref={profilePath?.(contact)} linkAs={Link} profileLabel={t('chats.openProfile', { name: contact.name })}
+      actions={chatId !== null && (searching
+        ? <SearchField ref={searchInput} size="sm" className="sm-chat__head-search" value={query} onValueChange={setQuery}
+          label={t('chats.searchChat')} placeholder={t('chats.searchChat')}
+          // the first Esc empties it, the next one closes the search
+          onKeyDown={event => { if (event.key === 'Escape' && !query) stopSearching(); }} />
+        : <IconButton icon={Search} label={t('chats.searchChat')} variant="ghost" onClick={() => setSearching(true)} />)} />
   );
 
   if (history.error !== undefined) {
@@ -411,6 +427,7 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
     <ChatThread label={t('chats.with', { name: contact.name })} scrollRef={scroll} onScroll={onScroll} head={head}
       // after a jump the latest aren't on screen, so the button stays until they're back
       overlay={(newBelow || history.hasNewer) && <ChatJump label={t(newBelow ? 'chats.newMessages' : 'chats.backToLatest')} onClick={jump} />}
+      side={searching && chatId !== null && <ChatSearch chatId={chatId} query={query} onClose={stopSearching} onJump={jumpTo} nameOf={nameOf} />}
       composer={(
         <ChatComposer label={t('chats.messageLabel', { name: contact.name })} placeholder={t('chats.messageLabel', { name: firstName })}
           value={conversation.draft} onChange={draft => update(current => ({ ...current, draft }))} onSend={send}

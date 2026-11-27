@@ -1199,7 +1199,18 @@
       "objects": "Objetos",
       "symbols": "Símbolos",
       "flags": "Bandeiras"
-    }
+    },
+    "searchChat": "Pesquisar nesta conversa",
+    "searchTitle": "Pesquisa",
+    "searchResults": "Resultados da pesquisa",
+    "closeSearch": "Fechar pesquisa",
+    "results_one": "{{count}} resultado",
+    "results_other": "{{count}} resultados",
+    "resultsMore": "Mais de {{count}} resultados",
+    "moreResults": "Mostrar mais",
+    "noResults": "Nenhuma mensagem encontrada",
+    "noResultsBody": "Nada nesta conversa diz “{{text}}”.",
+    "resultGone": "Essa mensagem já não existe."
   },
   "classmate": {
     "title": "Perfil do estudante",

@@ -45,6 +45,9 @@ export const MESSAGE_MAX_LENGTH = 2000;
 // is in, hasNewer once the latest is (after jumping to an old message the latest aren't loaded)
 export interface MessagePageData { messages: MessageData[]; reactions?: ReactionData[]; hasMore: boolean; hasNewer?: boolean }
 
+// a page of a chat's search results, newest first, 25 at a time (#220)
+export interface MessageSearchData { messages: MessageData[]; hasMore: boolean }
+
 // what MESSAGE_DELETED carries: the message is gone, only its id is left
 export interface MessageDeletedData { chatId: number; messageId: number }
 

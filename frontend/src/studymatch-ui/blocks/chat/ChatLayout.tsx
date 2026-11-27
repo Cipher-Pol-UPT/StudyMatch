@@ -44,14 +44,17 @@ export interface ChatThreadProps {
   onScroll?: UIEventHandler<HTMLDivElement>;
   // floats over the messages, like the New messages button
   overlay?: ReactNode;
+  // a panel on the right of the messages, like the search results; it stops above the message box
+  side?: ReactNode;
   children?: ReactNode;
 }
 
-export function ChatThread({ label, head, composer, scrollRef, onScroll, overlay, children }: ChatThreadProps) {
+export function ChatThread({ label, head, composer, scrollRef, onScroll, overlay, side, children }: ChatThreadProps) {
   return (
-    <section className="sm-chat__thread" aria-label={label}>
+    <section className={side ? 'sm-chat__thread sm-chat__thread--side' : 'sm-chat__thread'} aria-label={label}>
       {head}
       <div className="sm-chat__scroll" ref={scrollRef} onScroll={onScroll}>{children}</div>
+      {side}
       {overlay}
       {composer}
     </section>
@@ -85,10 +88,12 @@ export interface ChatHeadProps {
   profileLabel?: string;
   // the router's link, like the app shell's
   linkAs?: ElementType;
+  // on the right, like the search
+  actions?: ReactNode;
 }
 
 // who the conversation is with; the back button only shows on a phone
-export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profileHref, profileLabel, linkAs }: ChatHeadProps) {
+export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profileHref, profileLabel, linkAs, actions }: ChatHeadProps) {
   const LinkAs = linkAs ?? 'a';
   const who = (
     <>
@@ -105,7 +110,50 @@ export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profile
       {profileHref
         ? <LinkAs href={profileHref} to={linkAs ? profileHref : undefined} className="sm-chat__who sm-chat__who--link" aria-label={profileLabel}>{who}</LinkAs>
         : <div className="sm-chat__who">{who}</div>}
+      {actions && <div className="sm-chat__head-actions">{actions}</div>}
     </header>
+  );
+}
+
+export interface ChatSheetProps {
+  label: string;
+  title: ReactNode;
+  closeLabel: string;
+  onClose: () => void;
+  children: ReactNode;
+}
+
+// a panel on the right of the conversation, under its head, like the search results
+export function ChatSheet({ label, title, closeLabel, onClose, children }: ChatSheetProps) {
+  return (
+    <aside className="sm-chat__sheet" aria-label={label}>
+      <div className="sm-chat__sheet-head">
+        <h3>{title}</h3>
+        <IconButton icon={X} label={closeLabel} variant="ghost" onClick={onClose} />
+      </div>
+      <div className="sm-chat__sheet-body">{children}</div>
+    </aside>
+  );
+}
+
+export interface ChatResultProps {
+  author: string;
+  time: string;
+  dateTime: string;
+  // the text, with what was searched for in <mark>
+  children: ReactNode;
+  onClick: () => void;
+}
+
+// a search result: who, when, and the words that matched; clicking it goes to the message
+export function ChatResult({ author, time, dateTime, children, onClick }: ChatResultProps) {
+  return (
+    <li>
+      <button type="button" className="sm-chat__result" onClick={onClick}>
+        <span className="sm-chat__result-meta"><b>{author}</b><time dateTime={dateTime}>{time}</time></span>
+        <span className="sm-chat__result-text">{children}</span>
+      </button>
+    </li>
   );
 }
 

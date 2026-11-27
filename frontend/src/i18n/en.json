@@ -1199,7 +1199,18 @@
       "objects": "Objects",
       "symbols": "Symbols",
       "flags": "Flags"
-    }
+    },
+    "searchChat": "Search this chat",
+    "searchTitle": "Search",
+    "searchResults": "Search results",
+    "closeSearch": "Close search",
+    "results_one": "{{count}} result",
+    "results_other": "{{count}} results",
+    "resultsMore": "More than {{count}} results",
+    "moreResults": "Show more",
+    "noResults": "No messages found",
+    "noResultsBody": "Nothing in this chat says “{{text}}”.",
+    "resultGone": "That message isn't there anymore."
   },
   "classmate": {
     "title": "Student profile",

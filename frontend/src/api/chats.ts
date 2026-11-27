@@ -1,4 +1,4 @@
-import type { ChatContactData, ChatSummaryData, DirectChatData, MessageData, MessagePageData, ReactionData } from '../types/chat';
+import type { ChatContactData, ChatSummaryData, DirectChatData, MessageData, MessagePageData, MessageSearchData, ReactionData } from '../types/chat';
 import type { PageData } from '../types/studentDirectory';
 import { request } from './client';
 
@@ -14,6 +14,9 @@ export const sendDirectMessage = (number: number, text: string, replyToId?: numb
 // from an old message you jumped to
 export const getChatMessages = (chatId: number, from?: { before: number } | { after: number }) =>
   request<MessagePageData>('GET', `/chats/${chatId}/messages${from === undefined ? '' : `?${new URLSearchParams(Object.entries(from).map(([key, id]) => [key, String(id)]))}`}`);
+// the chat's messages with that text, newest first; before is the oldest result's id, for the next 25
+export const searchChat = (chatId: number, text: string, before?: number) =>
+  request<MessageSearchData>('GET', `/chats/${chatId}/messages/search?${new URLSearchParams(before === undefined ? { text } : { text, before: String(before) })}`);
 // a message with up to 25 on each side, to jump to it
 export const getMessagesAround = (chatId: number, messageId: number) =>
   request<MessagePageData>('GET', `/chats/${chatId}/messages/${messageId}/around`);
