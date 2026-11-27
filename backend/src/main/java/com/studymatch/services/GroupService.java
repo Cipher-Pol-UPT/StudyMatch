@@ -216,7 +216,7 @@ public class GroupService {
           : ErrorCode.NO_PUBLISHED_GROUPS);
     }
     List<Enrolment> enrolments = enrolmentService.listEnrolments(subjectEditionId);
-    List<List<Student>> members = editedMembers(edited, enrolments);
+    List<List<Student>> members = editedMembers(edited, enrolments, current);
 
     // what's left in removed at the end is every group the teacher took out
     Map<Long, Group> removed = current.stream().collect(Collectors.toMap(Group::getId, Function.identity()));
@@ -261,9 +261,14 @@ public class GroupService {
 
   // every enrolled student who isn't blocked in exactly one group, a blocked one can stay or go (GR5)
   private static List<List<Student>> editedMembers(List<EditGroupsRequestDTO.EditedGroup> edited,
-      List<Enrolment> enrolments) {
+      List<Enrolment> enrolments, List<Group> current) {
     Map<Long, Student> enrolled = enrolments.stream().map(Enrolment::getStudent)
         .collect(Collectors.toMap(Student::getNumber, Function.identity()));
+    Map<Long, Long> blockedIn = new HashMap<>();
+    for (Group group : current) {
+      group.getMembers().stream().filter(Student::isBlocked)
+          .forEach(student -> blockedIn.put(student.getNumber(), group.getId()));
+    }
     Set<Long> placed = new HashSet<>();
     List<List<Student>> members = new ArrayList<>();
     for (EditGroupsRequestDTO.EditedGroup group : edited) {
@@ -275,6 +280,10 @@ public class GroupService {
         }
         if (!placed.add(number)) {
           throw new StudyMatchException(ErrorCode.STUDENT_IN_TWO_GROUPS, Map.of("number", number));
+        }
+        // a new group's id is null, so it never matches, not even for a blocked student with no group
+        if (student.isBlocked() && (group.id() == null || !group.id().equals(blockedIn.get(number)))) {
+          throw new StudyMatchException(ErrorCode.BLOCKED_STUDENT_MOVED, Map.of("number", number));
         }
         students.add(student);
       }

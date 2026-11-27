@@ -611,6 +611,7 @@
     "NO_PUBLISHED_GROUPS": "This assignment has no published groups to edit.",
     "STUDENT_WITHOUT_GROUP": "Every student has to be in a group before saving.",
     "STUDENT_IN_TWO_GROUPS": "Student {{number}} is in more than one group.",
+    "BLOCKED_STUDENT_MOVED": "Student {{number}} is blocked and can only stay in the group they were already in.",
     "NO_GROUPS_TO_EXPORT": "This assignment has no published groups to export yet.",
     "ASSIGNMENT_ALREADY_EXISTS": "This subject already has an assignment with this name.",
     "ASSIGNMENT_WEIGHT_EXCEEDED": "The assignment weights would go over 100%. Weight available: {{remaining}}%.",

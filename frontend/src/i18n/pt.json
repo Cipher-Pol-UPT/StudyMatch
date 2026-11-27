@@ -611,6 +611,7 @@
     "NO_PUBLISHED_GROUPS": "Esta avaliação não tem grupos publicados para editar.",
     "STUDENT_WITHOUT_GROUP": "Todos os estudantes têm de estar num grupo antes de guardar.",
     "STUDENT_IN_TWO_GROUPS": "O estudante {{number}} está em mais do que um grupo.",
+    "BLOCKED_STUDENT_MOVED": "O estudante {{number}} está bloqueado e só pode ficar no grupo em que já estava.",
     "NO_GROUPS_TO_EXPORT": "Esta avaliação ainda não tem grupos publicados para exportar.",
     "ASSIGNMENT_ALREADY_EXISTS": "Esta unidade curricular já tem uma avaliação com este nome.",
     "ASSIGNMENT_WEIGHT_EXCEEDED": "Os pesos das avaliações ultrapassariam os 100%. Peso disponível: {{remaining}}%.",
