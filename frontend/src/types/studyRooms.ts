@@ -2,6 +2,14 @@ import type { StudyRoomStatus } from './enums';
 
 export interface TutorSubjectData { subjectId: number; subjectName: string }
 export interface SubjectData { id: number; name: string }
+// Apply for tutoring (#40): a subject you passed, your rank in it and whether you can apply
+export interface TutorEligibleSubjectData {
+  subjectId: number; subjectName: string; finalGrade: number; position: number; editionSize: number;
+  eligible: boolean; hasPendingApplication: boolean; hasTutorRole: boolean; hasCurrentEdition: boolean;
+}
+export interface TutorApplicationData {
+  id: number; subjectId: number; subjectName: string; status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'; submittedAt: string;
+}
 export interface CreateStudyRoomRequest {
   subjectId: number | null; startsAt: string | null; endsAt: string | null;
   description: string | null; capacity: number; link: string | null;

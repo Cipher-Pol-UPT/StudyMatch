@@ -1,7 +1,13 @@
-import type { CreateStudyRoomRequest, ParticipantData, StudyRoomData, StudyRoomDetailData, TutorSubjectData, UpdateStudyRoomRequest } from '../types/studyRooms';
+import type { CreateStudyRoomRequest, ParticipantData, StudyRoomData, StudyRoomDetailData, TutorApplicationData, TutorEligibleSubjectData, TutorSubjectData, UpdateStudyRoomRequest } from '../types/studyRooms';
 import { request } from './client';
 
 export const getMyTutorSubjects = () => request<TutorSubjectData[]>('GET', '/tutors/me/subjects');
+
+// Apply for tutoring (#40)
+export const getApplicableSubjects = () => request<TutorEligibleSubjectData[]>('GET', '/tutors/me/applicable-subjects');
+
+export const applyForTutoring = (subjectId: number, motivation: string | null) =>
+  request<TutorApplicationData>('POST', '/tutor-applications/', { subjectId, motivation });
 
 export const createStudyRoom = (room: CreateStudyRoomRequest) => request<StudyRoomData>('POST', '/study-rooms/', room);
 

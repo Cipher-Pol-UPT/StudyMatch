@@ -299,6 +299,33 @@
     "leaveBody": "{{room}}. O seu lugar fica livre para outros estudantes.",
     "stay": "Ficar"
   },
+  "tutoring": {
+    "heading": "Ser tutor",
+    "hint": "As unidades curriculares em que obteve aprovação. Pode candidatar-se a tutor quando a sua nota final está nos 5% melhores da turma.",
+    "subject": "Unidade curricular",
+    "grade": "Nota",
+    "position": "Posição",
+    "positionOf": "{{position}} de {{size}}",
+    "state": "Estado",
+    "actions": "Ações",
+    "states": {
+      "tutor": "Tutor",
+      "pending": "Pendente",
+      "notTaught": "Não lecionada este ano",
+      "notTop": "Fora dos 5% melhores",
+      "canApply": "Pode candidatar-se"
+    },
+    "apply": "Candidatar",
+    "applyFor": "Candidatar-se a tutor de {{subject}}",
+    "applyTitle": "Tutoria de {{subject}}",
+    "applyDescription": "Quem decide é o docente da unidade curricular deste ano.",
+    "applyRank": "Nota final {{grade}}, {{position}} de {{size}} na sua turma.",
+    "motivation": "Motivação",
+    "motivationPlaceholder": "Porque gostaria de ser tutor desta unidade curricular?",
+    "applied": "Candidatou-se a tutor de {{subject}}.",
+    "empty": "Ainda sem unidades curriculares concluídas",
+    "emptyBody": "Quando obtiver aprovação numa unidade curricular, aparece aqui."
+  },
   "studyRooms": {
     "heading": "Salas de estudo",
     "intro": "Um espaço para se concentrar, tirar dúvidas e progredir em conjunto. Encontre uma sessão à sua medida.",

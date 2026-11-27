@@ -299,6 +299,33 @@
     "leaveBody": "{{room}}. Your place goes back to the other students.",
     "stay": "Stay"
   },
+  "tutoring": {
+    "heading": "Become a tutor",
+    "hint": "The subjects you passed. You can apply to tutor one where your final grade is in the top 5% of your class.",
+    "subject": "Subject",
+    "grade": "Grade",
+    "position": "Position",
+    "positionOf": "{{position}} of {{size}}",
+    "state": "State",
+    "actions": "Actions",
+    "states": {
+      "tutor": "Tutor",
+      "pending": "Pending",
+      "notTaught": "Not taught this year",
+      "notTop": "Not in the top 5%",
+      "canApply": "Can apply"
+    },
+    "apply": "Apply",
+    "applyFor": "Apply to tutor {{subject}}",
+    "applyTitle": "Tutor {{subject}}",
+    "applyDescription": "This year's teacher of the subject decides.",
+    "applyRank": "Final grade {{grade}}, {{position}} of {{size}} in your class.",
+    "motivation": "Motivation",
+    "motivationPlaceholder": "Why would you like to tutor this subject?",
+    "applied": "You applied to tutor {{subject}}.",
+    "empty": "No subjects passed yet",
+    "emptyBody": "Once you pass a subject, it shows up here."
+  },
   "studyRooms": {
     "heading": "StudyRooms",
     "intro": "A shared space to focus, ask questions and make progress together. Find a session that works for you.",
