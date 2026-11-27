@@ -1,6 +1,7 @@
 package com.studymatch.services;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -32,6 +33,8 @@ import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Chat;
 import com.studymatch.models.CustomChat;
 import com.studymatch.models.DirectChat;
+import com.studymatch.models.Group;
+import com.studymatch.models.GroupChat;
 import com.studymatch.models.User;
 import com.studymatch.repositories.ChatRepository;
 import com.studymatch.utils.PresenceTracker;
@@ -77,8 +80,8 @@ public class ChatService {
     return getChatFor(chatId, user).getMembers().stream().map(ChatContactDTO::from).toList();
   }
 
-  // every chat the user is in, without DMs with people they blocked. a block doesn't hide group chats (GR9).
-  // assignment group chats join this list when they exist (#236)
+  // every chat the user is in, without DMs with people they blocked. a block doesn't hide group chats (GR9),
+  // assignment ones neither (#236)
   @Transactional(readOnly = true)
   public List<Chat> getChatsOf(User user) {
     Set<Long> blocked = userBlockService.getBlockedNumbers(user);
@@ -86,6 +89,7 @@ public class ChatService {
         .filter(direct -> !blocked.contains(direct.getOtherUser(user).getNumber()))
         .toList());
     chats.addAll(chatRepository.findCustomChatsOf(user.getNumber()));
+    chats.addAll(chatRepository.findGroupChatsOf(user.getNumber()));
     return chats;
   }
 
@@ -115,8 +119,9 @@ public class ChatService {
       return;
     }
     TypingDTO typing = new TypingDTO(chat.getId(), ChatContactDTO.from(user));
-    // a group chat goes to each member like its messages, a removed member's open tab still listens to the topic
-    if (chat instanceof CustomChat) {
+    // a group chat goes to each member like its messages, a removed or moved member's open tab still listens to
+    // the topic
+    if (!(chat instanceof DirectChat)) {
       for (User member : chat.getMembers()) {
         eventPublisher.publishEvent(new MemberChatEvent(member, chat.getId(), ChatEventType.TYPING, typing));
       }
@@ -238,6 +243,47 @@ public class ChatService {
     chatRepository.deleteById(chat.getId());
   }
 
+  // every published group gets its own chat, empty, its students see it on their list straight away (#236)
+  @Transactional
+  public void createGroupChats(List<Group> groups) {
+    for (Group group : groups) {
+      GroupChat chat = chatRepository.save(new GroupChat(group));
+      for (User member : chat.getMembers()) {
+        eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_ADDED,
+            ChatSummaryDTO.from(chat, member, null, 0)));
+      }
+    }
+  }
+
+  @Transactional(readOnly = true)
+  public List<GroupChat> getGroupChatsFor(Collection<Group> groups) {
+    return groups.isEmpty() ? List.of() : chatRepository.findGroupChatsFor(groups);
+  }
+
+  // the group's going, so is its chat. delete the messages first (MessageService.deleteGroupChats).
+  // CHAT_REMOVED takes it off the members' lists
+  @Transactional
+  public void deleteGroupChats(List<GroupChat> chats) {
+    for (GroupChat chat : chats) {
+      chatSettingsService.deleteAllOf(chat);
+      for (User member : chat.getMembers()) {
+        eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_REMOVED, chat.getId()));
+      }
+      chatRepository.delete(chat);
+    }
+  }
+
+  // the teacher moved students, whoever left loses the chat and its history like a removed member (GR8).
+  // whoever joined gets the history read, their CHAT_ADDED needs the last message so it's in MessageService
+  @Transactional
+  public void groupMembersChanged(GroupChat chat, List<User> left, List<User> joined) {
+    for (User member : left) {
+      chatSettingsService.deleteOf(chat, member);
+      eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_REMOVED, chat.getId()));
+    }
+    chatSettingsService.startRead(chat, joined);
+  }
+
   // any member renames a group chat, the name's checked like creating (#234). a DM has no name, so 404
   @Transactional
   public void rename(Long chatId, User user, RenameGroupChatRequestDTO request) {
@@ -268,8 +314,8 @@ public class ChatService {
   // a group chat someone made, locked so two changes at once go one after the other. it's locked before
   // getChatFor loads the members, or the second would wait and then use the list from before the first.
   // edits lock too, saving writes the whole row back, owner included (#234). anything else gets notGroupChat,
-  // a DM's members never change and it has no name. #236: if the assignment chat ends up extending CustomChat
-  // it has to be refused here too, its members come from the group
+  // a DM's members never change and it has no name. an assignment chat neither, its members come from the group
+  // and its name from the assignment (#236)
   private CustomChat getLockedCustomChatFor(Long chatId, User user, ErrorCode notGroupChat) {
     chatRepository.findLockedCustomChat(chatId);
     if (getChatFor(chatId, user) instanceof CustomChat chat) {

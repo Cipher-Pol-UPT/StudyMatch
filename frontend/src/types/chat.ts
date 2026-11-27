@@ -46,7 +46,8 @@ export interface MessagePageData { messages: MessageData[]; hasMore: boolean }
 export interface MessageDeletedData { chatId: number; messageId: number }
 
 // a row of the chat list (#201): contact is the other person in a DM, null in a group chat. picture says if a group chat
-// has one, and pictureUpdatedAt goes in its url so a new one isn't cached. lastMessage is null before anyone writes
+// has one, and pictureUpdatedAt goes in its url so a new one isn't cached. lastMessage is null before anyone writes.
+// assignment is a published group's chat (#236), its members can't be changed by hand
 export interface ChatSummaryData {
   chatId: number;
   name: string;
@@ -55,6 +56,7 @@ export interface ChatSummaryData {
   pictureUpdatedAt: string | null;
   lastMessage: MessageData | null;
   unread: number;
+  assignment: boolean;
 }
 
 // what CHAT_EDITED carries: a group chat's new name or picture
