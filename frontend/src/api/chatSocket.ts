@@ -20,6 +20,9 @@ function setConnected(value: boolean) {
   connected = value;
   connectionListeners.forEach(listener => listener());
 }
+// told when the connection comes back after dropping, to load what was missed meanwhile (#317)
+const reconnectListeners = new Set<() => void>();
+let connectedOnce = false;
 
 // one connection for the whole app, opened after login. stompjs reconnects by itself
 export function connectChatSocket(): void {
@@ -37,6 +40,8 @@ export function connectChatSocket(): void {
     onConnect: () => {
       listeners.forEach(listen);
       setConnected(true);
+      if (connectedOnce) reconnectListeners.forEach(listener => listener());
+      connectedOnce = true;
     },
     onWebSocketClose: () => setConnected(false),
   });
@@ -47,6 +52,7 @@ export async function disconnectChatSocket(): Promise<void> {
   const closing = client;
   client = null;
   setConnected(false);
+  connectedOnce = false;
   listeners.forEach(listener => { listener.subscription = undefined; });
   await closing?.deactivate();
 }
@@ -77,6 +83,12 @@ export const isChatSocketConnected = () => connected;
 export function onChatSocketConnection(listener: () => void): () => void {
   connectionListeners.add(listener);
   return () => { connectionListeners.delete(listener); };
+}
+
+// returns the unsubscribe. Nothing on the first connection, only when it comes back
+export function onChatSocketReconnect(listener: () => void): () => void {
+  reconnectListeners.add(listener);
+  return () => { reconnectListeners.delete(listener); };
 }
 
 function listen(listener: Listener) {

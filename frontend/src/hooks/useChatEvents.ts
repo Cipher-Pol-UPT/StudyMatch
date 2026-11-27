@@ -1,5 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
-import { isChatSocketConnected, onChatSocketConnection, subscribeToChatEvents } from '../api/chatSocket';
+import { isChatSocketConnected, onChatSocketConnection, onChatSocketReconnect, subscribeToChatEvents } from '../api/chatSocket';
 import type { ChatEvent } from '../types/chat';
 
 // a chat's messages being sent, edited or deleted, while the component is on screen; nothing while there's no chat yet
@@ -26,4 +26,13 @@ function useSocketDestination(destination: string | null, onEvent: (event: ChatE
 // whether the live connection is up right now (#223)
 export function useChatSocketConnected() {
   return useSyncExternalStore(onChatSocketConnection, isChatSocketConnected);
+}
+
+// the connection came back after dropping: whatever was pushed meanwhile was lost, so it's asked for again (#317)
+export function useChatSocketReconnect(onReconnect: () => void) {
+  const handler = useRef(onReconnect);
+  useEffect(() => {
+    handler.current = onReconnect;
+  });
+  useEffect(() => onChatSocketReconnect(() => handler.current()), []);
 }

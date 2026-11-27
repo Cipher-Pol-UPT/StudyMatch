@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getChats } from '../../api/chats';
-import { useChatListEvents } from '../../hooks/useChatEvents';
+import { useChatListEvents, useChatSocketReconnect } from '../../hooks/useChatEvents';
 import type { ChatEditedData, ChatSummaryData, MessageData, MessageDeletedData } from '../../types/chat';
 
 export interface ChatList {
@@ -21,6 +21,8 @@ export function useChatList(isMine: (message: MessageData) => boolean, isOpen: (
   ), []);
 
   useEffect(() => { void reload(); }, [reload]);
+  // previews and unread counts may have changed while the connection was down (#317)
+  useChatSocketReconnect(() => { void reload(); });
 
   const update = (change: (chats: ChatSummaryData[]) => ChatSummaryData[]) =>
     setList(current => current.chats ? { ...current, chats: change(current.chats) } : current);

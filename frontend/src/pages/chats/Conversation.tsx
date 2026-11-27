@@ -7,7 +7,7 @@ import { blockUser, unblockUser } from '../../api/blocks';
 import { deleteMessage, editMessage, getDirectChat, reactToMessage, removeReaction, sendDirectMessage, sendMessage } from '../../api/chats';
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
-import { useChatEvents, useChatListEvents } from '../../hooks/useChatEvents';
+import { useChatEvents, useChatListEvents, useChatSocketReconnect } from '../../hooks/useChatEvents';
 import { typingLine, useTyping } from './useTyping';
 import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatTyping, ChatStart, ChatThread, ConfirmDialog, Button, Menu, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction } from '../../studymatch-ui';
 import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData, type MessageQuoteData, type ReactionData } from '../../types/chat';
@@ -73,7 +73,9 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
   const [conversation, update] = useConversation(contact ? `direct:${contact.number}` : `chat:${chat.kind === 'group' ? chat.chatId : ''}`);
   // a DM gets its id with its first message, yours or theirs: from then on its history loads and its live events are followed
   const [chatId, setChatId] = useState(chat.kind === 'direct' ? chat.chat.chatId : chat.chatId);
-  const { history, loadOlder, loadNewer, jumpTo, toLatest, behind, add, replace, remove, applyReaction, markRead } = useChatHistory(chatId);
+  const { history, loadOlder, loadNewer, jumpTo, toLatest, behind, add, replace, remove, applyReaction, markRead, catchUp } = useChatHistory(chatId);
+  // what was sent, edited or deleted while the connection was down (#317)
+  useChatSocketReconnect(() => { void catchUp(); });
   const toast = useToast();
   // a message you sent keeps the key it had while sending, so it doesn't jump when the backend answers.
   // Each key belongs to one message: its live event can take it before the answer, which then puts it right

@@ -9,7 +9,7 @@ import type { ChatContactData, ChatEvent, MessageData, MessageQuoteData } from '
 
 // every listener of a destination gets what the test pushes
 const live = vi.hoisted(() => ({ listeners: new Map<string, Set<(event: unknown) => void>>() }));
-vi.mock('../src/api/chatSocket', () => ({
+vi.mock('../src/api/chatSocket', () => ({ onChatSocketReconnect: () => () => undefined,
   // the connection is down, so nobody shows as online
   isChatSocketConnected: () => false, onChatSocketConnection: () => () => undefined, sendTyping: vi.fn(),
   subscribeToChatEvents: (destination: string, onEvent: (event: unknown) => void) => {
