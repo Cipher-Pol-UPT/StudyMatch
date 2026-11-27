@@ -1,0 +1,111 @@
+/* ─── New subject form ─────────────────────────────────────── */
+.subjects-page__create { margin-top: 16px; }
+
+.sm-subject-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: var(--sm-font);
+}
+
+.sm-subject-form__top {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.sm-subject-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 12px;
+  align-items: start;
+}
+
+/* Degrees: a card, because the rows can grow */
+.sm-subject-degrees {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--sm-r-lg);
+  border: 1px solid var(--sm-border);
+  background: var(--sm-surface);
+}
+
+.sm-subject-degrees__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--sm-text);
+}
+
+.sm-subject-degrees__hint {
+  margin: -6px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--sm-text-2);
+}
+
+.sm-subject-degrees__error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--sm-danger-ink);
+}
+
+.sm-subject-degrees__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.sm-subject-degrees > .sm-btn {
+  align-self: flex-start;
+}
+
+/* Teachers */
+.sm-subject-teachers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sm-subject-teachers__label {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sm-text);
+}
+
+.sm-subject-teachers__error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--sm-danger-ink);
+}
+
+.sm-subject-teachers__add {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+}
+
+.sm-subject-teachers__add > .sm-field {
+  flex: 1;
+}
+
+/* Footer */
+.sm-subject-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .sm-subject-form__top,
+  .sm-subject-form__row,
+  .sm-subject-degrees__row {
+    grid-template-columns: 1fr;
+  }
+}

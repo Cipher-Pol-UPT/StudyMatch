@@ -8,7 +8,7 @@ export const STAFF_SECTIONS: NavigationSection[] = [
   { key: 'studentClasses', path: '/student-classes', icon: Layers },
   { key: 'statutes', path: '/student-statutes', icon: ShieldCheck },
   { key: 'attendance', path: '/attendance', icon: ClipboardList, ready: true },
-  { key: 'subjects', path: '/subjects', icon: BookOpen },
+  { key: 'subjects', path: '/subjects', icon: BookOpen, ready: true },
   { key: 'degrees', path: '/degrees', icon: GraduationCap },
   { key: 'categories', path: '/categories', icon: Layers, ready: true },
   { key: 'academicYear', path: '/academic-year', icon: CalendarDays },

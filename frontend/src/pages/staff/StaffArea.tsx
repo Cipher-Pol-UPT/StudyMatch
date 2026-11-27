@@ -9,6 +9,7 @@ import { StaffCategoriesPage } from './StaffCategoriesPage';
 import { StaffEnrolmentsPage } from './StaffEnrolmentsPage';
 import { StaffStudentsPage } from './StaffStudentsPage';
 import { StaffStudentDetailsPage } from './StaffStudentDetailsPage';
+import { StaffSubjectsPage } from './StaffSubjectsPage';
 
 interface StaffAreaProps {
   currentUser: CurrentUser;
@@ -24,6 +25,7 @@ export function StaffArea({ currentUser, onLoggedOut }: StaffAreaProps) {
       <Route path="/enrolments" element={<StaffEnrolmentsPage />} />
       <Route path="/attendance" element={<StaffAttendancePage />} />
       <Route path="/categories" element={<StaffCategoriesPage />} />
+      <Route path="/subjects" element={<StaffSubjectsPage />} />
       <Route path="/analytics" element={<StaffAnalyticsPage />} />
     </RoleLayout>
   );
