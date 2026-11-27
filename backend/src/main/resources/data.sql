@@ -309,6 +309,26 @@ JOIN subject s ON s.code = v.code
 JOIN subject_edition e ON e.subject_id = s.id AND e.academic_year = v.academic_year
 ON CONFLICT (subject_edition_id, code) DO NOTHING;
 
+-- teachers of this year's classes, only where Staff hasn't picked one yet
+UPDATE class_section cs
+SET teacher_number = u.number
+FROM (VALUES
+  ('PROG1', 'T1', 'tiago.teacher@example.com'),
+  ('PROG1', 'T2', 'tiago.teacher@example.com'),
+  ('MATH1', 'T1', 'marta.teacher@example.com'),
+  ('DB', 'T1', 'tiago.teacher@example.com'),
+  ('DB', 'T2', 'tiago.teacher@example.com'),
+  ('STAT', 'T1', 'marta.teacher@example.com'),
+  ('SE', 'T1', 'rui.teacher@example.com'),
+  ('SQ', 'T1', 'tiago.teacher@example.com'),
+  ('UX', 'T1', 'rui.teacher@example.com'),
+  ('PM', 'T1', 'marta.teacher@example.com')
+) AS v(code, section, teacher_email)
+JOIN subject s ON s.code = v.code
+JOIN subject_edition e ON e.subject_id = s.id AND e.academic_year = 2026
+JOIN users u ON u.personal_email = v.teacher_email
+WHERE cs.subject_edition_id = e.id AND cs.code = v.section AND cs.teacher_number IS NULL;
+
 -- enrolments: the 2025 ones are finished with a final grade, the 2026 ones are in progress
 
 INSERT INTO enrolment (student_id, subject_edition_id, class_section_id, status, final_grade)
