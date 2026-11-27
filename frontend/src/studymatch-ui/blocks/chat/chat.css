@@ -199,6 +199,25 @@
 .sm-person__name { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sm-person__sub { font-size: 12px; color: var(--sm-text-3); }
 .sm-person__tag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: var(--sm-r-pill); background: var(--sm-fill); font-size: 11.5px; font-weight: 500; color: var(--sm-text-2); white-space: nowrap; }
+.sm-person--pick:disabled { opacity: .45; cursor: not-allowed; }
+.sm-person--pick:disabled:hover { background: none; }
+.sm-person__check { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--sm-violet); color: var(--sm-on-accent); }
+/* a group chat's picture, picked in New group chat (#227) */
+.sm-chat__picture { position: relative; flex-shrink: 0; }
+.sm-chat__picture-pick { display: grid; place-items: center; width: 56px; height: 56px; padding: 0; overflow: hidden; border: 1.5px dashed var(--sm-gray-300); border-radius: 28%; background: var(--sm-fill); color: var(--sm-text-3); cursor: pointer; }
+.sm-chat__picture-pick:hover { background: var(--sm-fill-hover); color: var(--sm-text-2); }
+.sm-chat__picture-pick:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-chat__picture-pick img { width: 100%; height: 100%; object-fit: cover; }
+.sm-chat__picture-pick:has(img) { border-style: solid; border-color: transparent; }
+.sm-chat__picture-remove.sm-icon-btn { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; box-shadow: var(--sm-shadow-sm); background: var(--sm-surface); }
+.sm-chat__group-form { display: grid; gap: 14px; }
+.sm-chat__group-name { display: flex; align-items: flex-start; gap: 12px; }
+.sm-chat__group-field { flex: 1; min-width: 0; }
+.sm-chat__group-error { margin: -6px 0 0; font-size: 12.5px; color: var(--sm-danger-ink); }
+.sm-chat__picked { display: flex; flex-wrap: wrap; gap: 6px; }
+.sm-chat__picked .sm-chip--refused { box-shadow: inset 0 0 0 1.5px var(--sm-danger); }
+.sm-chat__counter { display: flex; justify-content: space-between; align-items: center; margin-bottom: -8px; font-size: 12.5px; color: var(--sm-text-2); }
+.sm-chat__counter b { font-weight: 500; color: var(--sm-text); font-variant-numeric: tabular-nums; }
 
 /* a phone: the list and the conversation are separate screens */
 @media (max-width: 720px) {

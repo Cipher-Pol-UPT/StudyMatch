@@ -1,14 +1,15 @@
 import type { TFunction } from 'i18next';
-import { ArrowLeft, MessagesSquare, SquarePen } from 'lucide-react';
+import { ArrowLeft, MessagesSquare, SquarePen, UsersRound } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getDirectChat } from '../../api/chats';
+import { getChatMembers, getDirectChat } from '../../api/chats';
 import { isBackendError } from '../../api/errors';
+import { NewGroupChatDialog } from '../../components/chat/NewGroupChatDialog';
 import { NewMessageDialog } from '../../components/chat/NewMessageDialog';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
-import { Banner, Button, buttonClass, ChatLayout, ChatListPane, ChatRow, ChatRows, ChatThread, EmptyState } from '../../studymatch-ui';
+import { Banner, Button, buttonClass, ChatLayout, ChatListPane, ChatRow, ChatRows, ChatThread, EmptyState, IconButton } from '../../studymatch-ui';
 import { type ChatContactData, type ChatSummaryData, type MessageData } from '../../types/chat';
 import { Conversation } from './Conversation';
 import { lineOf } from './messageText';
@@ -25,17 +26,27 @@ export interface ChatsPageProps {
 const photoOf = (contact: ChatContactData) => contact.role === 'STUDENT' ? `/api/students/${contact.number}/pfp` : undefined;
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
-// Chats: the list (#201) and the open conversation; this page starts DMs (#199)
+// an id in the address that can't be a chat: the same answer the backend gives one you aren't in, as an Error
+const notFound = () => Object.assign(new Error('Not found'), { code: 'NOT_FOUND' });
+
+// a group chat's picture, a new one isn't served from the cache
+const pictureOf = (chat: ChatSummaryData) => chat.picture ? `/api/chats/${chat.chatId}/picture?v=${chat.pictureUpdatedAt ?? ''}` : undefined;
+
+// Chats: the list (#201) and the open conversation; this page starts DMs (#199) and group chats (#227)
 export function ChatsPage({ me, profilePath }: ChatsPageProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { number, chatId } = useParams();
   const [choosing, setChoosing] = useState(false);
+  const [creating, setCreating] = useState(false);
   const isOpen = (chat: ChatSummaryData) => chat.contact ? String(chat.contact.number) === number : String(chat.chatId) === chatId;
-  const { chats, error } = useChatList(message => message.author.number === me, isOpen);
+  const { chats, error, add } = useChatList(message => message.author.number === me, isOpen);
 
   const newMessage = (
-    <Button size="sm" icon={SquarePen} onClick={() => setChoosing(true)}>{t('chats.newMessage')}</Button>
+    <>
+      <IconButton icon={UsersRound} label={t('chats.newGroupChat')} title={t('chats.newGroupChat')} variant="ghost" onClick={() => setCreating(true)} />
+      <Button size="sm" icon={SquarePen} onClick={() => setChoosing(true)}>{t('chats.newMessage')}</Button>
+    </>
   );
 
   // today it's the time, yesterday says so, before that the day
@@ -56,7 +67,7 @@ export function ChatsPage({ me, profilePath }: ChatsPageProps) {
       <ChatRows label={t('chats.title')}>
         {chats.map(chat => (
           <ChatRow key={chat.chatId} name={chat.name} group={!chat.contact} linkAs={Link}
-            avatarSrc={chat.contact ? photoOf(chat.contact) : chat.picture ? `/api/chats/${chat.chatId}/picture?v=${chat.pictureUpdatedAt ?? ''}` : undefined}
+            avatarSrc={chat.contact ? photoOf(chat.contact) : pictureOf(chat)}
             href={chat.contact ? `/chats/direct/${chat.contact.number}` : `/chats/group/${chat.chatId}`}
             preview={previewOf(chat, me, t)} time={chat.lastMessage ? when(chat.lastMessage.sentAt) : undefined} dateTime={chat.lastMessage?.sentAt}
             unread={chat.unread} unreadLabel={t('chats.unread', { count: chat.unread })} current={isOpen(chat)} />
@@ -66,12 +77,14 @@ export function ChatsPage({ me, profilePath }: ChatsPageProps) {
   };
 
   const thread = () => {
-    if (number) return <DirectConversation key={number} number={Number(number)} profilePath={profilePath} />;
-    // group chats open with their own issues (#227); until then the list shows them
-    const pick = chatId ? { title: t('chats.groupSoon'), body: t('chats.groupSoonBody') } : { title: t('chats.pickChat'), body: t('chats.pickChatBody') };
+    if (number) return <DirectConversation key={number} number={Number(number)} me={me} profilePath={profilePath} />;
+    if (chatId) {
+      return <GroupConversation key={chatId} chatId={Number(chatId)} me={me} profilePath={profilePath}
+        summary={chats?.find(chat => !chat.contact && String(chat.chatId) === chatId)} listLoaded={chats !== null} listError={error} />;
+    }
     return (
       <ChatThread label={t('chats.conversation')}>
-        <EmptyState compact icon={MessagesSquare} title={pick.title} body={pick.body} />
+        <EmptyState compact icon={MessagesSquare} title={t('chats.pickChat')} body={t('chats.pickChatBody')} />
       </ChatThread>
     );
   };
@@ -83,6 +96,8 @@ export function ChatsPage({ me, profilePath }: ChatsPageProps) {
         thread={thread()} />
       <NewMessageDialog open={choosing} onClose={() => setChoosing(false)}
         onPick={contact => { setChoosing(false); navigate(`/chats/direct/${contact.number}`); }} />
+      <NewGroupChatDialog open={creating} onClose={() => setCreating(false)}
+        onCreated={chat => { setCreating(false); add(chat); navigate(`/chats/group/${chat.chatId}`); }} />
     </>
   );
 }
@@ -98,22 +113,51 @@ function previewOf(chat: ChatSummaryData, me: number, t: TFunction) {
 }
 
 // the DM with one person: found by their number, then its messages and the message box
-function DirectConversation({ number, profilePath }: { number: number } & Pick<ChatsPageProps, 'profilePath'>) {
+function DirectConversation({ number, me, profilePath }: { number: number } & Pick<ChatsPageProps, 'me' | 'profilePath'>) {
   const { t } = useTranslation();
-  const load = useCallback(() => Number.isInteger(number) ? getDirectChat(number) : Promise.reject({ code: 'NOT_FOUND' }), [number]);
+  const load = useCallback(() => Number.isInteger(number) ? getDirectChat(number) : Promise.reject(notFound()), [number]);
   const chat = useRemoteData(`direct-chat:${number}`, load);
 
-  if (chat.error !== undefined) {
-    return (
-      <ChatThread label={t('chats.conversation')}>
-        <Banner tone="danger">{isBackendError(chat.error) ? t(`errors.${chat.error.code}`, chat.error.params ?? {}) : t('common.unexpectedError')}</Banner>
-        <Link to="/chats" className={buttonClass({ variant: 'secondary', size: 'sm' })}><ArrowLeft size={16} aria-hidden />{t('chats.back')}</Link>
-      </ChatThread>
-    );
-  }
+  if (chat.error !== undefined) return <ChatNotOpened error={chat.error} />;
   if (chat.loading || !chat.data) {
     return <ChatThread label={t('chats.conversation')}><DataLoadState /></ChatThread>;
   }
 
-  return <Conversation chat={chat.data} profilePath={profilePath} />;
+  return <Conversation chat={{ kind: 'direct', chat: chat.data }} me={me} profilePath={profilePath} />;
+}
+
+interface GroupConversationProps extends Pick<ChatsPageProps, 'me' | 'profilePath'> {
+  chatId: number;
+  // its row in the chat list, with its name and picture, kept up to date by the list
+  summary?: ChatSummaryData;
+  listLoaded: boolean;
+  // the list couldn't load, so its row never comes: shown here too instead of loading forever
+  listError?: unknown;
+}
+
+// a group chat by its id: its members, then its messages and the message box (#227)
+function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listError }: GroupConversationProps) {
+  const { t } = useTranslation();
+  const load = useCallback(() => Number.isInteger(chatId) ? getChatMembers(chatId) : Promise.reject(notFound()), [chatId]);
+  const members = useRemoteData(`chat-members:${chatId}`, load);
+
+  // not in your list once it has loaded: it isn't yours, or it isn't there anymore
+  const error = members.error ?? listError ?? (listLoaded && !summary ? notFound() : undefined);
+  if (error !== undefined) return <ChatNotOpened error={error} />;
+  if (members.loading || !members.data || !summary) {
+    return <ChatThread label={t('chats.conversation')}><DataLoadState /></ChatThread>;
+  }
+
+  return <Conversation chat={{ kind: 'group', chatId, name: summary.name, pictureSrc: pictureOf(summary), members: members.data }} me={me} profilePath={profilePath} />;
+}
+
+// a chat that can't be opened: why, and the way back to the list
+function ChatNotOpened({ error }: { error: unknown }) {
+  const { t } = useTranslation();
+  return (
+    <ChatThread label={t('chats.conversation')}>
+      <Banner tone="danger">{isBackendError(error) ? t(`errors.${error.code}`, error.params ?? {}) : t('common.unexpectedError')}</Banner>
+      <Link to="/chats" className={buttonClass({ variant: 'secondary', size: 'sm' })}><ArrowLeft size={16} aria-hidden />{t('chats.back')}</Link>
+    </ChatThread>
+  );
 }

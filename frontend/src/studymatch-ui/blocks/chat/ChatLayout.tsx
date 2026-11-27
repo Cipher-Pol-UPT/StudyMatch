@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronLeft, CircleAlert, CornerUpLeft, Pencil, Reply, SmilePlus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Camera, Check, ChevronLeft, CircleAlert, CornerUpLeft, Pencil, Reply, SmilePlus, Trash2, X } from 'lucide-react';
 import { useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, type ElementType, type MouseEvent, type PointerEvent, type ReactNode, type Ref, type UIEventHandler } from 'react';
 import { Avatar } from '../../components/avatar/Avatar';
 import { Button, IconButton } from '../../components/button/Button';
@@ -90,14 +90,16 @@ export interface ChatHeadProps {
   linkAs?: ElementType;
   // on the right, like the search
   actions?: ReactNode;
+  // a group chat's picture is square, a person's round
+  group?: boolean;
 }
 
 // who the conversation is with; the back button only shows on a phone
-export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profileHref, profileLabel, linkAs, actions }: ChatHeadProps) {
+export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profileHref, profileLabel, linkAs, actions, group }: ChatHeadProps) {
   const LinkAs = linkAs ?? 'a';
   const who = (
     <>
-      <Avatar name={name} src={avatarSrc} size={40} />
+      <Avatar name={name} src={avatarSrc} size={40} shape={group ? 'square' : 'circle'} />
       <div className="sm-chat__head-text">
         <h2 className="sm-chat__head-name">{name}</h2>
         {subtitle && <div className="sm-chat__head-sub">{subtitle}</div>}
@@ -160,14 +162,15 @@ export function ChatResult({ author, time, dateTime, children, onClick }: ChatRe
 export interface ChatStartProps {
   name: string;
   avatarSrc?: string;
+  group?: boolean;
   children?: ReactNode;
 }
 
 // the top of a conversation: who it's with, and a word on how to begin
-export function ChatStart({ name, avatarSrc, children }: ChatStartProps) {
+export function ChatStart({ name, avatarSrc, group, children }: ChatStartProps) {
   return (
     <div className="sm-chat__start">
-      <Avatar name={name} src={avatarSrc} size={64} />
+      <Avatar name={name} src={avatarSrc} size={64} shape={group ? 'square' : 'circle'} />
       <h3>{name}</h3>
       {children && <p>{children}</p>}
     </div>
@@ -178,22 +181,54 @@ export interface ChatPersonProps {
   name: string;
   subtitle: string;
   tag?: string;
+  // picking several, like the members of a new group chat: picked shows a check, and the row toggles
+  picked?: boolean;
+  disabled?: boolean;
   onPick: () => void;
 }
 
 // someone to message, a row of the New message search
-export function ChatPerson({ name, subtitle, tag, onPick }: ChatPersonProps) {
+export function ChatPerson({ name, subtitle, tag, picked, disabled, onPick }: ChatPersonProps) {
   return (
     <li>
-      <button type="button" className="sm-person sm-person--pick" onClick={onPick}>
+      <button type="button" className="sm-person sm-person--pick" onClick={onPick} disabled={disabled} aria-pressed={picked}>
         <Avatar name={name} size={38} />
         <span className="sm-person__text">
           <span className="sm-person__name">{name}</span>
           <span className="sm-person__sub">{subtitle}</span>
         </span>
-        {tag && <span className="sm-person__tag">{tag}</span>}
+        {picked ? <span className="sm-person__check"><Check size={13} strokeWidth={2.5} aria-hidden /></span> : tag && <span className="sm-person__tag">{tag}</span>}
       </button>
     </li>
+  );
+}
+
+export interface ChatPictureProps {
+  // the picture picked so far
+  src?: string;
+  label: string;
+  removeLabel: string;
+  onPick: (file: File) => void;
+  onRemove: () => void;
+}
+
+// a group chat's optional picture: a dashed square to pick a PNG or JPEG, then the picture with an X
+export function ChatPicture({ src, label, removeLabel, onPick, onRemove }: ChatPictureProps) {
+  const input = useRef<HTMLInputElement>(null);
+  return (
+    <div className="sm-chat__picture">
+      <button type="button" className="sm-chat__picture-pick" aria-label={label} title={label} onClick={() => input.current?.click()}>
+        {src ? <img src={src} alt="" /> : <Camera size={20} aria-hidden />}
+      </button>
+      {src && <IconButton className="sm-chat__picture-remove" icon={X} label={removeLabel} size="sm" variant="secondary" onClick={onRemove} />}
+      <input ref={input} type="file" accept="image/png,image/jpeg" hidden
+        onChange={event => {
+          const file = event.target.files?.[0];
+          // the same file can be picked again after taking it off
+          event.target.value = '';
+          if (file) onPick(file);
+        }} />
+    </div>
   );
 }
 
