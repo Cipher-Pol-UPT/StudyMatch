@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -19,9 +22,11 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.AssignmentGroupsDTO;
+import com.studymatch.dtos.EditGroupsRequestDTO;
 import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.MyGroupDTO;
 import com.studymatch.enums.AssignmentType;
@@ -334,6 +339,265 @@ class GroupServiceTest {
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, exception.getCode());
+  }
+
+  // edit groups: the assignment's groups of one status (ids from 11, numbered from 1) and who is enrolled
+  private List<Group> editing(GroupStatus status, List<List<Student>> groups, Student... enrolled) {
+    Assignment assignment = project("Project", LocalDate.of(2026, 1, 10));
+    when(assignmentService.getLockedAssignment(1L, 2L)).thenReturn(assignment);
+    List<Group> current = new ArrayList<>();
+    for (List<Student> members : groups) {
+      Group group = draft(assignment, current.size() + 1, members.toArray(Student[]::new));
+      ReflectionTestUtils.setField(group, "id", 11L + current.size());
+      if (status == GroupStatus.PUBLISHED) {
+        group.publish();
+      }
+      current.add(group);
+    }
+    when(groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment, status)).thenReturn(current);
+    when(enrolmentService.listEnrolments(1L))
+        .thenReturn(List.of(enrolled).stream().map(ModelTestData::enrolment).toList());
+    when(groupRepository.save(any(Group.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    return current;
+  }
+
+  private static EditGroupsRequestDTO.EditedGroup edited(Long id, Student... members) {
+    return new EditGroupsRequestDTO.EditedGroup(id, List.of(members).stream().map(Student::getNumber).toList());
+  }
+
+  // the groups handed to deleteAll, as a list
+  private List<Group> deleted() {
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<Iterable<Group>> captor = ArgumentCaptor.forClass(Iterable.class);
+    verify(groupRepository).deleteAll(captor.capture());
+    List<Group> groups = new ArrayList<>();
+    captor.getValue().forEach(groups::add);
+    return groups;
+  }
+
+  private StudyMatchException editFails(GroupStatus status, List<EditGroupsRequestDTO.EditedGroup> edited) {
+    return assertThrows(StudyMatchException.class, () -> groupService.editGroups(1L, 2L, status, edited));
+  }
+
+  @Test
+  @DisplayName("Edit groups: moving a student keeps both groups, with their ids and numbers")
+  void editMovesStudent() {
+    // Arrange
+    Student bia = student("Bia", 1003L);
+    List<Group> current = editing(GroupStatus.DRAFT, List.of(List.of(ana, rui), List.of(bia)), ana, rui, bia);
+
+    // Act
+    List<GroupDTO> groups = groupService.editGroups(1L, 2L, GroupStatus.DRAFT,
+        List.of(edited(11L, ana), edited(12L, rui, bia)));
+
+    // Assert
+    assertEquals(List.of(11L, 12L), groups.stream().map(GroupDTO::id).toList());
+    assertEquals(List.of(1, 2), groups.stream().map(GroupDTO::number).toList());
+    assertEquals(Set.of(ana), current.get(0).getMembers());
+    assertEquals(Set.of(rui, bia), current.get(1).getMembers());
+    assertTrue(deleted().isEmpty());
+  }
+
+  @Test
+  @DisplayName("Edit groups: a removed group is deleted and the ones after it move down a number")
+  void editRemovesGroup() {
+    // Arrange
+    Student bia = student("Bia", 1003L);
+    List<Group> current = editing(GroupStatus.DRAFT, List.of(List.of(ana), List.of(rui), List.of(bia)),
+        ana, rui, bia);
+
+    // Act
+    List<GroupDTO> groups = groupService.editGroups(1L, 2L, GroupStatus.DRAFT,
+        List.of(edited(11L, ana, rui), edited(13L, bia)));
+
+    // Assert
+    assertEquals(List.of(current.get(1)), deleted());
+    assertEquals(List.of(11L, 13L), groups.stream().map(GroupDTO::id).toList());
+    assertEquals(List.of(1, 2), groups.stream().map(GroupDTO::number).toList());
+  }
+
+  @Test
+  @DisplayName("Edit groups: a new group in the published ones is published too, numbered after the kept ones")
+  void editAddsPublishedGroup() {
+    // Arrange
+    Student bia = student("Bia", 1003L);
+    editing(GroupStatus.PUBLISHED, List.of(List.of(ana, rui, bia)), ana, rui, bia);
+
+    // Act
+    List<GroupDTO> groups = groupService.editGroups(1L, 2L, GroupStatus.PUBLISHED,
+        List.of(edited(null, bia), edited(11L, ana, rui)));
+
+    // Assert - sorted by number, so the kept group comes first
+    assertEquals(List.of(1, 2), groups.stream().map(GroupDTO::number).toList());
+    assertEquals(11L, groups.get(0).id());
+    assertEquals(List.of(GroupStatus.PUBLISHED, GroupStatus.PUBLISHED),
+        groups.stream().map(GroupDTO::status).toList());
+    assertEquals(List.of(1003L), groups.get(1).members().stream().map(GroupDTO.Member::number).toList());
+  }
+
+  @Test
+  @DisplayName("Edit groups: an enrolled student left out is STUDENT_WITHOUT_GROUP with their number, nothing saved")
+  void editLeavesStudentOut() {
+    // Arrange
+    editing(GroupStatus.DRAFT, List.of(List.of(ana, rui)), ana, rui);
+
+    // Act
+    StudyMatchException exception = editFails(GroupStatus.DRAFT, List.of(edited(11L, ana)));
+
+    // Assert
+    assertEquals(ErrorCode.STUDENT_WITHOUT_GROUP, exception.getCode());
+    assertEquals(List.of(1002L), exception.getParams().get("numbers"));
+    verify(groupRepository, never()).save(any(Group.class));
+  }
+
+  @Test
+  @DisplayName("Edit groups: a blocked student can be left out (GR5)")
+  void editLeavesBlockedOut() {
+    // Arrange
+    rui.block("test");
+    editing(GroupStatus.DRAFT, List.of(List.of(ana, rui)), ana, rui);
+
+    // Act
+    List<GroupDTO> groups = groupService.editGroups(1L, 2L, GroupStatus.DRAFT, List.of(edited(11L, ana)));
+
+    // Assert
+    assertEquals(List.of(ANA), groups.getFirst().members().stream().map(GroupDTO.Member::number).toList());
+  }
+
+  @Test
+  @DisplayName("Edit groups: a blocked student can stay in the group they were in (GR5)")
+  void editKeepsBlockedInGroup() {
+    // Arrange
+    Student bia = student("Bia", 1003L);
+    rui.block("test");
+    List<Group> current = editing(GroupStatus.DRAFT, List.of(List.of(ana, rui), List.of(bia)), ana, rui, bia);
+
+    // Act
+    groupService.editGroups(1L, 2L, GroupStatus.DRAFT, List.of(edited(11L, rui), edited(12L, ana, bia)));
+
+    // Assert
+    assertEquals(Set.of(rui), current.get(0).getMembers());
+  }
+
+  @Test
+  @DisplayName("Edit groups: a blocked student moved to another group is BLOCKED_STUDENT_MOVED (GR5)")
+  void editMovesBlockedStudent() {
+    // Arrange
+    rui.block("test");
+    editing(GroupStatus.DRAFT, List.of(List.of(ana, rui), List.of()), ana, rui);
+
+    // Act
+    StudyMatchException exception = editFails(GroupStatus.DRAFT, List.of(edited(11L, ana), edited(12L, rui)));
+
+    // Assert
+    assertEquals(ErrorCode.BLOCKED_STUDENT_MOVED, exception.getCode());
+    assertEquals(1002L, exception.getParams().get("number"));
+    verify(groupRepository, never()).save(any(Group.class));
+  }
+
+  @Test
+  @DisplayName("Edit groups: a blocked student put in a new group is BLOCKED_STUDENT_MOVED (GR5)")
+  void editPutsBlockedInNewGroup() {
+    // Arrange
+    rui.block("test");
+    editing(GroupStatus.DRAFT, List.of(List.of(ana, rui)), ana, rui);
+
+    // Act
+    StudyMatchException exception = editFails(GroupStatus.DRAFT, List.of(edited(11L, ana), edited(null, rui)));
+
+    // Assert
+    assertEquals(ErrorCode.BLOCKED_STUDENT_MOVED, exception.getCode());
+  }
+
+  @Test
+  @DisplayName("Edit groups: a blocked student who had no group can't be added to one (GR5)")
+  void editAddsBlockedWithoutGroup() {
+    // Arrange
+    rui.block("test");
+    editing(GroupStatus.DRAFT, List.of(List.of(ana)), ana, rui);
+
+    // Act
+    StudyMatchException exception = editFails(GroupStatus.DRAFT, List.of(edited(11L, ana, rui)));
+
+    // Assert
+    assertEquals(ErrorCode.BLOCKED_STUDENT_MOVED, exception.getCode());
+  }
+
+  @Test
+  @DisplayName("Edit groups: a student in two groups is STUDENT_IN_TWO_GROUPS")
+  void editStudentTwice() {
+    // Arrange
+    editing(GroupStatus.DRAFT, List.of(List.of(ana), List.of(rui)), ana, rui);
+
+    // Act
+    StudyMatchException exception = editFails(GroupStatus.DRAFT, List.of(edited(11L, ana), edited(12L, rui, ana)));
+
+    // Assert
+    assertEquals(ErrorCode.STUDENT_IN_TWO_GROUPS, exception.getCode());
+    assertEquals(ANA, exception.getParams().get("number"));
+  }
+
+  @Test
+  @DisplayName("Edit groups: a student not enrolled in the edition is STUDENT_NOT_ENROLLED")
+  void editStudentNotEnrolled() {
+    // Arrange
+    editing(GroupStatus.DRAFT, List.of(List.of(ana)), ana);
+
+    // Act
+    StudyMatchException exception = editFails(GroupStatus.DRAFT, List.of(edited(11L, ana, rui)));
+
+    // Assert
+    assertEquals(ErrorCode.STUDENT_NOT_ENROLLED, exception.getCode());
+    assertEquals(1002L, exception.getParams().get("number"));
+  }
+
+  @Test
+  @DisplayName("Edit groups: an id that isn't one of these groups is NOT_FOUND, nothing deleted")
+  void editUnknownGroup() {
+    // Arrange
+    editing(GroupStatus.DRAFT, List.of(List.of(ana, rui)), ana, rui);
+
+    // Act
+    StudyMatchException exception = editFails(GroupStatus.DRAFT, List.of(edited(99L, ana, rui)));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, exception.getCode());
+    verify(groupRepository, never()).deleteAll(any());
+  }
+
+  @Test
+  @DisplayName("Edit groups: the same group sent twice is NOT_FOUND the second time")
+  void editSameGroupTwice() {
+    // Arrange
+    editing(GroupStatus.DRAFT, List.of(List.of(ana, rui)), ana, rui);
+
+    // Act + Assert
+    assertEquals(ErrorCode.NOT_FOUND,
+        editFails(GroupStatus.DRAFT, List.of(edited(11L, ana), edited(11L, rui))).getCode());
+  }
+
+  @Test
+  @DisplayName("Edit groups: no drafts is NO_DRAFT_GROUPS, no published groups is NO_PUBLISHED_GROUPS")
+  void editWithoutGroups() {
+    // Arrange - the published ones aren't stubbed, so there are none either
+    editing(GroupStatus.DRAFT, List.of(), ana);
+
+    // Act + Assert
+    assertEquals(ErrorCode.NO_DRAFT_GROUPS, editFails(GroupStatus.DRAFT, List.of(edited(null, ana))).getCode());
+    assertEquals(ErrorCode.NO_PUBLISHED_GROUPS,
+        editFails(GroupStatus.PUBLISHED, List.of(edited(null, ana))).getCode());
+  }
+
+  @Test
+  @DisplayName("Edit groups: an assignment without a grouping rule is ASSIGNMENT_NOT_GROUP_WORK")
+  void editNotGroupWork() {
+    // Arrange
+    when(assignmentService.getLockedAssignment(1L, 2L)).thenReturn(new Assignment(edition, "Exam",
+        AssignmentType.EXAM, LocalDate.of(2026, 1, 20), new BigDecimal("0.60"), null));
+
+    // Act + Assert
+    assertEquals(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK,
+        editFails(GroupStatus.DRAFT, List.of(edited(null, ana))).getCode());
   }
 
 }
