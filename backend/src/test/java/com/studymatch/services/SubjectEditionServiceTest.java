@@ -2,6 +2,7 @@ package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import com.studymatch.dtos.SubjectEditionRequestDTO;
+import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.AcademicYear;
@@ -413,7 +415,8 @@ class SubjectEditionServiceTest {
     Teacher eva = new Teacher("eva@example.com", "eva@studymatch.com", "Eva", "hash");
     SubjectEdition edition = new SubjectEdition(subject, year2026, Set.of(ana, eva));
     when(academicYearService.findCurrent()).thenReturn(Optional.of(year2026));
-    when(subjectEditionRepository.findBySubjectAndAcademicYear(subject, year2026)).thenReturn(Optional.of(edition));
+    when(subjectEditionRepository.findLockedBySubjectAndAcademicYear(subject, year2026))
+        .thenReturn(Optional.of(edition));
 
     // Act
     SubjectEdition result = subjectEditionService.updateCurrentTeachers(subject, List.of(1L, 2L));
@@ -429,7 +432,8 @@ class SubjectEditionServiceTest {
     // Arrange
     SubjectEdition edition = new SubjectEdition(subject, year2026, Set.of(ana));
     when(academicYearService.findCurrent()).thenReturn(Optional.of(year2026));
-    when(subjectEditionRepository.findBySubjectAndAcademicYear(subject, year2026)).thenReturn(Optional.of(edition));
+    when(subjectEditionRepository.findLockedBySubjectAndAcademicYear(subject, year2026))
+        .thenReturn(Optional.of(edition));
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
@@ -446,7 +450,8 @@ class SubjectEditionServiceTest {
     // Arrange
     SubjectEdition edition = new SubjectEdition(subject, year2026, Set.of(ana));
     when(academicYearService.findCurrent()).thenReturn(Optional.of(year2026));
-    when(subjectEditionRepository.findBySubjectAndAcademicYear(subject, year2026)).thenReturn(Optional.of(edition));
+    when(subjectEditionRepository.findLockedBySubjectAndAcademicYear(subject, year2026))
+        .thenReturn(Optional.of(edition));
     when(teacherService.getTeachers(List.of(99L))).thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
 
     // Act
@@ -456,6 +461,99 @@ class SubjectEditionServiceTest {
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
     assertEquals(Set.of(ana), edition.getTeachers());
+  }
+
+  @Test
+  @DisplayName("Updating the teachers of a subject without an edition this year is NOT_FOUND")
+  void updatingTeachersWithoutEditionIsNotFound() {
+    // Arrange
+    when(academicYearService.findCurrent()).thenReturn(Optional.of(year2026));
+    when(subjectEditionRepository.findLockedBySubjectAndAcademicYear(subject, year2026)).thenReturn(Optional.empty());
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectEditionService.updateCurrentTeachers(subject, List.of(1L)));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  // teacher of a class section
+
+  @Test
+  @DisplayName("Staff picks a section's teacher on the locked current edition, and gets the edition back with it")
+  void sectionTeacherIsAssigned() {
+    // Arrange
+    SubjectEdition edition = new SubjectEdition(subject, year2026, Set.of(ana, rui));
+    edition.addClassSection("T2");
+    edition.addClassSection("T1");
+    when(subjectEditionRepository.findLockedById(7L)).thenReturn(Optional.of(edition));
+    when(academicYearService.isCurrent(year2026)).thenReturn(true);
+    when(teacherService.getTeacher(2L)).thenReturn(rui);
+
+    // Act
+    SubjectEditionResponseDTO result = subjectEditionService.assignSectionTeacher(7L, "T2", 2L);
+
+    // Assert - sorted by code, T1 still without one
+    assertSame(rui, edition.getClassSection("T2").getTeacher());
+    assertEquals("T1", result.sectionTeachers().get(0).classSection());
+    assertNull(result.sectionTeachers().get(0).teacher());
+    assertEquals("T2", result.sectionTeachers().get(1).classSection());
+    assertEquals("Rui", result.sectionTeachers().get(1).teacher().name());
+  }
+
+  @Test
+  @DisplayName("An older edition's section gets SUBJECT_EDITION_NOT_CURRENT before the teacher is looked up")
+  void olderEditionSectionIsRefused() {
+    // Arrange - isCurrent is false by default
+    when(subjectEditionRepository.findLockedById(7L))
+        .thenReturn(Optional.of(new SubjectEdition(subject, new AcademicYear(2025), Set.of(ana))));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectEditionService.assignSectionTeacher(7L, "T1", 1L));
+
+    // Assert
+    assertEquals(ErrorCode.SUBJECT_EDITION_NOT_CURRENT, e.getCode());
+    verify(teacherService, never()).getTeacher(any());
+  }
+
+  @Test
+  @DisplayName("A teacher number that doesn't exist: the teacher's NOT_FOUND goes through and the section keeps no teacher")
+  void unknownSectionTeacherIsNotFound() {
+    // Arrange
+    SubjectEdition edition = new SubjectEdition(subject, year2026, Set.of(ana));
+    edition.addClassSection("T1");
+    when(subjectEditionRepository.findLockedById(7L)).thenReturn(Optional.of(edition));
+    when(academicYearService.isCurrent(year2026)).thenReturn(true);
+    when(teacherService.getTeacher(99L)).thenThrow(new StudyMatchException(ErrorCode.NOT_FOUND));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectEditionService.assignSectionTeacher(7L, "T1", 99L));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+    assertNull(edition.getClassSection("T1").getTeacher());
+  }
+
+  @Test
+  @DisplayName("A teacher from outside the edition gets the edition's TEACHER_NOT_IN_SUBJECT_EDITION")
+  void outsideTeacherIsRefused() {
+    // Arrange
+    SubjectEdition edition = new SubjectEdition(subject, year2026, Set.of(ana));
+    edition.addClassSection("T1");
+    when(subjectEditionRepository.findLockedById(7L)).thenReturn(Optional.of(edition));
+    when(academicYearService.isCurrent(year2026)).thenReturn(true);
+    when(teacherService.getTeacher(2L)).thenReturn(rui);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectEditionService.assignSectionTeacher(7L, "T1", 2L));
+
+    // Assert
+    assertEquals(ErrorCode.TEACHER_NOT_IN_SUBJECT_EDITION, e.getCode());
+    assertNull(edition.getClassSection("T1").getTeacher());
   }
 
 }
