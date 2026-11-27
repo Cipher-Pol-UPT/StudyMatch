@@ -223,6 +223,16 @@ WHERE s.number = p.number;
 INSERT INTO academic_year (start_year) VALUES (2025), (2026)
 ON CONFLICT (start_year) DO NOTHING;
 
+-- semester dates (#334): an update so a database that already has the years gets them too, and dates Staff
+-- changed stay
+UPDATE academic_year y
+SET semester1_start = v.s1_start, semester1_end = v.s1_end, semester2_start = v.s2_start, semester2_end = v.s2_end
+FROM (VALUES
+  (2025, DATE '2025-09-15', DATE '2026-01-31', DATE '2026-02-16', DATE '2026-06-30'),
+  (2026, DATE '2026-09-14', DATE '2027-01-30', DATE '2027-02-15', DATE '2027-06-30')
+) AS v(start_year, s1_start, s1_end, s2_start, s2_end)
+WHERE y.start_year = v.start_year AND y.semester1_start IS NULL;
+
 INSERT INTO subject_edition (subject_id, academic_year)
 SELECT s.id, v.academic_year
 FROM (VALUES
