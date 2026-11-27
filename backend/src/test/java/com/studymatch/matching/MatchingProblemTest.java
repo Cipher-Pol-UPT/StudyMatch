@@ -1,5 +1,6 @@
 package com.studymatch.matching;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -72,6 +73,16 @@ class MatchingProblemTest {
     String sorted = Arrays.stream(sizes).boxed().sorted(Collections.reverseOrder()).map(String::valueOf)
         .collect(Collectors.joining(" "));
     assertEquals(expected, sorted);
+  }
+
+  @Test
+  @DisplayName("Without a problem the sizes are the same, and empty when the students don't split")
+  void staticGroupSizes() {
+    // Act + Assert - 2 is below the minimum, 5 is between one group of 4 and two of 3
+    assertArrayEquals(new int[] { 3, 3, 4 }, MatchingProblem.groupSizes(10, 3, 4, 5));
+    assertArrayEquals(new int[0], MatchingProblem.groupSizes(2, 3, 3, 4));
+    assertArrayEquals(new int[0], MatchingProblem.groupSizes(5, 3, 3, 4));
+    assertArrayEquals(new int[0], MatchingProblem.groupSizes(0, 2, 2, 3));
   }
 
   @Test
