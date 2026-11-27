@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowUp, ChevronLeft, CircleAlert, Pencil, Trash2 } from 'lucide-react';
-import { useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, type ElementType, type MouseEvent, type ReactNode, type Ref, type UIEventHandler } from 'react';
+import { ArrowDown, ArrowUp, ChevronLeft, CircleAlert, CornerUpLeft, Pencil, Reply, SmilePlus, Trash2, X } from 'lucide-react';
+import { useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, type ElementType, type MouseEvent, type PointerEvent, type ReactNode, type Ref, type UIEventHandler } from 'react';
 import { Avatar } from '../../components/avatar/Avatar';
 import { Button, IconButton } from '../../components/button/Button';
 import { Spinner } from '../../components/progress/Progress';
@@ -44,14 +44,17 @@ export interface ChatThreadProps {
   onScroll?: UIEventHandler<HTMLDivElement>;
   // floats over the messages, like the New messages button
   overlay?: ReactNode;
+  // a panel on the right of the messages, like the search results; it stops above the message box
+  side?: ReactNode;
   children?: ReactNode;
 }
 
-export function ChatThread({ label, head, composer, scrollRef, onScroll, overlay, children }: ChatThreadProps) {
+export function ChatThread({ label, head, composer, scrollRef, onScroll, overlay, side, children }: ChatThreadProps) {
   return (
-    <section className="sm-chat__thread" aria-label={label}>
+    <section className={side ? 'sm-chat__thread sm-chat__thread--side' : 'sm-chat__thread'} aria-label={label}>
       {head}
       <div className="sm-chat__scroll" ref={scrollRef} onScroll={onScroll}>{children}</div>
+      {side}
       {overlay}
       {composer}
     </section>
@@ -85,10 +88,12 @@ export interface ChatHeadProps {
   profileLabel?: string;
   // the router's link, like the app shell's
   linkAs?: ElementType;
+  // on the right, like the search
+  actions?: ReactNode;
 }
 
 // who the conversation is with; the back button only shows on a phone
-export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profileHref, profileLabel, linkAs }: ChatHeadProps) {
+export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profileHref, profileLabel, linkAs, actions }: ChatHeadProps) {
   const LinkAs = linkAs ?? 'a';
   const who = (
     <>
@@ -105,7 +110,50 @@ export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profile
       {profileHref
         ? <LinkAs href={profileHref} to={linkAs ? profileHref : undefined} className="sm-chat__who sm-chat__who--link" aria-label={profileLabel}>{who}</LinkAs>
         : <div className="sm-chat__who">{who}</div>}
+      {actions && <div className="sm-chat__head-actions">{actions}</div>}
     </header>
+  );
+}
+
+export interface ChatSheetProps {
+  label: string;
+  title: ReactNode;
+  closeLabel: string;
+  onClose: () => void;
+  children: ReactNode;
+}
+
+// a panel on the right of the conversation, under its head, like the search results
+export function ChatSheet({ label, title, closeLabel, onClose, children }: ChatSheetProps) {
+  return (
+    <aside className="sm-chat__sheet" aria-label={label}>
+      <div className="sm-chat__sheet-head">
+        <h3>{title}</h3>
+        <IconButton icon={X} label={closeLabel} variant="ghost" onClick={onClose} />
+      </div>
+      <div className="sm-chat__sheet-body">{children}</div>
+    </aside>
+  );
+}
+
+export interface ChatResultProps {
+  author: string;
+  time: string;
+  dateTime: string;
+  // the text, with what was searched for in <mark>
+  children: ReactNode;
+  onClick: () => void;
+}
+
+// a search result: who, when, and the words that matched; clicking it goes to the message
+export function ChatResult({ author, time, dateTime, children, onClick }: ChatResultProps) {
+  return (
+    <li>
+      <button type="button" className="sm-chat__result" onClick={onClick}>
+        <span className="sm-chat__result-meta"><b>{author}</b><time dateTime={dateTime}>{time}</time></span>
+        <span className="sm-chat__result-text">{children}</span>
+      </button>
+    </li>
   );
 }
 
@@ -213,7 +261,31 @@ export function ChatMessages({ label, children }: ChatMessagesProps) {
   return <div className="sm-chat__messages" role="log" aria-label={label}>{children}</div>;
 }
 
+// the original a reply quotes, above it: who wrote it and one line of it. Clicking it goes to the original.
+// gone: the original was deleted, so there's only `text` saying so, in grey and not clickable
+export interface ChatQuote {
+  author?: string;
+  text: string;
+  gone?: boolean;
+  // read out for the button, like "Go to Ana's message"
+  label?: string;
+  onClick?: () => void;
+}
+
+// one emoji under a message, with how many reacted with it. mine: yours is this one, so it's highlighted
+export interface ChatReaction {
+  emoji: string;
+  count: number;
+  mine: boolean;
+  // who reacted, shown on hover, like "You and Ana"
+  title: string;
+  // read out for the button, like "❤️ 2, take yours off"
+  label: string;
+}
+
 export interface ChatMessageProps {
+  // on the message's row, for going to it
+  id?: string;
   text: string;
   // when it was sent: shown as `time`, `dateTime` is the machine-readable one
   time: string;
@@ -243,13 +315,63 @@ export interface ChatMessageProps {
   onDelete?: (shift: boolean) => void;
   // shown instead of the text while it's being edited, a ChatMessageEditor
   editor?: ReactNode;
+  // what it replies to (#219)
+  quote?: ChatQuote;
+  // Reply, on hover or focus, for any message the backend has
+  replyLabel?: string;
+  onReply?: () => void;
+  // the reactions under it (#217): clicking one picks that emoji, or takes yours off if it's yours
+  reactions?: ChatReaction[];
+  onReaction?: (emoji: string) => void;
+  // Add reaction, in the tools and after the reactions; it gets the button, for the picker to sit by it
+  reactLabel?: string;
+  onAddReaction?: (button: HTMLElement) => void;
+  // double clicking or double tapping the message, which reacts with a heart
+  onDoubleTap?: () => void;
+  // the picker is open for it, so its tools stay on screen
+  picking?: boolean;
 }
 
-export function ChatMessage({ text, time, dateTime, mine = false, first = true, author, avatarSrc, editedLabel, editedTitle, status, statusLabel, retryLabel, discardLabel, onRetry, onDiscard,
-  toolsLabel, editLabel = '', deleteLabel = '', onEdit, onDelete, editor }: ChatMessageProps) {
-  const cls = ['sm-msg', mine && 'sm-msg--mine', first && 'sm-msg--first', status === 'sending' && 'sm-msg--sending'].filter(Boolean).join(' ');
+// two taps closer than this are a double tap
+const DOUBLE_TAP_MS = 300;
+// a double click on these is theirs, not the message's
+const OWN_CLICKS = 'button, a, textarea, input';
+
+export function ChatMessage({ id, text, time, dateTime, mine = false, first = true, author, avatarSrc, editedLabel, editedTitle, status, statusLabel, retryLabel, discardLabel, onRetry, onDiscard,
+  toolsLabel, editLabel = '', deleteLabel = '', onEdit, onDelete, editor, quote, replyLabel = '', onReply,
+  reactions, onReaction, reactLabel = '', onAddReaction, onDoubleTap, picking }: ChatMessageProps) {
+  const cls = ['sm-msg', mine && 'sm-msg--mine', first && 'sm-msg--first', status === 'sending' && 'sm-msg--sending', picking && 'sm-msg--picking'].filter(Boolean).join(' ');
+  // touch screens don't always send a double click, so two taps are counted here
+  const lastTap = useRef(0);
+  const touched = useRef(false);
+  const tapped = (event: PointerEvent<HTMLDivElement>) => {
+    touched.current = event.pointerType === 'touch';
+    if (!touched.current || !onDoubleTap || (event.target as Element).closest(OWN_CLICKS)) return;
+    if (event.timeStamp - lastTap.current < DOUBLE_TAP_MS) {
+      lastTap.current = 0;
+      onDoubleTap();
+    } else {
+      lastTap.current = event.timeStamp;
+    }
+  };
+  const doubleClicked = (event: MouseEvent<HTMLDivElement>) => {
+    if (touched.current || !onDoubleTap || (event.target as Element).closest(OWN_CLICKS)) return;
+    onDoubleTap();
+  };
+  // a double click sends a heart, so its second press doesn't select the word under it too.
+  // It's a shortcut for the mouse (React is the way with a keyboard), so it's listened to here and not on the line
+  const line = useRef<HTMLDivElement>(null);
+  const doubleTaps = !!onDoubleTap;
+  const editing = !!editor;
+  useEffect(() => {
+    const element = line.current;
+    if (!element || !doubleTaps) return undefined;
+    const pressed = (event: globalThis.MouseEvent) => { if (event.detail > 1) event.preventDefault(); };
+    element.addEventListener('mousedown', pressed);
+    return () => element.removeEventListener('mousedown', pressed);
+  }, [doubleTaps, editing]);
   return (
-    <div className={cls}>
+    <div className={cls} id={id}>
       {!mine && <div className="sm-msg__avatar">{first && author && <Avatar name={author} src={avatarSrc} size={36} />}</div>}
       <div className="sm-msg__main">
         {first && (
@@ -258,15 +380,35 @@ export function ChatMessage({ text, time, dateTime, mine = false, first = true, 
             <time dateTime={dateTime}>{time}</time>
           </div>
         )}
+        {quote && <ChatMessageQuote {...quote} />}
         {editor ?? (
-          <div className="sm-msg__line">
+          <div className="sm-msg__line" ref={line} onPointerUp={tapped} onDoubleClick={doubleClicked}>
             <div className="sm-msg__bubble">{text}{editedLabel && <span className="sm-msg__edited" title={editedTitle}>{editedLabel}</span>}</div>
-            {(onEdit || onDelete) && (
+            {(onAddReaction || onReply || onEdit || onDelete) && (
               <div className="sm-msg__tools" role="toolbar" aria-label={toolsLabel}>
+                {onAddReaction && <IconButton icon={SmilePlus} label={reactLabel} size="sm" variant="ghost" aria-haspopup="dialog" aria-expanded={picking ?? false}
+                  onClick={(event: MouseEvent<HTMLButtonElement>) => onAddReaction(event.currentTarget)} />}
+                {onReply && <IconButton icon={Reply} label={replyLabel} size="sm" variant="ghost" onClick={onReply} />}
                 {onEdit && <IconButton icon={Pencil} label={editLabel} size="sm" variant="ghost" onClick={onEdit} />}
                 {onDelete && <IconButton icon={Trash2} label={deleteLabel} size="sm" variant="ghost" className="sm-msg__delete"
                   onClick={(event: MouseEvent) => onDelete(event.shiftKey)} />}
               </div>
+            )}
+          </div>
+        )}
+        {reactions && reactions.length > 0 && (
+          <div className="sm-reactions">
+            {reactions.map(reaction => (
+              <button key={reaction.emoji} type="button" className={`sm-reaction${reaction.mine ? ' sm-reaction--mine' : ''}`}
+                aria-pressed={reaction.mine} aria-label={reaction.label} title={reaction.title} onClick={() => onReaction?.(reaction.emoji)}>
+                <span aria-hidden>{reaction.emoji}</span><span aria-hidden>{reaction.count}</span>
+              </button>
+            ))}
+            {onAddReaction && (
+              <button type="button" className="sm-reaction sm-reaction--add" aria-label={reactLabel} title={reactLabel} aria-haspopup="dialog"
+                onClick={event => onAddReaction(event.currentTarget)}>
+                <SmilePlus size={14} aria-hidden />
+              </button>
             )}
           </div>
         )}
@@ -279,6 +421,37 @@ export function ChatMessage({ text, time, dateTime, mine = false, first = true, 
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ChatMessageQuote({ author, text, gone, label, onClick }: ChatQuote) {
+  if (gone || !onClick) {
+    return <span className={`sm-msg__quote${gone ? ' sm-msg__quote--gone' : ''}`}><CornerUpLeft size={13} aria-hidden />{author && <b>{author}</b>}<span>{text}</span></span>;
+  }
+  return (
+    <button type="button" className="sm-msg__quote" aria-label={label} onClick={onClick}>
+      <CornerUpLeft size={13} aria-hidden />{author && <b>{author}</b>}<span>{text}</span>
+    </button>
+  );
+}
+
+export interface ChatReplyBarProps {
+  // "Replying to <b>Ana</b>"
+  title: ReactNode;
+  // one line of the message being answered
+  preview: string;
+  cancelLabel: string;
+  onCancel: () => void;
+}
+
+// above the message box while you answer a message, with an X to stop
+export function ChatReplyBar({ title, preview, cancelLabel, onCancel }: ChatReplyBarProps) {
+  return (
+    <div className="sm-composer__bar">
+      <Reply size={15} aria-hidden />
+      <span className="sm-composer__bar-text">{title}<span className="sm-composer__bar-preview"> · {preview}</span></span>
+      <IconButton icon={X} label={cancelLabel} size="sm" variant="ghost" onClick={onCancel} />
     </div>
   );
 }
@@ -347,12 +520,16 @@ export interface ChatComposerProps {
   onEditLast?: () => boolean;
   // lets the page put the cursor back in the box, after editing a message
   inputRef?: Ref<{ focus: () => void }>;
+  // above the box, like the ChatReplyBar
+  above?: ReactNode;
+  // Esc in the box, like stopping a reply; true when it did something
+  onEscape?: () => boolean;
 }
 
 const COMPOSER_MAX_HEIGHT = 160;
 
 // the message box: grows with the text, Enter sends and Shift+Enter adds a line
-export function ChatComposer({ label, placeholder, value, onChange, onSend, sendLabel, max, error, onEditLast, inputRef }: ChatComposerProps) {
+export function ChatComposer({ label, placeholder, value, onChange, onSend, sendLabel, max, error, onEditLast, inputRef, above, onEscape }: ChatComposerProps) {
   const id = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   useImperativeHandle(inputRef, () => ({ focus: () => input.current?.focus() }), []);
@@ -375,12 +552,17 @@ export function ChatComposer({ label, placeholder, value, onChange, onSend, send
 
   return (
     <div className="sm-composer">
+      {above}
       <div className="sm-composer__box">
         <label className="sm-visually-hidden" htmlFor={`${id}-input`}>{label}</label>
         <textarea ref={input} id={`${id}-input`} className="sm-composer__input" rows={1} placeholder={placeholder} value={value}
           aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined}
           onChange={event => onChange(event.target.value)}
           onKeyDown={event => {
+            if (event.key === 'Escape' && onEscape?.()) {
+              event.preventDefault();
+              return;
+            }
             if (event.key === 'ArrowUp' && !value && onEditLast?.()) {
               event.preventDefault();
               return;

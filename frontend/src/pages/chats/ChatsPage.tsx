@@ -11,6 +11,7 @@ import { useRemoteData } from '../../hooks/useRemoteData';
 import { Banner, Button, buttonClass, ChatLayout, ChatListPane, ChatRow, ChatRows, ChatThread, EmptyState } from '../../studymatch-ui';
 import { type ChatContactData, type ChatSummaryData, type MessageData } from '../../types/chat';
 import { Conversation } from './Conversation';
+import { lineOf } from './messageText';
 import { useChatList } from './useChatList';
 
 export interface ChatsPageProps {
@@ -90,18 +91,10 @@ export function ChatsPage({ me, profilePath }: ChatsPageProps) {
 function previewOf(chat: ChatSummaryData, me: number, t: TFunction) {
   const message: MessageData | null = chat.lastMessage;
   if (!message) return t('chats.noMessagesYet');
-  const text = message.text || filesOf(message, t);
+  const text = lineOf(message, t);
   if (message.author.number === me) return t('chats.byYou', { text });
   if (!chat.contact) return t('chats.byThem', { name: message.author.name.split(' ')[0], text });
   return text;
-}
-
-// a message with only files: "Photo", the file's name, or how many
-function filesOf(message: MessageData, t: TFunction) {
-  const files = message.attachments ?? [];
-  if (files.length > 1) return t('chats.files', { count: files.length });
-  if (files.length === 1) return files[0].contentType.startsWith('image/') ? t('chats.photo') : files[0].name;
-  return '';
 }
 
 // the DM with one person: found by their number, then its messages and the message box
