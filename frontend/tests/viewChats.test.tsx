@@ -202,9 +202,11 @@ describe('view chats', () => {
   });
 
   it("shows the backend's error when the list can't load", async () => {
-    vi.stubGlobal('fetch', vi.fn<typeof fetch>(async input => String(input).endsWith('/chats/')
-      ? new Response(JSON.stringify({ code: 'ACCESS_DENIED' }), { status: 403 })
-      : new Response('0', { status: 200 })));
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>(async input => {
+      if (String(input).endsWith('/chats/')) return new Response(JSON.stringify({ code: 'ACCESS_DENIED' }), { status: 403 });
+      // nobody blocked, and the side menu's count
+      return new Response(String(input).endsWith('/blocks/') ? '[]' : '0', { status: 200 });
+    }));
     open();
 
     expect((await screen.findByRole('alert')).textContent).toBe(i18n.t('errors.ACCESS_DENIED'));
