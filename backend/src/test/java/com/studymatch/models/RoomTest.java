@@ -2,6 +2,7 @@ package com.studymatch.models;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.DisplayName;
@@ -74,6 +75,13 @@ class RoomTest {
     // Act + Assert
     assertTrue(room("BUILDING a", 1, 10, 10, 10, 10).overlaps(other));
     assertEquals(other.floorKey(), room("BUILDING a", 1, 0, 0, 1, 1).floorKey());
+  }
+
+  @Test
+  @DisplayName("The code's lock is the same whatever its case, and never a floor's")
+  void codeKey() {
+    assertEquals(Room.codeKey("b.101"), Room.codeKey("B.101"));
+    assertNotEquals(Room.codeKey("1"), Room.floorKey("", 1));
   }
 
   // the grid is 100 x 100: ending at 100 is the last cell, 101 is off it

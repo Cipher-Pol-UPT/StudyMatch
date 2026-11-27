@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -82,14 +83,16 @@ class RoomServiceTest {
   }
 
   @Test
-  @DisplayName("The floor is locked before its rooms are read, so two saves on it can't both miss each other")
-  void floorIsLockedFirst() {
+  @DisplayName("The code in lower case is locked before it's checked, then the floor before its rooms are read")
+  void locksComeFirst() {
     // Act
     roomService.registerRoom(request("A.101", 1, 0, 0, 10, 10));
 
     // Assert
     InOrder order = inOrder(roomRepository);
-    order.verify(roomRepository).lockFloor("building a|1");
+    order.verify(roomRepository).lock("code|a.101");
+    order.verify(roomRepository).existsByCodeIgnoreCase("A.101");
+    order.verify(roomRepository).lock("floor|building a|1");
     order.verify(roomRepository).findByBuildingIgnoreCaseAndFloorAndActiveTrue("Building A", 1);
     order.verify(roomRepository).saveAndFlush(any());
   }
@@ -204,7 +207,7 @@ class RoomServiceTest {
 
     // Assert
     assertEquals(ErrorCode.ROOM_OVERLAP, e.getCode());
-    verify(roomRepository).lockFloor("building a|2");
+    verify(roomRepository).lock("floor|building a|2");
   }
 
   @Test
@@ -238,7 +241,8 @@ class RoomServiceTest {
     roomService.editRoom(ID, request("A.101", 1, 0, 0, 20, 20));
 
     // Assert
-    verify(roomRepository, never()).lockFloor(anyString());
+    verify(roomRepository).lock("code|a.101");
+    verify(roomRepository, never()).lock(startsWith("floor|"));
     verify(roomRepository).saveAndFlush(room);
   }
 
@@ -288,7 +292,7 @@ class RoomServiceTest {
 
     // Assert
     assertTrue(room.isActive());
-    verify(roomRepository).lockFloor("building a|1");
+    verify(roomRepository).lock("floor|building a|1");
     verify(roomRepository).save(room);
   }
 
@@ -323,7 +327,7 @@ class RoomServiceTest {
 
     // Assert
     assertTrue(room.isActive());
-    verify(roomRepository, never()).lockFloor(anyString());
+    verify(roomRepository, never()).lock(anyString());
     verify(roomRepository, never()).save(any());
   }
 
