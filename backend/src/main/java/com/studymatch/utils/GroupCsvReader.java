@@ -11,6 +11,9 @@ public class GroupCsvReader {
 
   public static final List<String> COLUMNS = List.of("groupNumber", "studentNumber");
 
+  // the export has no limit, so this has to fit a whole edition, far more than any has. the 1 MB still applies
+  public static final int MAX_ROWS = 10_000;
+
   // row is the line in the spreadsheet (the header is row 1)
   public record Row(int row, Integer groupNumber, Long studentNumber) {
   }
@@ -21,7 +24,7 @@ public class GroupCsvReader {
   }
 
   public List<Row> read(byte[] file) {
-    return CsvFiles.read(file, COLUMNS).stream()
+    return CsvFiles.read(file, COLUMNS, MAX_ROWS).stream()
         .map(line -> new Row(line.row(), toGroupNumber(CsvFiles.value(line.record(), "groupNumber")),
             toStudentNumber(CsvFiles.value(line.record(), "studentNumber"))))
         .toList();
