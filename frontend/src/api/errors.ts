@@ -113,6 +113,9 @@ export const ERROR_CODES = [
   "NOTE_TOO_LONG",
   "INVALID_NOTE_POSITION",
   "NOTE_LIMIT_REACHED",
+  "ROOM_ALREADY_EXISTS",
+  "ROOM_OVERLAP",
+  "ROOM_OUTSIDE_FLOOR",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;
