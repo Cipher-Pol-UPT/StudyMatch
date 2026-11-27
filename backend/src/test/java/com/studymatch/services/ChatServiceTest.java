@@ -13,32 +13,43 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.AddMembersRequestDTO;
 import com.studymatch.dtos.ChatEditedDTO;
+import com.studymatch.dtos.ChatSummaryDTO;
 import com.studymatch.dtos.CreateGroupChatRequestDTO;
 import com.studymatch.dtos.GroupChatPictureRequestDTO;
 import com.studymatch.dtos.RenameGroupChatRequestDTO;
+import com.studymatch.enums.AssignmentType;
 import com.studymatch.enums.ChatEventType;
 import com.studymatch.events.ChatEvent;
 import com.studymatch.events.MemberChatEvent;
 import com.studymatch.events.UserChatEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.models.Assignment;
+import com.studymatch.models.Chat;
 import com.studymatch.models.CustomChat;
 import com.studymatch.models.DirectChat;
+import com.studymatch.models.Group;
+import com.studymatch.models.GroupChat;
+import com.studymatch.models.GroupingRule;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Student;
 import com.studymatch.models.User;
@@ -747,6 +758,142 @@ class ChatServiceTest {
 
     // Assert
     assertEquals(3, created.getMembers().size());
+  }
+
+  // a published group 1 with ana and eva, its chat is 7 (#236)
+  private GroupChat assignmentChat(Student eva) {
+    Assignment project = new Assignment(ModelTestData.subjectEdition(), "Test Project", AssignmentType.PROJECT,
+        LocalDate.now(), new BigDecimal("0.50"), new GroupingRule(2, 3, 4, false));
+    Group group = new Group(project, 1);
+    group.addMember(ana);
+    group.addMember(eva);
+    group.publish();
+    GroupChat assignment = new GroupChat(group);
+    ReflectionTestUtils.setField(assignment, "id", 7L);
+    when(chatRepository.findById(7L)).thenReturn(Optional.of(assignment));
+    return assignment;
+  }
+
+  @Test
+  @DisplayName("An assignment chat's members come from the group: adding, removing and leaving are CHAT_MEMBERS_FIXED")
+  void assignmentChatMembersFixed() {
+    // Arrange
+    assignmentChat(student("Eva", 1003L));
+
+    // Act
+    StudyMatchException add = assertThrows(StudyMatchException.class,
+        () -> chatService.addMembers(7L, ana, new AddMembersRequestDTO(List.of(1002L))));
+    StudyMatchException remove = assertThrows(StudyMatchException.class,
+        () -> chatService.removeMember(7L, ana, 1003L));
+    StudyMatchException leave = assertThrows(StudyMatchException.class, () -> chatService.leave(7L, ana));
+
+    // Assert
+    assertEquals(ErrorCode.CHAT_MEMBERS_FIXED, add.getCode());
+    assertEquals(ErrorCode.CHAT_MEMBERS_FIXED, remove.getCode());
+    assertEquals(ErrorCode.CHAT_MEMBERS_FIXED, leave.getCode());
+  }
+
+  @Test
+  @DisplayName("An assignment chat is named after the assignment, so renaming it is NOT_FOUND like a DM")
+  void assignmentChatRenameNotFound() {
+    // Arrange
+    assignmentChat(student("Eva", 1003L));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> chatService.rename(7L, ana, new RenameGroupChatRequestDTO("New name")));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
+  @Test
+  @DisplayName("The student's assignment chats are on their chat list with the rest")
+  void assignmentChatListed() {
+    // Arrange
+    GroupChat assignment = assignmentChat(student("Eva", 1003L));
+    when(chatRepository.findDirectChatsOf(1001L)).thenReturn(List.of(chat));
+    when(chatRepository.findGroupChatsOf(1001L)).thenReturn(List.of(assignment));
+
+    // Act
+    List<Chat> chats = chatService.getChatsOf(ana);
+
+    // Assert
+    assertEquals(List.of(chat, assignment), chats);
+  }
+
+  @Test
+  @DisplayName("Typing in an assignment chat goes to each member, a moved student's tab may still hear the topic")
+  void assignmentTypingGoesToEachMember() {
+    // Arrange
+    assignmentChat(student("Eva", 1003L));
+
+    // Act
+    chatService.announceTyping(7L, ana);
+
+    // Assert
+    verify(eventPublisher, times(2)).publishEvent(any(MemberChatEvent.class));
+    verify(eventPublisher, never()).publishEvent(any(ChatEvent.class));
+  }
+
+  @Test
+  @DisplayName("Each published group gets a chat, its students get CHAT_ADDED with the empty row")
+  void groupChatsCreated() {
+    // Arrange
+    Student eva = student("Eva", 1003L);
+    Group group = assignmentChat(eva).getGroup();
+    when(chatRepository.save(any(GroupChat.class))).thenAnswer(call -> call.getArgument(0));
+
+    // Act
+    chatService.createGroupChats(List.of(group));
+
+    // Assert
+    ArgumentCaptor<GroupChat> saved = ArgumentCaptor.forClass(GroupChat.class);
+    verify(chatRepository).save(saved.capture());
+    assertSame(group, saved.getValue().getGroup());
+    ArgumentCaptor<UserChatEvent> events = ArgumentCaptor.forClass(UserChatEvent.class);
+    verify(eventPublisher, times(2)).publishEvent(events.capture());
+    assertEquals(Set.of(1001L, 1003L),
+        events.getAllValues().stream().map(event -> event.recipient().getNumber()).collect(Collectors.toSet()));
+    ChatSummaryDTO row = (ChatSummaryDTO) events.getValue().payload();
+    assertEquals(ChatEventType.CHAT_ADDED, events.getValue().type());
+    assertEquals("Test Project · Test Subject · Group 1", row.name());
+    assertTrue(row.assignment());
+    assertNull(row.lastMessage());
+  }
+
+  @Test
+  @DisplayName("A removed group's chat takes everyone's settings, its students get CHAT_REMOVED, then it's deleted")
+  void groupChatsDeleted() {
+    // Arrange
+    GroupChat assignment = assignmentChat(student("Eva", 1003L));
+
+    // Act
+    chatService.deleteGroupChats(List.of(assignment));
+
+    // Assert
+    verify(chatSettingsService).deleteAllOf(assignment);
+    ArgumentCaptor<UserChatEvent> events = ArgumentCaptor.forClass(UserChatEvent.class);
+    verify(eventPublisher, times(2)).publishEvent(events.capture());
+    assertTrue(events.getAllValues().stream()
+        .allMatch(event -> event.type() == ChatEventType.CHAT_REMOVED && event.payload().equals(7L)));
+    verify(chatRepository).delete(assignment);
+  }
+
+  @Test
+  @DisplayName("Whoever left a group loses their settings and gets CHAT_REMOVED, whoever joined starts with it read")
+  void groupMembersChanged() {
+    // Arrange
+    GroupChat assignment = assignmentChat(student("Eva", 1003L));
+    Student rui = (Student) chat.getSecondUser();
+
+    // Act
+    chatService.groupMembersChanged(assignment, List.of(rui), List.of(ana));
+
+    // Assert
+    verify(chatSettingsService).deleteOf(assignment, rui);
+    verify(eventPublisher).publishEvent(new UserChatEvent(rui, ChatEventType.CHAT_REMOVED, 7L));
+    verify(chatSettingsService).startRead(assignment, List.of(ana));
   }
 
 }
