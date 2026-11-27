@@ -80,6 +80,20 @@ class EnrolmentTest {
     assertEquals(EnrolmentStatus.PASSED, enrolment.getStatus());
   }
 
+  @Test
+  @DisplayName("Clearing the final grade takes it off and puts the enrolment back in progress")
+  void clearFinalGrade() {
+    // Arrange
+    enrolment.setFinalGrade(15);
+
+    // Act
+    enrolment.clearFinalGrade();
+
+    // Assert
+    assertNull(enrolment.getFinalGrade());
+    assertEquals(EnrolmentStatus.IN_PROGRESS, enrolment.getStatus());
+  }
+
   @ParameterizedTest(name = "grade {0} is refused")
   @ValueSource(ints = { -1, 21 })
   @DisplayName("Final grades outside 0 to 20 give GRADE_OUT_OF_RANGE and nothing changes")

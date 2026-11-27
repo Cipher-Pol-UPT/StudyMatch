@@ -14,6 +14,8 @@ import java.time.LocalDate;
 import java.util.Set;
 
 import org.hamcrest.Matchers;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,7 @@ import com.studymatch.models.Assignment;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
 import com.studymatch.models.Enrolment;
+import com.studymatch.models.Grade;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
 import com.studymatch.models.Subject;
@@ -52,6 +55,8 @@ import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.SubjectEditionRepository;
 import com.studymatch.repositories.SubjectRepository;
 import com.studymatch.repositories.TeacherRepository;
+
+import jakarta.persistence.EntityManager;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -77,6 +82,7 @@ class GradeStudentIntegrationTest {
   @Autowired private EnrolmentRepository enrolmentRepository;
   @Autowired private AssignmentRepository assignmentRepository;
   @Autowired private GradeRepository gradeRepository;
+  @Autowired private EntityManager entityManager;
 
   private SubjectEdition edition;
   private Assignment project;
@@ -183,6 +189,48 @@ class GradeStudentIntegrationTest {
         .andExpect(jsonPath("$.students[1].grades['" + project.getId() + "']").value(14.5))
         .andExpect(jsonPath("$.students[1].status").value("IN_PROGRESS"))
         .andExpect(jsonPath("$.weightsComplete").value(true));
+  }
+
+  // how many statements the sheet takes, read fresh from the database. statistics are off by default, so they're
+  // switched on just for this
+  private long statementsForSheet(MockHttpSession session) throws Exception {
+    entityManager.flush();
+    entityManager.clear();
+    Statistics statistics = entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics();
+    statistics.setStatisticsEnabled(true);
+    try {
+      statistics.clear();
+      mockMvc.perform(get("/subject-editions/" + edition.getId() + "/grades").session(session))
+          .andExpect(status().isOk());
+      return statistics.getPrepareStatementCount();
+    } finally {
+      statistics.setStatisticsEnabled(false);
+    }
+  }
+
+  @Test
+  @DisplayName("More graded students don't mean more queries for the sheet")
+  void sheetQueriesDontGrowWithTheStudents() throws Exception {
+    // Arrange - measured with two graded students, then three more enrolled and graded
+    gradeRepository.save(new Grade(enrolmentOf(ana), project, 12));
+    gradeRepository.save(new Grade(enrolmentOf(rui), exam, 15));
+    MockHttpSession session = loginAs(TEACHER);
+    long before = statementsForSheet(session);
+    for (int i = 0; i < 3; i++) {
+      Student student = studentRepository.save(new Student("it.grade.more" + i + "@example.com", "More " + i,
+          "hash", ana.getDegree(), 1));
+      Enrolment enrolment = enrolmentRepository.save(new Enrolment(student,
+          edition.getClassSections().iterator().next()));
+      gradeRepository.save(new Grade(enrolment, project, 10));
+      gradeRepository.save(new Grade(enrolment, exam, 11));
+    }
+
+    // Act
+    long after = statementsForSheet(session);
+
+    // Assert
+    assertTrue(before > 0);
+    assertEquals(before, after);
   }
 
   // grade student

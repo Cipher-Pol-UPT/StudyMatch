@@ -81,6 +81,11 @@ public class AssignmentService {
         .toList();
   }
 
+  // just how many, without loading them
+  public long countAssignments(SubjectEdition edition) {
+    return assignmentRepository.countBySubjectEdition(edition);
+  }
+
   // final grades only make sense once the weights add up to 100%
   public boolean hasFullWeight(SubjectEdition edition) {
     return assignmentRepository.sumWeightBySubjectEdition(edition).compareTo(BigDecimal.ONE) == 0;

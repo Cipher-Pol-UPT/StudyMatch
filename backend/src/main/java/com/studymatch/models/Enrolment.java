@@ -98,6 +98,12 @@ public class Enrolment {
     this.status = finalGrade >= PASSING_GRADE ? EnrolmentStatus.PASSED : EnrolmentStatus.FAILED;
   }
 
+  // the grades stopped adding up to a final one (a weight changed, an assignment came or went), so it's open again
+  public void clearFinalGrade() {
+    this.finalGrade = null;
+    this.status = EnrolmentStatus.IN_PROGRESS;
+  }
+
   // passed or failed, either way there's a final grade to count
   public boolean isFinished() {
     return finalGrade != null;

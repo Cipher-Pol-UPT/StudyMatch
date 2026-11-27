@@ -75,6 +75,7 @@ class GradeServiceTest {
     when(assignmentService.getAssignment(EDITION_ID, 1L)).thenReturn(project);
     when(assignmentService.getAssignment(EDITION_ID, 2L)).thenReturn(exam);
     when(assignmentService.listAssignments(edition)).thenReturn(List.of(project, exam));
+    when(assignmentService.countAssignments(edition)).thenReturn(2L);
     when(assignmentService.hasFullWeight(edition)).thenReturn(true);
     when(enrolmentService.getEnrolment(EDITION_ID, 1001L)).thenReturn(ana);
 
@@ -193,6 +194,39 @@ class GradeServiceTest {
     assertFalse(response.weightsComplete());
     assertNull(response.student().finalGrade());
     assertEquals(EnrolmentStatus.IN_PROGRESS, response.student().status());
+  }
+
+  @Test
+  @DisplayName("Weights dropping under 100% after a final grade: grading again clears it back to in progress")
+  void weightsDropClearsFinalGrade() {
+    // Arrange - 13, passed, then a weight changed
+    grade(project, "14");
+    grade(exam, "12");
+    when(assignmentService.hasFullWeight(edition)).thenReturn(false);
+
+    // Act
+    GradeResponseDTO response = grade(exam, "15");
+
+    // Assert
+    assertNull(response.student().finalGrade());
+    assertEquals(EnrolmentStatus.IN_PROGRESS, response.student().status());
+    assertNull(ana.getFinalGrade());
+  }
+
+  @Test
+  @DisplayName("A new assignment after a final grade: grading again clears it, one is still missing")
+  void newAssignmentClearsFinalGrade() {
+    // Arrange - 13, passed, then a third assignment came
+    grade(project, "14");
+    grade(exam, "12");
+    when(assignmentService.countAssignments(edition)).thenReturn(3L);
+
+    // Act
+    GradeResponseDTO response = grade(project, "16");
+
+    // Assert
+    assertNull(response.student().finalGrade());
+    assertEquals(EnrolmentStatus.IN_PROGRESS, ana.getStatus());
   }
 
   @Test

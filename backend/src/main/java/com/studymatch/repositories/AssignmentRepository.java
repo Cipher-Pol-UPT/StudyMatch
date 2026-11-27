@@ -25,6 +25,8 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
 
   boolean existsBySubjectEditionAndNameIgnoreCase(SubjectEdition subjectEdition, String name);
 
+  long countBySubjectEdition(SubjectEdition subjectEdition);
+
   @Query("select coalesce(sum(a.weight), 0) from Assignment a where a.subjectEdition = :subjectEdition")
   BigDecimal sumWeightBySubjectEdition(SubjectEdition subjectEdition);
 
