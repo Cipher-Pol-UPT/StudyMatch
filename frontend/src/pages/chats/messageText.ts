@@ -1,7 +1,8 @@
 import type { TFunction } from 'i18next';
 import type { AttachmentData } from '../../types/chat';
+import type { Sticker } from '../../types/enums';
 
-interface Content { text: string; gifId?: string | null; attachments?: AttachmentData[] }
+interface Content { text: string; gifId?: string | null; sticker?: Sticker | null; attachments?: AttachmentData[] }
 
 // a message with only files: "Photo", the file's name, or how many
 export function filesOf(message: Content, t: TFunction) {
@@ -11,5 +12,10 @@ export function filesOf(message: Content, t: TFunction) {
   return '';
 }
 
-// one line for a message: its text, or "GIF", or its files
-export const lineOf = (message: Content, t: TFunction) => message.text || (message.gifId ? t('chats.gif') : filesOf(message, t));
+// one line for a message: its text, "GIF", the sticker's name, or its files
+export function lineOf(message: Content, t: TFunction) {
+  if (message.text) return message.text;
+  if (message.gifId) return t('chats.gif');
+  if (message.sticker) return t('chats.stickerLine', { name: t(`stickers.${message.sticker}`) });
+  return filesOf(message, t);
+}

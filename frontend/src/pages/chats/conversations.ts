@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import type { MessageQuoteData } from '../../types/chat';
+import type { Sticker } from '../../types/enums';
 
 // a message of this conversation: 'sending' until the backend confirms it, 'failed' to retry or discard
 export interface ThreadMessage {
@@ -12,6 +13,8 @@ export interface ThreadMessage {
   // its files while they go up, and how much of them has (#211)
   files?: File[];
   progress?: number;
+  // a sticker instead of the text, which is empty then (#215)
+  sticker?: Sticker;
 }
 
 // what's typed and sent in one conversation

@@ -187,6 +187,13 @@
 .sm-composer__bar-preview { color: var(--sm-text-2); }
 .sm-composer__box { display: flex; align-items: flex-end; gap: 4px; padding: 6px 6px 6px 14px; border-radius: var(--sm-r-xl); background: var(--sm-surface); box-shadow: var(--sm-shadow-md); transition: box-shadow var(--sm-dur-1); }
 .sm-composer__box:focus-within { box-shadow: 0 0 0 2px var(--sm-violet), var(--sm-shadow-md); }
+.sm-composer__box:has(.sm-composer__tool) { padding-left: 6px; }
+/* the sticker button is a tiny Matchy that wiggles when pointed at */
+.sm-composer__tool { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: none; flex-shrink: 0; cursor: pointer; transition: background var(--sm-dur-1); }
+.sm-composer__tool:hover, .sm-composer__tool[aria-expanded="true"] { background: var(--sm-fill); }
+.sm-composer__tool:hover .sm-sticker__object { animation: sm-sticker-hop 0.7s cubic-bezier(.3, 1.6, .5, 1) both; }
+.sm-composer__tool:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+@media (prefers-reduced-motion: reduce) { .sm-composer__tool:hover .sm-sticker__object { animation: none; } }
 .sm-composer__input { flex: 1; min-width: 0; max-height: 160px; min-height: 36px; padding: 8px 4px; border: 0; background: none; resize: none; outline: none; color: var(--sm-text); font: inherit; font-size: 14.5px; line-height: 1.4; }
 .sm-composer__input::placeholder { color: var(--sm-text-3); }
 .sm-composer__send { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--sm-violet); color: var(--sm-on-accent); box-shadow: var(--sm-shadow-violet); flex-shrink: 0; cursor: pointer; transition: transform var(--sm-dur-1) var(--sm-ease-out), opacity var(--sm-dur-1); }
@@ -346,3 +353,43 @@
   .sm-drop, .sm-drop__paper, .sm-upload { animation: none; }
   .sm-paper, .sm-msg__image img, .sm-file__download { transition: none; }
 }
+/* ─── Stickers (#215) ───────────────────────────── */
+/* the picker: the packs on a rail, a search, the stickers in a grid, and the one pointed at shown big at the bottom */
+.sm-stickers { position: absolute; z-index: 6; display: grid; grid-template-columns: 58px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; width: 392px; height: 460px; max-width: calc(100% - 16px); border-radius: var(--sm-r-lg); background: var(--sm-surface); box-shadow: var(--sm-shadow-lg); overflow: hidden; animation: sm-stickers-in var(--sm-dur-2) var(--sm-ease-out) both; transform-origin: 50% 100%; }
+@keyframes sm-stickers-in { from { opacity: 0; transform: translateY(6px) scale(0.97); } }
+.sm-stickers__rail { grid-row: 1 / 4; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0; background: var(--sm-fill); overflow-y: auto; scrollbar-width: none; }
+.sm-stickers__tab { position: relative; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 0; border-radius: var(--sm-r-md); background: none; color: var(--sm-text-2); cursor: pointer; transition: background var(--sm-dur-1), transform var(--sm-dur-1) var(--sm-ease-out); }
+.sm-stickers__tab:hover { background: var(--sm-fill-hover); transform: translateY(-1px); }
+.sm-stickers__tab:active { transform: scale(0.92); }
+.sm-stickers__tab[aria-current] { background: var(--sm-surface); box-shadow: var(--sm-shadow-sm); color: var(--sm-violet); }
+/* the pack being looked at gets a pill on the rail's edge */
+.sm-stickers__tab::before { content: ""; position: absolute; left: -8px; top: 50%; width: 4px; height: 0; border-radius: 0 4px 4px 0; background: var(--sm-violet); transform: translateY(-50%); transition: height var(--sm-dur-2) var(--sm-ease-out); }
+.sm-stickers__tab[aria-current]::before { height: 22px; }
+.sm-stickers__tab:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-stickers__head { padding: 10px 10px 4px; }
+.sm-stickers__list { position: relative; padding: 0 10px 10px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.sm-stickers__name { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 4px 6px; background: color-mix(in srgb, var(--sm-surface) 92%, transparent); backdrop-filter: blur(6px); font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--sm-text-2); }
+.sm-stickers__season { padding: 2px 8px; border-radius: var(--sm-r-pill); background: var(--sm-tint-lemon); color: var(--sm-warning-ink); font-size: 10.5px; letter-spacing: 0.02em; text-transform: none; }
+.sm-stickers__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.sm-stickers__grid--found { padding-top: 8px; }
+.sm-stickers__item { position: relative; display: grid; place-items: center; aspect-ratio: 1; padding: 0; border: 0; border-radius: var(--sm-r-md); background: none; cursor: pointer; transition: background var(--sm-dur-1), transform var(--sm-dur-2) var(--sm-ease-out), box-shadow var(--sm-dur-1); }
+.sm-stickers__item .sm-sticker { transition: transform var(--sm-dur-2) var(--sm-ease-out), filter var(--sm-dur-2); }
+/* pointed at: a soft violet tile, and the sticker grows a little and lifts */
+.sm-stickers__item:hover, .sm-stickers__item:focus-visible { background: var(--sm-tint-lavender); }
+.sm-stickers__item:hover .sm-sticker, .sm-stickers__item:focus-visible .sm-sticker { transform: scale(1.1) translateY(-2px); filter: drop-shadow(0 6px 8px rgba(74, 61, 245, 0.22)); }
+.sm-stickers__item:active { transform: scale(0.9); }
+.sm-stickers__item:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--sm-violet); }
+.sm-stickers__badge { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--sm-surface); color: var(--sm-violet); box-shadow: var(--sm-shadow-sm); }
+.sm-stickers__empty { display: grid; justify-items: center; gap: 8px; padding: 36px 16px; text-align: center; font-size: 13px; color: var(--sm-text-3); }
+.sm-stickers__foot { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 6px 12px; border-top: 1px solid var(--sm-hairline); font-size: 12.5px; color: var(--sm-text-3); }
+.sm-stickers__named { display: grid; gap: 2px; line-height: 1.25; }
+.sm-stickers__named b { color: var(--sm-text); font-size: 14px; }
+.sm-stickers__animated { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; padding: 1px 7px; border-radius: var(--sm-r-pill); background: var(--sm-tint-lavender); color: var(--sm-violet-ink); font-size: 10.5px; font-weight: 600; }
+.sm-stickers__hint { flex: 1; text-align: center; }
+@media (prefers-reduced-motion: reduce) {
+  .sm-stickers, .sm-stickers__item .sm-sticker { animation: none; transition: none; }
+  .sm-stickers__item:hover .sm-sticker, .sm-stickers__item:focus-visible .sm-sticker { transform: none; }
+}
+/* in the chat: bigger than an emoji and without a bubble (#215) */
+.sm-msg__sticker { line-height: 0; }
+.sm-msg__sticker .sm-sticker { width: 132px; height: 132px; }
