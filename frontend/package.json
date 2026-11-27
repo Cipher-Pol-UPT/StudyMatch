@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@stomp/stompjs": "^7.5.0",
+    "emoji-picker-react": "^4.22.3",
     "framer-motion": "^11.18.2",
     "i18next": "^26.4.4",
     "lucide-react": "^0.460.0",

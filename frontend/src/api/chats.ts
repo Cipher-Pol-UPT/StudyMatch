@@ -1,4 +1,4 @@
-import type { ChatContactData, ChatSummaryData, DirectChatData, MessageData, MessagePageData } from '../types/chat';
+import type { ChatContactData, ChatSummaryData, DirectChatData, MessageData, MessagePageData, ReactionData } from '../types/chat';
 import type { PageData } from '../types/studentDirectory';
 import { request } from './client';
 
@@ -22,6 +22,11 @@ export const markChatRead = (chatId: number) => request<void>('PUT', `/chats/${c
 // change your own message's text, it comes back with editedAt
 export const editMessage = (chatId: number, messageId: number, text: string) =>
   request<MessageData>('PUT', `/chats/${chatId}/messages/${messageId}`, { text });
+// react with one emoji, replacing yours (#216)
+export const reactToMessage = (chatId: number, messageId: number, emoji: string) =>
+  request<ReactionData>('PUT', `/chats/${chatId}/messages/${messageId}/reaction`, { emoji });
+// take your reaction off
+export const removeReaction = (chatId: number, messageId: number) => request<void>('DELETE', `/chats/${chatId}/messages/${messageId}/reaction`);
 // delete your own message for everyone
 export const deleteMessage = (chatId: number, messageId: number) => request<void>('DELETE', `/chats/${chatId}/messages/${messageId}`);
 

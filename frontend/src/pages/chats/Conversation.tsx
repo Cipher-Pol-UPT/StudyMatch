@@ -1,14 +1,14 @@
 import type { TFunction } from 'i18next';
 import { ArrowLeft } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
-import { deleteMessage, editMessage, getDirectChat, sendDirectMessage } from '../../api/chats';
+import { deleteMessage, editMessage, getDirectChat, reactToMessage, removeReaction, sendDirectMessage } from '../../api/chats';
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useChatEvents, useChatListEvents } from '../../hooks/useChatEvents';
-import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatReplyBar, ChatStart, ChatThread, ConfirmDialog, flashMessage, useToast, type ChatQuote } from '../../studymatch-ui';
-import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData, type MessageQuoteData } from '../../types/chat';
+import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatStart, ChatThread, ConfirmDialog, EMOJI_CATEGORIES, flashMessage, useToast, type ChatQuote, type ChatReaction } from '../../studymatch-ui';
+import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData, type MessageQuoteData, type ReactionData } from '../../types/chat';
 import { newMessageKey, useConversation, type ThreadMessage } from './conversations';
 import { lineOf } from './messageText';
 import { useChatHistory } from './useChatHistory';
@@ -19,6 +19,8 @@ export interface ConversationProps {
   profilePath?: (contact: ChatContactData) => string | undefined;
 }
 
+// what double tapping a message reacts with
+const HEART = '❤️';
 // messages closer than this are one run: only the first shows who and when
 const RUN_MS = 5 * 60 * 1000;
 // this close to an edge counts as being at it: the bottom keeps up with new messages, the top loads older ones
@@ -53,7 +55,7 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   const [conversation, update] = useConversation(contact.number);
   // the DM gets its id with its first message, yours or theirs: from then on its history loads and its live events are followed
   const [chatId, setChatId] = useState(chat.chatId);
-  const { history, loadOlder, loadNewer, jumpTo, toLatest, behind, add, replace, remove, markRead } = useChatHistory(chatId);
+  const { history, loadOlder, loadNewer, jumpTo, toLatest, behind, add, replace, remove, applyReaction, markRead } = useChatHistory(chatId);
   const toast = useToast();
   // a message you sent keeps the key it had while sending, so it doesn't jump when the backend answers.
   // Each key belongs to one message: its live event can take it before the answer, which then puts it right
@@ -77,6 +79,9 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   // the box open now, for an edit that finishes after you've moved on
   const editingNow = useRef(editing);
   useEffect(() => { editingNow.current = editing; });
+  // the message the emoji picker is open for, and the button it sits by
+  const [picking, setPicking] = useState<{ message: MessageData; anchor: HTMLElement } | null>(null);
+  const closePicker = useCallback(() => setPicking(null), []);
   // the message waiting for Delete to be confirmed
   const [deleting, setDeleting] = useState<MessageData | null>(null);
 
@@ -157,6 +162,7 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
 
   useChatEvents(chatId, event => {
     if (event.type === 'MESSAGE_EDITED') return replace(event.payload as MessageData);
+    if (event.type === 'MESSAGE_REACTED') return applyReaction(event.payload as ReactionData);
     if (event.type === 'MESSAGE_DELETED') {
       const { messageId } = event.payload as MessageDeletedData;
       remove(messageId);
@@ -265,6 +271,48 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
     update(current => ({ ...current, error: undefined, messages: current.messages.map(m => m.key === message.key ? { ...m, status: 'sending' } : m) }));
     deliver(message.key, message.text, message.replyTo);
   };
+
+  // your reaction to a message, if you have one
+  const yoursOn = (id: number) => history.reactions.find(reaction => reaction.messageId === id && isMine(reaction.user));
+  const reactionFailed = (error: unknown) => {
+    toast.danger(isBackendError(error) ? t(`errors.${error.code}`, error.params ?? {}) : t('common.unexpectedError'));
+  };
+  // one each: another emoji replaces yours
+  const react = (message: MessageData, emoji: string) => {
+    if (yoursOn(message.id)?.emoji === emoji) return;
+    reactToMessage(message.chatId, message.id, emoji).then(applyReaction, reactionFailed);
+  };
+  const unreact = (reaction: ReactionData) => removeReaction(reaction.chatId, reaction.messageId).then(
+    () => applyReaction({ ...reaction, emoji: null }), reactionFailed);
+  // a pill: yours takes it off, another one makes it yours
+  const pickPill = (message: MessageData, emoji: string) => {
+    const yours = yoursOn(message.id);
+    if (yours?.emoji === emoji) return unreact(yours);
+    react(message, emoji);
+  };
+  const list = new Intl.ListFormat(i18n.language, { type: 'conjunction' });
+  // the same emoji from several people is one pill with the count, in the order they first appeared
+  const pillsOf = (id: number): ChatReaction[] => {
+    const byEmoji = new Map<string, ReactionData[]>();
+    history.reactions.filter(reaction => reaction.messageId === id && reaction.emoji)
+      .forEach(reaction => byEmoji.set(reaction.emoji!, [...(byEmoji.get(reaction.emoji!) ?? []), reaction]));
+    return [...byEmoji].map(([emoji, people]) => {
+      const mine = people.some(person => isMine(person.user));
+      // you first, then the others by name
+      const who = list.format([...(mine ? [t('chats.you')] : []), ...people.filter(person => !isMine(person.user)).map(person => person.user.name)]);
+      return { emoji, count: people.length, mine, title: who, label: t(mine ? 'chats.reactionYours' : 'chats.reaction', { emoji, count: people.length, who }) };
+    });
+  };
+  const picker = picking && (
+    <ChatEmojiPicker anchor={picking.anchor} label={t('chats.pickReaction')} searchLabel={t('chats.searchEmoji')} loadingLabel={t('chats.loadingEmoji')}
+      categoryNames={Object.fromEntries(EMOJI_CATEGORIES.map(category => [category, t(`chats.emojiGroups.${category}`)])) as Record<(typeof EMOJI_CATEGORIES)[number], string>}
+      onClose={closePicker} onPick={emoji => {
+        const { message } = picking;
+        setPicking(null);
+        picking.anchor.focus();
+        react(message, emoji);
+      }} />
+  );
 
   // answering a message: it shows above the message box until it's sent, or Esc or the X stops it
   const startReply = (message: MessageData) => {
@@ -401,6 +449,10 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
                   onRetry={item.pending && (() => retry(item.pending!))} onDiscard={item.pending && (() => discard(item.pending!))}
                   toolsLabel={t('chats.messageActions')} editLabel={t('chats.edit')} deleteLabel={t('chats.delete')}
                   replyLabel={t('chats.reply')} onReply={item.message && (() => startReply(item.message!))}
+                  reactions={item.message && pillsOf(item.message.id)} onReaction={emoji => item.message && pickPill(item.message, emoji)}
+                  reactLabel={t('chats.addReaction')} picking={picking !== null && picking.message.id === item.message?.id}
+                  onAddReaction={item.message && (anchor => setPicking(current => current?.message.id === item.message!.id ? null : { message: item.message!, anchor }))}
+                  onDoubleTap={item.message && (() => react(item.message!, HEART))}
                   onEdit={own && (() => startEditing(own))} onDelete={own && (shift => askToDelete(own, shift))} editor={editor || undefined} />
               </div>
             );
@@ -408,6 +460,7 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
         </ChatMessages>
       )}
       {history.loadingNewer && <ChatOlder label={t('chats.loadingNewer')} />}
+      {picker}
       <ConfirmDialog open={deleting !== null} onClose={() => setDeleting(null)} tone="danger"
         title={t('chats.deleteTitle')} confirmLabel={t('chats.delete')}
         description={deleting && (

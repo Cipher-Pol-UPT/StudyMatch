@@ -1182,7 +1182,24 @@
     "originalDeleted": "Original message was deleted",
     "originalGone": "The original message isn't there anymore.",
     "loadingNewer": "Loading newer messages",
-    "gif": "GIF"
+    "gif": "GIF",
+    "addReaction": "Add reaction",
+    "pickReaction": "Pick a reaction",
+    "searchEmoji": "Search emoji",
+    "loadingEmoji": "Loading emoji",
+    "reaction": "{{emoji}} {{count}}, from {{who}}",
+    "reactionYours": "{{emoji}} {{count}}, from {{who}}. Take yours off",
+    "emojiGroups": {
+      "suggested": "Recently used",
+      "smileys_people": "Smileys & people",
+      "animals_nature": "Animals & nature",
+      "food_drink": "Food & drink",
+      "travel_places": "Travel & places",
+      "activities": "Activities",
+      "objects": "Objects",
+      "symbols": "Symbols",
+      "flags": "Flags"
+    }
   },
   "classmate": {
     "title": "Student profile",

@@ -1182,7 +1182,24 @@
     "originalDeleted": "A mensagem original foi eliminada",
     "originalGone": "A mensagem original já não existe.",
     "loadingNewer": "A carregar mensagens mais recentes",
-    "gif": "GIF"
+    "gif": "GIF",
+    "addReaction": "Adicionar reação",
+    "pickReaction": "Escolher uma reação",
+    "searchEmoji": "Pesquisar emoji",
+    "loadingEmoji": "A carregar os emojis",
+    "reaction": "{{emoji}} {{count}}, de {{who}}",
+    "reactionYours": "{{emoji}} {{count}}, de {{who}}. Retirar a sua",
+    "emojiGroups": {
+      "suggested": "Usados recentemente",
+      "smileys_people": "Rostos e pessoas",
+      "animals_nature": "Animais e natureza",
+      "food_drink": "Comida e bebida",
+      "travel_places": "Viagens e locais",
+      "activities": "Atividades",
+      "objects": "Objetos",
+      "symbols": "Símbolos",
+      "flags": "Bandeiras"
+    }
   },
   "classmate": {
     "title": "Perfil do estudante",

@@ -103,6 +103,40 @@
 .sm-msg__quote:hover { background: var(--sm-fill-hover); }
 .sm-msg__quote:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-msg__quote--gone, .sm-msg__quote--gone:hover { border-left-color: var(--sm-text-3); background: var(--sm-fill); font-style: italic; cursor: default; }
+/* the reactions under a message (#217): one pill per emoji with its count, yours highlighted */
+.sm-reactions { display: flex; flex-wrap: wrap; gap: 4px; }
+.sm-msg--mine .sm-reactions { justify-content: flex-end; }
+.sm-reaction { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 8px; border: 1px solid var(--sm-border); border-radius: var(--sm-r-pill); background: var(--sm-surface); color: var(--sm-text); font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; transition: transform var(--sm-dur-1) var(--sm-ease-out), border-color var(--sm-dur-1); }
+.sm-reaction:hover { border-color: var(--sm-text-3); }
+.sm-reaction:active { transform: scale(0.92); }
+.sm-reaction:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-reaction--mine { border-color: var(--sm-violet); background: var(--sm-violet-a12); color: var(--sm-violet-ink); font-weight: 500; }
+.sm-reaction--add { width: 26px; padding: 0; justify-content: center; color: var(--sm-text-3); }
+/* the picker is open for this message, so its tools stay */
+.sm-msg--picking .sm-msg__tools { opacity: 1; pointer-events: auto; }
+/* the emoji picker over the conversation, in the theme's colours */
+.sm-emoji { position: absolute; z-index: 6; width: 344px; height: 380px; max-width: calc(100% - 16px); border-radius: var(--sm-r-lg); background: var(--sm-surface); box-shadow: var(--sm-shadow-lg); }
+.sm-emoji__loading { display: grid; place-items: center; height: 100%; }
+.sm-emoji .EmojiPickerReact.EmojiPickerReact {
+  --epr-bg-color: var(--sm-surface); --epr-dark-bg-color: var(--sm-surface);
+  --epr-category-label-bg-color: var(--sm-surface); --epr-dark-category-label-bg-color: var(--sm-surface);
+  --epr-text-color: var(--sm-text); --epr-dark-text-color: var(--sm-text);
+  --epr-category-label-text-color: var(--sm-text-2);
+  --epr-hover-bg-color: var(--sm-fill); --epr-dark-hover-bg-color: var(--sm-fill);
+  --epr-hover-bg-color-reduced-opacity: var(--sm-fill); --epr-dark-hover-bg-color-reduced-opacity: var(--sm-fill);
+  --epr-focus-bg-color: var(--sm-fill-hover); --epr-dark-focus-bg-color: var(--sm-fill-hover);
+  --epr-highlight-color: var(--sm-violet); --epr-dark-highlight-color: var(--sm-violet);
+  --epr-category-icon-active-color: var(--sm-violet); --epr-dark-category-icon-active-color: var(--sm-violet);
+  --epr-search-input-bg-color: var(--sm-fill); --epr-dark-search-input-bg-color: var(--sm-fill);
+  --epr-search-input-bg-color-active: var(--sm-fill); --epr-dark-search-input-bg-color-active: var(--sm-fill);
+  --epr-search-input-text-color: var(--sm-text); --epr-search-input-placeholder-color: var(--sm-text-3);
+  --epr-search-border-color: transparent; --epr-search-border-color-active: var(--sm-violet);
+  --epr-picker-border-color: transparent; --epr-dark-picker-border-color: transparent;
+  --epr-picker-border-radius: var(--sm-r-lg);
+  --epr-emoji-variation-picker-bg-color: var(--sm-surface); --epr-dark-emoji-variation-picker-bg-color: var(--sm-surface);
+  --epr-skin-tone-picker-menu-color: var(--sm-surface); --epr-dark-skin-tone-picker-menu-color: var(--sm-surface);
+  font-family: var(--sm-font);
+}
 /* the message you went to, for a moment */
 .sm-msg--flash { animation: sm-msg-flash 1.4s var(--sm-ease-out); }
 @keyframes sm-msg-flash { from, 30% { background: color-mix(in srgb, var(--sm-spark) 45%, transparent); } }
