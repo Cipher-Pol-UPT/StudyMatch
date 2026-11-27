@@ -45,6 +45,19 @@ INSERT INTO category (name) VALUES
   ('Design')
 ON CONFLICT (name) DO NOTHING;
 
+-- rooms: every type on two buildings, positions on each floor's 100 x 100 grid. B.102 is inactive
+INSERT INTO room (code, building, floor, type, capacity, x, y, width, depth, active) VALUES
+  ('A.001', 'Building A', 0, 'AUDITORIUM', 120, 0, 0, 40, 30, true),
+  ('A.002', 'Building A', 0, 'CLASSROOM', 30, 40, 0, 20, 20, true),
+  ('A.101', 'Building A', 1, 'CLASSROOM', 30, 0, 0, 20, 20, true),
+  ('A.102', 'Building A', 1, 'CLASSROOM', 30, 20, 0, 20, 20, true),
+  ('A.103', 'Building A', 1, 'LAB', 24, 40, 0, 25, 20, true),
+  ('B.001', 'Building B', 0, 'LAB', 20, 0, 0, 20, 20, true),
+  ('B.002', 'Building B', 0, 'CLASSROOM', 40, 20, 0, 25, 20, true),
+  ('B.101', 'Building B', 1, 'LAB', 20, 0, 0, 20, 20, true),
+  ('B.102', 'Building B', 1, 'CLASSROOM', 25, 20, 0, 20, 20, false)
+ON CONFLICT (code) DO NOTHING;
+
 -- subjects and where they are in each degree
 
 INSERT INTO subject (code, name, ects, category_id)
