@@ -597,6 +597,8 @@
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Selecione pelo menos um docente.",
     "CLASS_SECTION_ALREADY_EXISTS": "Esta turma já existe.",
     "CLASS_SECTION_NOT_IN_SUBJECT_EDITION": "A turma não pertence a esta edição da unidade curricular.",
+    "TEACHER_NOT_IN_SUBJECT_EDITION": "Só um docente desta edição da unidade curricular pode lecionar as suas turmas.",
+    "TEACHER_STILL_TEACHES_SECTION": "Um docente que removeu ainda leciona {{classSections}}. Atribua primeiro outro docente a essas turmas.",
     "SUBJECT_EDITION_NOT_CURRENT": "Só é possível alterar edições do ano letivo atual.",
     "GROUP_WORK_NOT_ALLOWED_FOR_EXAMS": "Os exames não permitem trabalho de grupo.",
     "INVALID_GROUP_SIZES": "Os tamanhos dos grupos são inválidos.",
