@@ -7,7 +7,7 @@ import type { CurrentUser } from '../src/types/currentUser';
 import type { Role } from '../src/types/enums';
 import { connectChatSocket, disconnectChatSocket } from '../src/api/chatSocket';
 
-vi.mock('../src/api/chatSocket', () => ({
+vi.mock('../src/api/chatSocket', () => ({ onChatSocketReconnect: () => () => undefined,
   // the connection is down, so nobody shows as online
   isChatSocketConnected: () => false, onChatSocketConnection: () => () => undefined, sendTyping: vi.fn(), connectChatSocket: vi.fn(), disconnectChatSocket: vi.fn(async () => {}), subscribeToChatEvents: vi.fn(() => () => undefined) }));
 

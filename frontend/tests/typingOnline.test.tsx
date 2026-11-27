@@ -15,7 +15,7 @@ const live = vi.hoisted(() => ({
   onConnection: new Set<() => void>(),
   typing: [] as number[],
 }));
-vi.mock('../src/api/chatSocket', () => ({
+vi.mock('../src/api/chatSocket', () => ({ onChatSocketReconnect: () => () => undefined,
   isChatSocketConnected: () => live.connected,
   onChatSocketConnection: (listener: () => void) => { live.onConnection.add(listener); return () => live.onConnection.delete(listener); },
   sendTyping: (chatId: number) => live.typing.push(chatId),

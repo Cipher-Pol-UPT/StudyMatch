@@ -7,7 +7,7 @@ import { TeacherArea } from '../src/pages/teacher/TeacherArea';
 import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { ChatContactData, MessageData } from '../src/types/chat';
 
-vi.mock('../src/api/chatSocket', () => ({
+vi.mock('../src/api/chatSocket', () => ({ onChatSocketReconnect: () => () => undefined,
   // the connection is down, so nobody shows as online
   isChatSocketConnected: () => false, onChatSocketConnection: () => () => undefined, sendTyping: vi.fn(), subscribeToChatEvents: () => () => undefined }));
 
