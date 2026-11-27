@@ -7,7 +7,9 @@ import { TeacherArea } from '../src/pages/teacher/TeacherArea';
 import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { ChatContactData, MessageData } from '../src/types/chat';
 
-vi.mock('../src/api/chatSocket', () => ({ subscribeToChatEvents: () => () => undefined }));
+vi.mock('../src/api/chatSocket', () => ({
+  // the connection is down, so nobody shows as online
+  isChatSocketConnected: () => false, onChatSocketConnection: () => () => undefined, sendTyping: vi.fn(), subscribeToChatEvents: () => () => undefined }));
 
 configure({ asyncUtilTimeout: 5000 });
 vi.setConfig({ testTimeout: 15000 });

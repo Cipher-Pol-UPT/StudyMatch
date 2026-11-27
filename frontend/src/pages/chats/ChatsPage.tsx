@@ -14,6 +14,7 @@ import { type ChatContactData, type ChatSummaryData, type MessageData } from '..
 import { Conversation } from './Conversation';
 import { lineOf } from './messageText';
 import { useChatList } from './useChatList';
+import { useOnline } from './useOnline';
 
 export interface ChatsPageProps {
   // your number, to tell your own messages apart in the list
@@ -41,6 +42,7 @@ export function ChatsPage({ me, profilePath }: ChatsPageProps) {
   const [creating, setCreating] = useState(false);
   const isOpen = (chat: ChatSummaryData) => chat.contact ? String(chat.contact.number) === number : String(chat.chatId) === chatId;
   const { chats, error, add } = useChatList(message => message.author.number === me, isOpen);
+  const online = useOnline();
 
   const newMessage = (
     <>
@@ -70,17 +72,18 @@ export function ChatsPage({ me, profilePath }: ChatsPageProps) {
             avatarSrc={chat.contact ? photoOf(chat.contact) : pictureOf(chat)}
             href={chat.contact ? `/chats/direct/${chat.contact.number}` : `/chats/group/${chat.chatId}`}
             preview={previewOf(chat, me, t)} time={chat.lastMessage ? when(chat.lastMessage.sentAt) : undefined} dateTime={chat.lastMessage?.sentAt}
-            unread={chat.unread} unreadLabel={t('chats.unread', { count: chat.unread })} current={isOpen(chat)} />
+            unread={chat.unread} unreadLabel={t('chats.unread', { count: chat.unread })} current={isOpen(chat)}
+            online={!!chat.contact && online.has(chat.contact.number)} onlineLabel={t('chats.online')} />
         ))}
       </ChatRows>
     );
   };
 
   const thread = () => {
-    if (number) return <DirectConversation key={number} number={Number(number)} me={me} profilePath={profilePath} />;
+    if (number) return <DirectConversation key={number} number={Number(number)} me={me} profilePath={profilePath} online={online} />;
     if (chatId) {
       return <GroupConversation key={chatId} chatId={Number(chatId)} me={me} profilePath={profilePath}
-        summary={chats?.find(chat => !chat.contact && String(chat.chatId) === chatId)} listLoaded={chats !== null} listError={error} />;
+        summary={chats?.find(chat => !chat.contact && String(chat.chatId) === chatId)} listLoaded={chats !== null} listError={error} online={online} />;
     }
     return (
       <ChatThread label={t('chats.conversation')}>
@@ -113,7 +116,7 @@ function previewOf(chat: ChatSummaryData, me: number, t: TFunction) {
 }
 
 // the DM with one person: found by their number, then its messages and the message box
-function DirectConversation({ number, me, profilePath }: { number: number } & Pick<ChatsPageProps, 'me' | 'profilePath'>) {
+function DirectConversation({ number, me, profilePath, online }: { number: number; online: ReadonlySet<number> } & Pick<ChatsPageProps, 'me' | 'profilePath'>) {
   const { t } = useTranslation();
   const load = useCallback(() => Number.isInteger(number) ? getDirectChat(number) : Promise.reject(notFound()), [number]);
   const chat = useRemoteData(`direct-chat:${number}`, load);
@@ -123,7 +126,7 @@ function DirectConversation({ number, me, profilePath }: { number: number } & Pi
     return <ChatThread label={t('chats.conversation')}><DataLoadState /></ChatThread>;
   }
 
-  return <Conversation chat={{ kind: 'direct', chat: chat.data }} me={me} profilePath={profilePath} />;
+  return <Conversation chat={{ kind: 'direct', chat: chat.data }} me={me} profilePath={profilePath} online={online} />;
 }
 
 interface GroupConversationProps extends Pick<ChatsPageProps, 'me' | 'profilePath'> {
@@ -133,10 +136,11 @@ interface GroupConversationProps extends Pick<ChatsPageProps, 'me' | 'profilePat
   listLoaded: boolean;
   // the list couldn't load, so its row never comes: shown here too instead of loading forever
   listError?: unknown;
+  online: ReadonlySet<number>;
 }
 
 // a group chat by its id: its members, then its messages and the message box (#227)
-function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listError }: GroupConversationProps) {
+function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listError, online }: GroupConversationProps) {
   const { t } = useTranslation();
   const load = useCallback(() => Number.isInteger(chatId) ? getChatMembers(chatId) : Promise.reject(notFound()), [chatId]);
   const members = useRemoteData(`chat-members:${chatId}`, load);
@@ -148,7 +152,7 @@ function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listE
     return <ChatThread label={t('chats.conversation')}><DataLoadState /></ChatThread>;
   }
 
-  return <Conversation chat={{ kind: 'group', chatId, name: summary.name, pictureSrc: pictureOf(summary), members: members.data }} me={me} profilePath={profilePath} />;
+  return <Conversation chat={{ kind: 'group', chatId, name: summary.name, pictureSrc: pictureOf(summary), members: members.data }} me={me} profilePath={profilePath} online={online} />;
 }
 
 // a chat that can't be opened: why, and the way back to the list

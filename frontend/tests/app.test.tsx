@@ -6,7 +6,9 @@ import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { CurrentUser } from '../src/types/currentUser';
 import { connectChatSocket } from '../src/api/chatSocket';
 
-vi.mock('../src/api/chatSocket', () => ({ connectChatSocket: vi.fn(), disconnectChatSocket: vi.fn(async () => {}), subscribeToChatEvents: vi.fn(() => () => undefined) }));
+vi.mock('../src/api/chatSocket', () => ({
+  // the connection is down, so nobody shows as online
+  isChatSocketConnected: () => false, onChatSocketConnection: () => () => undefined, sendTyping: vi.fn(), connectChatSocket: vi.fn(), disconnectChatSocket: vi.fn(async () => {}), subscribeToChatEvents: vi.fn(() => () => undefined) }));
 
 const student: CurrentUser = {
   number: 50001,

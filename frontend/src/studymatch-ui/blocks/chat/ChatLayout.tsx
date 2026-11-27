@@ -92,17 +92,19 @@ export interface ChatHeadProps {
   actions?: ReactNode;
   // a group chat's picture is square, a person's round
   group?: boolean;
+  // they have the app open: a green dot on the picture and the subtitle in green, like "Online" (#223)
+  online?: boolean;
 }
 
 // who the conversation is with; the back button only shows on a phone
-export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profileHref, profileLabel, linkAs, actions, group }: ChatHeadProps) {
+export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profileHref, profileLabel, linkAs, actions, group, online }: ChatHeadProps) {
   const LinkAs = linkAs ?? 'a';
   const who = (
     <>
-      <Avatar name={name} src={avatarSrc} size={40} shape={group ? 'square' : 'circle'} />
+      <Avatar name={name} src={avatarSrc} size={40} shape={group ? 'square' : 'circle'} presence={online ? 'online' : undefined} />
       <div className="sm-chat__head-text">
         <h2 className="sm-chat__head-name">{name}</h2>
-        {subtitle && <div className="sm-chat__head-sub">{subtitle}</div>}
+        {subtitle && <div className={online ? 'sm-chat__head-sub sm-chat__head-sub--online' : 'sm-chat__head-sub'}>{subtitle}</div>}
       </div>
     </>
   );
@@ -258,18 +260,21 @@ export interface ChatRowProps {
   current?: boolean;
   // the router's link, like the app shell's
   linkAs?: ElementType;
+  // the other person in a DM has the app open: a green dot on the picture, read out as onlineLabel (#223)
+  online?: boolean;
+  onlineLabel?: string;
 }
 
 // one chat in the list: picture, name, the latest message, when, and how many you haven't read
-export function ChatRow({ name, avatarSrc, group, preview, time, dateTime, unread, unreadLabel, href, current, linkAs }: ChatRowProps) {
+export function ChatRow({ name, avatarSrc, group, preview, time, dateTime, unread, unreadLabel, href, current, linkAs, online, onlineLabel }: ChatRowProps) {
   const LinkAs = linkAs ?? 'a';
   return (
     <li>
       <LinkAs href={href} to={linkAs ? href : undefined} className={`sm-chat__row${unread ? ' sm-chat__row--unread' : ''}`}
         aria-current={current ? 'page' : undefined}>
-        <Avatar name={name} src={avatarSrc} size={46} shape={group ? 'square' : 'circle'} />
+        <Avatar name={name} src={avatarSrc} size={46} shape={group ? 'square' : 'circle'} presence={online ? 'online' : undefined} />
         <span className="sm-chat__row-text">
-          <span className="sm-chat__row-name">{name}</span>
+          <span className="sm-chat__row-name">{name}{online && onlineLabel && <span className="sm-visually-hidden">, {onlineLabel}</span>}</span>
           <span className="sm-chat__row-last">{preview}</span>
         </span>
         <span className="sm-chat__row-side">
@@ -331,6 +336,8 @@ export interface ChatMessageProps {
   author?: string;
   // the author's picture; their initials when there's none
   avatarSrc?: string;
+  // the author has the app open, a green dot on their picture (#223)
+  online?: boolean;
   // "(edited)" after the text, with when in its tooltip
   editedLabel?: string;
   editedTitle?: string;
@@ -372,7 +379,7 @@ const DOUBLE_TAP_MS = 300;
 // a double click on these is theirs, not the message's
 const OWN_CLICKS = 'button, a, textarea, input';
 
-export function ChatMessage({ id, text, time, dateTime, mine = false, first = true, author, avatarSrc, editedLabel, editedTitle, status, statusLabel, retryLabel, discardLabel, onRetry, onDiscard,
+export function ChatMessage({ id, text, time, dateTime, mine = false, first = true, author, avatarSrc, online, editedLabel, editedTitle, status, statusLabel, retryLabel, discardLabel, onRetry, onDiscard,
   toolsLabel, editLabel = '', deleteLabel = '', onEdit, onDelete, editor, quote, replyLabel = '', onReply,
   reactions, onReaction, reactLabel = '', onAddReaction, onDoubleTap, picking }: ChatMessageProps) {
   const cls = ['sm-msg', mine && 'sm-msg--mine', first && 'sm-msg--first', status === 'sending' && 'sm-msg--sending', picking && 'sm-msg--picking'].filter(Boolean).join(' ');
@@ -407,7 +414,7 @@ export function ChatMessage({ id, text, time, dateTime, mine = false, first = tr
   }, [doubleTaps, editing]);
   return (
     <div className={cls} id={id}>
-      {!mine && <div className="sm-msg__avatar">{first && author && <Avatar name={author} src={avatarSrc} size={36} />}</div>}
+      {!mine && <div className="sm-msg__avatar">{first && author && <Avatar name={author} src={avatarSrc} size={36} presence={online ? 'online' : undefined} />}</div>}
       <div className="sm-msg__main">
         {first && (
           <div className="sm-msg__meta">
@@ -478,6 +485,15 @@ export interface ChatReplyBarProps {
   preview: string;
   cancelLabel: string;
   onCancel: () => void;
+}
+
+// who's typing, above the message box; empty when nobody is, but it keeps its place so the messages don't jump (#223)
+export function ChatTyping({ text }: { text?: string }) {
+  return (
+    <div className="sm-chat__typing" aria-live="polite">
+      {text && <><span className="sm-dots" aria-hidden><i /><i /><i /></span>{text}</>}
+    </div>
+  );
 }
 
 // above the message box while you answer a message, with an X to stop

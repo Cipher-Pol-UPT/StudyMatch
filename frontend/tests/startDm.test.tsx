@@ -5,7 +5,7 @@ import i18n from '../src/i18n';
 import { StudentArea } from '../src/pages/student/StudentArea';
 import { TeacherArea } from '../src/pages/teacher/TeacherArea';
 import { StudyMatchProvider } from '../src/studymatch-ui';
-import type { ChatContactData, DirectChatData } from '../src/types/chat';
+import type { ChatContactData, DirectChatData, MessageData } from '../src/types/chat';
 
 const ana: ChatContactData = { number: 50001, name: 'Test Ana', role: 'STUDENT' };
 const rui: ChatContactData = { number: 9001, name: 'Test Rui', role: 'TEACHER' };
@@ -22,8 +22,12 @@ function backend(direct: (number: number) => Response = number => reply({ chatId
       searches.push(search);
       return reply(page([ana, rui].filter(contact => contact.name.toLowerCase().includes(search) || String(contact.number).includes(search))));
     }
-    // an existing DM's history (#203): empty is enough here
-    if (url.pathname.match(/^\/api\/chats\/\d+\/messages$/)) return reply({ messages: [], hasMore: false });
+    // an existing DM's history (#203), with one message so it isn't an empty DM, which shows the hint
+    const history = url.pathname.match(/^\/api\/chats\/(\d+)\/messages$/);
+    if (history) {
+      const message: MessageData = { id: 1, chatId: Number(history[1]), author: rui, text: 'Hello from Rui', sentAt: '2026-11-20T10:00:00', editedAt: null, reply: false, replyTo: null };
+      return reply({ messages: [message], reactions: [], hasMore: false });
+    }
     if (url.pathname.match(/^\/api\/chats\/\d+\/read$/)) return new Response(null, { status: 204 });
     const dm = url.pathname.match(/^\/api\/chats\/direct\/(\d+)$/);
     if (dm) return direct(Number(dm[1]));
@@ -105,6 +109,8 @@ describe('start a DM', () => {
     open('/chats/direct/9001');
 
     const conversation = within(await screen.findByRole('region', { name: 'Conversation with Test Rui' }));
+    // its history is on screen, so the hint would have shown by now
+    expect(await conversation.findByText('Hello from Rui')).toBeTruthy();
 
     expect(conversation.getByText('Teacher · 9001')).toBeTruthy();
     expect(conversation.queryByText(/say hi/)).toBeNull();

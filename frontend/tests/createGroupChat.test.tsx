@@ -8,8 +8,10 @@ import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { ChatContactData, ChatEvent, ChatSummaryData, MessageData } from '../src/types/chat';
 
 // every listener of a destination gets what the test pushes
-const live = vi.hoisted(() => ({ listeners: new Map<string, Set<(event: unknown) => void>>() }));
+const live = vi.hoisted(() => ({ listeners: new Map<string, Set<(event: unknown) => void>>(), connected: false }));
 vi.mock('../src/api/chatSocket', () => ({
+  // down unless a test says so, then nobody shows as online
+  isChatSocketConnected: () => live.connected, onChatSocketConnection: () => () => undefined, sendTyping: vi.fn(),
   subscribeToChatEvents: (destination: string, onEvent: (event: unknown) => void) => {
     const set = live.listeners.get(destination) ?? new Set();
     set.add(onEvent);
@@ -80,7 +82,7 @@ const create = () => fireEvent.click(dialog().getByRole('button', { name: 'Creat
 const created = (calls: Call[]) => calls.filter(call => call.path === '/api/chats/groups');
 
 beforeEach(async () => { await i18n.changeLanguage('en'); });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); forgetConversations(); live.listeners.clear(); });
+afterEach(() => { live.connected = false; cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); forgetConversations(); live.listeners.clear(); });
 
 describe('create a group chat', () => {
   it('creates it with a name and the people picked, then opens it and adds it to the list', async () => {
@@ -219,6 +221,18 @@ describe('open a group chat', () => {
     open('/chats/group/abc');
 
     expect(await screen.findByText(i18n.t('errors.NOT_FOUND'))).toBeTruthy();
+  });
+
+  it('says how many of the others are online in its head', async () => {
+    live.connected = true;
+    backend({
+      chats: [group(5, 'Test Study Group')],
+      // Ana is online, and you are too, which doesn't count
+      answer: call => call.path === '/api/chats/online' ? json([ana.number, me.number]) : undefined,
+    });
+    open('/chats/group/5');
+
+    expect(await screen.findByText('3 members · 1 online')).toBeTruthy();
   });
 
   it("says a group chat you aren't in can't be opened", async () => {
