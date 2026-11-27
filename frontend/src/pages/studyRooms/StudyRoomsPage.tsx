@@ -1,4 +1,4 @@
-import { BookOpen, CalendarDays, Check, CircleX, ListChecks, Pencil, Plus, Users } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, CircleX, GraduationCap, ListChecks, Pencil, Plus, Users } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isBackendError } from '../../api/errors';
@@ -7,6 +7,7 @@ import { getSubjects } from '../../api/subjects';
 import { Banner, Button, ConfirmAttendanceDialog, ConfirmDialog, CreateStudyRoomForm, Dialog, EmptyState, Skeleton, useToast, type StudyRoomDraft } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import type { ParticipantData, StudyRoomData, StudyRoomDetailData, SubjectData } from '../../types/studyRooms';
+import { BecomeTutor } from './BecomeTutor';
 import { dateKey, monthStart } from './calendar';
 import { roomTopic, roomWhen } from './roomTime';
 import { StudyRoomCalendar, StudyRoomMiniCalendar } from './StudyRoomCalendar';
@@ -20,7 +21,7 @@ interface StudyRoomsPageProps {
   initialDate?: Date;
 }
 
-type StudyRoomsView = 'calendar' | 'inscriptions' | 'created';
+type StudyRoomsView = 'calendar' | 'inscriptions' | 'created' | 'tutor';
 
 export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps) {
   const { t, i18n } = useTranslation();
@@ -392,9 +393,11 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
               { key: 'calendar', icon: CalendarDays, label: 'studyRooms.calendar', count: rooms.length },
               { key: 'inscriptions', icon: ListChecks, label: 'studyRooms.inscriptions', count: joinedRooms.length },
               { key: 'created', icon: Users, label: 'studyRooms.created', count: createdRooms.length },
+              // Apply for tutoring (#40), no count: it's the subjects you passed, not rooms
+              { key: 'tutor', icon: GraduationCap, label: 'tutoring.heading', count: undefined },
             ] as const).map(({ key, icon: Icon, label, count }) => (
               <button key={key} type="button" aria-pressed={view === key} onClick={() => { openRoom(null); setView(key); }}>
-                <Icon size={17} aria-hidden /><span>{t(label)}</span><small>{count}</small>
+                <Icon size={17} aria-hidden /><span>{t(label)}</span>{count !== undefined && <small>{count}</small>}
               </button>
             ))}
           </nav>
@@ -414,7 +417,9 @@ export function StudyRoomsPage({ currentUser, initialDate }: StudyRoomsPageProps
         </aside>
 
         <div className="study-rooms__content">
-          {loading ? (
+          {view === 'tutor' ? (
+            <BecomeTutor />
+          ) : loading ? (
             <div className="study-rooms__loading" aria-label={t('studyRooms.loading')}>
               <Skeleton />
               <Skeleton />

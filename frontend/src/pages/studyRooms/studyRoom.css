@@ -106,6 +106,10 @@ td[data-today='true'] .study-rooms-calendar__day { background: var(--sm-violet);
 .study-rooms__personal { min-height: 720px; padding: 18px 8px; }
 .study-rooms__list-heading { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
 .study-rooms__list-heading > span { padding: 5px 8px; border-radius: 20px; background: rgb(255 255 255 / 75%); color: var(--sm-text-2); font-size: 11px; }
+.study-rooms__apply { display: grid; gap: 16px; }
+/* a sentence, not a name like the other views' headings */
+.study-rooms__tutor .study-rooms__list-heading h2 { text-transform: none; }
+.study-rooms__apply > .sm-caption { margin: 0; }
 .study-rooms__cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); gap: 15px; }
 .study-rooms__cards .study-room-preview__head { flex-wrap: wrap; }
 .study-rooms__cards .study-room-preview__status { margin-left: 70px; }
