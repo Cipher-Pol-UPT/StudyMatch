@@ -43,6 +43,7 @@ import com.studymatch.dtos.GradeSheetDTO;
 import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.GroupGenerationDTO;
 import com.studymatch.dtos.GroupImportDTO;
+import com.studymatch.dtos.SectionTeacherRequestDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.enums.ExportFormat;
 import com.studymatch.enums.GroupStatus;
@@ -108,6 +109,17 @@ public class SubjectEditionController {
   @Operation(summary = "Editions of the current academic year (the newest registered), the ones open for enrolment")
   public ResponseEntity<List<SubjectEditionResponseDTO>> listCurrentEditions() {
     return ResponseEntity.ok(subjectEditionService.listCurrent());
+  }
+
+  // PUT since picking the teacher the section already has changes nothing
+  @PutMapping("{id}/class-sections/{classSection}/teacher")
+  @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Pick which of the edition's teachers teaches one of its class sections")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.SUBJECT_EDITION_NOT_CURRENT,
+      ErrorCode.CLASS_SECTION_NOT_IN_SUBJECT_EDITION, ErrorCode.TEACHER_NOT_IN_SUBJECT_EDITION })
+  public ResponseEntity<SubjectEditionResponseDTO> assignSectionTeacher(@PathVariable Long id,
+      @PathVariable String classSection, @Valid @RequestBody SectionTeacherRequestDTO request) {
+    return ResponseEntity.ok(subjectEditionService.assignSectionTeacher(id, classSection, request.teacherNumber()));
   }
 
   // 200 and not 201, some students may just be skipped

@@ -35,4 +35,9 @@ public class TeacherService {
     return new HashSet<>(teachers);
   }
 
+  public Teacher getTeacher(Long number) {
+    return teacherRepository.findById(number)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
 }

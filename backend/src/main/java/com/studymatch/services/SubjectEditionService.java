@@ -76,12 +76,23 @@ public class SubjectEditionService {
     return subjectEditionRepository.existsBySubjectAndAcademicYear(subject, year);
   }
 
-  // past editions keep their teachers. With no teachers the model refuses it (AT_LEAST_ONE_TEACHER_REQUIRED)
+  // past editions keep their teachers. With no teachers the model refuses it (AT_LEAST_ONE_TEACHER_REQUIRED).
+  // Locked so a section can't get a teacher this removes at the same moment
   @Transactional
   public SubjectEdition updateCurrentTeachers(Subject subject, List<Long> teacherNumbers) {
-    SubjectEdition edition = getCurrentEdition(subject);
+    SubjectEdition edition = findCurrentYear()
+        .flatMap(year -> subjectEditionRepository.findLockedBySubjectAndAcademicYear(subject, year))
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
     edition.setTeachers(teacherService.getTeachers(teacherNumbers));
     return edition;
+  }
+
+  // teacher of a class section (staff): only this year's, past lessons already had their teacher
+  @Transactional
+  public SubjectEditionResponseDTO assignSectionTeacher(Long editionId, String classSection, Long teacherNumber) {
+    SubjectEdition edition = getLockedCurrentEdition(editionId);
+    edition.assignTeacher(classSection, teacherService.getTeacher(teacherNumber));
+    return SubjectEditionResponseDTO.from(edition);
   }
 
   // discover the editions assigned to the authenticated teacher
