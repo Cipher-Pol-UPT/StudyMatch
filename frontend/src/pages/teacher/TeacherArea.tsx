@@ -26,6 +26,7 @@ export function TeacherArea({ currentUser, onLoggedOut }: TeacherAreaProps) {
       <Route path="/chats" element={<ChatsPage me={currentUser.number} />} />
       <Route path="/chats/direct/:number" element={<ChatsPage me={currentUser.number} />} />
       <Route path="/chats/group/:chatId" element={<ChatsPage me={currentUser.number} />} />
+      <Route path="/chats/blocked" element={<ChatsPage me={currentUser.number} view="blocked" />} />
       {SUBJECT_TABS.map(item => <Route key={item} path={`/${item}`} element={<TeacherSubjectsPage tab={item} />} />)}
       <Route path="/subject-editions/:editionId" element={<TeacherSubjectLayout />}>
         <Route path="students" element={<TeacherStudentsPage />} />

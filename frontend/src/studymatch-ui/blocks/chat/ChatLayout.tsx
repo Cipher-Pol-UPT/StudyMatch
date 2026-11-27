@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Camera, Check, ChevronLeft, CircleAlert, CornerUpLeft, Pencil, Reply, SmilePlus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Camera, Check, ChevronLeft, CircleAlert, CornerUpLeft, EyeOff, Pencil, Reply, SmilePlus, Trash2, X } from 'lucide-react';
 import { useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, type ElementType, type MouseEvent, type PointerEvent, type ReactNode, type Ref, type UIEventHandler } from 'react';
 import { Avatar } from '../../components/avatar/Avatar';
 import { Button, IconButton } from '../../components/button/Button';
@@ -21,16 +21,19 @@ export function ChatLayout({ list, thread, view, label }: ChatLayoutProps) {
 export interface ChatListPaneProps {
   title: string;
   actions?: ReactNode;
+  // under the list, like the Blocked users link (#225)
+  foot?: ReactNode;
   children?: ReactNode;
 }
 
-export function ChatListPane({ title, actions, children }: ChatListPaneProps) {
+export function ChatListPane({ title, actions, foot, children }: ChatListPaneProps) {
   return (
     <section className="sm-chat__list" aria-label={title}>
       {/* the top bar already shows the page's name; the heading stays for screen readers */}
       <h1 className="sm-visually-hidden">{title}</h1>
       {actions && <div className="sm-chat__list-head"><div className="sm-chat__new">{actions}</div></div>}
       <div className="sm-chat__rows">{children}</div>
+      {foot && <div className="sm-chat__list-foot">{foot}</div>}
     </section>
   );
 }
@@ -94,14 +97,16 @@ export interface ChatHeadProps {
   group?: boolean;
   // they have the app open: a green dot on the picture and the subtitle in green, like "Online" (#223)
   online?: boolean;
+  // a page of the chats that isn't a chat, like Blocked users, has no picture
+  noAvatar?: boolean;
 }
 
 // who the conversation is with; the back button only shows on a phone
-export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profileHref, profileLabel, linkAs, actions, group, online }: ChatHeadProps) {
+export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profileHref, profileLabel, linkAs, actions, group, online, noAvatar }: ChatHeadProps) {
   const LinkAs = linkAs ?? 'a';
   const who = (
     <>
-      <Avatar name={name} src={avatarSrc} size={40} shape={group ? 'square' : 'circle'} presence={online ? 'online' : undefined} />
+      {!noAvatar && <Avatar name={name} src={avatarSrc} size={40} shape={group ? 'square' : 'circle'} presence={online ? 'online' : undefined} />}
       <div className="sm-chat__head-text">
         <h2 className="sm-chat__head-name">{name}</h2>
         {subtitle && <div className={online ? 'sm-chat__head-sub sm-chat__head-sub--online' : 'sm-chat__head-sub'}>{subtitle}</div>}
@@ -116,6 +121,20 @@ export function ChatHead({ name, avatarSrc, subtitle, backLabel, onBack, profile
         : <div className="sm-chat__who">{who}</div>}
       {actions && <div className="sm-chat__head-actions">{actions}</div>}
     </header>
+  );
+}
+
+// a person in a list with something to do on the right, like Unblock (#225)
+export function ChatPersonRow({ name, avatarSrc, subtitle, action }: { name: string; avatarSrc?: string; subtitle?: string; action?: ReactNode }) {
+  return (
+    <li className="sm-person sm-person--row">
+      <Avatar name={name} src={avatarSrc} size={40} />
+      <span className="sm-person__text">
+        <span className="sm-person__name">{name}</span>
+        {subtitle && <span className="sm-person__sub">{subtitle}</span>}
+      </span>
+      {action}
+    </li>
   );
 }
 
@@ -338,6 +357,8 @@ export interface ChatMessageProps {
   avatarSrc?: string;
   // the author has the app open, a green dot on their picture (#223)
   online?: boolean;
+  // from someone you blocked: only this button shows, and clicking it shows the message (GR9, #225)
+  hidden?: { label: string; onShow: () => void };
   // "(edited)" after the text, with when in its tooltip
   editedLabel?: string;
   editedTitle?: string;
@@ -379,7 +400,7 @@ const DOUBLE_TAP_MS = 300;
 // a double click on these is theirs, not the message's
 const OWN_CLICKS = 'button, a, textarea, input';
 
-export function ChatMessage({ id, text, time, dateTime, mine = false, first = true, author, avatarSrc, online, editedLabel, editedTitle, status, statusLabel, retryLabel, discardLabel, onRetry, onDiscard,
+export function ChatMessage({ id, text, time, dateTime, mine = false, first = true, author, avatarSrc, online, hidden, editedLabel, editedTitle, status, statusLabel, retryLabel, discardLabel, onRetry, onDiscard,
   toolsLabel, editLabel = '', deleteLabel = '', onEdit, onDelete, editor, quote, replyLabel = '', onReply,
   reactions, onReaction, reactLabel = '', onAddReaction, onDoubleTap, picking }: ChatMessageProps) {
   const cls = ['sm-msg', mine && 'sm-msg--mine', first && 'sm-msg--first', status === 'sending' && 'sm-msg--sending', picking && 'sm-msg--picking'].filter(Boolean).join(' ');
@@ -422,8 +443,9 @@ export function ChatMessage({ id, text, time, dateTime, mine = false, first = tr
             <time dateTime={dateTime}>{time}</time>
           </div>
         )}
-        {quote && <ChatMessageQuote {...quote} />}
-        {editor ?? (
+        {hidden && <button type="button" className="sm-msg__hidden" onClick={hidden.onShow}><EyeOff size={14} aria-hidden />{hidden.label}</button>}
+        {!hidden && quote && <ChatMessageQuote {...quote} />}
+        {hidden ? null : editor ?? (
           <div className="sm-msg__line" ref={line} onPointerUp={tapped} onDoubleClick={doubleClicked}>
             <div className="sm-msg__bubble">{text}{editedLabel && <span className="sm-msg__edited" title={editedTitle}>{editedLabel}</span>}</div>
             {(onAddReaction || onReply || onEdit || onDelete) && (
@@ -438,7 +460,7 @@ export function ChatMessage({ id, text, time, dateTime, mine = false, first = tr
             )}
           </div>
         )}
-        {reactions && reactions.length > 0 && (
+        {!hidden && reactions && reactions.length > 0 && (
           <div className="sm-reactions">
             {reactions.map(reaction => (
               <button key={reaction.emoji} type="button" className={`sm-reaction${reaction.mine ? ' sm-reaction--mine' : ''}`}

@@ -203,6 +203,7 @@
 .sm-chat__people { display: grid; gap: 2px; max-height: 320px; overflow-y: auto; margin: 0 -10px; padding: 0; list-style: none; }
 .sm-person { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--sm-r-md); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background var(--sm-dur-1); }
 .sm-person--pick:hover { background: var(--sm-fill); }
+.sm-person--row { cursor: default; }
 .sm-person--pick:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-person__text { display: grid; min-width: 0; }
 .sm-person__name { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -239,3 +240,18 @@
   .sm-msg__tools { top: auto; bottom: 100%; right: 0; transform: none; }
   .sm-msg:not(.sm-msg--mine) .sm-msg__tools { right: auto; left: 0; }
 }
+
+/* the foot of the chat list, with the Blocked users link (#225) */
+.sm-chat__list-foot { padding: 10px 16px 14px; border-top: 1px solid var(--sm-hairline); }
+.sm-chat__link { display: inline-flex; align-items: center; gap: 6px; padding: 4px 0; border-radius: var(--sm-r-sm); color: var(--sm-text-2); font-size: 13px; text-decoration: none; }
+.sm-chat__link:hover { color: var(--sm-text); }
+.sm-chat__link:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+/* the people you blocked */
+.sm-chat__blocked { display: grid; align-content: start; gap: 16px; width: 100%; max-width: 560px; margin: 0 auto; padding: 28px var(--sm-chat-gutter); overflow-y: auto; }
+.sm-chat__blocked-list { display: grid; gap: 2px; margin: 0; padding: 6px; list-style: none; border-radius: var(--sm-r-lg); background: var(--sm-surface); box-shadow: var(--sm-shadow-sm); }
+/* in place of the message box, in a DM with someone you blocked */
+.sm-chat__blocked-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; padding: 14px var(--sm-chat-gutter) 18px; border-top: 1px solid var(--sm-hairline); font-size: 13.5px; color: var(--sm-text-2); }
+/* a message from someone you blocked, until it's shown */
+.sm-msg__hidden { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px dashed var(--sm-gray-300); border-radius: 16px; background: none; color: var(--sm-text-2); font: inherit; font-size: 13px; font-style: italic; cursor: pointer; }
+.sm-msg__hidden:hover { background: var(--sm-fill); }
+.sm-msg__hidden:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }

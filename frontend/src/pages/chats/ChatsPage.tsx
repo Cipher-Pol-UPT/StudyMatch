@@ -1,15 +1,16 @@
 import type { TFunction } from 'i18next';
-import { ArrowLeft, MessagesSquare, SquarePen, UsersRound } from 'lucide-react';
+import { ArrowLeft, Ban, MessagesSquare, ShieldCheck, SquarePen, UsersRound } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getBlocked, unblockUser } from '../../api/blocks';
 import { getChatMembers, getDirectChat } from '../../api/chats';
 import { isBackendError } from '../../api/errors';
 import { NewGroupChatDialog } from '../../components/chat/NewGroupChatDialog';
 import { NewMessageDialog } from '../../components/chat/NewMessageDialog';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
-import { Banner, Button, buttonClass, ChatLayout, ChatListPane, ChatRow, ChatRows, ChatThread, EmptyState, IconButton } from '../../studymatch-ui';
+import { Banner, Button, buttonClass, ChatHead, ChatLayout, ChatListPane, ChatPersonRow, ChatRow, ChatRows, ChatThread, EmptyState, IconButton, useToast } from '../../studymatch-ui';
 import { type ChatContactData, type ChatSummaryData, type MessageData } from '../../types/chat';
 import { Conversation } from './Conversation';
 import { lineOf } from './messageText';
@@ -21,6 +22,8 @@ export interface ChatsPageProps {
   me: number;
   // where someone's profile is, for the people who have one you can open
   profilePath?: (contact: ChatContactData) => string | undefined;
+  // the Blocked users page instead of a conversation (#225)
+  view?: 'blocked';
 }
 
 // only students have a photo
@@ -34,14 +37,18 @@ const notFound = () => Object.assign(new Error('Not found'), { code: 'NOT_FOUND'
 const pictureOf = (chat: ChatSummaryData) => chat.picture ? `/api/chats/${chat.chatId}/picture?v=${chat.pictureUpdatedAt ?? ''}` : undefined;
 
 // Chats: the list (#201) and the open conversation; this page starts DMs (#199) and group chats (#227)
-export function ChatsPage({ me, profilePath }: ChatsPageProps) {
+export function ChatsPage({ me, profilePath, view }: ChatsPageProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { number, chatId } = useParams();
   const [choosing, setChoosing] = useState(false);
   const [creating, setCreating] = useState(false);
   const isOpen = (chat: ChatSummaryData) => chat.contact ? String(chat.contact.number) === number : String(chat.chatId) === chatId;
-  const { chats, error, add } = useChatList(message => message.author.number === me, isOpen);
+  const { chats, error, add, reload } = useChatList(message => message.author.number === me, isOpen);
+  const blocks = useRemoteData('blocks', getBlocked);
+  const blocked: ReadonlySet<number> = new Set(blocks.data?.map(person => person.number));
+  // blocking or unblocking takes a DM off the list or brings it back, and nothing is pushed about it
+  const blocksChanged = () => { blocks.retry(); void reload(); };
   const online = useOnline();
 
   const newMessage = (
@@ -71,7 +78,7 @@ export function ChatsPage({ me, profilePath }: ChatsPageProps) {
           <ChatRow key={chat.chatId} name={chat.name} group={!chat.contact} linkAs={Link}
             avatarSrc={chat.contact ? photoOf(chat.contact) : pictureOf(chat)}
             href={chat.contact ? `/chats/direct/${chat.contact.number}` : `/chats/group/${chat.chatId}`}
-            preview={previewOf(chat, me, t)} time={chat.lastMessage ? when(chat.lastMessage.sentAt) : undefined} dateTime={chat.lastMessage?.sentAt}
+            preview={previewOf(chat, me, blocked, t)} time={chat.lastMessage ? when(chat.lastMessage.sentAt) : undefined} dateTime={chat.lastMessage?.sentAt}
             unread={chat.unread} unreadLabel={t('chats.unread', { count: chat.unread })} current={isOpen(chat)}
             online={!!chat.contact && online.has(chat.contact.number)} onlineLabel={t('chats.online')} />
         ))}
@@ -80,10 +87,11 @@ export function ChatsPage({ me, profilePath }: ChatsPageProps) {
   };
 
   const thread = () => {
-    if (number) return <DirectConversation key={number} number={Number(number)} me={me} profilePath={profilePath} online={online} />;
+    if (view === 'blocked') return <BlockedUsers people={blocks.data} error={blocks.error} onChanged={blocksChanged} />;
+    if (number) return <DirectConversation key={number} number={Number(number)} me={me} profilePath={profilePath} online={online} blocked={blocked} onBlocksChanged={blocksChanged} />;
     if (chatId) {
       return <GroupConversation key={chatId} chatId={Number(chatId)} me={me} profilePath={profilePath}
-        summary={chats?.find(chat => !chat.contact && String(chat.chatId) === chatId)} listLoaded={chats !== null} listError={error} online={online} />;
+        summary={chats?.find(chat => !chat.contact && String(chat.chatId) === chatId)} listLoaded={chats !== null} listError={error} online={online} blocked={blocked} />;
     }
     return (
       <ChatThread label={t('chats.conversation')}>
@@ -94,8 +102,13 @@ export function ChatsPage({ me, profilePath }: ChatsPageProps) {
 
   return (
     <>
-      <ChatLayout label={t('chats.title')} view={number || chatId ? 'thread' : 'list'}
-        list={<ChatListPane title={t('chats.title')} actions={newMessage}>{rows()}</ChatListPane>}
+      <ChatLayout label={t('chats.title')} view={number || chatId || view ? 'thread' : 'list'}
+        list={(
+          <ChatListPane title={t('chats.title')} actions={newMessage}
+            foot={<Link to="/chats/blocked" className="sm-chat__link" aria-current={view === 'blocked' ? 'page' : undefined}><Ban size={15} aria-hidden />{t('chats.blockedUsers')}</Link>}>
+            {rows()}
+          </ChatListPane>
+        )}
         thread={thread()} />
       <NewMessageDialog open={choosing} onClose={() => setChoosing(false)}
         onPick={contact => { setChoosing(false); navigate(`/chats/direct/${contact.number}`); }} />
@@ -105,10 +118,12 @@ export function ChatsPage({ me, profilePath }: ChatsPageProps) {
   );
 }
 
-// a line of the latest message: "You: …" for yours, the first name in a group chat
-function previewOf(chat: ChatSummaryData, me: number, t: TFunction) {
+// a line of the latest message: "You: …" for yours, the first name in a group chat. Someone you blocked
+// doesn't show, like their messages in the chat (GR9)
+function previewOf(chat: ChatSummaryData, me: number, blocked: ReadonlySet<number>, t: TFunction) {
   const message: MessageData | null = chat.lastMessage;
   if (!message) return t('chats.noMessagesYet');
+  if (message.author.number !== me && blocked.has(message.author.number)) return t('chats.fromBlocked');
   const text = lineOf(message, t);
   if (message.author.number === me) return t('chats.byYou', { text });
   if (!chat.contact) return t('chats.byThem', { name: message.author.name.split(' ')[0], text });
@@ -116,7 +131,14 @@ function previewOf(chat: ChatSummaryData, me: number, t: TFunction) {
 }
 
 // the DM with one person: found by their number, then its messages and the message box
-function DirectConversation({ number, me, profilePath, online }: { number: number; online: ReadonlySet<number> } & Pick<ChatsPageProps, 'me' | 'profilePath'>) {
+interface DirectConversationProps extends Pick<ChatsPageProps, 'me' | 'profilePath'> {
+  number: number;
+  online: ReadonlySet<number>;
+  blocked: ReadonlySet<number>;
+  onBlocksChanged: () => void;
+}
+
+function DirectConversation({ number, me, profilePath, online, blocked, onBlocksChanged }: DirectConversationProps) {
   const { t } = useTranslation();
   const load = useCallback(() => Number.isInteger(number) ? getDirectChat(number) : Promise.reject(notFound()), [number]);
   const chat = useRemoteData(`direct-chat:${number}`, load);
@@ -126,7 +148,9 @@ function DirectConversation({ number, me, profilePath, online }: { number: numbe
     return <ChatThread label={t('chats.conversation')}><DataLoadState /></ChatThread>;
   }
 
-  return <Conversation chat={{ kind: 'direct', chat: chat.data }} me={me} profilePath={profilePath} online={online} />;
+  // unblocking here opens the DM again, with its history, so it's asked for again
+  return <Conversation chat={{ kind: 'direct', chat: chat.data }} me={me} profilePath={profilePath} online={online} blocked={blocked}
+    onBlocksChanged={() => { onBlocksChanged(); if (chat.data?.blocked) chat.retry(); }} />;
 }
 
 interface GroupConversationProps extends Pick<ChatsPageProps, 'me' | 'profilePath'> {
@@ -137,10 +161,12 @@ interface GroupConversationProps extends Pick<ChatsPageProps, 'me' | 'profilePat
   // the list couldn't load, so its row never comes: shown here too instead of loading forever
   listError?: unknown;
   online: ReadonlySet<number>;
+  // the people you blocked, their messages are hidden behind a click (GR9)
+  blocked: ReadonlySet<number>;
 }
 
 // a group chat by its id: its members, then its messages and the message box (#227)
-function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listError, online }: GroupConversationProps) {
+function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listError, online, blocked }: GroupConversationProps) {
   const { t } = useTranslation();
   const load = useCallback(() => Number.isInteger(chatId) ? getChatMembers(chatId) : Promise.reject(notFound()), [chatId]);
   const members = useRemoteData(`chat-members:${chatId}`, load);
@@ -152,7 +178,7 @@ function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listE
     return <ChatThread label={t('chats.conversation')}><DataLoadState /></ChatThread>;
   }
 
-  return <Conversation chat={{ kind: 'group', chatId, name: summary.name, pictureSrc: pictureOf(summary), members: members.data }} me={me} profilePath={profilePath} online={online} />;
+  return <Conversation chat={{ kind: 'group', chatId, name: summary.name, pictureSrc: pictureOf(summary), members: members.data }} me={me} profilePath={profilePath} online={online} blocked={blocked} />;
 }
 
 // a chat that can't be opened: why, and the way back to the list
@@ -162,6 +188,39 @@ function ChatNotOpened({ error }: { error: unknown }) {
     <ChatThread label={t('chats.conversation')}>
       <Banner tone="danger">{isBackendError(error) ? t(`errors.${error.code}`, error.params ?? {}) : t('common.unexpectedError')}</Banner>
       <Link to="/chats" className={buttonClass({ variant: 'secondary', size: 'sm' })}><ArrowLeft size={16} aria-hidden />{t('chats.back')}</Link>
+    </ChatThread>
+  );
+}
+
+// the people you blocked, with Unblock (#225). They aren't told either way (GR9)
+function BlockedUsers({ people, error, onChanged }: { people?: ChatContactData[]; error: unknown; onChanged: () => void }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const unblock = (person: ChatContactData) => unblockUser(person.number).then(
+    () => { toast.success(t('chats.unblockedToast', { name: person.name })); onChanged(); },
+    failure => { toast.danger(isBackendError(failure) ? t(`errors.${failure.code}`, failure.params ?? {}) : t('common.unexpectedError')); },
+  );
+
+  const body = () => {
+    if (error !== undefined) return <Banner tone="danger">{isBackendError(error) ? t(`errors.${error.code}`, error.params ?? {}) : t('common.unexpectedError')}</Banner>;
+    if (!people) return <DataLoadState />;
+    if (!people.length) return <EmptyState compact icon={ShieldCheck} title={t('chats.noOneBlocked')} body={t('chats.noOneBlockedBody')} />;
+    return (
+      <ul className="sm-chat__blocked-list" aria-label={t('chats.blockedUsers')}>
+        {people.map(person => (
+          <ChatPersonRow key={person.number} name={person.name} avatarSrc={photoOf(person)}
+            subtitle={t('chats.contactLine', { role: t(`roles.${person.role}`), number: person.number })}
+            action={<Button size="sm" variant="secondary" onClick={() => void unblock(person)} aria-label={t('chats.unblockPerson', { name: person.name })}>{t('chats.unblock')}</Button>} />
+        ))}
+      </ul>
+    );
+  };
+
+  return (
+    <ChatThread label={t('chats.blockedUsers')}
+      head={<ChatHead name={t('chats.blockedUsers')} subtitle={t('chats.blockedUsersSub')} backLabel={t('chats.back')} onBack={() => navigate('/chats')} noAvatar />}>
+      <div className="sm-chat__blocked">{body()}</div>
     </ChatThread>
   );
 }
