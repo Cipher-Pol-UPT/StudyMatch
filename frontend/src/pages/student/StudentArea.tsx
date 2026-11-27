@@ -63,6 +63,7 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
         <Route path="/chats" element={<ChatsPage me={currentUser.number} profilePath={classmatePath} />} />
         <Route path="/chats/direct/:number" element={<ChatsPage me={currentUser.number} profilePath={classmatePath} />} />
         <Route path="/chats/group/:chatId" element={<ChatsPage me={currentUser.number} profilePath={classmatePath} />} />
+        <Route path="/chats/blocked" element={<ChatsPage me={currentUser.number} profilePath={classmatePath} view="blocked" />} />
         <Route path="/classmates/:number" element={<ClassmateProfilePage myNumber={currentUser.number} profilePath={PROFILE_PATH} />} />
         <Route path={CHANGE_PASSWORD_PATH} element={<AccountPasswordPage />} />
         <Route path="/achievements" element={<AchievementsPage profile={profile} failed={failed} />} />

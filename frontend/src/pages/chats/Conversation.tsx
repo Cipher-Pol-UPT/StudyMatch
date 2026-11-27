@@ -1,14 +1,15 @@
 import type { TFunction } from 'i18next';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Ban, Ellipsis, Search } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
+import { blockUser, unblockUser } from '../../api/blocks';
 import { deleteMessage, editMessage, getDirectChat, reactToMessage, removeReaction, sendDirectMessage, sendMessage } from '../../api/chats';
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useChatEvents, useChatListEvents } from '../../hooks/useChatEvents';
 import { typingLine, useTyping } from './useTyping';
-import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatTyping, ChatStart, ChatThread, ConfirmDialog, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction } from '../../studymatch-ui';
+import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatTyping, ChatStart, ChatThread, ConfirmDialog, Button, Menu, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction } from '../../studymatch-ui';
 import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData, type MessageQuoteData, type ReactionData } from '../../types/chat';
 import { ChatSearch } from './ChatSearch';
 import { newMessageKey, useConversation, type ThreadMessage } from './conversations';
@@ -28,6 +29,10 @@ export interface ConversationProps {
   profilePath?: (contact: ChatContactData) => string | undefined;
   // who has the app open, for the green dots (#223)
   online?: ReadonlySet<number>;
+  // the people you blocked: their messages are hidden behind a click (GR9, #225)
+  blocked?: ReadonlySet<number>;
+  // after you block or unblock someone here
+  onBlocksChanged?: () => void;
 }
 
 // what double tapping a message reacts with
@@ -60,7 +65,7 @@ const photoOf = (author: ChatContactData) => author.role === 'STUDENT' ? `/api/s
 
 // a DM or a group chat: its history, live messages while it's open, editing and deleting your own, and the message box
 // (#203, #205, #207, #209, #227)
-export function Conversation({ chat, me, profilePath, online }: ConversationProps) {
+export function Conversation({ chat, me, profilePath, online, blocked, onBlocksChanged }: ConversationProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   // the other person in a DM; a group chat has none
@@ -97,6 +102,9 @@ export function Conversation({ chat, me, profilePath, online }: ConversationProp
   const closePicker = useCallback(() => setPicking(null), []);
   // the search in the head and its results on the right (#221)
   const [searching, setSearching] = useState(false);
+  const [askingToBlock, setAskingToBlock] = useState(false);
+  // messages from someone you blocked that you clicked to see
+  const [shown, setShown] = useState<ReadonlySet<number>>(new Set());
   const [query, setQuery] = useState('');
   const searchInput = useRef<HTMLInputElement>(null);
   useEffect(() => { if (searching) searchInput.current?.focus(); }, [searching]);
@@ -415,16 +423,33 @@ export function Conversation({ chat, me, profilePath, online }: ConversationProp
   );
   const askToDelete = (message: MessageData, shift: boolean) => shift ? deleteForGood(message) : setDeleting(message);
 
+  // a DM with someone you blocked: no history and no message box until you unblock them
+  const youBlocked = chat.kind === 'direct' && chat.chat.blocked;
+  // they aren't told either way (GR9). Blocking takes the DM off your list, so the list opens
+  const block = (person: ChatContactData) => blockUser(person.number).then(
+    () => { toast.success(t('chats.blockedToast', { name: person.name })); onBlocksChanged?.(); navigate('/chats'); },
+    error => { toast.danger(isBackendError(error) ? t(`errors.${error.code}`, error.params ?? {}) : t('common.unexpectedError')); },
+  );
+  const unblock = (person: ChatContactData) => unblockUser(person.number).then(
+    () => { toast.success(t('chats.unblockedToast', { name: person.name })); onBlocksChanged?.(); },
+    error => { toast.danger(isBackendError(error) ? t(`errors.${error.code}`, error.params ?? {}) : t('common.unexpectedError')); },
+  );
+  // only a DM has it for now, blocking from a group chat comes with its member list (#231)
+  const menu = contact && !youBlocked && (
+    <Menu label={t('chats.chatOptions')} trigger={<IconButton icon={Ellipsis} label={t('chats.chatOptions')} variant="ghost" />}
+      items={[{ label: t('chats.block', { name: firstName }), icon: Ban, danger: true, onSelect: () => setAskingToBlock(true) }]} />
+  );
+
   const head = (
     <ChatHead name={name} avatarSrc={avatarSrc} subtitle={contact && isOnline(contact) ? t('chats.online') : line} online={!!contact && isOnline(contact)}
       backLabel={t('chats.back')} onBack={() => navigate('/chats')} group={!contact}
       profileHref={contact ? profilePath?.(contact) : undefined} linkAs={Link} profileLabel={t('chats.openProfile', { name })}
-      actions={chatId !== null && (searching
+      actions={<>{chatId !== null && (searching
         ? <SearchField ref={searchInput} size="sm" className="sm-chat__head-search" value={query} onValueChange={setQuery}
           label={t('chats.searchChat')} placeholder={t('chats.searchChat')}
           // the first Esc empties it, the next one closes the search
           onKeyDown={event => { if (event.key === 'Escape' && !query) stopSearching(); }} />
-        : <IconButton icon={Search} label={t('chats.searchChat')} variant="ghost" onClick={() => setSearching(true)} />)} />
+        : <IconButton icon={Search} label={t('chats.searchChat')} variant="ghost" onClick={() => setSearching(true)} />)}{menu}</>} />
   );
 
   if (history.error !== undefined) {
@@ -451,14 +476,19 @@ export function Conversation({ chat, me, profilePath, online }: ConversationProp
   };
   // the top of the conversation once its first message is on screen, or a hint to say hi when there's none
   const start = history.loading || history.hasMore ? null
-    : <ChatStart name={name} avatarSrc={avatarSrc} group={!contact}>{startText()}</ChatStart>;
+    : <ChatStart name={name} avatarSrc={avatarSrc} group={!contact}>{youBlocked ? t('chats.blockedStart', { line }) : startText()}</ChatStart>;
 
   return (
     <ChatThread label={t('chats.with', { name })} scrollRef={scroll} onScroll={onScroll} head={head}
       // after a jump the latest aren't on screen, so the button stays until they're back
       overlay={(newBelow || history.hasNewer) && <ChatJump label={t(newBelow ? 'chats.newMessages' : 'chats.backToLatest')} onClick={jump} />}
       side={searching && chatId !== null && <ChatSearch chatId={chatId} query={query} onClose={stopSearching} onJump={jumpTo} nameOf={nameOf} />}
-      composer={(
+      composer={youBlocked ? (
+        <div className="sm-chat__blocked-bar" role="status">
+          {t('chats.youBlocked', { name: firstName })}
+          <Button size="sm" variant="secondary" onClick={() => { if (contact) void unblock(contact); }}>{t('chats.unblock')}</Button>
+        </div>
+      ) : (
         <ChatComposer label={t('chats.messageLabel', { name })} placeholder={t('chats.messageLabel', { name: firstName })}
           value={conversation.draft} onChange={draft => { update(current => ({ ...current, draft })); if (draft.trim()) typing.typed(); }} onSend={send}
           sendLabel={t('chats.send')} max={MESSAGE_MAX_LENGTH} error={conversation.error === undefined ? undefined : sendError(conversation.error, t)}
@@ -487,7 +517,9 @@ export function Conversation({ chat, me, profilePath, online }: ConversationProp
             return (
               <div key={item.key}>
                 {newDay && <ChatDay label={dayLabel(sentAt)} />}
-                <ChatMessage id={item.message && rowId(item.message.id)} mine={item.mine} text={item.text} quote={quoteOf(item)} first={first} author={item.author.name} online={isOnline(item.author)} avatarSrc={photoOf(item.author)}
+                <ChatMessage id={item.message && rowId(item.message.id)} mine={item.mine}
+                  hidden={item.message && !item.mine && blocked?.has(item.author.number) && !shown.has(item.message.id)
+                    ? { label: t('chats.fromBlocked'), onShow: () => setShown(current => new Set(current).add(item.message!.id)) } : undefined} text={item.text} quote={quoteOf(item)} first={first} author={item.author.name} online={isOnline(item.author)} avatarSrc={photoOf(item.author)}
                   time={timeFormat.format(sentAt)} dateTime={item.sentAt} status={status}
                   editedLabel={item.editedAt ? t('chats.edited') : undefined}
                   editedTitle={item.editedAt ? t('chats.editedAt', { when: editedFormat.format(new Date(item.editedAt)) }) : undefined}
@@ -508,6 +540,11 @@ export function Conversation({ chat, me, profilePath, online }: ConversationProp
       )}
       {history.loadingNewer && <ChatOlder label={t('chats.loadingNewer')} />}
       {picker}
+      {contact && (
+        <ConfirmDialog open={askingToBlock} onClose={() => setAskingToBlock(false)} tone="danger" icon={Ban}
+          title={t('chats.blockTitle', { name: contact.name })} description={t('chats.blockBody')} confirmLabel={t('chats.blockConfirm')}
+          onConfirm={async () => { setAskingToBlock(false); await block(contact); }} />
+      )}
       <ConfirmDialog open={deleting !== null} onClose={() => setDeleting(null)} tone="danger"
         title={t('chats.deleteTitle')} confirmLabel={t('chats.delete')}
         description={deleting && (
