@@ -39,6 +39,8 @@ function react(current: ReactionData[], more: ReactionData[]) {
 }
 
 const ignore = () => undefined;
+// how far a catch-up goes after a reconnect, 50 messages a page
+const CATCH_UP_PAGES = 20;
 let lastFocus = 0;
 
 // an open chat's messages: the 50 newest when it opens, 50 more each time loadOlder is called (#203).
@@ -155,6 +157,56 @@ export function useChatHistory(chatId: number | null) {
     );
   }, [chatId, markRead]);
 
+  // after the connection drops and comes back (#317): the stretch on screen is asked for again, 50 at a time from the
+  // oldest one shown, so new messages show and the ones edited or deleted meanwhile change or go. After a jump it stops
+  // at the newest one shown, the latest still wait behind New messages
+  const catchUp = useCallback(async () => {
+    const { messages, loading, hasNewer } = current.current;
+    if (chatId === null || loading) return;
+    const asked = view.current;
+    // nothing on screen (a new group chat, or every message deleted): what's there now is the latest page
+    if (!messages.length) {
+      let page: MessagePageData;
+      try {
+        page = await getChatMessages(chatId);
+      } catch {
+        return;
+      }
+      if (asked !== view.current) return;
+      setHistory(state => ({ ...state, messages: merge(state.messages, page.messages), reactions: react(state.reactions, page.reactions ?? []), hasMore: page.hasMore }));
+      if (page.messages.length) markRead();
+      return;
+    }
+    const newestShown = messages[messages.length - 1].id;
+    let after = messages[0].id - 1;
+    let got = false;
+    for (let pages = 0; pages < CATCH_UP_PAGES; pages++) {
+      let page: MessagePageData;
+      try {
+        page = await getChatMessages(chatId, { after });
+      } catch {
+        return;
+      }
+      if (asked !== view.current) return;
+      const more = page.hasNewer ?? false;
+      const last = page.messages.length ? page.messages[page.messages.length - 1].id : after;
+      // what's on screen between the last page and this one's end is swapped for the page. The last page also covers
+      // up to the newest one shown before asking, a newer one has come live since
+      const from = after;
+      const to = more ? last : Math.max(last, newestShown);
+      const inRange = (id: number) => id > from && id <= to;
+      setHistory(state => ({
+        ...state,
+        messages: merge(state.messages.filter(m => !inRange(m.id)), page.messages),
+        reactions: react(state.reactions.filter(r => !inRange(r.messageId)), page.reactions ?? []),
+      }));
+      got = got || page.messages.some(m => m.id > newestShown);
+      after = last;
+      if (!more || (hasNewer && last >= newestShown)) break;
+    }
+    if (got && !hasNewer) markRead();
+  }, [chatId, markRead]);
+
   // the latest messages aren't on screen (after a jump), read as it is now, not as of the last render
   const behind = useCallback(() => current.current.hasNewer, []);
   // a new message, or the answer to one you sent. While the latest aren't loaded it waits for them
@@ -181,5 +233,5 @@ export function useChatHistory(chatId: number | null) {
     ? { ...state, reactions: react(state.reactions, [reaction]) }
     : state), []);
 
-  return { history, loadOlder, loadNewer, jumpTo, toLatest, behind, add, replace, remove, applyReaction, markRead };
+  return { history, loadOlder, loadNewer, jumpTo, toLatest, behind, add, replace, remove, applyReaction, markRead, catchUp };
 }
