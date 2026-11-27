@@ -14,6 +14,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.studymatch.enums.Sticker;
+
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -136,6 +138,15 @@ class SendMessageRequestDTOTest {
   void nullTextIsEmpty() {
     // Act + Assert
     assertEquals("", new SendMessageRequestDTO(null, "abc123", null).text());
+  }
+
+  @Test
+  @DisplayName("A sticker on its own is one content, with a text or a GIF it isn't (GR10, #214)")
+  void stickerIsOneContent() {
+    // Act + Assert
+    assertTrue(new SendMessageRequestDTO(null, null, null, Sticker.HELLO).hasOneContent());
+    assertFalse(new SendMessageRequestDTO("hi", null, null, Sticker.HELLO).hasOneContent());
+    assertFalse(new SendMessageRequestDTO(null, "abc123", null, Sticker.HELLO).hasOneContent());
   }
 
 }
