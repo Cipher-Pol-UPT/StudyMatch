@@ -22,10 +22,12 @@ public class RoomService {
     this.roomRepository = roomRepository;
   }
 
-  // "B.101" and " b.101 " are the same room
+  // "B.101" and " b.101 " are the same room.
+  // the code is always locked before the floor, so two saves never wait on each other's lock
   @Transactional
   public Room registerRoom(RoomRequestDTO request) {
     String code = request.code().trim();
+    roomRepository.lock(Room.codeKey(code));
     if (roomRepository.existsByCodeIgnoreCase(code)) {
       throw new StudyMatchException(ErrorCode.ROOM_ALREADY_EXISTS);
     }
@@ -45,6 +47,7 @@ public class RoomService {
   public Room editRoom(Long id, RoomRequestDTO request) {
     Room room = getRoom(id);
     String code = request.code().trim();
+    roomRepository.lock(Room.codeKey(code));
     if (roomRepository.existsByCodeIgnoreCaseAndIdNot(code, id)) {
       throw new StudyMatchException(ErrorCode.ROOM_ALREADY_EXISTS);
     }
@@ -91,7 +94,7 @@ public class RoomService {
 
   // the active rooms on the floor, read once nobody else can be saving there
   private List<Room> lockFloor(String building, int floor) {
-    roomRepository.lockFloor(Room.floorKey(building, floor));
+    roomRepository.lock(Room.floorKey(building, floor));
     return roomRepository.findByBuildingIgnoreCaseAndFloorAndActiveTrue(building, floor);
   }
 
@@ -111,7 +114,7 @@ public class RoomService {
         });
   }
 
-  // two Staff saving the same code at once both pass the check, the unique column stops the second.
+  // the code lock already stops two saves of one code, the unique column is only there if something skips it.
   // flush so that happens here and not after the response
   private Room save(Room room) {
     try {

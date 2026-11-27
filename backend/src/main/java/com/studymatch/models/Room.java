@@ -151,7 +151,12 @@ public class Room {
 
   // what the floor lock is taken on, the same for every spelling of the building
   public static String floorKey(String building, int floor) {
-    return building.toLowerCase(Locale.ROOT) + "|" + floor;
+    return "floor|" + building.toLowerCase(Locale.ROOT) + "|" + floor;
+  }
+
+  // the unique column only stops the exact same code, this lock stops B.101 and b.101 saved at once
+  public static String codeKey(String code) {
+    return "code|" + code.toLowerCase(Locale.ROOT);
   }
 
 }
