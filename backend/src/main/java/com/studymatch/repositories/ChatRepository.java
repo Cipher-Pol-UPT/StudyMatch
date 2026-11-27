@@ -1,5 +1,6 @@
 package com.studymatch.repositories;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,6 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import com.studymatch.models.Chat;
 import com.studymatch.models.CustomChat;
 import com.studymatch.models.DirectChat;
+import com.studymatch.models.Group;
+import com.studymatch.models.GroupChat;
 
 import jakarta.persistence.LockModeType;
 
@@ -32,5 +35,13 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
   // the group chats the user is a member of, the owner included
   @Query("select c from CustomChat c join c.members m where m.number = :number")
   List<CustomChat> findCustomChatsOf(Long number);
+
+  // the assignment chats of the groups the student is in (#236)
+  @Query("select c from GroupChat c join c.group g join g.members m where m.number = :number")
+  List<GroupChat> findGroupChatsOf(Long number);
+
+  // the chats of groups being deleted or edited
+  @Query("select c from GroupChat c where c.group in :groups")
+  List<GroupChat> findGroupChatsFor(Collection<Group> groups);
 
 }

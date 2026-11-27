@@ -70,6 +70,8 @@ public class GroupService {
   private final SubjectEditionService subjectEditionService;
   private final LessonService lessonService;
   private final AbsenceService absenceService;
+  private final ChatService chatService;
+  private final MessageService messageService;
   private final GroupGenerator groupGenerator;
   private final GroupCsvWriter groupCsvWriter;
   private final GroupPdfWriter groupPdfWriter;
@@ -78,7 +80,8 @@ public class GroupService {
   public GroupService(GroupRepository groupRepository, AssignmentService assignmentService,
       EnrolmentService enrolmentService, AcademicYearService academicYearService,
       SubjectEditionService subjectEditionService, LessonService lessonService, AbsenceService absenceService,
-      GroupGenerator groupGenerator, GroupCsvWriter groupCsvWriter, GroupPdfWriter groupPdfWriter) {
+      ChatService chatService, MessageService messageService, GroupGenerator groupGenerator,
+      GroupCsvWriter groupCsvWriter, GroupPdfWriter groupPdfWriter) {
     this.groupRepository = groupRepository;
     this.assignmentService = assignmentService;
     this.enrolmentService = enrolmentService;
@@ -86,6 +89,8 @@ public class GroupService {
     this.subjectEditionService = subjectEditionService;
     this.lessonService = lessonService;
     this.absenceService = absenceService;
+    this.chatService = chatService;
+    this.messageService = messageService;
     this.groupGenerator = groupGenerator;
     this.groupCsvWriter = groupCsvWriter;
     this.groupPdfWriter = groupPdfWriter;
@@ -181,7 +186,8 @@ public class GroupService {
     return new GroupGenerationDTO(enrolments.size(), plan.groups(), rule.getOptimalSize(), plan.search().toMillis());
   }
 
-  // generate groups, confirm: the drafts replace whatever was published before
+  // generate groups, confirm: the drafts replace whatever was published before, chats and their history too.
+  // they're new groups with other people, each gets a fresh chat (#236)
   @Transactional
   public void publishGroups(Long subjectEditionId, Long assignmentId) {
     Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
@@ -189,9 +195,12 @@ public class GroupService {
     if (drafts.isEmpty()) {
       throw new StudyMatchException(ErrorCode.NO_DRAFT_GROUPS);
     }
+    messageService.deleteGroupChats(
+        groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.PUBLISHED));
     groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.PUBLISHED);
     groupRepository.flush();
     drafts.forEach(Group::publish);
+    chatService.createGroupChats(drafts);
     // telling the students about their groups comes with notifications (#144)
   }
 
@@ -228,31 +237,51 @@ public class GroupService {
       }
       kept.add(existing);
     }
+    // only published groups have chats (#236)
+    boolean published = status == GroupStatus.PUBLISHED;
+    if (published) {
+      messageService.deleteGroupChats(removed.values());
+    }
     groupRepository.deleteAll(removed.values());
     groupRepository.flush();
 
     // one at a time and only ever down, so two groups never share a number on the way
     List<Group> survivors = kept.stream().filter(Objects::nonNull).sorted(Comparator.comparing(Group::getNumber))
         .toList();
+    List<Group> renumbered = new ArrayList<>();
     for (int i = 0; i < survivors.size(); i++) {
       if (survivors.get(i).getNumber() != i + 1) {
         survivors.get(i).renumber(i + 1);
         groupRepository.flush();
+        renumbered.add(survivors.get(i));
       }
     }
 
     int next = survivors.size();
     List<Group> saved = new ArrayList<>();
+    List<Group> added = new ArrayList<>();
+    Map<Group, List<Student>> before = new HashMap<>();
     for (int i = 0; i < edited.size(); i++) {
       Group group = kept.get(i);
       if (group == null) {
         group = new Group(assignment, ++next);
-        if (status == GroupStatus.PUBLISHED) {
+        if (published) {
           group.publish();
         }
+      } else {
+        before.put(group, new ArrayList<>(group.getMembers()));
       }
       group.replaceMembers(members.get(i));
       saved.add(groupRepository.save(group));
+      if (kept.get(i) == null) {
+        added.add(saved.getLast());
+      }
+    }
+    if (published) {
+      chatService.createGroupChats(added);
+      messageService.groupMembersChanged(before);
+      // the name has the number, after the members so it reaches who's in now
+      chatService.groupsRenumbered(renumbered);
     }
     // telling the students of changed published groups comes with notifications (#144)
     Map<Long, String> classOf = classSections(enrolments);

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -17,12 +19,14 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.studymatch.dtos.AssignmentGroupsDTO;
@@ -55,6 +59,8 @@ class GroupServiceTest {
   private AssignmentService assignmentService;
   private EnrolmentService enrolmentService;
   private GroupPdfWriter groupPdfWriter;
+  private ChatService chatService;
+  private MessageService messageService;
   private GroupService groupService;
   private SubjectEdition edition;
   private Student ana;
@@ -66,9 +72,12 @@ class GroupServiceTest {
     assignmentService = mock(AssignmentService.class);
     enrolmentService = mock(EnrolmentService.class);
     groupPdfWriter = mock(GroupPdfWriter.class);
+    chatService = mock(ChatService.class);
+    messageService = mock(MessageService.class);
     groupService = new GroupService(groupRepository, assignmentService, enrolmentService,
         mock(AcademicYearService.class), mock(SubjectEditionService.class), mock(LessonService.class),
-        mock(AbsenceService.class), mock(GroupGenerator.class), new GroupCsvWriter(), groupPdfWriter);
+        mock(AbsenceService.class), chatService, messageService, mock(GroupGenerator.class), new GroupCsvWriter(),
+        groupPdfWriter);
     edition = ModelTestData.subjectEdition();
     ana = student("Ana", ANA);
     rui = student("Rui", 1002L);
@@ -414,6 +423,8 @@ class GroupServiceTest {
     assertEquals(List.of(current.get(1)), deleted());
     assertEquals(List.of(11L, 13L), groups.stream().map(GroupDTO::id).toList());
     assertEquals(List.of(1, 2), groups.stream().map(GroupDTO::number).toList());
+    // renumbered drafts have no chat to rename
+    verifyNoInteractions(chatService);
   }
 
   @Test
@@ -433,6 +444,87 @@ class GroupServiceTest {
     assertEquals(List.of(GroupStatus.PUBLISHED, GroupStatus.PUBLISHED),
         groups.stream().map(GroupDTO::status).toList());
     assertEquals(List.of(1003L), groups.get(1).members().stream().map(GroupDTO.Member::number).toList());
+  }
+
+  @Test
+  @DisplayName("Edit groups: in published groups a removed one loses its chat, a new one gets one, a kept one says who it had (#236)")
+  void editPublishedGroupChats() {
+    // Arrange
+    Student bia = student("Bia", 1003L);
+    List<Group> current = editing(GroupStatus.PUBLISHED, List.of(List.of(ana, rui), List.of(bia)), ana, rui, bia);
+    Group kept = current.get(0);
+    Group removed = current.get(1);
+
+    // Act
+    groupService.editGroups(1L, 2L, GroupStatus.PUBLISHED, List.of(edited(11L, ana), edited(null, rui, bia)));
+
+    // Assert - the removed group's chat goes before the group does
+    InOrder order = inOrder(messageService, groupRepository);
+    order.verify(messageService).deleteGroupChats(argThat(groups -> List.copyOf(groups).equals(List.of(removed))));
+    order.verify(groupRepository).deleteAll(any());
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<Group>> added = ArgumentCaptor.forClass(List.class);
+    verify(chatService).createGroupChats(added.capture());
+    assertEquals(1, added.getValue().size());
+    assertEquals(Set.of(rui, bia), added.getValue().getFirst().getMembers());
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<Map<Group, List<Student>>> before = ArgumentCaptor.forClass(Map.class);
+    verify(messageService).groupMembersChanged(before.capture());
+    assertEquals(Set.of(kept), before.getValue().keySet());
+    assertEquals(Set.of(ana, rui), Set.copyOf(before.getValue().get(kept)));
+  }
+
+  @Test
+  @DisplayName("Edit groups: removing published group 2 of 3 renames only group 3's chat, now group 2 (#236)")
+  void editRenumbersPublishedChats() {
+    // Arrange
+    Student bia = student("Bia", 1003L);
+    List<Group> current = editing(GroupStatus.PUBLISHED, List.of(List.of(ana), List.of(rui), List.of(bia)),
+        ana, rui, bia);
+
+    // Act
+    groupService.editGroups(1L, 2L, GroupStatus.PUBLISHED, List.of(edited(11L, ana, rui), edited(13L, bia)));
+
+    // Assert
+    verify(chatService).groupsRenumbered(List.of(current.get(2)));
+    assertEquals(2, current.get(2).getNumber());
+  }
+
+  @Test
+  @DisplayName("Edit groups: drafts have no chats, so editing them leaves the chats alone (#236)")
+  void editDraftsNoChats() {
+    // Arrange
+    editing(GroupStatus.DRAFT, List.of(List.of(ana), List.of(rui)), ana, rui);
+
+    // Act
+    groupService.editGroups(1L, 2L, GroupStatus.DRAFT, List.of(edited(11L, ana, rui)));
+
+    // Assert
+    verifyNoInteractions(chatService, messageService);
+  }
+
+  @Test
+  @DisplayName("Publish groups: the old published groups' chats go first, then every new published group gets one (#236)")
+  void publishReplacesChats() {
+    // Arrange
+    Assignment assignment = project("Project", LocalDate.of(2026, 1, 10));
+    when(assignmentService.getLockedAssignment(1L, 2L)).thenReturn(assignment);
+    Group old = draft(assignment, 1, ana, rui);
+    old.publish();
+    List<Group> drafts = List.of(draft(assignment, 1, ana), draft(assignment, 2, rui));
+    when(groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT)).thenReturn(drafts);
+    when(groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.PUBLISHED))
+        .thenReturn(List.of(old));
+
+    // Act
+    groupService.publishGroups(1L, 2L);
+
+    // Assert
+    InOrder order = inOrder(messageService, groupRepository, chatService);
+    order.verify(messageService).deleteGroupChats(List.of(old));
+    order.verify(groupRepository).deleteByAssignmentAndStatus(assignment, GroupStatus.PUBLISHED);
+    order.verify(chatService).createGroupChats(drafts);
+    assertTrue(drafts.stream().allMatch(group -> group.getStatus() == GroupStatus.PUBLISHED));
   }
 
   @Test

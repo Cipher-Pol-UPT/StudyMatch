@@ -32,9 +32,9 @@ const today = (hour: number) => { const d = new Date(); d.setHours(hour, 0, 0, 0
 const message = (id: number, chatId: number, author: ChatContactData, text: string, sentAt = today(9)): MessageData =>
   ({ id, chatId, author, text, sentAt, editedAt: null, reply: false, replyTo: null });
 const dm = (chatId: number, contact: ChatContactData, last: MessageData | null, unread = 0): ChatSummaryData =>
-  ({ chatId, name: contact.name, contact, picture: false, pictureUpdatedAt: null, lastMessage: last, unread });
+  ({ chatId, name: contact.name, contact, picture: false, pictureUpdatedAt: null, lastMessage: last, unread, assignment: false });
 const group = (chatId: number, name: string, last: MessageData | null, picture = false): ChatSummaryData =>
-  ({ chatId, name, contact: null, picture, pictureUpdatedAt: picture ? '2026-11-20T10:00:00' : null, lastMessage: last, unread: 0 });
+  ({ chatId, name, contact: null, picture, pictureUpdatedAt: picture ? '2026-11-20T10:00:00' : null, lastMessage: last, unread: 0, assignment: false });
 const daysAgo = (days: number) => { const d = new Date(); d.setDate(d.getDate() - days); d.setHours(10, 0, 0, 0); return d.toISOString().slice(0, 19); };
 
 // the chat list and the unread count; `lists` answers each GET /chats/ in turn

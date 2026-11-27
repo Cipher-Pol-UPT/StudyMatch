@@ -50,6 +50,12 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
   @Query("delete from Message m where m.chat = :chat")
   void deleteByChat(Chat chat);
 
+  // the same for the chats of removed groups (#236). no clear, editing groups still uses the groups it loaded,
+  // and nothing in there has loaded these messages
+  @Modifying(flushAutomatically = true)
+  @Query("delete from Message m where m.chat in :chats")
+  void deleteByChatIn(Collection<? extends Chat> chats);
+
   // the side menu's total, same unread rule as findActivity
   @Query("""
       select count(u) from Message u
