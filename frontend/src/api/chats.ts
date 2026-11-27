@@ -10,6 +10,9 @@ export const getDirectChat = (number: number) => request<DirectChatData>('GET', 
 // with replyToId it answers that message (#218)
 export const sendDirectMessage = (number: number, text: string, replyToId?: number) =>
   request<MessageData>('POST', `/chats/direct/${number}/messages`, replyToId === undefined ? { text } : { text, replyToId });
+// send to a chat you're in by its id, a group chat (#227)
+export const sendMessage = (chatId: number, text: string, replyToId?: number) =>
+  request<MessageData>('POST', `/chats/${chatId}/messages`, replyToId === undefined ? { text } : { text, replyToId });
 // a chat's 50 newest messages, the 50 before a message when scrolling up, or the 50 after one when scrolling down
 // from an old message you jumped to
 export const getChatMessages = (chatId: number, from?: { before: number } | { after: number }) =>
@@ -35,6 +38,12 @@ export const deleteMessage = (chatId: number, messageId: number) => request<void
 
 // your chats, the latest message first, with what you haven't read (#201)
 export const getChats = () => request<ChatSummaryData[]>('GET', '/chats/');
+
+// a group chat you own with 2 to 19 others; picture is an optional data URL like the profile photo (#227)
+export const createGroupChat = (name: string, memberNumbers: number[], picture: string | null) =>
+  request<ChatSummaryData>('POST', '/chats/groups', { name, memberNumbers, picture });
+// who's in a chat, the owner first then in the order they joined
+export const getChatMembers = (chatId: number) => request<ChatContactData[]>('GET', `/chats/${chatId}/members`);
 
 // how many messages you haven't read across every chat, for the side menu
 export const getUnreadCount = () => request<number>('GET', '/chats/unread-count');

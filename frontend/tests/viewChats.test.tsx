@@ -1,4 +1,4 @@
-import { act, cleanup, configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, configure, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
@@ -170,16 +170,6 @@ describe('view chats', () => {
     expect(rows[1].querySelector('img')?.getAttribute('src')).toBe('/api/chats/5/picture?v=2026-11-20T10:00:00');
     expect(rows[2].textContent).toContain('No messages yet');
     expect(rows[3].textContent).toMatch(/5 Oct|Oct 5/);
-  });
-
-  it('opens a group chat as coming soon, keeping it in the list', async () => {
-    backend([[group(5, 'Test Study Group', message(50, 5, rui, 'Hi all'))]]);
-    open();
-
-    fireEvent.click(within(await list()).getByRole('link'));
-
-    expect(await screen.findByText('Group chats open here soon')).toBeTruthy();
-    expect(within(await list()).getByRole('link').getAttribute('aria-current')).toBe('page');
   });
 
   it('adds a chat you were added to, renames a group chat and shows an edited last message', async () => {

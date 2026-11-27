@@ -3,7 +3,7 @@ import { ArrowLeft, Search } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
-import { deleteMessage, editMessage, getDirectChat, reactToMessage, removeReaction, sendDirectMessage } from '../../api/chats';
+import { deleteMessage, editMessage, getDirectChat, reactToMessage, removeReaction, sendDirectMessage, sendMessage } from '../../api/chats';
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useChatEvents, useChatListEvents } from '../../hooks/useChatEvents';
@@ -14,8 +14,15 @@ import { newMessageKey, useConversation, type ThreadMessage } from './conversati
 import { lineOf } from './messageText';
 import { useChatHistory } from './useChatHistory';
 
+// a DM with one person, or a group chat by its id (#227)
+export type ConversationChat =
+  | { kind: 'direct'; chat: DirectChatData }
+  | { kind: 'group'; chatId: number; name: string; pictureSrc?: string; members: ChatContactData[] };
+
 export interface ConversationProps {
-  chat: DirectChatData;
+  chat: ConversationChat;
+  // your number, to tell your own messages apart
+  me: number;
   // where someone's profile is, for the people who have one you can open
   profilePath?: (contact: ChatContactData) => string | undefined;
 }
@@ -48,14 +55,16 @@ const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 // only students have a photo
 const photoOf = (author: ChatContactData) => author.role === 'STUDENT' ? `/api/students/${author.number}/pfp` : undefined;
 
-// a DM: its history, live messages while it's open, editing and deleting your own, and the message box (#203, #205, #207, #209)
-export function Conversation({ chat, profilePath }: ConversationProps) {
+// a DM or a group chat: its history, live messages while it's open, editing and deleting your own, and the message box
+// (#203, #205, #207, #209, #227)
+export function Conversation({ chat, me, profilePath }: ConversationProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { contact } = chat;
-  const [conversation, update] = useConversation(contact.number);
-  // the DM gets its id with its first message, yours or theirs: from then on its history loads and its live events are followed
-  const [chatId, setChatId] = useState(chat.chatId);
+  // the other person in a DM; a group chat has none
+  const contact = chat.kind === 'direct' ? chat.chat.contact : null;
+  const [conversation, update] = useConversation(contact ? `direct:${contact.number}` : `chat:${chat.kind === 'group' ? chat.chatId : ''}`);
+  // a DM gets its id with its first message, yours or theirs: from then on its history loads and its live events are followed
+  const [chatId, setChatId] = useState(chat.kind === 'direct' ? chat.chat.chatId : chat.chatId);
   const { history, loadOlder, loadNewer, jumpTo, toLatest, behind, add, replace, remove, applyReaction, markRead } = useChatHistory(chatId);
   const toast = useToast();
   // a message you sent keeps the key it had while sending, so it doesn't jump when the backend answers.
@@ -95,13 +104,17 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   // the message waiting for Delete to be confirmed
   const [deleting, setDeleting] = useState<MessageData | null>(null);
 
-  const line = t('chats.contactLine', { role: t(`roles.${contact.role}`), number: contact.number });
-  const firstName = contact.name.split(' ')[0];
+  const name = contact ? contact.name : chat.kind === 'group' ? chat.name : '';
+  const line = contact ? t('chats.contactLine', { role: t(`roles.${contact.role}`), number: contact.number })
+    : t('chats.memberCount', { count: chat.kind === 'group' ? chat.members.length : 0 });
+  // a person is called by their first name, a group chat by its whole name
+  const firstName = contact ? contact.name.split(' ')[0] : name;
+  const avatarSrc = contact ? photoOf(contact) : chat.kind === 'group' ? chat.pictureSrc : undefined;
+  const self: ChatContactData = { number: me, name: t('chats.you'), role: 'STUDENT' };
   const timeFormat = new Intl.DateTimeFormat(i18n.language, { hour: '2-digit', minute: '2-digit' });
   const dayFormat = new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'long', year: 'numeric' });
   const editedFormat = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' });
-  // in a DM everything not from them is yours
-  const isMine = (author: ChatContactData) => author.number !== contact.number;
+  const isMine = (author: ChatContactData) => author.number === me;
 
   const items: Item[] = [
     ...history.messages.map(message => ({
@@ -109,7 +122,7 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
       mine: isMine(message.author), editedAt: message.editedAt, reply: message.reply, replyTo: message.replyTo, message,
     })),
     ...conversation.messages.filter(message => !claimed(keys).has(message.key)).map(message => ({
-      key: message.key, text: message.text, sentAt: message.sentAt, author: contact, mine: true,
+      key: message.key, text: message.text, sentAt: message.sentAt, author: self, mine: true,
       reply: message.replyTo !== undefined, replyTo: message.replyTo ?? null, pending: message,
     })),
   ];
@@ -166,7 +179,7 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   // so a message of theirs in a group you share would look the same: the DM itself says whether it exists now
   useChatListEvents(event => {
     const message = event.payload as Partial<MessageData> | null;
-    if (chatId !== null || message?.author?.number !== contact.number) return;
+    if (!contact || chatId !== null || message?.author?.number !== contact.number) return;
     getDirectChat(contact.number).then(dm => { if (dm.chatId !== null) setChatId(id => id ?? dm.chatId); }, ignore);
   });
 
@@ -255,7 +268,7 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   const goTo = (id: number) => jumpTo(id).catch(error => toast.danger(isBackendError(error) && error.code === 'NOT_FOUND' ? t('chats.originalGone') : t('common.unexpectedError')));
 
   const deliver = (key: string, text: string, replyTo?: MessageQuoteData) => {
-    sendDirectMessage(contact.number, text, replyTo?.id).then(
+    (contact ? sendDirectMessage(contact.number, text, replyTo?.id) : sendMessage(chatId!, text, replyTo?.id)).then(
       message => {
         answered(key, message);
         setChatId(id => id ?? message.chatId);
@@ -390,8 +403,8 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
   const askToDelete = (message: MessageData, shift: boolean) => shift ? deleteForGood(message) : setDeleting(message);
 
   const head = (
-    <ChatHead name={contact.name} avatarSrc={photoOf(contact)} subtitle={line} backLabel={t('chats.back')} onBack={() => navigate('/chats')}
-      profileHref={profilePath?.(contact)} linkAs={Link} profileLabel={t('chats.openProfile', { name: contact.name })}
+    <ChatHead name={name} avatarSrc={avatarSrc} subtitle={line} backLabel={t('chats.back')} onBack={() => navigate('/chats')} group={!contact}
+      profileHref={contact ? profilePath?.(contact) : undefined} linkAs={Link} profileLabel={t('chats.openProfile', { name })}
       actions={chatId !== null && (searching
         ? <SearchField ref={searchInput} size="sm" className="sm-chat__head-search" value={query} onValueChange={setQuery}
           label={t('chats.searchChat')} placeholder={t('chats.searchChat')}
@@ -402,7 +415,7 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
 
   if (history.error !== undefined) {
     return (
-      <ChatThread label={t('chats.with', { name: contact.name })} head={head}>
+      <ChatThread label={t('chats.with', { name })} head={head}>
         <Banner tone="danger">{isBackendError(history.error) ? t(`errors.${history.error.code}`, history.error.params ?? {}) : t('common.unexpectedError')}</Banner>
         <Link to="/chats" className={buttonClass({ variant: 'secondary', size: 'sm' })}><ArrowLeft size={16} aria-hidden />{t('chats.back')}</Link>
       </ChatThread>
@@ -418,18 +431,21 @@ export function Conversation({ chat, profilePath }: ConversationProps) {
     return dayFormat.format(date);
   };
 
+  const startText = () => {
+    if (!contact) return t(items.length ? 'chats.startOfGroupChat' : 'chats.groupSayHi', { name });
+    return items.length ? t('chats.startOfConversation', { name: firstName }) : t('chats.sayHi', { line, name: firstName });
+  };
   // the top of the conversation once its first message is on screen, or a hint to say hi when there's none
   const start = history.loading || history.hasMore ? null
-    : items.length ? <ChatStart name={contact.name} avatarSrc={photoOf(contact)}>{t('chats.startOfConversation', { name: firstName })}</ChatStart>
-      : <ChatStart name={contact.name} avatarSrc={photoOf(contact)}>{t('chats.sayHi', { line, name: firstName })}</ChatStart>;
+    : <ChatStart name={name} avatarSrc={avatarSrc} group={!contact}>{startText()}</ChatStart>;
 
   return (
-    <ChatThread label={t('chats.with', { name: contact.name })} scrollRef={scroll} onScroll={onScroll} head={head}
+    <ChatThread label={t('chats.with', { name })} scrollRef={scroll} onScroll={onScroll} head={head}
       // after a jump the latest aren't on screen, so the button stays until they're back
       overlay={(newBelow || history.hasNewer) && <ChatJump label={t(newBelow ? 'chats.newMessages' : 'chats.backToLatest')} onClick={jump} />}
       side={searching && chatId !== null && <ChatSearch chatId={chatId} query={query} onClose={stopSearching} onJump={jumpTo} nameOf={nameOf} />}
       composer={(
-        <ChatComposer label={t('chats.messageLabel', { name: contact.name })} placeholder={t('chats.messageLabel', { name: firstName })}
+        <ChatComposer label={t('chats.messageLabel', { name })} placeholder={t('chats.messageLabel', { name: firstName })}
           value={conversation.draft} onChange={draft => update(current => ({ ...current, draft }))} onSend={send}
           sendLabel={t('chats.send')} max={MESSAGE_MAX_LENGTH} error={conversation.error === undefined ? undefined : sendError(conversation.error, t)}
           onEditLast={editLast} inputRef={composer} above={replyBar} onEscape={stopReply} />

@@ -40,6 +40,11 @@ export interface ReactionData { chatId: number; messageId: number; user: ChatCon
 
 // the most characters a message can have (GR10)
 export const MESSAGE_MAX_LENGTH = 2000;
+// a group chat has 3 to 20 people counting its owner, a name of up to 50 characters and a picture of up to 1 MB (#226)
+export const GROUP_CHAT_MAX_MEMBERS = 20;
+export const GROUP_CHAT_MIN_OTHERS = 2;
+export const GROUP_CHAT_NAME_MAX_LENGTH = 50;
+export const GROUP_CHAT_PICTURE_MAX_BYTES = 1024 * 1024;
 
 // a page of an open chat, oldest first, with the reactions to its messages. hasMore is false once the first message
 // is in, hasNewer once the latest is (after jumping to an old message the latest aren't loaded)

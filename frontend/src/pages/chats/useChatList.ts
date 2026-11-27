@@ -63,5 +63,9 @@ export function useChatList(isMine: (message: MessageData) => boolean, isOpen: (
     }
   });
 
-  return list;
+  // one you just made, before its CHAT_ADDED comes (#227)
+  const add = useCallback((chat: ChatSummaryData) =>
+    setList(current => current.chats ? { ...current, chats: [chat, ...current.chats.filter(other => other.chatId !== chat.chatId)] } : current), []);
+
+  return { ...list, add };
 }
