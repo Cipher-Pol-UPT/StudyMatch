@@ -896,4 +896,25 @@ class ChatServiceTest {
     verify(chatSettingsService).startRead(assignment, List.of(ana));
   }
 
+  @Test
+  @DisplayName("A renumbered group's chat sends CHAT_EDITED with the new name to every member, no picture")
+  void groupsRenumbered() {
+    // Arrange
+    GroupChat assignment = assignmentChat(student("Eva", 1003L));
+    assignment.getGroup().renumber(2);
+    when(chatRepository.findGroupChatsFor(List.of(assignment.getGroup()))).thenReturn(List.of(assignment));
+
+    // Act
+    chatService.groupsRenumbered(List.of(assignment.getGroup()));
+
+    // Assert
+    ArgumentCaptor<UserChatEvent> events = ArgumentCaptor.forClass(UserChatEvent.class);
+    verify(eventPublisher, times(2)).publishEvent(events.capture());
+    assertEquals(Set.of(1001L, 1003L),
+        events.getAllValues().stream().map(event -> event.recipient().getNumber()).collect(Collectors.toSet()));
+    assertEquals(ChatEventType.CHAT_EDITED, events.getValue().type());
+    assertEquals(new ChatEditedDTO(7L, "Test Project · Test Subject · Group 2", false, null),
+        events.getValue().payload());
+  }
+
 }

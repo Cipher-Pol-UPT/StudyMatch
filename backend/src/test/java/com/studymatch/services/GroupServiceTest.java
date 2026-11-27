@@ -423,6 +423,8 @@ class GroupServiceTest {
     assertEquals(List.of(current.get(1)), deleted());
     assertEquals(List.of(11L, 13L), groups.stream().map(GroupDTO::id).toList());
     assertEquals(List.of(1, 2), groups.stream().map(GroupDTO::number).toList());
+    // renumbered drafts have no chat to rename
+    verifyNoInteractions(chatService);
   }
 
   @Test
@@ -470,6 +472,22 @@ class GroupServiceTest {
     verify(messageService).groupMembersChanged(before.capture());
     assertEquals(Set.of(kept), before.getValue().keySet());
     assertEquals(Set.of(ana, rui), Set.copyOf(before.getValue().get(kept)));
+  }
+
+  @Test
+  @DisplayName("Edit groups: removing published group 2 of 3 renames only group 3's chat, now group 2 (#236)")
+  void editRenumbersPublishedChats() {
+    // Arrange
+    Student bia = student("Bia", 1003L);
+    List<Group> current = editing(GroupStatus.PUBLISHED, List.of(List.of(ana), List.of(rui), List.of(bia)),
+        ana, rui, bia);
+
+    // Act
+    groupService.editGroups(1L, 2L, GroupStatus.PUBLISHED, List.of(edited(11L, ana, rui), edited(13L, bia)));
+
+    // Assert
+    verify(chatService).groupsRenumbered(List.of(current.get(2)));
+    assertEquals(2, current.get(2).getNumber());
   }
 
   @Test
