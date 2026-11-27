@@ -39,12 +39,17 @@ public class GroupChat extends Chat {
     return new ArrayList<>(group.getMembers());
   }
 
-  // the same for everyone, teachers are never in it
-  @Override
-  public String getNameFor(User viewer) {
+  // follows the group's number, so renumbering it renames the chat
+  public String getName() {
     Assignment assignment = group.getAssignment();
     return assignment.getName() + " · " + assignment.getSubjectEdition().getSubject().getName() + " · Group "
         + group.getNumber();
+  }
+
+  // the same for everyone, teachers are never in it
+  @Override
+  public String getNameFor(User viewer) {
+    return getName();
   }
 
 }

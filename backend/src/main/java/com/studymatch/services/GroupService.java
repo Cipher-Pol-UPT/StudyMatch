@@ -248,10 +248,12 @@ public class GroupService {
     // one at a time and only ever down, so two groups never share a number on the way
     List<Group> survivors = kept.stream().filter(Objects::nonNull).sorted(Comparator.comparing(Group::getNumber))
         .toList();
+    List<Group> renumbered = new ArrayList<>();
     for (int i = 0; i < survivors.size(); i++) {
       if (survivors.get(i).getNumber() != i + 1) {
         survivors.get(i).renumber(i + 1);
         groupRepository.flush();
+        renumbered.add(survivors.get(i));
       }
     }
 
@@ -278,6 +280,8 @@ public class GroupService {
     if (published) {
       chatService.createGroupChats(added);
       messageService.groupMembersChanged(before);
+      // the name has the number, after the members so it reaches who's in now
+      chatService.groupsRenumbered(renumbered);
     }
     // telling the students of changed published groups comes with notifications (#144)
     Map<Long, String> classOf = classSections(enrolments);

@@ -284,6 +284,18 @@ public class ChatService {
     chatSettingsService.startRead(chat, joined);
   }
 
+  // a removed group moves the ones after it down, their chats' names have the number so every member's list
+  // swaps it. after the members changed, so it goes to who's in now
+  @Transactional(readOnly = true)
+  public void groupsRenumbered(List<Group> groups) {
+    for (GroupChat chat : getGroupChatsFor(groups)) {
+      ChatEditedDTO edited = ChatEditedDTO.from(chat);
+      for (User member : chat.getMembers()) {
+        eventPublisher.publishEvent(new UserChatEvent(member, ChatEventType.CHAT_EDITED, edited));
+      }
+    }
+  }
+
   // any member renames a group chat, the name's checked like creating (#234). a DM has no name, so 404
   @Transactional
   public void rename(Long chatId, User user, RenameGroupChatRequestDTO request) {
