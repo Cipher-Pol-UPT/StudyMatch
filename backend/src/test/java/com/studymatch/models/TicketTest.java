@@ -1,6 +1,8 @@
 package com.studymatch.models;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDateTime;
@@ -32,6 +34,42 @@ class TicketTest {
     assertEquals("can't log in", ticket.getSubject());
     assertEquals("it says blocked", ticket.getDescription());
     assertEquals(ticket.getCreatedAt(), ticket.getUpdatedAt());
+  }
+
+  @Test
+  @DisplayName("A guest ticket has the email, ip and token hash and no author, and starts Open")
+  void guestTicket() {
+    // Act
+    Ticket ticket = Ticket.forGuest("  guest@example.com ", "10.0.0.7", "hash", TicketCategory.ACCOUNT, "help",
+        "locked out");
+
+    // Assert
+    assertTrue(ticket.isFromGuest());
+    assertNull(ticket.getAuthor());
+    assertEquals("guest@example.com", ticket.getGuestEmail());
+    assertEquals("10.0.0.7", ticket.getGuestIp());
+    assertEquals("hash", ticket.getGuestTokenHash());
+    assertEquals(TicketStatus.OPEN, ticket.getStatus());
+  }
+
+  @Test
+  @DisplayName("A ticket with an author isn't from a guest")
+  void authorTicket() {
+    // Act + Assert
+    assertFalse(ticket(TicketCategory.OTHER).isFromGuest());
+  }
+
+  @Test
+  @DisplayName("Replacing the guest token keeps only the new hash")
+  void replaceGuestToken() {
+    // Arrange
+    Ticket ticket = Ticket.forGuest("guest@example.com", "10.0.0.7", "old", TicketCategory.OTHER, "help", "hi");
+
+    // Act
+    ticket.replaceGuestToken("new");
+
+    // Assert
+    assertEquals("new", ticket.getGuestTokenHash());
   }
 
   @Test

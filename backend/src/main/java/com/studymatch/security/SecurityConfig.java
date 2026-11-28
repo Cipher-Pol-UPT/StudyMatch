@@ -38,11 +38,14 @@ public class SecurityConfig {
   public static final List<String> PUBLIC_ENDPOINTS = List.of(
       "/users/login",
       "/users/forgot-password",
-      "/users/reset-password");
+      "/users/reset-password",
+      "/support/tickets/",
+      "/support/tickets/{token}/replies");
 
-  // GET only, what a certificate's QR code opens, for anyone who scans it
+  // GET only, what a certificate's QR code opens, for anyone who scans it, and a guest's ticket behind its link
   public static final List<String> PUBLIC_GET_ENDPOINTS = List.of(
-      "/achievements/certificates/{code}");
+      "/achievements/certificates/{code}",
+      "/support/tickets/{token}");
 
   // the docs page and its JSON, no data behind them
   private static final String[] API_DOCS = { "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**" };

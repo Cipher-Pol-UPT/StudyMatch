@@ -53,6 +53,37 @@ public class EmailSender {
     }
   }
 
+  // the only place the link exists, the ticket keeps just its hash (#366). in the background like the reset code,
+  // the ticket is saved either way
+  @Async
+  public void sendSupportTicketLink(String to, String ticketSubject, String link) {
+    SimpleMailMessage message = new SimpleMailMessage();
+    message.setFrom(from);
+    message.setTo(to);
+    message.setSubject("StudyMatch - O seu pedido de apoio / Your support request");
+    message.setText("""
+        Olá,
+
+        Recebemos o seu pedido "%1$s". Pode acompanhá-lo e responder aqui:
+        %2$s
+        Não partilhe esta ligação, quem a tiver pode ver o pedido.
+
+        ---
+
+        Hello,
+
+        We got your request "%1$s". You can follow it and reply here:
+        %2$s
+        Don't share this link, anyone who has it can see the request.
+        """.formatted(ticketSubject, link));
+
+    try {
+      mailSender.send(message);
+    } catch (MailException e) {
+      log.error("Could not send the support ticket link", e);
+    }
+  }
+
   // not async and not silent: the admin is waiting and has to know if it failed
   public void sendAccountCredentials(String to, String name, String institutionalEmail, String oneTimePassword) {
     SimpleMailMessage message = new SimpleMailMessage();

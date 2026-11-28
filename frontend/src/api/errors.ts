@@ -128,6 +128,7 @@ export const ERROR_CODES = [
   "ROOM_OUTSIDE_FLOOR",
   "INVALID_SLOT",
   "NO_CURRENT_ACADEMIC_YEAR",
+  "TOO_MANY_TICKETS",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;

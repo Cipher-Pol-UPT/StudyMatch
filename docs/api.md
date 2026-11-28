@@ -2,7 +2,7 @@
 
 This is the map of the backend's endpoints. The details (request and response bodies, every error code per endpoint) are in Swagger UI at http://localhost:8080/swagger-ui.html while the backend is running, and the raw OpenAPI JSON is at `/v3/api-docs`.
 
-The backend runs on `http://localhost:8080`; the frontend calls the same paths with `/api` in front. Every endpoint needs a login except the first three under Users. Requests that change something (POST, PUT, PATCH, DELETE) need the `X-XSRF-TOKEN` header, see [architecture.md](architecture.md#csrf).
+The backend runs on `http://localhost:8080`; the frontend calls the same paths with `/api` in front. Every endpoint needs a login except the first three under Users, the certificate a QR code opens and the `/support/` ones under Tickets. Requests that change something (POST, PUT, PATCH, DELETE) need the `X-XSRF-TOKEN` header, see [architecture.md](architecture.md#csrf).
 
 Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` with the code's HTTP status, see [conventions.md](conventions.md#error-codes). A logged-in user who is blocked, hasn't changed their first password or hasn't taken this year's personality test gets 403 on almost everything, see [architecture.md](architecture.md#account-state).
 
@@ -206,6 +206,9 @@ These work before the personality test too (GR1). Admin answers tickets and does
 | GET | `/tickets/mine` | Student, Teacher, Staff | your tickets with their status, the one with the latest reply first |
 | GET | `/tickets/{id}` | the ticket's author | the ticket with its thread, oldest reply first. Someone else's is `NOT_FOUND` |
 | POST | `/tickets/{id}/replies` | the ticket's author | write back with `text` (up to 2000 characters) (201), answers the ticket with its thread. A `RESOLVED` ticket goes back to `OPEN`. Someone else's is `NOT_FOUND` |
+| POST | `/support/tickets/` | Anyone, no login | contact support with `email` and the same three fields (201, no body). The private link goes to the email and never comes back here. `TOO_MANY_TICKETS` with `max` past 3 an hour per email or 10 per IP |
+| GET | `/support/tickets/{token}` | Anyone with the link | the ticket with its thread, oldest reply first. A wrong token is `NOT_FOUND` |
+| POST | `/support/tickets/{token}/replies` | Anyone with the link | write back with `text` (up to 2000 characters) (201), answers the ticket with its thread. The reply has no author, and a `RESOLVED` ticket goes back to `OPEN` |
 
 ## Coming next
 

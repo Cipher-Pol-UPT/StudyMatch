@@ -29,6 +29,10 @@
 -- trips it halfway (#228)
 ALTER TABLE IF EXISTS custom_chat_member DROP CONSTRAINT IF EXISTS uk6mbv7ca5nfft2nn86dslucu6l;
 
+-- guest tickets have no author, #397 made the column not null (#366)
+ALTER TABLE IF EXISTS ticket ALTER COLUMN author_number DROP NOT NULL;
+ALTER TABLE IF EXISTS ticket_reply ALTER COLUMN author_number DROP NOT NULL;
+
 -- degrees and categories
 
 INSERT INTO degree (name, curricular_years) VALUES
