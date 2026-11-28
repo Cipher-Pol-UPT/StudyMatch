@@ -1,0 +1,5 @@
+/* the Notifications page (#145): the library's list in a card, as wide as reads well */
+.role-page.notifications-page { max-width: 760px; margin: 0; }
+.notifications-page__card { padding: 8px; }
+/* the whole list scrolls with the page here; the cap is only for the bell */
+.notifications-page .sm-notifs__list { max-height: none; overflow: visible; }

@@ -1,13 +1,15 @@
-import { Bell, House } from 'lucide-react';
+import { House } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { AppShell, EmptyState, Logo, type NavItem, type NavSection } from '../../studymatch-ui';
+import { AppShell, Logo, type NavItem, type NavSection } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import type { NavigationSection } from '../../types/navigation';
 import { AccountPasswordPage } from '../../pages/password/AccountPasswordPage';
 import { FeaturePlaceholder } from '../feedback/FeaturePlaceholder';
 import { AccountActions } from '../navigation/AccountActions';
+import { NotificationsPage } from '../../pages/notifications/NotificationsPage';
+import { NotificationsProvider } from '../../pages/notifications/NotificationsProvider';
 import { RoleHomePage } from './RoleHomePage';
 import '../../styles/appShell.css';
 import '../../styles/roleLayout.css';
@@ -53,6 +55,7 @@ export function RoleLayout({ currentUser, sections, onLoggedOut, activePath, chi
     : pathname === '/notifications' ? t('nav.notifications') : t('nav.home');
 
   return (
+    <NotificationsProvider role={currentUser.role}>
     <AppShell
       brand={<Logo size={28} />}
       nav={nav}
@@ -69,9 +72,10 @@ export function RoleLayout({ currentUser, sections, onLoggedOut, activePath, chi
           <Route key={section.path} path={section.path} element={<FeaturePlaceholder section={section} />} />
         ))}
         <Route path="/change-password" element={<AccountPasswordPage />} />
-        <Route path="/notifications" element={<EmptyState icon={Bell} title={t('nav.notifications')} body={t('placeholder.comingSoon')} />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>
+    </NotificationsProvider>
   );
 }

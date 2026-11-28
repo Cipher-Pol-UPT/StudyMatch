@@ -1440,5 +1440,73 @@
     "noSemesters": "Defina as datas dos semestres deste ano antes de marcar dias sem aulas.",
     "noYear": "Ainda não há ano letivo",
     "noYearBody": "Os dias sem aulas são marcados depois de começar o primeiro ano letivo."
+  },
+  "notifications": {
+    "title": "Notificações",
+    "intro": "O que mudou nas suas StudyRooms, grupos, candidaturas e conquistas.",
+    "show": "Mostrar",
+    "all": "Todas",
+    "unread": "Por ler",
+    "unreadCount": "Por ler ({{count}})",
+    "noUnread": "Não tem notificações por ler.",
+    "empty": "Está tudo em dia.",
+    "seeAll": "Ver todas as notificações",
+    "older": "Mostrar mais antigas",
+    "newAchievement": "Nova conquista: {{name}}",
+    "reason": "Motivo: {{reason}}",
+    "types": {
+      "ACCOUNT_UNBLOCKED": {
+        "title": "A sua conta está novamente ativa",
+        "body": "Pode usar o StudyMatch como antes. O que lhe foi enviado entretanto está aqui."
+      },
+      "TUTOR_APPLICATION_SUBMITTED": {
+        "title": "Nova candidatura a tutor",
+        "body": "{{student}} ({{number}}) quer ser tutor de {{subject}}."
+      },
+      "TUTOR_APPLICATION_APPROVED": {
+        "title": "Já é tutor",
+        "body": "A sua candidatura a tutor de {{subject}} foi aprovada."
+      },
+      "TUTOR_APPLICATION_REJECTED": {
+        "title": "Candidatura a tutor não aprovada",
+        "body": "A sua candidatura a tutor de {{subject}} não foi aprovada."
+      },
+      "STUDYROOM_LEFT": {
+        "title": "Alguém saiu da sua StudyRoom",
+        "body": "{{student}} saiu de {{subject}} de {{startsAt}}."
+      },
+      "STUDYROOM_UPDATED": {
+        "title": "Uma StudyRoom foi alterada",
+        "body": "{{subject}} passa a ser {{startsAt}} até às {{endsAt}}."
+      },
+      "STUDYROOM_CANCELLED": {
+        "title": "Uma StudyRoom foi cancelada",
+        "body": "{{subject}} de {{startsAt}} já não se realiza."
+      },
+      "STUDYROOM_RATING_OPEN": {
+        "title": "Avalie o seu tutor",
+        "body": "Como correu a StudyRoom de {{tutor}} sobre {{subject}}, em {{startsAt}}?"
+      },
+      "ACHIEVEMENT_EARNED": {
+        "title": "Nova conquista: {{achievement}}",
+        "body": "Está na sua página de conquistas, com o certificado."
+      },
+      "GROUP_PUBLISHED": {
+        "title": "O seu grupo está pronto",
+        "body": "Está no grupo {{number}} de {{assignment}} em {{subject}}."
+      },
+      "GROUP_UPDATED": {
+        "title": "O seu grupo mudou",
+        "body": "Está agora no grupo {{number}} de {{assignment}} em {{subject}}."
+      },
+      "TICKET_ANSWERED": {
+        "title": "O apoio respondeu-lhe",
+        "body": "Há uma nova resposta em \"{{subject}}\"."
+      },
+      "TICKET_RESOLVED": {
+        "title": "O seu pedido foi resolvido",
+        "body": "O apoio resolveu \"{{subject}}\". Responda se ainda precisar de ajuda."
+      }
+    }
   }
 }

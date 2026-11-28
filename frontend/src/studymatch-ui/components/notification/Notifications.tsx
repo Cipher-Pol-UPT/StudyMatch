@@ -25,6 +25,12 @@ export interface NotificationListProps {
   onMarkAllRead?: () => void;
   emptyText?: ReactNode;
   title?: ReactNode;
+  // under the list, like a link to every notification
+  footer?: ReactNode;
+  // the unread ones, when the list holds only some of them
+  count?: number;
+  // the count beside the title; off when the title already says it
+  showCount?: boolean;
   className?: string;
 }
 
@@ -36,15 +42,15 @@ const TONE: Record<NonNullable<NotificationItem['tone']>, [string, string]> = {
   info: ['var(--sm-tint-sky)', '#1f86c0'],
 };
 
-export function NotificationList({ items, onItemClick, onMarkAllRead, emptyText = i18n.t('ui.you_re_all_caught_up'), title = i18n.t('ui.notifications'), className }: NotificationListProps) {
+export function NotificationList({ items, onItemClick, onMarkAllRead, emptyText = i18n.t('ui.you_re_all_caught_up'), title = i18n.t('ui.notifications'), footer, count, showCount = true, className }: NotificationListProps) {
   useTranslation();
-  const unread = items.filter((i) => !i.read).length;
+  const unread = count ?? items.filter((i) => !i.read).length;
   return (
     <div className={cx('sm-notifs', className)}>
       <div className="sm-notifs__head">
         <span className="sm-notifs__title">
           {title}
-          {unread > 0 && <Badge>{unread}</Badge>}
+          {showCount && unread > 0 && <Badge>{unread}</Badge>}
         </span>
         {onMarkAllRead && unread > 0 && (
           <button type="button" className="sm-notifs__link" onClick={onMarkAllRead}>
@@ -88,6 +94,7 @@ export function NotificationList({ items, onItemClick, onMarkAllRead, emptyText 
           })}
         </ul>
       )}
+      {footer && <div className="sm-notifs__foot">{footer}</div>}
     </div>
   );
 }
@@ -98,7 +105,7 @@ export interface NotificationBellProps extends NotificationListProps {
 
 export function NotificationBell({ align = 'end', ...list }: NotificationBellProps) {
   useTranslation();
-  const unread = list.items.filter((i) => !i.read).length;
+  const unread = list.count ?? list.items.filter((i) => !i.read).length;
   return (
     <span className="sm-bell">
       <Popover
@@ -108,7 +115,10 @@ export function NotificationBell({ align = 'end', ...list }: NotificationBellPro
         className="sm-notifs-pop"
         trigger={<IconButton icon={Bell} label={unread ? i18n.t('ui.unread_notifications', {count:unread}) : i18n.t('ui.notifications')} variant="secondary" />}
       >
-        <NotificationList {...list} />
+        {(close: () => void) => (
+          <NotificationList {...list} onItemClick={list.onItemClick && (item => { close(); list.onItemClick?.(item); })}
+            footer={list.footer && <span onClickCapture={close}>{list.footer}</span>} />
+        )}
       </Popover>
       {unread > 0 && (
         <Badge tone="danger" className="sm-bell__badge" aria-hidden>
