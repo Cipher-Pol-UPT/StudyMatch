@@ -4,7 +4,7 @@ package com.studymatch.enums;
 public enum NotificationTarget {
 
   STUDYROOM,
-  GROUP,
+  ASSIGNMENT,
   TUTOR_APPLICATION,
   ACHIEVEMENT
 }
