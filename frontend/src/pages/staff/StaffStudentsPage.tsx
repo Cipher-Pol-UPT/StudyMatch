@@ -51,7 +51,7 @@ export function StaffStudentsPage() {
     { key: 'degree', header: t('directory.degree') },
     { key: 'curricularYear', header: t('directory.year') },
     { key: 'attendance', header: t('directory.attendance'), render: row => format.attendance(row.attendance) },
-    { key: 'averageGrade', header: t('directory.averageGrade'), render: row => format.grade(row.averageGrade) },
+    { key: 'averageGrade', header: t('directory.averageGrade'), render: row => row.averageGrade === null ? format.grade(null) : <span className="directory-value">{format.grade(row.averageGrade)}</span> },
     { key: 'personalityProfile', header: t('directory.personality'), render: row => <PersonalitySummary profile={row.personalityProfile} /> },
     { key: 'accountStatus', header: t('directory.status'), render: row => <StatusPill tone={row.accountStatus === 'ACTIVE' ? 'success' : 'danger'}>{t(`accountStatuses.${row.accountStatus}`)}</StatusPill> },
   ];

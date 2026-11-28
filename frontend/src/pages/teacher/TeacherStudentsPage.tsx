@@ -45,7 +45,7 @@ export function TeacherStudentsPage() {
     },
     { key: 'classSection', header: t('directory.class') },
     { key: 'personalityProfile', header: t('directory.personality'), render: row => <PersonalitySummary profile={row.personalityProfile} /> },
-    { key: 'categoryLevel', header: t('directory.categoryLevel'), render: row => format.grade(row.categoryLevel) },
+    { key: 'categoryLevel', header: t('directory.categoryLevel'), render: row => row.categoryLevel === null ? format.grade(null) : <span className="directory-value">{format.grade(row.categoryLevel)}</span> },
     { key: 'attendance', header: t('directory.subjectAttendance'), render: row => format.attendance(row.attendance) },
   ];
 

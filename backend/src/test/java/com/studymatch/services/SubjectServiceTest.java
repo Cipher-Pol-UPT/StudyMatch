@@ -3,6 +3,7 @@ package com.studymatch.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -24,6 +25,8 @@ import com.studymatch.dtos.SubjectEditionRequestDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.dtos.SubjectRequestDTO;
 import com.studymatch.dtos.UpdateSubjectRequestDTO;
+import com.studymatch.dtos.WeeklySessionDTO;
+import com.studymatch.enums.RoomType;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.AcademicYear;
@@ -33,6 +36,7 @@ import com.studymatch.models.DegreeSubject;
 import com.studymatch.models.ModelTestData;
 import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
+import com.studymatch.models.WeeklySession;
 import com.studymatch.repositories.SubjectRepository;
 
 class SubjectServiceTest {
@@ -77,7 +81,7 @@ class SubjectServiceTest {
   }
 
   private static SubjectRequestDTO request(String code, DegreePlacementDTO... degrees) {
-    return new SubjectRequestDTO(code, "Mathematics I", 6, 1L, List.of(degrees), EDITION);
+    return new SubjectRequestDTO(code, "Mathematics I", 6, 1L, List.of(degrees), EDITION, null);
   }
 
   // register subject
@@ -107,7 +111,7 @@ class SubjectServiceTest {
   void codeAndNameAreTrimmed() {
     // Act
     Subject subject = subjectService.registerSubject(new SubjectRequestDTO("  MAT1 ", "  Mathematics I ", 6, 1L,
-        List.of(new DegreePlacementDTO(10L, 1, 1)), EDITION)).getSubject();
+        List.of(new DegreePlacementDTO(10L, 1, 1)), EDITION, null)).getSubject();
 
     // Assert
     assertEquals("MAT1", subject.getCode());
@@ -138,7 +142,8 @@ class SubjectServiceTest {
   void unknownCategoryIsNotFound() {
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectService.registerSubject(
-        new SubjectRequestDTO("MAT1", "Mathematics I", 6, 99L, List.of(new DegreePlacementDTO(10L, 1, 1)), EDITION)));
+        new SubjectRequestDTO("MAT1", "Mathematics I", 6, 99L, List.of(new DegreePlacementDTO(10L, 1, 1)), EDITION,
+            null)));
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
@@ -177,6 +182,63 @@ class SubjectServiceTest {
 
     // Assert
     assertEquals(3, subject.getDegreeSubjects().iterator().next().getCurricularYear());
+  }
+
+  private static SubjectRequestDTO withSessions(WeeklySessionDTO... sessions) {
+    return new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, List.of(new DegreePlacementDTO(10L, 1, 1)), EDITION,
+        List.of(sessions));
+  }
+
+  @Test
+  @DisplayName("The weekly plan is saved with the subject, in the order given")
+  void planIsSaved() {
+    // Act
+    Subject subject = subjectService.registerSubject(withSessions(new WeeklySessionDTO(90, RoomType.CLASSROOM),
+        new WeeklySessionDTO(180, RoomType.LAB))).getSubject();
+
+    // Assert
+    assertEquals(List.of(90, 180), subject.getWeeklySessions().stream().map(WeeklySession::getMinutes).toList());
+    assertEquals(List.of(RoomType.CLASSROOM, RoomType.LAB),
+        subject.getWeeklySessions().stream().map(WeeklySession::getRoomType).toList());
+    verify(subjectRepository).saveAndFlush(subject);
+  }
+
+  @Test
+  @DisplayName("Without a plan the subject is saved with none")
+  void noPlanIsSaved() {
+    // Act
+    Subject subject = subjectService.registerSubject(request("MAT1", new DegreePlacementDTO(10L, 1, 1))).getSubject();
+
+    // Assert
+    assertTrue(subject.getWeeklySessions().isEmpty());
+  }
+
+  @Test
+  @DisplayName("A session of a length that isn't allowed gets INVALID_SESSION_LENGTH and nothing is saved")
+  void invalidLengthIsRefused() {
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectService.registerSubject(withSessions(new WeeklySessionDTO(100, RoomType.LAB))));
+
+    // Assert
+    assertEquals(ErrorCode.INVALID_SESSION_LENGTH, e.getCode());
+    verify(subjectRepository, never()).saveAndFlush(any());
+    verify(subjectEditionService, never()).createEdition(any(), any());
+  }
+
+  @Test
+  @DisplayName("More than 5 sessions gets TOO_MANY_WEEKLY_SESSIONS and nothing is saved")
+  void tooManySessionsIsRefused() {
+    // Arrange
+    WeeklySessionDTO session = new WeeklySessionDTO(60, RoomType.CLASSROOM);
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class,
+        () -> subjectService.registerSubject(withSessions(session, session, session, session, session, session)));
+
+    // Assert
+    assertEquals(ErrorCode.TOO_MANY_WEEKLY_SESSIONS, e.getCode());
+    verify(subjectRepository, never()).saveAndFlush(any());
   }
 
   @Test
@@ -334,7 +396,7 @@ class SubjectServiceTest {
     when(subjectRepository.findWithDegreesById(1L)).thenReturn(Optional.of(subject));
 
     // Act
-    Subject result = subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("  Calculus I ", 7, null));
+    Subject result = subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("  Calculus I ", 7, null, null));
 
     // Assert
     assertSame(subject, result);
@@ -352,7 +414,7 @@ class SubjectServiceTest {
         .thenReturn(Optional.of(new Subject("MAT1", "Mathematics I", 6, mathematics)));
 
     // Act
-    subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, null));
+    subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, null, null));
 
     // Assert
     verify(subjectEditionService, never()).updateCurrentTeachers(any(), any());
@@ -366,7 +428,7 @@ class SubjectServiceTest {
     when(subjectRepository.findWithDegreesById(1L)).thenReturn(Optional.of(subject));
 
     // Act
-    subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, List.of(1L, 2L)));
+    subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, List.of(1L, 2L), null));
 
     // Assert
     verify(subjectEditionService).updateCurrentTeachers(subject, List.of(1L, 2L));
@@ -383,7 +445,7 @@ class SubjectServiceTest {
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
-        () -> subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, List.of())));
+        () -> subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, List.of(), null)));
 
     // Assert
     assertEquals(ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED, e.getCode());
@@ -397,10 +459,59 @@ class SubjectServiceTest {
 
     // Act
     StudyMatchException e = assertThrows(StudyMatchException.class,
-        () -> subjectService.updateSubject(99L, new UpdateSubjectRequestDTO("Calculus I", 6, List.of(1L))));
+        () -> subjectService.updateSubject(99L, new UpdateSubjectRequestDTO("Calculus I", 6, List.of(1L), null)));
 
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+    verify(subjectEditionService, never()).updateCurrentTeachers(any(), any());
+  }
+
+  @Test
+  @DisplayName("A plan in the update replaces the old one")
+  void updateReplacesPlan() {
+    // Arrange
+    Subject subject = new Subject("MAT1", "Mathematics I", 6, mathematics);
+    subject.setWeeklySessions(List.of(new WeeklySession(120, RoomType.CLASSROOM), new WeeklySession(120, RoomType.LAB)));
+    when(subjectRepository.findWithDegreesById(1L)).thenReturn(Optional.of(subject));
+
+    // Act
+    subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, null,
+        List.of(new WeeklySessionDTO(150, RoomType.AUDITORIUM))));
+
+    // Assert
+    assertEquals(1, subject.getWeeklySessions().size());
+    assertEquals(150, subject.getWeeklySessions().get(0).getMinutes());
+    assertSame(RoomType.AUDITORIUM, subject.getWeeklySessions().get(0).getRoomType());
+  }
+
+  @Test
+  @DisplayName("Without a plan in the update the old one stays, and an empty one clears it")
+  void updateWithoutPlanKeepsIt() {
+    // Arrange
+    Subject subject = new Subject("MAT1", "Mathematics I", 6, mathematics);
+    subject.setWeeklySessions(List.of(new WeeklySession(120, RoomType.CLASSROOM)));
+    when(subjectRepository.findWithDegreesById(1L)).thenReturn(Optional.of(subject));
+
+    // Act + Assert
+    subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, null, null));
+    assertEquals(1, subject.getWeeklySessions().size());
+    subjectService.updateSubject(1L, new UpdateSubjectRequestDTO("Calculus I", 6, null, List.of()));
+    assertTrue(subject.getWeeklySessions().isEmpty());
+  }
+
+  @Test
+  @DisplayName("A refused plan in the update gets its error before the teachers are touched")
+  void refusedPlanInUpdate() {
+    // Arrange
+    when(subjectRepository.findWithDegreesById(1L))
+        .thenReturn(Optional.of(new Subject("MAT1", "Mathematics I", 6, mathematics)));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> subjectService.updateSubject(1L,
+        new UpdateSubjectRequestDTO("Calculus I", 6, List.of(1L), List.of(new WeeklySessionDTO(45, RoomType.LAB)))));
+
+    // Assert
+    assertEquals(ErrorCode.INVALID_SESSION_LENGTH, e.getCode());
     verify(subjectEditionService, never()).updateCurrentTeachers(any(), any());
   }
 

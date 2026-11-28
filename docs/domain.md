@@ -4,7 +4,7 @@
 
 ![StudyMatch class diagram](SM_ClassDiagram.svg)
 
-The diagram shows the entities and how they relate. This page covers what it can't: how the numbers on a student's profile are worked out, what happens when there's no data yet, and the rules the use cases depend on. The use cases themselves are the GitHub issues, and the business rules they share are numbered GR1 to GR12. Where a rule belongs to a use case that isn't built yet, the issue number is next to it.
+The diagram shows the entities and how they relate. This page covers what it can't: how the numbers on a student's profile are worked out, what happens when there's no data yet, and the rules the use cases depend on. The use cases themselves are the GitHub issues, and the business rules they share are numbered GR1 to GR13. Where a rule belongs to a use case that isn't built yet, the issue number is next to it.
 
 ## The concepts
 
@@ -116,6 +116,12 @@ A teacher marks the slots of the week when they can't teach (#342). A slot is 30
 The page saves the whole grid at once. The new slots replace the old ones, an empty list clears them, and the same slot sent twice is stored once. Every slot is checked before the old ones are deleted, so one bad slot leaves them as they were. With no academic year registered there's nothing to save them in (`NO_CURRENT_ACADEMIC_YEAR`). Saving locks the teacher, so two tabs saving at once go one after the other and the second one wins, instead of both inserting and hitting the unique constraint.
 
 New slots are used the next time the schedule is generated (#344, #345). The issue also wants a teacher who marks a slot where they already teach a published class to be told which class it is, and Staff to be asked to move it. There are no published schedules yet, so that check belongs to Move a Class (#349). The demo data marks Monday 8:00 to 10:00 for Tiago and Wednesday 18:00 to 20:00 for Marta. Rui has nothing marked.
+
+## Weekly plan
+
+A subject's weekly plan says what sessions it has each week, and every class of the subject gets all of them in the timetable (#338). Each session has a length and the room type it needs. The timetable runs from 8:00 to 20:00 in 30-minute slots, so a session lasts 60, 90, 120, 150 or 180 minutes, which is 2 to 6 slots in a row. Any other length is `INVALID_SESSION_LENGTH`. A subject has at most 5 sessions (`TOO_MANY_WEEKLY_SESSIONS`), so 15 hours a week at most.
+
+The plan belongs to the subject, not to an edition: it's set when registering the subject and changed when updating it. An update with sessions replaces the whole plan in the order given, an empty list clears it, and leaving the field out keeps it, so the current pages that don't send it lose nothing. A subject without a plan is allowed, and Generate Schedule lists it as missing one (#345). In the demo data every subject has a plan except UX.
 
 ## Tutors and StudyRooms
 

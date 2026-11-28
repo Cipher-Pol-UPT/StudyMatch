@@ -1,14 +1,19 @@
 package com.studymatch.models;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,12 +21,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderColumn;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 @Entity
 public class Subject {
+
+  public static final int MAX_WEEKLY_SESSIONS = 5;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,6 +52,12 @@ public class Subject {
 
   @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL, orphanRemoval = true)
   private Set<DegreeSubject> degreeSubjects = new HashSet<>();
+
+  // the weekly plan, in the order Staff gave it. Empty means Generate Schedule lists it as missing
+  @ElementCollection
+  @CollectionTable(name = "weekly_session")
+  @OrderColumn(name = "position")
+  private List<WeeklySession> weeklySessions = new ArrayList<>();
 
   protected Subject() {
   }
@@ -96,6 +110,19 @@ public class Subject {
 
   public void removeDegree(Degree degree) {
     degreeSubjects.removeIf(ds -> ds.getDegree().equals(degree));
+  }
+
+  public List<WeeklySession> getWeeklySessions() {
+    return Collections.unmodifiableList(weeklySessions);
+  }
+
+  // replaces the whole plan, checked before anything changes
+  public void setWeeklySessions(List<WeeklySession> sessions) {
+    if (sessions.size() > MAX_WEEKLY_SESSIONS) {
+      throw new StudyMatchException(ErrorCode.TOO_MANY_WEEKLY_SESSIONS, Map.of("max", MAX_WEEKLY_SESSIONS));
+    }
+    weeklySessions.clear();
+    weeklySessions.addAll(sessions);
   }
 
 }

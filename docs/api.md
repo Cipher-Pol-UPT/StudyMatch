@@ -56,9 +56,9 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | GET | `/categories/`, `/categories/{id}` | logged in | list categories, or one |
 | POST | `/categories/` | Staff | register a category |
 | PUT | `/categories/{id}` | Staff | rename a category, its subjects (and so the students' levels in it) stay linked |
-| GET | `/subjects/`, `/subjects/{id}` | logged in | list subjects with their category and degrees, or one |
-| POST | `/subjects/` | Staff | register a subject and its first edition |
-| PUT | `/subjects/{id}` | Staff | change name and ECTS (code and category stay), and optionally this year's edition's teachers, keeping at least one. Removing one who still teaches a class is `TEACHER_STILL_TEACHES_SECTION`, with those classes in `classSections` |
+| GET | `/subjects/`, `/subjects/{id}` | logged in | list subjects with their category, degrees and `weeklySessions`, or one |
+| POST | `/subjects/` | Staff | register a subject and its first edition, with an optional weekly plan in `weeklySessions: [{ minutes, roomType }]`. A length other than 60, 90, 120, 150 or 180 is `INVALID_SESSION_LENGTH`, more than 5 sessions is `TOO_MANY_WEEKLY_SESSIONS` |
+| PUT | `/subjects/{id}` | Staff | change name and ECTS (code and category stay), and optionally this year's edition's teachers, keeping at least one. Removing one who still teaches a class is `TEACHER_STILL_TEACHES_SECTION`, with those classes in `classSections`. `weeklySessions` replaces the plan, `[]` clears it and leaving it out keeps it, with the same errors as registering |
 | POST | `/subjects/{id}/editions` | Staff | add an edition of an existing subject for another year |
 | GET | `/subjects/{id}/editions/current` | Staff | the subject's edition this year with its teachers, to edit them |
 | GET | `/academic-years/` | logged in | academic years, newest (the current one) first, each with its `semesters` (null for a year from before #334) |

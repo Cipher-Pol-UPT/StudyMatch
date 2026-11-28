@@ -97,6 +97,29 @@ JOIN degree d ON d.name = v.degree
 JOIN subject s ON s.code = v.code
 ON CONFLICT (degree_id, subject_id) DO NOTHING;
 
+-- weekly plans (GR13), UX has none so Generate Schedule has something missing to show
+INSERT INTO weekly_session (subject_id, position, minutes, room_type)
+SELECT s.id, v.position, v.minutes, v.room_type
+FROM (VALUES
+  ('PROG1', 0, 120, 'CLASSROOM'),
+  ('PROG1', 1, 120, 'LAB'),
+  ('PROG2', 0, 90, 'CLASSROOM'),
+  ('PROG2', 1, 180, 'LAB'),
+  ('DB', 0, 120, 'CLASSROOM'),
+  ('DB', 1, 120, 'LAB'),
+  ('MATH1', 0, 90, 'AUDITORIUM'),
+  ('MATH1', 1, 90, 'CLASSROOM'),
+  ('STAT', 0, 120, 'CLASSROOM'),
+  ('STAT', 1, 60, 'LAB'),
+  ('SE', 0, 150, 'CLASSROOM'),
+  ('SQ', 0, 120, 'CLASSROOM'),
+  ('SQ', 1, 90, 'LAB'),
+  ('PM', 0, 90, 'CLASSROOM')
+) AS v(code, position, minutes, room_type)
+JOIN subject s ON s.code = v.code
+-- only subjects without a plan, so a plan Staff changed doesn't get the old sessions mixed back in
+WHERE NOT EXISTS (SELECT 1 FROM weekly_session w WHERE w.subject_id = s.id);
+
 -- accounts (students get their institutional email from their number further down)
 
 INSERT INTO users (number, name, personal_email, institutional_email, password, account_status, must_change_password)
