@@ -472,7 +472,7 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
     () => { toast.success(t('chats.unblockedToast', { name: person.name })); onBlocksChanged?.(); },
     error => { toast.danger(isBackendError(error) ? t(`errors.${error.code}`, error.params ?? {}) : t('common.unexpectedError')); },
   );
-  // only a DM has it for now, blocking from a group chat comes with its member list (#231)
+  // only a DM has it, someone in a group chat is blocked from their DM
   // what the page adds (a group chat's Add members, #229), then Block in a DM
   const menuEntries: MenuEntry[] = [
     ...(menuItems ?? []),

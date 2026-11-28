@@ -1,11 +1,12 @@
 import type { TFunction } from 'i18next';
-import { ArrowLeft, Ban, MessagesSquare, ShieldCheck, SquarePen, UserPlus, UsersRound } from 'lucide-react';
+import { ArrowLeft, Ban, MessagesSquare, ShieldCheck, SquarePen, UserPlus, Users, UsersRound } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getBlocked, unblockUser } from '../../api/blocks';
 import { getChatMembers, getDirectChat } from '../../api/chats';
 import { AddMembersDialog } from '../../components/chat/AddMembersDialog';
+import { GroupMembersDialog } from '../../components/chat/GroupMembersDialog';
 import { isBackendError } from '../../api/errors';
 import { NewGroupChatDialog } from '../../components/chat/NewGroupChatDialog';
 import { NewMessageDialog } from '../../components/chat/NewMessageDialog';
@@ -174,8 +175,13 @@ function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listE
   // the members after you added people here (#229)
   const [latest, setLatest] = useState<ChatContactData[]>();
   const [adding, setAdding] = useState(false);
+  const [listing, setListing] = useState(false);
   const toast = useToast();
+  // its row while it was in your list: if it goes while it's open, you were taken out of it (#231)
+  const [seen, setSeen] = useState(summary);
+  if (summary && summary !== seen) setSeen(summary);
 
+  if (listLoaded && !summary && seen) return <NoLongerIn name={seen.name} />;
   // not in your list once it has loaded: it isn't yours, or it isn't there anymore
   const error = members.error ?? listError ?? (listLoaded && !summary ? notFound() : undefined);
   if (error !== undefined) return <ChatNotOpened error={error} />;
@@ -184,7 +190,10 @@ function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listE
   }
 
   // an assignment group's members follow its group, nobody changes them by hand (#236)
-  const menuItems: MenuEntry[] = summary.assignment ? [] : [{ label: t('chats.addMembers'), icon: UserPlus, onSelect: () => setAdding(true) }];
+  const menuItems: MenuEntry[] = [
+    { label: t('chats.members'), icon: Users, onSelect: () => setListing(true) },
+    ...(summary.assignment ? [] : [{ label: t('chats.addMembers'), icon: UserPlus, onSelect: () => setAdding(true) }]),
+  ];
   return (
     <>
       <Conversation chat={{ kind: 'group', chatId, name: summary.name, pictureSrc: pictureOf(summary), members: latest ?? members.data }} me={me}
@@ -195,6 +204,8 @@ function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listE
           setLatest(now);
           toast.success(t('chats.membersAdded', { count: added.length, name: added[0]?.name }));
         }} />
+      <GroupMembersDialog open={listing} chatId={chatId} name={summary.name} me={me} fixed={summary.assignment}
+        onClose={() => setListing(false)} onChanged={setLatest} />
     </>
   );
 }
@@ -206,6 +217,17 @@ function ChatNotOpened({ error }: { error: unknown }) {
     <ChatThread label={t('chats.conversation')}>
       <Banner tone="danger">{isBackendError(error) ? t(`errors.${error.code}`, error.params ?? {}) : t('common.unexpectedError')}</Banner>
       <Link to="/chats" className={buttonClass({ variant: 'secondary', size: 'sm' })}><ArrowLeft size={16} aria-hidden />{t('chats.back')}</Link>
+    </ChatThread>
+  );
+}
+
+// the open group chat left your list: someone removed you, or you left it in another tab (#231)
+function NoLongerIn({ name }: { name: string }) {
+  const { t } = useTranslation();
+  return (
+    <ChatThread label={t('chats.conversation')}>
+      <EmptyState compact icon={UsersRound} title={t('chats.noLongerIn', { name })} body={t('chats.noLongerInBody')}
+        action={<Link to="/chats" className={buttonClass({ variant: 'secondary', size: 'sm' })}><ArrowLeft size={16} aria-hidden />{t('chats.back')}</Link>} />
     </ChatThread>
   );
 }
