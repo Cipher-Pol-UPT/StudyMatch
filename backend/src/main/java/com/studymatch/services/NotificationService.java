@@ -45,6 +45,22 @@ public class NotificationService {
         .toList());
   }
 
+  // a new message in a chat: counted into its unread notification, or a new one if it has none (GR11).
+  // the caller locks the chat, or two messages at once could both make one
+  @Transactional
+  public void countChatMessage(User recipient, Long chatId, String chatName, boolean mentioned) {
+    notificationRepository.findByRecipientNumberAndTypeAndTargetIdAndReadFalse(recipient.getNumber(),
+        NotificationType.CHAT_MESSAGES, chatId)
+        .ifPresentOrElse(notification -> notification.countChatMessage(chatName, mentioned),
+            () -> notificationRepository.save(Notification.forChatMessage(recipient, chatId, chatName, mentioned)));
+  }
+
+  // they opened the chat, its notification goes read with it
+  @Transactional
+  public void markChatRead(User user, Long chatId) {
+    notificationRepository.markAsRead(user.getNumber(), NotificationType.CHAT_MESSAGES, chatId);
+  }
+
   // newest first, the id breaks a tie between two made in the same instant
   @Transactional(readOnly = true)
   public PageDTO<NotificationDTO> listNotifications(User user, int page) {
