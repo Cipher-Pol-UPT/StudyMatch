@@ -87,6 +87,7 @@ describe('send attachments', () => {
     expect((await cards()).getByText('notes.pdf')).toBeTruthy();
     expect((await cards()).getByText('1.3 MB')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox', { name: 'Message Test Study Group' }), { target: { value: '  for tomorrow ' } });
+    await waitFor(() => expect(sendButton().disabled).toBe(false));
     fireEvent.click(sendButton());
 
     await waitFor(() => expect(uploads).toHaveLength(1));
@@ -111,7 +112,9 @@ describe('send attachments', () => {
     await open();
 
     pick(file('notes.txt'));
-    expect(sendButton().disabled).toBe(false);
+    // the card and Send come with the next render, which can come late on a busy machine
+    expect((await cards()).getByText('notes.txt')).toBeTruthy();
+    await waitFor(() => expect(sendButton().disabled).toBe(false));
     fireEvent.click(sendButton());
 
     await waitFor(() => expect(uploads).toHaveLength(1));
@@ -155,7 +158,7 @@ describe('send attachments', () => {
     expect(sendButton().disabled).toBe(true);
     fireEvent.click((await cards()).getByRole('button', { name: 'Remove lecture.pdf' }));
     fireEvent.click((await cards()).getByRole('button', { name: 'Remove project.zip' }));
-    expect(sendButton().disabled).toBe(false);
+    await waitFor(() => expect(sendButton().disabled).toBe(false));
   });
 
   it("lets go of an image's preview once its card is taken off", async () => {
@@ -184,6 +187,9 @@ describe('send attachments', () => {
     backend();
     await open();
     pick(file('fake.pdf'));
+    // the card and Send come with the next render, which can come late on a busy machine
+    expect((await cards()).getByText('fake.pdf')).toBeTruthy();
+    await waitFor(() => expect(sendButton().disabled).toBe(false));
     fireEvent.click(sendButton());
     await waitFor(() => expect(uploads).toHaveLength(1));
 

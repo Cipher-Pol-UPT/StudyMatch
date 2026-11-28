@@ -94,6 +94,8 @@ type AchievementGridProps,type AchievementTileProps,type AchievementUnlockedProp
 } from './achievements/Achievement';
 export { AchievementArt,type AchievementArtProps } from './achievements/AchievementArt';
 export { ACHIEVEMENT_ART,type AchievementId,type AchievementState } from './achievements/catalog';
+export { StickerArt,type StickerArtProps } from './stickers/StickerArt';
+export { ANIMATED_STICKERS,orderedPacks,packInSeason,STICKER_PACKS,type StickerId,type StickerPackId } from './stickers/catalog';
 
 // Blocks
 export { BlockAccountDialog,CreateAccountForm,RegisterStudentForm,type BlockAccountDialogProps,type CreateAccountFormProps,type RegisterStudentFormProps } from './blocks/accounts/AccountForms';
@@ -107,6 +109,7 @@ export { CategoryDialog,type CategoryDialogProps } from './blocks/catalogue/Cata
 export { ChatComposer,ChatDay,ChatPersonRow,ChatReplyBar,ChatTyping,ChatResult,ChatSheet,type ChatQuote,type ChatReaction,type ChatResultProps,type ChatSheetProps,type ChatReplyBarProps,ChatHead,ChatJump,ChatLayout,ChatListPane,ChatMessage,ChatMessageEditor,ChatMessages,ChatOlder,ChatPeople,ChatPerson,ChatPicture,ChatRow,ChatRows,ChatStart,ChatThread,type ChatComposerProps,type ChatHeadProps,type ChatLayoutProps,type ChatListPaneProps,type ChatMessageEditorProps,type ChatMessageProps,type ChatMessagesProps,type ChatPersonProps,type ChatPictureProps,type ChatRowProps,type ChatStartProps,type ChatThreadProps } from './blocks/chat/ChatLayout';
 export { flashMessage } from './blocks/chat/flash';
 export { ChatEmojiPicker,type ChatEmojiPickerProps } from './blocks/chat/ChatEmojiPicker';
+export { ChatStickerButton,ChatStickerPicker,type ChatStickerButtonProps,type ChatStickerItem,type ChatStickerPack,type ChatStickerPickerProps } from './blocks/chat/ChatStickerPicker';
 export { EMOJI_CATEGORIES } from './blocks/chat/emojiCategories';
 export { PersonalityTest,type PersonalityQuestion,type PersonalityTestProps } from './blocks/personality/PersonalityTest';
 export { EditProfileForm,type EditProfileFormProps,type ProfileEdits } from './blocks/profile/EditProfileForm';

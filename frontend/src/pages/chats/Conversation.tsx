@@ -1,21 +1,23 @@
 import type { TFunction } from 'i18next';
-import { ArrowLeft, Ban, Ellipsis, Search } from 'lucide-react';
+import { ArrowLeft, Ban, Clock, Ellipsis, Search } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { blockUser, unblockUser } from '../../api/blocks';
-import { deleteMessage, editMessage, getDirectChat, reactToMessage, removeReaction, sendDirectMessage, sendFiles, sendMessage } from '../../api/chats';
+import { deleteMessage, editMessage, getDirectChat, reactToMessage, removeReaction, sendDirectMessage, sendFiles, sendMessage, sendSticker } from '../../api/chats';
 import { isBackendError } from '../../api/errors';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useChatEvents, useChatListEvents, useChatSocketReconnect } from '../../hooks/useChatEvents';
 import { typingLine, useTyping } from './useTyping';
-import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatTyping, ChatStart, ChatThread, ConfirmDialog, Dialog, Button, Menu, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction, type MenuEntry } from '../../studymatch-ui';
+import { Banner, buttonClass, ChatComposer, ChatDay, ChatHead, ChatJump, ChatMessage, ChatMessageEditor, ChatMessages, ChatOlder, ChatEmojiPicker, ChatReplyBar, ChatTyping, ChatStart, ChatThread, ConfirmDialog, Dialog, Button, Menu, EMOJI_CATEGORIES, flashMessage, IconButton, SearchField, useToast, type ChatQuote, type ChatReaction, type MenuEntry, ChatStickerButton, ChatStickerPicker, ANIMATED_STICKERS, orderedPacks, packInSeason, StickerArt, type ChatStickerPack } from '../../studymatch-ui';
+import type { Sticker } from '../../types/enums';
 import { MESSAGE_MAX_LENGTH, type ChatContactData, type DirectChatData, type MessageData, type MessageDeletedData, type MessageQuoteData, type ReactionData } from '../../types/chat';
 import { ACCEPT, fileProblem, MAX_FILE_MB, MAX_FILES } from './attachmentFiles';
 import { ComposerFiles, MessageFiles, PendingFiles, type OpenImage } from './AttachmentViews';
 import { ChatSearch } from './ChatSearch';
 import { newMessageKey, useConversation, type ThreadMessage } from './conversations';
 import { lineOf } from './messageText';
+import { recentStickers, rememberSticker } from './recentStickers';
 import { useChatHistory } from './useChatHistory';
 
 // a DM with one person, or a group chat by its id (#227)
@@ -57,6 +59,7 @@ interface Item {
   // a reply: what it quotes, null when the original was deleted
   reply: boolean;
   replyTo: MessageQuoteData | null;
+  sticker?: Sticker | null;
   // the message as the backend has it, for editing and deleting it
   message?: MessageData;
   pending?: ThreadMessage;
@@ -142,11 +145,11 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
   const items: Item[] = [
     ...history.messages.map(message => ({
       key: keys.get(message.id) ?? `message-${message.id}`, text: message.text, sentAt: message.sentAt, author: message.author,
-      mine: isMine(message.author), editedAt: message.editedAt, reply: message.reply, replyTo: message.replyTo, message,
+      mine: isMine(message.author), editedAt: message.editedAt, reply: message.reply, replyTo: message.replyTo, sticker: message.sticker, message,
     })),
     ...conversation.messages.filter(message => !claimed(keys).has(message.key)).map(message => ({
       key: message.key, text: message.text, sentAt: message.sentAt, author: self, mine: true,
-      reply: message.replyTo !== undefined, replyTo: message.replyTo ?? null, pending: message,
+      reply: message.replyTo !== undefined, replyTo: message.replyTo ?? null, sticker: message.sticker, pending: message,
     })),
   ];
   const nameOf = (author: ChatContactData) => isMine(author) ? t('chats.you') : author.name;
@@ -156,7 +159,7 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
   const ownEvent = (message: MessageData) => {
     if (!claims.current.has(message.id)) {
       update(current => {
-        const key = unclaimed(current.messages, message.text, claims.current);
+        const key = unclaimed(current.messages, contentOf(message), claims.current);
         if (key) claim(new Map(claims.current).set(message.id, key));
         return current;
       });
@@ -173,7 +176,7 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
       next.set(message.id, key);
       if (taker !== undefined) {
         next.delete(taker);
-        const other = before !== undefined && before !== key ? before : unclaimed(current.messages, message.text, next, key);
+        const other = before !== undefined && before !== key ? before : unclaimed(current.messages, contentOf(message), next, key);
         if (other) next.set(taker, other);
       }
       claim(next);
@@ -185,10 +188,10 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
   const notSent = (key: string, error: unknown) => update(current => {
     const next = new Map(claims.current);
     const taker = holder(next, key);
-    const text = current.messages.find(m => m.key === key)?.text;
+    const sent = current.messages.find(m => m.key === key);
     if (taker !== undefined) {
       next.delete(taker);
-      const other = text === undefined ? undefined : unclaimed(current.messages, text, next, key);
+      const other = sent === undefined ? undefined : unclaimed(current.messages, contentOf(sent), next, key);
       if (!other) return { ...current, messages: current.messages.filter(m => m.key !== key) };
       // the event was another one's with the same text: it takes that one's key, and this one failed
       claim(next.set(taker, other));
@@ -307,9 +310,10 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
   // how much of a message's files went up, on its cards
   const progressed = (key: string, progress: number) =>
     update(current => ({ ...current, messages: current.messages.map(m => m.key === key ? { ...m, progress } : m) }));
-  const deliver = (key: string, text: string, replyTo?: MessageQuoteData, files?: File[]) => {
+  const deliver = (key: string, text: string, replyTo?: MessageQuoteData, files?: File[], sticker?: Sticker) => {
     const to = contact ? { number: contact.number } : { chatId: chatId! };
-    (files?.length ? sendFiles(to, text, files, replyTo?.id, progress => progressed(key, progress))
+    (sticker ? sendSticker(to, sticker, replyTo?.id)
+      : files?.length ? sendFiles(to, text, files, replyTo?.id, progress => progressed(key, progress))
       : contact ? sendDirectMessage(contact.number, text, replyTo?.id) : sendMessage(chatId!, text, replyTo?.id)).then(
       message => {
         answered(key, message);
@@ -335,10 +339,28 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
     toLatest();
     deliver(key, text, replyTo, files);
   };
+  // a sticker goes on its own, straight away, answering the message being replied to (#215)
+  const [stickers, setStickers] = useState<HTMLElement | null>(null);
+  const closeStickers = useCallback(() => setStickers(null), []);
+  const sendStickerNow = (sticker: Sticker) => {
+    rememberSticker(sticker);
+    const key = newMessageKey();
+    const { replyTo } = conversation;
+    setStickers(null);
+    composer.current?.focus();
+    update(current => ({
+      ...current,
+      error: undefined,
+      replyTo: undefined,
+      messages: [...current.messages, { key, text: '', sticker, sentAt: new Date().toISOString(), status: 'sending', replyTo }],
+    }));
+    toLatest();
+    deliver(key, '', replyTo, undefined, sticker);
+  };
   const retry = (message: ThreadMessage) => {
     update(current => ({ ...current, error: undefined, messages: current.messages.map(m => m.key === message.key
       ? { ...m, status: 'sending', progress: m.files && 0 } : m) }));
-    deliver(message.key, message.text, message.replyTo, message.files);
+    deliver(message.key, message.text, message.replyTo, message.files, message.sticker);
   };
 
   // files picked, dropped or pasted: they show as cards above the box, the ones that can't be sent say why (#211)
@@ -396,7 +418,7 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
 
   // answering a message: it shows above the message box until it's sent, or Esc or the X stops it
   const startReply = (message: MessageData) => {
-    update(current => ({ ...current, replyTo: { id: message.id, author: message.author, text: message.text, gifId: message.gifId, attachments: message.attachments } }));
+    update(current => ({ ...current, replyTo: { id: message.id, author: message.author, text: message.text, gifId: message.gifId, sticker: message.sticker, attachments: message.attachments } }));
     composer.current?.focus();
   };
   const stopReply = () => {
@@ -430,7 +452,8 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
   const startEditing = (message: MessageData) => setEditing({ id: message.id, text: message.text });
   // Arrow up in an empty message box: your last message that the backend has
   const editLast = () => {
-    const last = items.findLast(item => item.mine && item.message);
+    // a sticker has no text to change (GR10)
+    const last = items.findLast(item => item.mine && item.message && !item.message.sticker);
     if (!last?.message) return false;
     startEditing(last.message);
     return true;
@@ -537,7 +560,8 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
           sendLabel={t('chats.send')} max={MESSAGE_MAX_LENGTH} error={conversation.error === undefined ? undefined : sendError(conversation.error, t)}
           onEditLast={editLast} inputRef={composer} above={<><ChatTyping text={typingLine(typing.typing, t)} />{replyBar}</>} onEscape={stopReply}
           onAddFiles={addFiles} addFilesLabel={t('chats.addFiles')} accept={ACCEPT}
-          files={added.length > 0 && <ComposerFiles files={added} onRemove={removeFile} />} filesReady={added.length > 0} filesInvalid={filesInvalid} />
+          files={added.length > 0 && <ComposerFiles files={added} onRemove={removeFile} />} filesReady={added.length > 0} filesInvalid={filesInvalid}
+          tools={<ChatStickerButton label={t('chats.stickers')} open={stickers !== null} onOpen={anchor => setStickers(current => current ? null : anchor)} />} />
       )}>
       {history.loading && <DataLoadState />}
       {history.loadingOlder && <ChatOlder label={t('chats.loadingOlder')} />}
@@ -564,7 +588,7 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
                 {newDay && <ChatDay label={dayLabel(sentAt)} />}
                 <ChatMessage id={item.message && rowId(item.message.id)} mine={item.mine}
                   hidden={item.message && !item.mine && blocked?.has(item.author.number) && !shown.has(item.message.id)
-                    ? { label: t('chats.fromBlocked'), onShow: () => setShown(current => new Set(current).add(item.message!.id)) } : undefined} text={item.text} quote={quoteOf(item)} first={first} author={item.author.name} online={isOnline(item.author)} avatarSrc={photoOf(item.author)}
+                    ? { label: t('chats.fromBlocked'), onShow: () => setShown(current => new Set(current).add(item.message!.id)) } : undefined} text={item.text} quote={quoteOf(item)} sticker={item.sticker ? <StickerArt id={item.sticker} animated={ANIMATED_STICKERS.has(item.sticker)} className="sm-sticker--pop" /> : undefined} first={first} author={item.author.name} online={isOnline(item.author)} avatarSrc={photoOf(item.author)}
                   time={timeFormat.format(sentAt)} dateTime={item.sentAt} status={status}
                   editedLabel={item.editedAt ? t('chats.edited') : undefined}
                   editedTitle={item.editedAt ? t('chats.editedAt', { when: editedFormat.format(new Date(item.editedAt)) }) : undefined}
@@ -577,7 +601,7 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
                   reactLabel={t('chats.addReaction')} picking={picking !== null && picking.message.id === item.message?.id}
                   onAddReaction={item.message && (anchor => setPicking(current => current?.message.id === item.message!.id ? null : { message: item.message!, anchor }))}
                   onDoubleTap={item.message && (() => react(item.message!, HEART))}
-                  onEdit={own && (() => startEditing(own))} onDelete={own && (shift => askToDelete(own, shift))} editor={editor || undefined}
+                  onEdit={own && !own.sticker ? () => startEditing(own) : undefined} onDelete={own && (shift => askToDelete(own, shift))} editor={editor || undefined}
                   files={item.message?.attachments?.length
                     ? <MessageFiles chatId={item.message.chatId} messageId={item.message.id} attachments={item.message.attachments} onOpen={setViewing} />
                     : item.pending?.files?.length ? <PendingFiles files={item.pending.files} progress={item.pending.status === 'sending' ? item.pending.progress : undefined} /> : undefined} />
@@ -591,6 +615,11 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
       <Dialog open={viewing !== null} onClose={() => setViewing(null)} title={viewing?.name ?? ''} size="lg">
         {viewing && <img className="sm-msg__lightbox" src={viewing.src} alt={viewing.name} />}
       </Dialog>
+      {stickers && (
+        <ChatStickerPicker anchor={stickers} label={t('chats.pickSticker')} searchLabel={t('chats.searchStickers')} hint={t('chats.stickerKeys')}
+          inSeasonLabel={t('chats.inSeason')} animatedLabel={t('chats.animated')} emptyLabel={query => t('chats.noStickers', { query })}
+          onClose={closeStickers} onPick={sendStickerNow} packs={stickerPacks(t)} />
+      )}
       {contact && (
         <ConfirmDialog open={askingToBlock} onClose={() => setAskingToBlock(false)} tone="danger" icon={Ban}
           title={t('chats.blockTitle', { name: contact.name })} description={t('chats.blockBody')} confirmLabel={t('chats.blockConfirm')}
@@ -601,7 +630,7 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
         description={deleting && (
           <>
             {t('chats.deleteBody')}
-            <span className="sm-chat__preview">{deleting.text}</span>
+            <span className="sm-chat__preview">{lineOf(deleting, t)}</span>
           </>
         )}
         onConfirm={() => {
@@ -613,6 +642,17 @@ export function Conversation({ chat, me, profilePath, online, blocked, onBlocksC
   );
 }
 
+// the picker's packs: the ones you sent last, then the one in season, then the rest
+function stickerPacks(t: TFunction): ChatStickerPack[] {
+  const item = (id: Sticker) => ({ id, name: t(`stickers.${id}`), animated: ANIMATED_STICKERS.has(id) });
+  const recent = recentStickers();
+  const season = packInSeason(new Date());
+  return [
+    ...(recent.length ? [{ id: 'recent', name: t('chats.stickerPacks.recent'), icon: <Clock size={20} aria-hidden />, stickers: recent.map(item) }] : []),
+    ...orderedPacks(new Date()).map(pack => ({ id: pack.id, name: t(`chats.stickerPacks.${pack.id}`), inSeason: pack.id === season, stickers: pack.stickers.map(item) })),
+  ];
+}
+
 // a message's row, to go to it
 const rowId = (id: number) => `message-${id}`;
 
@@ -621,10 +661,12 @@ const claimed = (claims: ReadonlyMap<number, string>) => new Set(claims.values()
 // the message holding that key, other than `except`
 const holder = (claims: ReadonlyMap<number, string>, key: string, except?: number) =>
   [...claims].find(([id, k]) => k === key && id !== except)?.[0];
-// the oldest one still sending with that text that no message holds yet
-const unclaimed = (messages: ThreadMessage[], text: string, claims: ReadonlyMap<number, string>, except?: string) => {
+// what tells two messages apart while they're sending: the text, or the sticker (which has none)
+const contentOf = (message: { text: string; sticker?: Sticker | null }) => message.sticker ? `sticker:${message.sticker}` : `text:${message.text}`;
+// the oldest one still sending with that content that no message holds yet
+const unclaimed = (messages: ThreadMessage[], content: string, claims: ReadonlyMap<number, string>, except?: string) => {
   const taken = claimed(claims);
-  return messages.find(m => m.status === 'sending' && m.text === text && m.key !== except && !taken.has(m.key))?.key;
+  return messages.find(m => m.status === 'sending' && contentOf(m) === content && m.key !== except && !taken.has(m.key))?.key;
 };
 
 // the text's own problem (empty, too long) when the backend names it, otherwise the error's code

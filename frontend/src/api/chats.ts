@@ -1,5 +1,6 @@
 import type { ChatContactData, ChatSummaryData, DirectChatData, MessageData, MessagePageData, MessageSearchData, ReactionData } from '../types/chat';
 import type { PageData } from '../types/studentDirectory';
+import type { Sticker } from '../types/enums';
 import { request, uploadWithProgress } from './client';
 
 // who you can message, by name, institutional email or number, 20 a page
@@ -26,6 +27,10 @@ export function sendFiles(to: { chatId: number } | { number: number }, text: str
 // the address of a message's file, for <img src> and downloading it
 export const attachmentUrl = (chatId: number, messageId: number, attachmentId: number) =>
   `/api/chats/${chatId}/messages/${messageId}/attachments/${attachmentId}`;
+// one of our stickers, on its own (#214): to a chat by its id, or to someone by their number, which can start the DM
+export const sendSticker = (to: { chatId: number } | { number: number }, sticker: Sticker, replyToId?: number) =>
+  request<MessageData>('POST', 'chatId' in to ? `/chats/${to.chatId}/messages` : `/chats/direct/${to.number}/messages`,
+    replyToId === undefined ? { sticker } : { sticker, replyToId });
 // a chat's 50 newest messages, the 50 before a message when scrolling up, or the 50 after one when scrolling down
 // from an old message you jumped to
 export const getChatMessages = (chatId: number, from?: { before: number } | { after: number }) =>
