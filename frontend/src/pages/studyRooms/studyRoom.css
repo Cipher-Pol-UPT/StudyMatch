@@ -74,11 +74,11 @@ td[data-today='true'] .study-rooms-calendar__day { background: var(--sm-violet);
 .study-rooms-calendar__event > span { display: grid; align-content: center; gap: 3px; min-width: 0; }
 .study-rooms-calendar__event b { overflow: hidden; font: 450 11px var(--sm-font); text-overflow: ellipsis; white-space: nowrap; }
 .study-rooms-calendar__event small { color: var(--sm-text-2); font: 400 11px var(--sm-font); font-variant-numeric: tabular-nums; }
-.study-rooms-calendar__event:hover { background: rgb(255 255 255 / 80%); }
+.study-rooms-calendar__event:hover { background: var(--sm-fill); }
 .study-rooms-calendar__event[aria-pressed='true'] { background: var(--sm-violet-50); box-shadow: inset 0 0 0 1px var(--sm-violet-100); }
 .study-rooms-calendar__event:focus-visible { outline: 2px solid var(--sm-violet); outline-offset: 1px; }
 
-.study-room-preview { display: flex; flex-direction: column; gap: 17px; min-width: 0; padding: 21px; border: 1px solid rgb(255 255 255 / 80%); border-radius: 22px; box-shadow: var(--sm-shadow-sm); }
+.study-room-preview { display: flex; flex-direction: column; gap: 17px; min-width: 0; padding: 21px; border: 1px solid var(--sm-border); border-radius: 22px; box-shadow: var(--sm-shadow-sm); }
 .study-room-preview__head { display: flex; align-items: flex-start; gap: 13px; }
 .study-room-preview__date { flex: none; display: grid; justify-items: center; gap: 6px; width: 57px; padding: 10px 5px; border-radius: 17px; background: var(--sm-tint-lavender); color: var(--sm-violet-ink); }
 .study-room-preview__date b { font-size: 25px; line-height: 1; font-weight: 500; letter-spacing: -.04em; }
@@ -105,7 +105,7 @@ td[data-today='true'] .study-rooms-calendar__day { background: var(--sm-violet);
 
 .study-rooms__personal { min-height: 720px; padding: 18px 8px; }
 .study-rooms__list-heading { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
-.study-rooms__list-heading > span { padding: 5px 8px; border-radius: 20px; background: rgb(255 255 255 / 75%); color: var(--sm-text-2); font-size: 11px; }
+.study-rooms__list-heading > span { padding: 5px 8px; border-radius: 20px; background: var(--sm-surface); color: var(--sm-text-2); font-size: 11px; }
 .study-rooms__apply { display: grid; gap: 16px; }
 /* a sentence, not a name like the other views' headings */
 .study-rooms__tutor .study-rooms__list-heading h2 { text-transform: none; }
