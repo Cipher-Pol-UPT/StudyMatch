@@ -85,14 +85,14 @@ public class MessageService {
   public MessageDTO send(Long chatId, User user, SendMessageRequestDTO request) {
     requireOneContent(request);
     return send(chatService.getChatFor(chatId, user), user, request.text(), request.gifId(), request.sticker(),
-        request.replyToId(), List.of());
+        request.replyToId(), List.of(), request.mentions());
   }
 
   // the same with files, the text is optional then (GR10)
   @Transactional
   public MessageDTO sendAttachments(Long chatId, User user, SendAttachmentsRequestDTO request) {
     return send(chatService.getChatFor(chatId, user), user, request.text(), null, null, request.replyToId(),
-        request.files());
+        request.files(), request.mentions());
   }
 
   // the first message of a DM creates it, or goes into it if it's already there
@@ -100,13 +100,13 @@ public class MessageService {
   public MessageDTO sendDirect(Long number, User user, SendMessageRequestDTO request) {
     requireOneContent(request);
     return send(getOrCreateDirectChat(number, user), user, request.text(), request.gifId(), request.sticker(),
-        request.replyToId(), List.of());
+        request.replyToId(), List.of(), request.mentions());
   }
 
   @Transactional
   public MessageDTO sendDirectAttachments(Long number, User user, SendAttachmentsRequestDTO request) {
     return send(getOrCreateDirectChat(number, user), user, request.text(), null, null, request.replyToId(),
-        request.files());
+        request.files(), request.mentions());
   }
 
   // only the author edits, only the text, and without attachments it can't be left empty. the open chat swaps it, the chat list swaps the preview if it's the latest
@@ -365,11 +365,12 @@ public class MessageService {
   // the open chat gets the message, every member's chat list moves it to the top.
   // to someone who blocked the sender it goes through for the sender but never reaches them (GR9)
   private MessageDTO send(Chat chat, User user, String text, String gifId, Sticker sticker, Long replyToId,
-      List<MultipartFile> files) {
+      List<MultipartFile> files, List<Long> mentions) {
     chatService.lockForMessage(chat);
     Message original = replyToId == null ? null : getOriginal(chat, replyToId, user);
     Message saved = sticker == null ? new Message(chat, user, text, original, gifId)
         : new Message(chat, user, original, sticker);
+    saved.mention(mentionable(chat, user, mentions));
     if (chat instanceof DirectChat direct && userBlockService.hasBlocked(direct.getOtherUser(user), user)) {
       saved.hideFrom(direct.getOtherUser(user));
     }
@@ -386,8 +387,20 @@ public class MessageService {
     return MessageDTO.from(saved, user);
   }
 
-  // everyone else it reaches, as far as their level lets it: ALL every message, MENTIONS none yet, NONE never.
-  // someone who blocked the author isn't told, it doesn't count as unread for them either (GR9, GR11)
+  // the other members of a group chat out of the numbers picked. someone who isn't in it is left out and the text
+  // is still sent, a DM has no mentions (#239)
+  private static List<User> mentionable(Chat chat, User author, List<Long> numbers) {
+    if (chat instanceof DirectChat) {
+      return List.of();
+    }
+    return chat.getMembers().stream()
+        .filter(member -> numbers.contains(member.getNumber()))
+        .filter(member -> !member.getNumber().equals(author.getNumber()))
+        .toList();
+  }
+
+  // everyone else it reaches, as far as their level lets it: ALL every message, MENTIONS the ones that mention them,
+  // NONE never. someone who blocked the author isn't told, it doesn't count as unread for them either (GR9, GR11)
   private void notifyMembers(Message message) {
     Chat chat = message.getChat();
     User author = message.getAuthor();
@@ -395,11 +408,14 @@ public class MessageService {
     Set<Long> blockers = userBlockService.getBlockerNumbers(author);
     for (User member : chat.getMembers()) {
       if (member.getNumber().equals(author.getNumber()) || message.isHiddenFrom(member)
-          || blockers.contains(member.getNumber())
-          || levels.getOrDefault(member.getNumber(), NotificationLevel.ALL) != NotificationLevel.ALL) {
+          || blockers.contains(member.getNumber())) {
         continue;
       }
-      notificationService.countChatMessage(member, chat.getId(), chat.getNameFor(member), false);
+      boolean mentioned = message.mentions(member);
+      NotificationLevel level = levels.getOrDefault(member.getNumber(), NotificationLevel.ALL);
+      if (level == NotificationLevel.ALL || level == NotificationLevel.MENTIONS && mentioned) {
+        notificationService.countChatMessage(member, chat.getId(), chat.getNameFor(member), mentioned);
+      }
     }
   }
 
