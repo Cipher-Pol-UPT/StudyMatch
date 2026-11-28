@@ -66,7 +66,7 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 | POST | `/academic-years/` | Staff | start the next academic year (the body repeats its `startYear` and has its `semesters`: `semester1Start`, `semester1End`, `semester2Start`, `semester2End`), everyone retakes the personality test. `SEMESTER_OUTSIDE_YEAR` for a date outside 1 September to 31 August (with `from` and `to`), `SEMESTER_ENDS_BEFORE_START` with the `semester`, `SEMESTERS_OVERLAP` when semester 2 doesn't start after semester 1 ends |
 | PUT | `/academic-years/{startYear}/semesters` | Staff | change the current year's four dates, same rules as starting it. An older year is `ACADEMIC_YEAR_NOT_CURRENT` |
 | GET | `/teachers/` | Staff | every teacher, to pick an edition's teachers |
-| GET | `/teachers/me/unavailability` | Teacher | the 30-minute slots you can't teach this academic year, each `{ day, start }` like `{ "MONDAY", "08:00" }`, by day and time. Empty means available all week |
+| GET | `/teachers/me/unavailability` | Teacher | the 30-minute slots you can't teach this academic year, each `{ day, start }` like `{ "day": "MONDAY", "start": "08:00" }`, by day and time. Empty means available all week |
 | PUT | `/teachers/me/unavailability` | Teacher | replace those slots with `{ slots }`, an empty list clears them. Monday to Friday, starting 8:00 to 19:30 on the hour or half hour (`INVALID_SLOT` otherwise), `NO_CURRENT_ACADEMIC_YEAR` with no year registered |
 
 ## Subject editions
