@@ -48,3 +48,6 @@ export type TicketCategory = typeof TicketCategory[number];
 
 export const TicketStatus = ["OPEN", "IN_PROGRESS", "RESOLVED"] as const;
 export type TicketStatus = typeof TicketStatus[number];
+
+export const Sticker = ["HELLO", "THANK_YOU", "ON_IT", "COFFEE_BREAK", "EXAM_PANIC", "ALL_NIGHTER", "PASSED", "GRADUATED", "SANTA", "SNOWMAN", "GIFT", "REINDEER", "BUNNY", "HATCHING", "EGG_HUNT", "CHOCOLATE", "GHOST", "PUMPKIN", "WITCH", "VAMPIRE", "SUNGLASSES", "ICE_CREAM", "POOL_FLOAT", "SARDINE", "LAUGHING", "MIND_BLOWN", "PARTY", "LOVE"] as const;
+export type Sticker = typeof Sticker[number];

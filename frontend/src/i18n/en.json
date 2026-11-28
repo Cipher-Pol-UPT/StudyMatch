@@ -125,26 +125,31 @@
     "openness": {
       "label": "Openness",
       "short": "Open",
+      "initial": "O",
       "description": "Curious and open to new ideas, experiences and ways of doing things."
     },
     "conscientiousness": {
       "label": "Conscientiousness",
       "short": "Conscientious",
+      "initial": "C",
       "description": "Organised, reliable and careful with plans and deadlines."
     },
     "extraversion": {
       "label": "Extraversion",
       "short": "Extravert",
+      "initial": "E",
       "description": "Gets energy from other people, speaks up and enjoys working in a group."
     },
     "agreeableness": {
       "label": "Agreeableness",
       "short": "Agreeable",
+      "initial": "A",
       "description": "Cooperative, considerate and looks for agreement in the group."
     },
     "neuroticism": {
       "label": "Neuroticism",
       "short": "Neurotic",
+      "initial": "N",
       "description": "How strongly stress and worry are felt. A higher score means more."
     }
   },
@@ -710,6 +715,8 @@
     "ROOM_ALREADY_EXISTS": "A room with this code already exists.",
     "ROOM_OVERLAP": "This position overlaps room {{code}} on the same floor.",
     "ROOM_OUTSIDE_FLOOR": "The room has to fit inside the floor's {{size}} × {{size}} grid.",
+    "INVALID_SLOT": "Slots are 30 minutes, Monday to Friday, from 8:00 to 20:00.",
+    "NO_CURRENT_ACADEMIC_YEAR": "There's no academic year yet. Staff has to start one first.",
     "TOO_MANY_TICKETS": "You can send up to {{max}} requests an hour. Please try again later."
   },
   "validation": {
@@ -1230,7 +1237,6 @@
     "typingOne": "{{name}} is typing…",
     "typingTwo": "{{first}} and {{second}} are typing…",
     "typingSeveral": "Several people are typing…",
-    "chatOptions": "Chat options",
     "block": "Block {{name}}",
     "blockTitle": "Block {{name}}?",
     "blockBody": "You won't get their messages, and they aren't told. Group chats you share stay as they are.",
@@ -1302,6 +1308,25 @@
     "originalGone": "The original message isn't there anymore.",
     "loadingNewer": "Loading newer messages",
     "gif": "GIF",
+    "stickers": "Stickers",
+    "pickSticker": "Pick a sticker",
+    "stickerHint": "Pick one to send it",
+    "inSeason": "In season",
+    "stickerLine": "Sticker: {{name}}",
+    "searchStickers": "Search stickers",
+    "noStickers": "No sticker called “{{query}}”",
+    "animated": "Animated",
+    "stickerKeys": "Enter to send · Esc to close",
+    "stickerPacks": {
+      "everyday": "Every day",
+      "exams": "Exams",
+      "christmas": "Christmas",
+      "easter": "Easter",
+      "halloween": "Halloween",
+      "summer": "Summer",
+      "reactions": "Reactions",
+      "recent": "Recently used"
+    },
     "addReaction": "Add reaction",
     "pickReaction": "Pick a reaction",
     "searchEmoji": "Search emoji",
@@ -1346,5 +1371,35 @@
     "loadFailed": "Couldn't load your notes. Try again later.",
     "loading": "Loading your notes…",
     "open": "Open note: {{text}}"
+  },
+  "stickers": {
+    "HELLO": "Hello!",
+    "THANK_YOU": "Thank you",
+    "ON_IT": "On it",
+    "COFFEE_BREAK": "Coffee break",
+    "EXAM_PANIC": "Exam panic",
+    "ALL_NIGHTER": "All-nighter",
+    "PASSED": "Passed!",
+    "GRADUATED": "Graduated",
+    "SANTA": "Ho ho ho",
+    "SNOWMAN": "Snowman",
+    "GIFT": "Surprise!",
+    "REINDEER": "Reindeer",
+    "BUNNY": "Easter bunny",
+    "HATCHING": "Hatching",
+    "EGG_HUNT": "Egg hunt",
+    "CHOCOLATE": "Chocolate egg",
+    "GHOST": "Boo!",
+    "PUMPKIN": "Pumpkin",
+    "WITCH": "Witch",
+    "VAMPIRE": "Vampire",
+    "SUNGLASSES": "Too cool",
+    "ICE_CREAM": "Ice cream",
+    "POOL_FLOAT": "Pool day",
+    "SARDINE": "Sardine",
+    "LAUGHING": "Can't stop laughing",
+    "MIND_BLOWN": "Mind blown",
+    "PARTY": "Party time",
+    "LOVE": "Love it"
   }
 }

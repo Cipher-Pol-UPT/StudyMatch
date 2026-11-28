@@ -1,4 +1,4 @@
-import type { ChatEventType, Role } from './enums';
+import type { ChatEventType, Role, Sticker } from './enums';
 
 // what the backend pushes over the websocket, the payload depends on the type
 export interface ChatEvent<T = unknown> {
@@ -12,8 +12,8 @@ export interface ChatContactData { number: number; name: string; role: Role }
 // your DM with someone: chatId is null until the first message creates it, or while you've blocked them
 export interface DirectChatData { chatId: number | null; contact: ChatContactData; blocked: boolean }
 
-// the message a reply quotes, as it is now: its text, or the GIF or files it has instead
-export interface MessageQuoteData { id: number; author: ChatContactData; text: string; gifId?: string | null; attachments?: AttachmentData[] }
+// the message a reply quotes, as it is now: its text, or the GIF, sticker or files it has instead
+export interface MessageQuoteData { id: number; author: ChatContactData; text: string; gifId?: string | null; sticker?: Sticker | null; attachments?: AttachmentData[] }
 
 // a message as the chat shows it; editedAt is null until it's edited.
 // a reply with a null replyTo shows that the original was deleted
@@ -24,6 +24,8 @@ export interface MessageData {
   text: string;
   // a GIPHY GIF instead of a text (#212)
   gifId?: string | null;
+  // one of our stickers instead of a text (#214)
+  sticker?: Sticker | null;
   sentAt: string;
   editedAt: string | null;
   reply: boolean;

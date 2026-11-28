@@ -131,6 +131,8 @@ public enum ErrorCode {
   ROOM_ALREADY_EXISTS(HttpStatus.CONFLICT),
   ROOM_OVERLAP(HttpStatus.CONFLICT),
   ROOM_OUTSIDE_FLOOR(HttpStatus.BAD_REQUEST),
+  INVALID_SLOT(HttpStatus.BAD_REQUEST),
+  NO_CURRENT_ACADEMIC_YEAR(HttpStatus.CONFLICT),
   TOO_MANY_TICKETS(HttpStatus.TOO_MANY_REQUESTS);
 
   private final HttpStatus status;

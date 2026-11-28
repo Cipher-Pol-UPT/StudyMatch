@@ -125,26 +125,31 @@
     "openness": {
       "label": "Abertura",
       "short": "Aberto",
+      "initial": "Ab",
       "description": "Curioso e aberto a novas ideias, experiências e formas de fazer as coisas."
     },
     "conscientiousness": {
       "label": "Conscienciosidade",
       "short": "Consciencioso",
+      "initial": "C",
       "description": "Organizado, fiável e cuidadoso com os planos e os prazos."
     },
     "extraversion": {
       "label": "Extroversão",
       "short": "Extrovertido",
+      "initial": "E",
       "description": "Ganha energia com outras pessoas, toma a palavra e gosta de trabalhar em grupo."
     },
     "agreeableness": {
       "label": "Amabilidade",
       "short": "Amável",
+      "initial": "Am",
       "description": "Cooperante, atencioso e procura o consenso no grupo."
     },
     "neuroticism": {
       "label": "Neuroticismo",
       "short": "Neurótico",
+      "initial": "N",
       "description": "Mede a intensidade com que sente stress e preocupação. Um valor mais alto significa mais."
     }
   },
@@ -710,6 +715,8 @@
     "ROOM_ALREADY_EXISTS": "Já existe uma sala com este código.",
     "ROOM_OVERLAP": "Esta posição sobrepõe-se à sala {{code}} no mesmo piso.",
     "ROOM_OUTSIDE_FLOOR": "A sala tem de caber na grelha de {{size}} × {{size}} do piso.",
+    "INVALID_SLOT": "Os blocos são de 30 minutos, de segunda a sexta, das 8:00 às 20:00.",
+    "NO_CURRENT_ACADEMIC_YEAR": "Ainda não existe nenhum ano letivo. Os serviços académicos têm de iniciar um primeiro.",
     "TOO_MANY_TICKETS": "Pode enviar até {{max}} pedidos por hora. Tente novamente mais tarde."
   },
   "validation": {
@@ -1230,7 +1237,6 @@
     "typingOne": "{{name}} está a escrever…",
     "typingTwo": "{{first}} e {{second}} estão a escrever…",
     "typingSeveral": "Várias pessoas estão a escrever…",
-    "chatOptions": "Opções da conversa",
     "block": "Bloquear {{name}}",
     "blockTitle": "Bloquear {{name}}?",
     "blockBody": "Deixa de receber as mensagens desta pessoa, e ela não é avisada. As conversas de grupo em comum ficam como estão.",
@@ -1302,6 +1308,25 @@
     "originalGone": "A mensagem original já não existe.",
     "loadingNewer": "A carregar mensagens mais recentes",
     "gif": "GIF",
+    "stickers": "Autocolantes",
+    "pickSticker": "Escolher um autocolante",
+    "stickerHint": "Escolha um para o enviar",
+    "inSeason": "Da época",
+    "stickerLine": "Autocolante: {{name}}",
+    "searchStickers": "Pesquisar autocolantes",
+    "noStickers": "Nenhum autocolante chamado “{{query}}”",
+    "animated": "Animado",
+    "stickerKeys": "Enter para enviar · Esc para fechar",
+    "stickerPacks": {
+      "everyday": "Dia a dia",
+      "exams": "Exames",
+      "christmas": "Natal",
+      "easter": "Páscoa",
+      "halloween": "Halloween",
+      "summer": "Verão",
+      "reactions": "Reações",
+      "recent": "Usados recentemente"
+    },
     "addReaction": "Adicionar reação",
     "pickReaction": "Escolher uma reação",
     "searchEmoji": "Pesquisar emoji",
@@ -1346,5 +1371,35 @@
     "loadFailed": "Não foi possível carregar as suas notas. Tente mais tarde.",
     "loading": "A carregar as suas notas…",
     "open": "Abrir nota: {{text}}"
+  },
+  "stickers": {
+    "HELLO": "Olá!",
+    "THANK_YOU": "Obrigado",
+    "ON_IT": "Já trato disso",
+    "COFFEE_BREAK": "Pausa para café",
+    "EXAM_PANIC": "Pânico no exame",
+    "ALL_NIGHTER": "Noite em branco",
+    "PASSED": "Passei!",
+    "GRADUATED": "Formatura",
+    "SANTA": "Oh oh oh",
+    "SNOWMAN": "Boneco de neve",
+    "GIFT": "Surpresa!",
+    "REINDEER": "Rena",
+    "BUNNY": "Coelhinho da Páscoa",
+    "HATCHING": "A nascer",
+    "EGG_HUNT": "Caça aos ovos",
+    "CHOCOLATE": "Ovo de chocolate",
+    "GHOST": "Bu!",
+    "PUMPKIN": "Abóbora",
+    "WITCH": "Bruxa",
+    "VAMPIRE": "Vampiro",
+    "SUNGLASSES": "Demasiado fixe",
+    "ICE_CREAM": "Gelado",
+    "POOL_FLOAT": "Dia de piscina",
+    "SARDINE": "Sardinha",
+    "LAUGHING": "A morrer a rir",
+    "MIND_BLOWN": "Cabeça explodiu",
+    "PARTY": "Festa!",
+    "LOVE": "Adoro"
   }
 }

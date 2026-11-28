@@ -1,16 +1,23 @@
 .directory-filters { display: grid; grid-template-columns: 2fr repeat(3, minmax(130px, 1fr)); gap: 12px; padding: 18px; border: 1px solid var(--sm-border); border-radius: 18px; background: var(--sm-surface); }
 .directory-filter-actions { display: flex; flex-wrap: wrap; gap: 8px; grid-column: 1 / -1; }
-.directory-table .sm-table { min-width: 1100px; }
+.directory-table .sm-table { min-width: 920px; }
 .directory-table--teacher .sm-table { min-width: 800px; }
+/* long headers like Curricular year take two lines, so a column is as wide as its values and the table fits the page */
+.directory-table .sm-table th { white-space: normal; vertical-align: bottom; }
+/* a grade like 14.09 / 20 is one value, it never breaks (the longer "no grades yet" can) */
+.directory-value { white-space: nowrap; }
 .directory-page a:not(.role-card, .sm-crumbs a) { color: var(--sm-violet-ink); text-underline-offset: 3px; }
 .directory-details { display: grid; gap: 14px; margin: 0; }
 .directory-details > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; }
 .directory-details dt { color: var(--sm-text-2); }
 .directory-details dd { margin: 0; font-weight: 650; overflow-wrap: anywhere; }
-.student-personality { display: grid; gap: 3px; margin: 0; min-width: 160px; font-size: 11px; }
-.student-personality > div { display: flex; justify-content: space-between; gap: 12px; }
-.student-personality dt { color: var(--sm-text-2); }
-.student-personality dd { margin: 0; font-variant-numeric: tabular-nums; }
+/* the Big Five as five slim bars, one line tall, in the profile page's trait colours */
+.student-personality { display: inline-flex; cursor: help; }
+.student-personality__bars { display: inline-flex; align-items: flex-end; gap: 5px; }
+.student-personality__bar { display: grid; justify-items: center; gap: 3px; }
+.student-personality__track { display: flex; align-items: flex-end; width: 8px; height: 26px; overflow: hidden; border-radius: 4px; background: var(--sm-fill); }
+.student-personality__track > i { display: block; width: 100%; border-radius: 4px; }
+.student-personality__bar > b { color: var(--sm-text-3); font: 400 11px/1 var(--sm-mono); }
 .directory-subject-meta { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; color: var(--sm-text-2); font-size: 13px; }
 .directory-teacher-filters { grid-template-columns: minmax(0, 2fr) minmax(160px, 1fr); }
 @media (max-width: 900px) { .directory-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .directory-record-grid { grid-template-columns: minmax(0, 1fr); } }

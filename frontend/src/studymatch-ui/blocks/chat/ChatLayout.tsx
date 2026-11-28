@@ -351,6 +351,8 @@ export interface ChatMessageProps {
   // on the message's row, for going to it
   id?: string;
   text: string;
+  // a sticker instead of the text, bigger and without a bubble (#215)
+  sticker?: ReactNode;
   // when it was sent: shown as `time`, `dateTime` is the machine-readable one
   time: string;
   dateTime: string;
@@ -409,7 +411,7 @@ const OWN_CLICKS = 'button, a, textarea, input';
 
 export function ChatMessage({ id, text, time, dateTime, mine = false, first = true, author, avatarSrc, online, hidden, editedLabel, editedTitle, status, statusLabel, retryLabel, discardLabel, onRetry, onDiscard,
   toolsLabel, editLabel = '', deleteLabel = '', onEdit, onDelete, editor, quote, replyLabel = '', onReply,
-  reactions, onReaction, reactLabel = '', onAddReaction, onDoubleTap, picking, files }: ChatMessageProps) {
+  reactions, onReaction, reactLabel = '', onAddReaction, onDoubleTap, picking, files, sticker }: ChatMessageProps) {
   const cls = ['sm-msg', mine && 'sm-msg--mine', first && 'sm-msg--first', status === 'sending' && 'sm-msg--sending', picking && 'sm-msg--picking'].filter(Boolean).join(' ');
   // touch screens don't always send a double click, so two taps are counted here
   const lastTap = useRef(0);
@@ -454,7 +456,7 @@ export function ChatMessage({ id, text, time, dateTime, mine = false, first = tr
         {!hidden && quote && <ChatMessageQuote {...quote} />}
         {hidden ? null : editor ?? (
           <div className="sm-msg__line" ref={line} onPointerUp={tapped} onDoubleClick={doubleClicked}>
-            {files ? (
+            {sticker ? <div className="sm-msg__sticker">{sticker}</div> : files ? (
               <div className="sm-msg__stack">
                 {text && <div className="sm-msg__bubble">{text}{editedLabel && <span className="sm-msg__edited" title={editedTitle}>{editedLabel}</span>}</div>}
                 {files}
@@ -618,13 +620,15 @@ export interface ChatComposerProps {
   filesReady?: boolean;
   // one of them can't be sent, so nothing can until it's taken off
   filesInvalid?: boolean;
+  // buttons at the start of the box, like the sticker one (#215)
+  tools?: ReactNode;
 }
 
 const COMPOSER_MAX_HEIGHT = 160;
 
 // the message box: grows with the text, Enter sends and Shift+Enter adds a line
 export function ChatComposer({ label, placeholder, value, onChange, onSend, sendLabel, max, error, onEditLast, inputRef, above, onEscape,
-  onAddFiles, addFilesLabel = '', accept, files, filesReady, filesInvalid }: ChatComposerProps) {
+  onAddFiles, addFilesLabel = '', accept, files, filesReady, filesInvalid, tools }: ChatComposerProps) {
   const id = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   useImperativeHandle(inputRef, () => ({ focus: () => input.current?.focus() }), []);
@@ -651,6 +655,7 @@ export function ChatComposer({ label, placeholder, value, onChange, onSend, send
       {above}
       {files}
       <div className="sm-composer__box">
+        {tools}
         {onAddFiles && (
           <>
             <IconButton icon={Paperclip} label={addFilesLabel} variant="ghost" size="sm" className="sm-composer__attach" title={addFilesLabel}
