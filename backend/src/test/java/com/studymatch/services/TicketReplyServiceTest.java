@@ -1,6 +1,7 @@
 package com.studymatch.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -81,6 +82,25 @@ class TicketReplyServiceTest {
     // Assert
     assertEquals(ErrorCode.NOT_FOUND, error.getCode());
     verify(ticketReplyRepository, never()).save(any(TicketReply.class));
+  }
+
+  @Test
+  @DisplayName("A guest's reply has no author and opens a Resolved ticket again")
+  void guestReply() {
+    // Arrange
+    Ticket guestTicket = Ticket.forGuest("guest@example.com", "10.0.0.7", "hash", TicketCategory.OTHER, "help", "hi");
+    ReflectionTestUtils.setField(guestTicket, "status", TicketStatus.RESOLVED);
+    when(ticketService.getGuestLocked("token")).thenReturn(guestTicket);
+    ArgumentCaptor<TicketReply> saved = ArgumentCaptor.forClass(TicketReply.class);
+
+    // Act
+    TicketDTO result = ticketReplyService.replyAsGuest("token", new ReplyTicketRequestDTO("still locked"));
+
+    // Assert
+    assertEquals(TicketStatus.OPEN, result.status());
+    verify(ticketReplyRepository).save(saved.capture());
+    assertNull(saved.getValue().getAuthor());
+    assertEquals("still locked", saved.getValue().getText());
   }
 
   @Test
