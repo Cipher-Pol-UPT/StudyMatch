@@ -109,6 +109,14 @@ Each class of an edition has one teacher, picked by Staff from the edition's tea
 
 A teacher who still teaches a class can't be removed from the edition. Updating the subject's teachers then gives `TEACHER_STILL_TEACHES_SECTION`, naming those classes, and nothing changes until they have another teacher. Picking a teacher and changing the edition's teachers both lock the edition, so a removal and a pick at the same moment can't leave a class with a teacher who left. The demo data gives every 2026 class its edition's teacher.
 
+## Teacher unavailability
+
+A teacher marks the slots of the week when they can't teach (#342). A slot is 30 minutes of the week grid (GR13): Monday to Friday, starting on the hour or half hour from 8:00 to 19:30, so the last one ends at 20:00. Anything else is `INVALID_SLOT`. The slots repeat every week and belong to the current academic year, so a new year starts with nothing marked. Nothing marked means available all week. There are no whole days or one-off dates.
+
+The page saves the whole grid at once. The new slots replace the old ones, an empty list clears them, and the same slot sent twice is stored once. Every slot is checked before the old ones are deleted, so one bad slot leaves them as they were. With no academic year registered there's nothing to save them in (`NO_CURRENT_ACADEMIC_YEAR`). Saving locks the teacher, so two tabs saving at once go one after the other and the second one wins, instead of both inserting and hitting the unique constraint.
+
+New slots are used the next time the schedule is generated (#344, #345). The issue also wants a teacher who marks a slot where they already teach a published class to be told which class it is, and Staff to be asked to move it. There are no published schedules yet, so that check belongs to Move a Class (#349). The demo data marks Monday 8:00 to 10:00 for Tiago and Wednesday 18:00 to 20:00 for Marta. Rui has nothing marked.
+
 ## Tutors and StudyRooms
 
 A student can apply to tutor a subject they passed if their final grade is in the top 5% of the edition they took it in, rounded up with at least one student, and everyone tied at the cut-off is eligible (no minimum grade). `GET /tutors/me/applicable-subjects` lists the subjects they passed with their grade, position and eligibility, and `POST /tutor-applications/` creates the Pending application. A Pending application (`TUTOR_APPLICATION_ALREADY_PENDING`) or an existing Tutor Role (`TUTOR_ROLE_ALREADY_EXISTS`) blocks a new one, but a Rejected application doesn't. A subject with no edition this year can't be applied to (`SUBJECT_NOT_TAUGHT_THIS_YEAR`).
