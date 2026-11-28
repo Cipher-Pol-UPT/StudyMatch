@@ -1,11 +1,12 @@
 import type { TFunction } from 'i18next';
-import { ArrowLeft, Ban, LogOut, MessagesSquare, ShieldCheck, SquarePen, UserPlus, Users, UsersRound } from 'lucide-react';
+import { ArrowLeft, Ban, LogOut, MessagesSquare, Pencil, ShieldCheck, SquarePen, UserPlus, Users, UsersRound } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getBlocked, unblockUser } from '../../api/blocks';
 import { getChatMembers, getDirectChat, leaveChat } from '../../api/chats';
 import { AddMembersDialog } from '../../components/chat/AddMembersDialog';
+import { EditGroupChatDialog } from '../../components/chat/EditGroupChatDialog';
 import { GroupMembersDialog } from '../../components/chat/GroupMembersDialog';
 import { isBackendError } from '../../api/errors';
 import { NewGroupChatDialog } from '../../components/chat/NewGroupChatDialog';
@@ -13,7 +14,7 @@ import { NewMessageDialog } from '../../components/chat/NewMessageDialog';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
 import { Banner, Button, buttonClass, ChatHead, ChatLayout, ChatListPane, ChatPersonRow, ChatRow, ChatRows, ChatThread, ConfirmDialog, EmptyState, IconButton, useToast, type MenuEntry } from '../../studymatch-ui';
-import { type ChatContactData, type ChatSummaryData, type MessageData } from '../../types/chat';
+import { type ChatContactData, type ChatEditedData, type ChatSummaryData, type MessageData } from '../../types/chat';
 import { Conversation } from './Conversation';
 import { lineOf } from './messageText';
 import { useChatList } from './useChatList';
@@ -35,8 +36,12 @@ const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 // an id in the address that can't be a chat: the same answer the backend gives one you aren't in, as an Error
 const notFound = () => Object.assign(new Error('Not found'), { code: 'NOT_FOUND' });
 
-// a group chat's picture, a new one isn't served from the cache
-const pictureOf = (chat: ChatSummaryData) => chat.picture ? `/api/chats/${chat.chatId}/picture?v=${chat.pictureUpdatedAt ?? ''}` : undefined;
+// a group chat's picture, a new one isn't served from the cache. One with no date has no ?v= (#235)
+const pictureOf = (chat: ChatSummaryData) => {
+  if (!chat.picture) return undefined;
+  const path = `/api/chats/${chat.chatId}/picture`;
+  return chat.pictureUpdatedAt ? `${path}?v=${chat.pictureUpdatedAt}` : path;
+};
 
 // Chats: the list (#201) and the open conversation; this page starts DMs (#199) and group chats (#227)
 export function ChatsPage({ me, profilePath, view }: ChatsPageProps) {
@@ -46,7 +51,7 @@ export function ChatsPage({ me, profilePath, view }: ChatsPageProps) {
   const [choosing, setChoosing] = useState(false);
   const [creating, setCreating] = useState(false);
   const isOpen = (chat: ChatSummaryData) => chat.contact ? String(chat.contact.number) === number : String(chat.chatId) === chatId;
-  const { chats, error, add, remove, reload } = useChatList(message => message.author.number === me, isOpen);
+  const { chats, error, add, edit, remove, reload } = useChatList(message => message.author.number === me, isOpen);
   const blocks = useRemoteData('blocks', getBlocked);
   const blocked: ReadonlySet<number> = new Set(blocks.data?.map(person => person.number));
   // blocking or unblocking takes a DM off the list or brings it back, and nothing is pushed about it
@@ -94,7 +99,7 @@ export function ChatsPage({ me, profilePath, view }: ChatsPageProps) {
     if (chatId) {
       return <GroupConversation key={chatId} chatId={Number(chatId)} me={me} profilePath={profilePath}
         summary={chats?.find(chat => !chat.contact && String(chat.chatId) === chatId)} listLoaded={chats !== null} listError={error} online={online} blocked={blocked}
-        onLeft={() => { navigate('/chats'); remove(Number(chatId)); }} />;
+        onLeft={() => { navigate('/chats'); remove(Number(chatId)); }} onEdited={edit} />;
     }
     return (
       <ChatThread label={t('chats.conversation')}>
@@ -168,10 +173,12 @@ interface GroupConversationProps extends Pick<ChatsPageProps, 'me' | 'profilePat
   blocked: ReadonlySet<number>;
   // you left it: the list opens without it (#233)
   onLeft: () => void;
+  // you saved a new name or picture: the list and the head show it straight away (#235)
+  onEdited: (edited: ChatEditedData) => void;
 }
 
 // a group chat by its id: its members, then its messages and the message box (#227)
-function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listError, online, blocked, onLeft }: GroupConversationProps) {
+function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listError, online, blocked, onLeft, onEdited }: GroupConversationProps) {
   const { t } = useTranslation();
   const load = useCallback(() => Number.isInteger(chatId) ? getChatMembers(chatId) : Promise.reject(notFound()), [chatId]);
   const members = useRemoteData(`chat-members:${chatId}`, load);
@@ -180,6 +187,7 @@ function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listE
   const [adding, setAdding] = useState(false);
   const [listing, setListing] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [editing, setEditing] = useState(false);
   const toast = useToast();
   // its row while it was in your list: if it goes while it's open, you were taken out of it (#231)
   const [seen, setSeen] = useState(summary);
@@ -194,10 +202,11 @@ function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listE
   }
 
   // an assignment group's members follow its group, nobody changes them by hand (#236)
-  // and its members leave it only by leaving the group
+  // and its name and picture come from the assignment, and its members leave it only by leaving the group
   const menuItems: MenuEntry[] = [
     { label: t('chats.members'), icon: Users, onSelect: () => setListing(true) },
     ...(summary.assignment ? [] : [
+      { label: t('chats.editGroupChat'), icon: Pencil, onSelect: () => setEditing(true) },
       { label: t('chats.addMembers'), icon: UserPlus, onSelect: () => setAdding(true) },
       { type: 'separator' as const },
       { label: t('chats.leave'), icon: LogOut, danger: true, onSelect: () => setLeaving(true) },
@@ -220,6 +229,7 @@ function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listE
       toast.danger(isBackendError(failure) ? t(`errors.${failure.code}`, failure.params ?? {}) : t('common.unexpectedError'));
     }
   };
+  const owner = everyone[0]?.number === me;
   return (
     <>
       <Conversation chat={{ kind: 'group', chatId, name: summary.name, pictureSrc: pictureOf(summary), members: latest ?? members.data }} me={me}
@@ -234,6 +244,15 @@ function GroupConversation({ chatId, me, profilePath, summary, listLoaded, listE
         onClose={() => setListing(false)} onChanged={setLatest} />
       <ConfirmDialog open={leaving} onClose={() => setLeaving(false)} tone="danger" icon={LogOut}
         title={t('chats.leaveTitle', { name: summary.name })} description={leaveBody()} confirmLabel={t('chats.leave')} onConfirm={leave} />
+      <EditGroupChatDialog open={editing} chatId={chatId} name={summary.name} pictureSrc={pictureOf(summary)} owner={owner}
+        onClose={() => setEditing(false)}
+        onSaved={({ name, picture }) => {
+          setEditing(false);
+          // a new picture gets a new address, so the old one isn't shown from the cache; CHAT_EDITED brings the backend's date
+          const pictured = picture === undefined ? {} : { picture: picture !== null, pictureUpdatedAt: picture === null ? null : new Date().toISOString() };
+          onEdited({ chatId, name, picture: summary.picture, pictureUpdatedAt: summary.pictureUpdatedAt, ...pictured });
+          toast.success(t('chats.groupChatSaved'));
+        }} />
     </>
   );
 }

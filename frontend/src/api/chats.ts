@@ -65,6 +65,10 @@ export const removeChatMember = (chatId: number, number: number) =>
   request<ChatContactData[]>('DELETE', `/chats/${chatId}/members/${number}`);
 // leave a group chat; the owner leaving hands it to whoever's been there longest (#233)
 export const leaveChat = (chatId: number) => request<void>('POST', `/chats/${chatId}/leave`);
+// rename a group chat, any member can (#235)
+export const renameChat = (chatId: number, name: string) => request<void>('PUT', `/chats/${chatId}/name`, { name });
+// change a group chat's picture, only its owner can; null takes it off
+export const changeChatPicture = (chatId: number, picture: string | null) => request<void>('PUT', `/chats/${chatId}/picture`, { picture });
 // the numbers of the people you share a chat with who have the app open, for the first load; the pushes keep it up to date (#223)
 export const getOnlineContacts = () => request<number[]>('GET', '/chats/online');
 
