@@ -352,6 +352,25 @@ JOIN subject_edition e ON e.subject_id = s.id AND e.academic_year = 2026
 JOIN users u ON u.personal_email = v.teacher_email
 WHERE cs.subject_edition_id = e.id AND cs.code = v.section AND cs.teacher_number IS NULL;
 
+-- slots this year's teachers can't teach (GR13), only for a teacher who hasn't marked any. Rui has none, so he's
+-- available all week
+INSERT INTO unavailable_slot (teacher_number, academic_year, day, start_time)
+SELECT u.number, 2026, v.day, v.start_time::time
+FROM (VALUES
+  ('tiago.teacher@example.com', 'MONDAY', '08:00'),
+  ('tiago.teacher@example.com', 'MONDAY', '08:30'),
+  ('tiago.teacher@example.com', 'MONDAY', '09:00'),
+  ('tiago.teacher@example.com', 'MONDAY', '09:30'),
+  ('marta.teacher@example.com', 'WEDNESDAY', '18:00'),
+  ('marta.teacher@example.com', 'WEDNESDAY', '18:30'),
+  ('marta.teacher@example.com', 'WEDNESDAY', '19:00'),
+  ('marta.teacher@example.com', 'WEDNESDAY', '19:30')
+) AS v(teacher_email, day, start_time)
+JOIN users u ON u.personal_email = v.teacher_email
+WHERE NOT EXISTS (
+  SELECT 1 FROM unavailable_slot x WHERE x.teacher_number = u.number AND x.academic_year = 2026
+);
+
 -- enrolments: the 2025 ones are finished with a final grade, the 2026 ones are in progress
 
 INSERT INTO enrolment (student_id, subject_edition_id, class_section_id, status, final_grade)
