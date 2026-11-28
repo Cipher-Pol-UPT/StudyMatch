@@ -1,0 +1,95 @@
+package com.studymatch.models;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.LocalDateTime;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.studymatch.enums.Role;
+import com.studymatch.enums.TicketCategory;
+import com.studymatch.enums.TicketStatus;
+
+class TicketTest {
+
+  private Ticket ticket(TicketCategory category) {
+    return new Ticket(ModelTestData.student("Ana"), category, "  can't log in  ", "  it says blocked  ");
+  }
+
+  @Test
+  @DisplayName("A new ticket is Open, with its subject and description stripped")
+  void newTicket() {
+    // Act
+    Ticket ticket = ticket(TicketCategory.TECHNICAL);
+
+    // Assert
+    assertEquals(TicketStatus.OPEN, ticket.getStatus());
+    assertEquals("can't log in", ticket.getSubject());
+    assertEquals("it says blocked", ticket.getDescription());
+    assertEquals(ticket.getCreatedAt(), ticket.getUpdatedAt());
+  }
+
+  @Test
+  @DisplayName("An Account ticket goes to the Admin queue")
+  void accountQueue() {
+    // Act + Assert
+    assertEquals(Role.ADMIN, ticket(TicketCategory.ACCOUNT).getQueue());
+  }
+
+  @ParameterizedTest
+  @EnumSource(value = TicketCategory.class, names = "ACCOUNT", mode = EnumSource.Mode.EXCLUDE)
+  @DisplayName("Every other category goes to the Staff queue")
+  void staffQueue(TicketCategory category) {
+    // Act + Assert
+    assertEquals(Role.STAFF, ticket(category).getQueue());
+  }
+
+  @Test
+  @DisplayName("The author writing back on a Resolved ticket opens it again")
+  void replyReopens() {
+    // Arrange
+    Ticket ticket = ticket(TicketCategory.OTHER);
+    ReflectionTestUtils.setField(ticket, "status", TicketStatus.RESOLVED);
+
+    // Act
+    ticket.authorReplied();
+
+    // Assert
+    assertEquals(TicketStatus.OPEN, ticket.getStatus());
+  }
+
+  @Test
+  @DisplayName("The author writing back on a ticket In progress leaves it In progress")
+  void replyInProgress() {
+    // Arrange
+    Ticket ticket = ticket(TicketCategory.OTHER);
+    ReflectionTestUtils.setField(ticket, "status", TicketStatus.IN_PROGRESS);
+
+    // Act
+    ticket.authorReplied();
+
+    // Assert
+    assertEquals(TicketStatus.IN_PROGRESS, ticket.getStatus());
+  }
+
+  @Test
+  @DisplayName("A reply moves the ticket's last activity")
+  void replyTouches() {
+    // Arrange
+    Ticket ticket = ticket(TicketCategory.OTHER);
+    LocalDateTime before = LocalDateTime.of(2026, 1, 1, 9, 0);
+    ReflectionTestUtils.setField(ticket, "updatedAt", before);
+
+    // Act
+    ticket.authorReplied();
+
+    // Assert
+    assertTrue(ticket.getUpdatedAt().isAfter(before));
+  }
+
+}

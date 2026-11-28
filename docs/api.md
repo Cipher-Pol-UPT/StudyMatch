@@ -185,6 +185,17 @@ The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and 
 | PUT | `/rooms/{id}/deactivate` | Staff | mark it inactive: new schedules and sessions leave it out, what already uses it keeps it, and its place is free |
 | PUT | `/rooms/{id}/activate` | Staff | make it active again, `ROOM_OVERLAP` if another room took its place meanwhile |
 
+## Tickets
+
+These work before the personality test too (GR1). Admin answers tickets and doesn't open them, so it gets `ACCESS_DENIED` here.
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| POST | `/tickets/` | Student, Teacher, Staff | open a ticket with `category` (`ACCOUNT`, `GRADES_AND_ENROLMENT`, `TECHNICAL`, `OTHER`), `subject` (up to 100 characters) and `description` (up to 2000) (201). It starts `OPEN`, in the Admin queue for `ACCOUNT` and the Staff queue for the rest. A blank or too long field is `VALIDATION_FAILED` |
+| GET | `/tickets/mine` | Student, Teacher, Staff | your tickets with their status, the one with the latest reply first |
+| GET | `/tickets/{id}` | the ticket's author | the ticket with its thread, oldest reply first. Someone else's is `NOT_FOUND` |
+| POST | `/tickets/{id}/replies` | the ticket's author | write back with `text` (up to 2000 characters) (201), answers the ticket with its thread. A `RESOLVED` ticket goes back to `OPEN`. Someone else's is `NOT_FOUND` |
+
 ## Coming next
 
 The other use cases (tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

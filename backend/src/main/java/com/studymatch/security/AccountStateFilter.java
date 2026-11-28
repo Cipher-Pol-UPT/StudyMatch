@@ -31,6 +31,9 @@ public class AccountStateFilter extends OncePerRequestFilter {
       "PUT /users/change-password",
       "POST /students/personality-test");
 
+  // the whole helpdesk, someone stuck on the test can still ask for help and read the answer (#362)
+  private static final String HELPDESK_PATH = "/tickets/";
+
   private final UserService userService;
   private final SecurityErrorWriter errorWriter;
 
@@ -60,12 +63,14 @@ public class AccountStateFilter extends OncePerRequestFilter {
       return;
     }
 
-    String endpoint = request.getMethod() + " " + request.getRequestURI().substring(request.getContextPath().length());
+    String path = request.getRequestURI().substring(request.getContextPath().length());
+    String endpoint = request.getMethod() + " " + path;
     if (user.get().isMustChangePassword() && !ALLOWED_BEFORE_PASSWORD_CHANGE.contains(endpoint)) {
       errorWriter.write(response, ErrorCode.PASSWORD_CHANGE_REQUIRED);
       return;
     }
-    if (user.get().requiresPersonalityTest() && !ALLOWED_BEFORE_PERSONALITY_TEST.contains(endpoint)) {
+    if (user.get().requiresPersonalityTest() && !ALLOWED_BEFORE_PERSONALITY_TEST.contains(endpoint)
+        && !path.startsWith(HELPDESK_PATH)) {
       errorWriter.write(response, ErrorCode.PERSONALITY_TEST_REQUIRED);
       return;
     }
