@@ -30,9 +30,8 @@ public class TicketReply {
   @NotNull
   private Ticket ticket;
 
-  // the thread shows who wrote each reply
+  // the thread shows who wrote each reply. null is the guest who opened it (#366)
   @ManyToOne
-  @NotNull
   private User author;
 
   @NotNull
