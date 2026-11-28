@@ -653,7 +653,7 @@ export function ChatComposer({ label, placeholder, value, onChange, onSend, send
       <div className="sm-composer__box">
         {onAddFiles && (
           <>
-            <IconButton icon={Paperclip} label={addFilesLabel} variant="ghost" className="sm-composer__attach" title={addFilesLabel}
+            <IconButton icon={Paperclip} label={addFilesLabel} variant="ghost" size="sm" className="sm-composer__attach" title={addFilesLabel}
               onClick={() => picker.current?.click()} />
             <input ref={picker} type="file" multiple hidden accept={accept} tabIndex={-1}
               onChange={event => { onAddFiles(Array.from(event.target.files ?? [])); event.target.value = ''; }} />
