@@ -40,4 +40,10 @@ public class TeacherService {
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
   }
 
+  // held until the caller's transaction ends, so two saves of the same teacher's slots go one after the other
+  public Teacher getLockedTeacher(Long number) {
+    return teacherRepository.findLockedByNumber(number)
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
 }
