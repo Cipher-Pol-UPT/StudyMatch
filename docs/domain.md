@@ -204,6 +204,8 @@ Notifications are in-app only. Each one is a `NotificationType` with its params,
 
 A group notification opens the assignment, not the group: publishing again or an edit can delete the group, and the assignment stays. Importing groups only makes drafts, so its students are told when the drafts are published. A user only sees their own: someone else's notification is `NOT_FOUND`, the same as one that doesn't exist. A Student without this year's personality test can't see them yet (GR1).
 
+In the app, the bell in the top bar shows the unread count and the newest few, and the Notifications page has them all, 20 at a time. Both share one list, asked again every minute and when the window gets focus, so reading one in either place shows in both. Opening one marks it read and opens the section of its target: StudyRooms, Study groups, the teacher's Tutor applications (a student's opens StudyRooms) or Achievements. A new achievement also shows its badge and a toast the first time the student opens the app after earning it; which ones were shown is kept in the browser, so another device shows it once more.
+
 ## Groups
 
 Groups are generated per group assignment (#57). Blocked accounts aren't placed in new groups but keep their old ones (GR5), every group shares at least one language (GR4), and students with a special statute are placed last, filling the groups that need members (GR7). How the class is split and matched is in [group-matching.md](group-matching.md).

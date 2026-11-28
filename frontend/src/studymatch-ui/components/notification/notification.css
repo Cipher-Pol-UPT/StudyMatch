@@ -21,8 +21,9 @@
 button.sm-notifs__item { cursor: pointer; }
 button.sm-notifs__item:hover { background: var(--sm-fill); }
 button.sm-notifs__item:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--sm-violet); }
-li[data-read='false'] .sm-notifs__item { background: var(--sm-violet-50); }
-li[data-read='false'] button.sm-notifs__item:hover { background: var(--sm-violet-100); }
+/* unread: a stronger title and the dot, so a run of them doesn't turn into solid bars */
+li[data-read='false'] .sm-notifs__item-title { font-weight: 600; }
+li[data-read='true'] .sm-notifs__item-title { color: var(--sm-text-2); }
 .sm-notifs__icon { flex-shrink: 0; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; }
 .sm-notifs__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .sm-notifs__item-title { font-size: 15px; font-weight: 500; line-height: 1.3; }
@@ -34,3 +35,8 @@ li[data-read='false'] button.sm-notifs__item:hover { background: var(--sm-violet
 .sm-bell { position: relative; display: inline-flex; }
 .sm-bell__badge { position: absolute; top: -2px; right: -4px; box-shadow: 0 0 0 2px var(--sm-canvas); pointer-events: none; }
 .sm-notifs-pop { max-width: calc(100vw - 24px); }
+/* under the list, like "See all" (#145) */
+.sm-notifs__foot { display: flex; justify-content: center; padding: 8px 12px 10px; border-top: 1px solid var(--sm-hairline); font-size: 13.5px; }
+.sm-notifs__foot a { color: var(--sm-violet-ink); font-weight: 600; text-decoration: none; }
+.sm-notifs__foot a:hover { text-decoration: underline; }
+.sm-notifs__foot a:focus-visible { outline: none; border-radius: var(--sm-r-sm); box-shadow: var(--sm-focus-ring); }
