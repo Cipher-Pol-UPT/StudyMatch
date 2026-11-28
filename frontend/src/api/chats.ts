@@ -63,6 +63,8 @@ export const getChatMembers = (chatId: number) => request<ChatContactData[]>('GE
 // take someone out of a group chat you own, the members left come back (#231)
 export const removeChatMember = (chatId: number, number: number) =>
   request<ChatContactData[]>('DELETE', `/chats/${chatId}/members/${number}`);
+// leave a group chat; the owner leaving hands it to whoever's been there longest (#233)
+export const leaveChat = (chatId: number) => request<void>('POST', `/chats/${chatId}/leave`);
 // the numbers of the people you share a chat with who have the app open, for the first load; the pushes keep it up to date (#223)
 export const getOnlineContacts = () => request<number[]>('GET', '/chats/online');
 

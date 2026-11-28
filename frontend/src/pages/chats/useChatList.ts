@@ -69,6 +69,10 @@ export function useChatList(isMine: (message: MessageData) => boolean, isOpen: (
   const add = useCallback((chat: ChatSummaryData) =>
     setList(current => current.chats ? { ...current, chats: [chat, ...current.chats.filter(other => other.chatId !== chat.chatId)] } : current), []);
 
+  // one you just left, before its CHAT_REMOVED comes (#233)
+  const remove = useCallback((chatId: number) =>
+    setList(current => current.chats ? { ...current, chats: current.chats.filter(chat => chat.chatId !== chatId) } : current), []);
+
   // after blocking or unblocking someone: their DM goes or comes back, and nothing is pushed about it (#225)
-  return { ...list, add, reload };
+  return { ...list, add, remove, reload };
 }
