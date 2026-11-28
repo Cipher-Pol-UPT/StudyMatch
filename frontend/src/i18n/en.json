@@ -717,7 +717,8 @@
     "ROOM_OUTSIDE_FLOOR": "The room has to fit inside the floor's {{size}} × {{size}} grid.",
     "INVALID_SLOT": "Slots are 30 minutes, Monday to Friday, from 8:00 to 20:00.",
     "NO_CURRENT_ACADEMIC_YEAR": "There's no academic year yet. Staff has to start one first.",
-    "TOO_MANY_TICKETS": "You can send up to {{max}} requests an hour. Please try again later."
+    "TOO_MANY_TICKETS": "You can send up to {{max}} requests an hour. Please try again later.",
+    "TICKET_ALREADY_RESOLVED": "This ticket is already resolved."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",
