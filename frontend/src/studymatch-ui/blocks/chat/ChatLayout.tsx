@@ -353,6 +353,8 @@ export interface ChatMessageProps {
   text: string;
   // a sticker instead of the text, bigger and without a bubble (#215)
   sticker?: ReactNode;
+  // a GIF instead of the text, without a bubble either (#213)
+  gif?: ReactNode;
   // when it was sent: shown as `time`, `dateTime` is the machine-readable one
   time: string;
   dateTime: string;
@@ -411,7 +413,7 @@ const OWN_CLICKS = 'button, a, textarea, input';
 
 export function ChatMessage({ id, text, time, dateTime, mine = false, first = true, author, avatarSrc, online, hidden, editedLabel, editedTitle, status, statusLabel, retryLabel, discardLabel, onRetry, onDiscard,
   toolsLabel, editLabel = '', deleteLabel = '', onEdit, onDelete, editor, quote, replyLabel = '', onReply,
-  reactions, onReaction, reactLabel = '', onAddReaction, onDoubleTap, picking, files, sticker }: ChatMessageProps) {
+  reactions, onReaction, reactLabel = '', onAddReaction, onDoubleTap, picking, files, sticker, gif }: ChatMessageProps) {
   const cls = ['sm-msg', mine && 'sm-msg--mine', first && 'sm-msg--first', status === 'sending' && 'sm-msg--sending', picking && 'sm-msg--picking'].filter(Boolean).join(' ');
   // touch screens don't always send a double click, so two taps are counted here
   const lastTap = useRef(0);
@@ -456,7 +458,7 @@ export function ChatMessage({ id, text, time, dateTime, mine = false, first = tr
         {!hidden && quote && <ChatMessageQuote {...quote} />}
         {hidden ? null : editor ?? (
           <div className="sm-msg__line" ref={line} onPointerUp={tapped} onDoubleClick={doubleClicked}>
-            {sticker ? <div className="sm-msg__sticker">{sticker}</div> : files ? (
+            {sticker ? <div className="sm-msg__sticker">{sticker}</div> : gif ? <div className="sm-msg__gif">{gif}</div> : files ? (
               <div className="sm-msg__stack">
                 {text && <div className="sm-msg__bubble">{text}{editedLabel && <span className="sm-msg__edited" title={editedTitle}>{editedLabel}</span>}</div>}
                 {files}

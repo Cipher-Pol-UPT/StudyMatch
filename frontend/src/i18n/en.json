@@ -1307,6 +1307,18 @@
     "originalGone": "The original message isn't there anymore.",
     "loadingNewer": "Loading newer messages",
     "gif": "GIF",
+    "gifs": {
+      "open": "GIFs",
+      "pick": "Pick a GIF",
+      "search": "Search GIPHY",
+      "poweredBy": "Powered by GIPHY",
+      "none": "No GIFs found. Try other words.",
+      "down": "GIPHY isn't answering right now. You can still send text.",
+      "limit": "Too many GIF searches for now. Try again later, you can still send text.",
+      "noKey": "GIFs aren't set up here. You can still send text.",
+      "retry": "Try again",
+      "unavailable": "GIF not available"
+    },
     "stickers": "Stickers",
     "pickSticker": "Pick a sticker",
     "stickerHint": "Pick one to send it",
