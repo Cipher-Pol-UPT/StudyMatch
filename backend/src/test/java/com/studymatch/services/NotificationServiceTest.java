@@ -13,6 +13,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -208,6 +209,62 @@ class NotificationServiceTest {
 
     // Assert
     verify(notificationRepository).markAllAsRead(NUMBER);
+  }
+
+  // chat messages
+
+  @Test
+  @DisplayName("The first message since a chat was read makes a notification of 1 message that opens the chat")
+  void firstChatMessage() {
+    // Arrange
+    when(notificationRepository.findByRecipientNumberAndTypeAndTargetIdAndReadFalse(NUMBER,
+        NotificationType.CHAT_MESSAGES, 40L)).thenReturn(Optional.empty());
+
+    // Act
+    notificationService.countChatMessage(ana, 40L, "Study buddies", false);
+
+    // Assert
+    ArgumentCaptor<Notification> saved = ArgumentCaptor.forClass(Notification.class);
+    verify(notificationRepository).save(saved.capture());
+    assertEquals(NotificationType.CHAT_MESSAGES, saved.getValue().getType());
+    assertEquals(NotificationTarget.CHAT, saved.getValue().getTarget());
+    assertEquals(40L, saved.getValue().getTargetId());
+    assertEquals(Map.of("chat", "Study buddies", "count", 1, "mentions", 0), saved.getValue().getParams());
+    assertFalse(saved.getValue().isRead());
+  }
+
+  @Test
+  @DisplayName("The next one counts into the unread notification under the chat's new name and moves it to the top")
+  void nextChatMessage() {
+    // Arrange
+    Notification unread = Notification.forChatMessage(ana, 40L, "Study buddies", false);
+    LocalDateTime before = LocalDateTime.of(2026, 1, 1, 9, 0);
+    ReflectionTestUtils.setField(unread, "createdAt", before);
+    when(notificationRepository.findByRecipientNumberAndTypeAndTargetIdAndReadFalse(NUMBER,
+        NotificationType.CHAT_MESSAGES, 40L)).thenReturn(Optional.of(unread));
+
+    // Act
+    notificationService.countChatMessage(ana, 40L, "Exam crew", false);
+
+    // Assert
+    verify(notificationRepository, never()).save(any());
+    assertEquals(Map.of("chat", "Exam crew", "count", 2, "mentions", 0), unread.getParams());
+    assertTrue(unread.getCreatedAt().isAfter(before));
+  }
+
+  @Test
+  @DisplayName("A message that mentions them counts as a message and as a mention")
+  void mentionCounted() {
+    // Arrange
+    Notification unread = Notification.forChatMessage(ana, 40L, "Study buddies", true);
+    when(notificationRepository.findByRecipientNumberAndTypeAndTargetIdAndReadFalse(NUMBER,
+        NotificationType.CHAT_MESSAGES, 40L)).thenReturn(Optional.of(unread));
+
+    // Act
+    notificationService.countChatMessage(ana, 40L, "Study buddies", true);
+
+    // Assert
+    assertEquals(Map.of("chat", "Study buddies", "count", 2, "mentions", 2), unread.getParams());
   }
 
 }
