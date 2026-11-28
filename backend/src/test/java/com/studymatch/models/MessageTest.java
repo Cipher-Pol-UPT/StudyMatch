@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -83,6 +85,35 @@ class MessageTest {
     assertFalse(reply.quotesHidden());
     original.hideFrom(chat.getSecondUser());
     assertTrue(reply.quotesHidden());
+  }
+
+  @Test
+  @DisplayName("A message mentions whoever has a mentioned number, even loaded as another object, and no one else")
+  void mentions() {
+    // Arrange
+    Student eva = ModelTestData.student("Eva");
+    ReflectionTestUtils.setField(eva, "number", 1003L);
+    Student evaAgain = ModelTestData.student("Eva");
+    ReflectionTestUtils.setField(evaAgain, "number", 1003L);
+    Message message = new Message(chat, ana, "@Eva hi");
+
+    // Act
+    message.mention(List.of(eva));
+
+    // Assert
+    assertTrue(message.mentions(evaAgain));
+    assertFalse(message.mentions(ana));
+  }
+
+  @Test
+  @DisplayName("A message mentions no one until someone is picked")
+  void noMentions() {
+    // Act
+    Message message = new Message(chat, ana, "hi");
+
+    // Assert
+    assertTrue(message.getMentions().isEmpty());
+    assertFalse(message.mentions(ana));
   }
 
 }
