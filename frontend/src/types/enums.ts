@@ -42,3 +42,9 @@ export type NoteColour = typeof NoteColour[number];
 
 export const RoomType = ["CLASSROOM", "LAB", "AUDITORIUM"] as const;
 export type RoomType = typeof RoomType[number];
+
+export const TicketCategory = ["ACCOUNT", "GRADES_AND_ENROLMENT", "TECHNICAL", "OTHER"] as const;
+export type TicketCategory = typeof TicketCategory[number];
+
+export const TicketStatus = ["OPEN", "IN_PROGRESS", "RESOLVED"] as const;
+export type TicketStatus = typeof TicketStatus[number];
