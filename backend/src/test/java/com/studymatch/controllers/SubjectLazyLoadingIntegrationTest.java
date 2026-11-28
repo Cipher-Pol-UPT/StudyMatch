@@ -17,9 +17,12 @@ import org.springframework.test.context.ActiveProfiles;
 import com.studymatch.dtos.DegreePlacementResponseDTO;
 import com.studymatch.dtos.SubjectResponseDTO;
 import com.studymatch.dtos.UpdateSubjectRequestDTO;
+import com.studymatch.dtos.WeeklySessionDTO;
+import com.studymatch.enums.RoomType;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
 import com.studymatch.models.Subject;
+import com.studymatch.models.WeeklySession;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -53,6 +56,7 @@ class SubjectLazyLoadingIntegrationTest {
     degree = degreeRepository.save(new Degree("IT Lazy Degree", 3));
     Subject toSave = new Subject("ITLAZY1", "IT Lazy Subject", 6, category);
     toSave.addDegree(degree, 2, 1);
+    toSave.setWeeklySessions(List.of(new WeeklySession(90, RoomType.LAB)));
     subject = subjectRepository.save(toSave);
   }
 
@@ -69,6 +73,7 @@ class SubjectLazyLoadingIntegrationTest {
     DegreePlacementResponseDTO placement = response.degrees().get(0);
     assertEquals("IT Lazy Degree", placement.degreeName());
     assertEquals(2, placement.curricularYear());
+    assertEquals(List.of(new WeeklySessionDTO(90, RoomType.LAB)), response.weeklySessions());
   }
 
   @Test
@@ -98,7 +103,7 @@ class SubjectLazyLoadingIntegrationTest {
   void updateLoadsCategoryAndDegrees() {
     // Act
     ResponseEntity<SubjectResponseDTO> response = subjectController.updateSubject(subject.getId(),
-        new UpdateSubjectRequestDTO("IT Lazy Renamed", 6, null));
+        new UpdateSubjectRequestDTO("IT Lazy Renamed", 6, null, null));
 
     // Assert
     assertEquals(200, response.getStatusCode().value());

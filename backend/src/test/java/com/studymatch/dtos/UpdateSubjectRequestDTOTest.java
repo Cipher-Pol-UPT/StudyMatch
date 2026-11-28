@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.studymatch.enums.RoomType;
+
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 
@@ -34,15 +36,19 @@ class UpdateSubjectRequestDTOTest {
   }
 
   private UpdateSubjectRequestDTO withName(String name) {
-    return new UpdateSubjectRequestDTO(name, 6, List.of(1L));
+    return new UpdateSubjectRequestDTO(name, 6, List.of(1L), null);
   }
 
   private UpdateSubjectRequestDTO withEcts(Integer ects) {
-    return new UpdateSubjectRequestDTO("Mathematics I", ects, List.of(1L));
+    return new UpdateSubjectRequestDTO("Mathematics I", ects, List.of(1L), null);
   }
 
   private UpdateSubjectRequestDTO withTeachers(List<Long> teacherNumbers) {
-    return new UpdateSubjectRequestDTO("Mathematics I", 6, teacherNumbers);
+    return new UpdateSubjectRequestDTO("Mathematics I", 6, teacherNumbers, null);
+  }
+
+  private UpdateSubjectRequestDTO withSessions(List<WeeklySessionDTO> sessions) {
+    return new UpdateSubjectRequestDTO("Mathematics I", 6, null, sessions);
   }
 
   @Test
@@ -110,6 +116,32 @@ class UpdateSubjectRequestDTOTest {
     List<Long> teacherNumbers = new ArrayList<>();
     teacherNumbers.add(null);
     assertEquals(Set.of("teacherNumbers[0].<list element>=NotNull"), failures(withTeachers(teacherNumbers)));
+  }
+
+  // weekly plan
+
+  @Test
+  @DisplayName("The weekly plan is optional: a missing list leaves it, an empty one clears it")
+  void sessionsOptional() {
+    assertTrue(failures(withSessions(null)).isEmpty());
+    assertTrue(failures(withSessions(List.of())).isEmpty());
+  }
+
+  @Test
+  @DisplayName("A null entry in the sessions is NOT_NULL")
+  void nullSession() {
+    List<WeeklySessionDTO> sessions = new ArrayList<>();
+    sessions.add(null);
+    assertEquals(Set.of("weeklySessions[0].<list element>=NotNull"), failures(withSessions(sessions)));
+  }
+
+  @Test
+  @DisplayName("Each session is checked: minutes and room type are required")
+  void sessionMissingFields() {
+    assertEquals(Set.of("weeklySessions[0].minutes=NotNull"),
+        failures(withSessions(List.of(new WeeklySessionDTO(null, RoomType.CLASSROOM)))));
+    assertEquals(Set.of("weeklySessions[0].roomType=NotNull"),
+        failures(withSessions(List.of(new WeeklySessionDTO(90, null)))));
   }
 
 }

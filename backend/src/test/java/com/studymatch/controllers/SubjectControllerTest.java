@@ -35,7 +35,7 @@ class SubjectControllerTest {
 
   private static final SubjectEditionRequestDTO EDITION = new SubjectEditionRequestDTO(2026, List.of(1L), List.of("T1"));
   private static final SubjectRequestDTO REGISTER = new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L,
-      List.of(new DegreePlacementDTO(10L, 1, 1)), EDITION);
+      List.of(new DegreePlacementDTO(10L, 1, 1)), EDITION, null);
 
   private SubjectService subjectService;
   private SubjectController controller;
@@ -213,7 +213,7 @@ class SubjectControllerTest {
   @DisplayName("Updating a subject is 200 with the updated subject")
   void updateSubjectIs200() {
     // Arrange
-    UpdateSubjectRequestDTO update = new UpdateSubjectRequestDTO("Calculus I", 7, List.of(1L));
+    UpdateSubjectRequestDTO update = new UpdateSubjectRequestDTO("Calculus I", 7, List.of(1L), null);
     Subject updated = new Subject("MAT1", "Calculus I", 7, new Category("Mathematics"));
     when(subjectService.updateSubject(1L, update)).thenReturn(updated);
 
@@ -231,7 +231,7 @@ class SubjectControllerTest {
   @DisplayName("When the update is refused, the service's error goes through to the handler")
   void updateErrorIsPassedOn() {
     // Arrange
-    UpdateSubjectRequestDTO update = new UpdateSubjectRequestDTO("Calculus I", 7, List.of());
+    UpdateSubjectRequestDTO update = new UpdateSubjectRequestDTO("Calculus I", 7, List.of(), null);
     when(subjectService.updateSubject(1L, update))
         .thenThrow(new StudyMatchException(ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED));
 

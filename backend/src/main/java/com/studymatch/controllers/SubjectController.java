@@ -55,10 +55,11 @@ public class SubjectController {
   // registers the subject and its first edition, the answer is the edition with the subject inside
   @PostMapping
   @PreAuthorize("hasRole('STAFF')")
-  @Operation(summary = "Register a subject and its first edition. A taken code answers with the existing subject's id")
+  @Operation(summary = "Register a subject, its weekly plan and its first edition. "
+      + "A taken code answers with the existing subject's id")
   @ErrorCodes({ ErrorCode.SUBJECT_ALREADY_EXISTS, ErrorCode.NOT_FOUND, ErrorCode.CURRICULAR_YEAR_OUT_OF_RANGE,
       ErrorCode.SUBJECT_ALREADY_IN_DEGREE, ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED,
-      ErrorCode.CLASS_SECTION_ALREADY_EXISTS })
+      ErrorCode.CLASS_SECTION_ALREADY_EXISTS, ErrorCode.INVALID_SESSION_LENGTH, ErrorCode.TOO_MANY_WEEKLY_SESSIONS })
   public ResponseEntity<SubjectEditionResponseDTO> registerSubject(@Valid @RequestBody SubjectRequestDTO registerRequest) {
     SubjectEdition edition = subjectService.registerSubject(registerRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(SubjectEditionResponseDTO.from(edition));
@@ -87,10 +88,10 @@ public class SubjectController {
 
   @PutMapping("{id}")
   @PreAuthorize("hasRole('STAFF')")
-  @Operation(summary = "Change a subject's name and ECTS, and optionally the teachers of its edition this year. "
-      + "Code and category can't change")
+  @Operation(summary = "Change a subject's name and ECTS, and optionally its weekly plan and the teachers of its "
+      + "edition this year. Code and category can't change")
   @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.AT_LEAST_ONE_TEACHER_REQUIRED,
-      ErrorCode.TEACHER_STILL_TEACHES_SECTION })
+      ErrorCode.TEACHER_STILL_TEACHES_SECTION, ErrorCode.INVALID_SESSION_LENGTH, ErrorCode.TOO_MANY_WEEKLY_SESSIONS })
   public ResponseEntity<SubjectResponseDTO> updateSubject(@PathVariable Long id,
       @Valid @RequestBody UpdateSubjectRequestDTO updateRequest) {
     return ResponseEntity.ok(SubjectResponseDTO.from(subjectService.updateSubject(id, updateRequest)));

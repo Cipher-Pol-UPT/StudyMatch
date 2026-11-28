@@ -109,6 +109,12 @@ Each class of an edition has one teacher, picked by Staff from the edition's tea
 
 A teacher who still teaches a class can't be removed from the edition. Updating the subject's teachers then gives `TEACHER_STILL_TEACHES_SECTION`, naming those classes, and nothing changes until they have another teacher. Picking a teacher and changing the edition's teachers both lock the edition, so a removal and a pick at the same moment can't leave a class with a teacher who left. The demo data gives every 2026 class its edition's teacher.
 
+## Weekly plan
+
+A subject's weekly plan says what sessions it has each week, and every class of the subject gets all of them in the timetable (#338). Each session has a length and the room type it needs. The timetable runs from 8:00 to 20:00 in 30-minute slots, so a session lasts 60, 90, 120, 150 or 180 minutes, which is 2 to 6 slots in a row. Any other length is `INVALID_SESSION_LENGTH`. A subject has at most 5 sessions (`TOO_MANY_WEEKLY_SESSIONS`), so 15 hours a week at most.
+
+The plan belongs to the subject, not to an edition: it's set when registering the subject and changed when updating it. An update with sessions replaces the whole plan in the order given, an empty list clears it, and leaving the field out keeps it, so the current pages that don't send it lose nothing. A subject without a plan is allowed, and Generate Schedule lists it as missing one (#345). In the demo data every subject has a plan except UX.
+
 ## Tutors and StudyRooms
 
 A student can apply to tutor a subject they passed if their final grade is in the top 5% of the edition they took it in, rounded up with at least one student, and everyone tied at the cut-off is eligible (no minimum grade). `GET /tutors/me/applicable-subjects` lists the subjects they passed with their grade, position and eligibility, and `POST /tutor-applications/` creates the Pending application. A Pending application (`TUTOR_APPLICATION_ALREADY_PENDING`) or an existing Tutor Role (`TUTOR_ROLE_ALREADY_EXISTS`) blocks a new one, but a Rejected application doesn't. A subject with no edition this year can't be applied to (`SUBJECT_NOT_TAUGHT_THIS_YEAR`).

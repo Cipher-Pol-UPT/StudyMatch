@@ -12,12 +12,12 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
 
   Optional<Subject> findByCodeIgnoreCase(String code);
 
-  // open-in-view is off, so the degrees are loaded here for the response to read them.
+  // open-in-view is off, so the degrees and weekly plan are loaded here for the response to read them.
   // The graph leaves what it doesn't name lazy, so the category and each placement's degree are named too
-  @EntityGraph(attributePaths = { "category", "degreeSubjects", "degreeSubjects.degree" })
+  @EntityGraph(attributePaths = { "category", "degreeSubjects", "degreeSubjects.degree", "weeklySessions" })
   List<Subject> findAllByOrderByCodeAsc();
 
-  @EntityGraph(attributePaths = { "category", "degreeSubjects", "degreeSubjects.degree" })
+  @EntityGraph(attributePaths = { "category", "degreeSubjects", "degreeSubjects.degree", "weeklySessions" })
   Optional<Subject> findWithDegreesById(Long id);
 
 }
