@@ -1420,7 +1420,6 @@
   "daysOff": {
     "title": "Dias sem aulas",
     "year": "{{from}}/{{to}}",
-    "semester": "{{number}}.º semestre: {{dates}}",
     "add": "Marcar dias",
     "addHint": "Um dia, ou um intervalo com um último dia. Os horários publicados ignoram-nos.",
     "firstDay": "Primeiro dia",
@@ -1439,5 +1438,20 @@
     "noSemesters": "Defina as datas dos semestres deste ano antes de marcar dias sem aulas.",
     "noYear": "Ainda não há ano letivo",
     "noYearBody": "Os dias sem aulas são marcados depois de começar o primeiro ano letivo."
+  },
+  "semesters": {
+    "title": "Semestres",
+    "semester": "Semestre {{number}}",
+    "edit": "Editar datas",
+    "set": "Definir as datas dos semestres",
+    "editTitle": "Editar as datas dos semestres",
+    "hint": "Todas as datas ficam entre {{from}} e {{to}}. Os horários publicados seguem as novas datas.",
+    "save": "Guardar datas",
+    "saved": "Datas dos semestres guardadas.",
+    "none": "Este ano ainda não tem datas de semestres. Defina-as para marcar dias sem aulas e publicar horários.",
+    "semester1Start": "Início do semestre 1",
+    "semester1End": "Fim do semestre 1",
+    "semester2Start": "Início do semestre 2",
+    "semester2End": "Fim do semestre 2"
   }
 }

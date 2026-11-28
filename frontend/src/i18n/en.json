@@ -1420,7 +1420,6 @@
   "daysOff": {
     "title": "Days without classes",
     "year": "{{from}}/{{to}}",
-    "semester": "Semester {{number}}: {{dates}}",
     "add": "Mark days",
     "addHint": "One day, or a range with a last day. Published schedules skip them.",
     "firstDay": "First day",
@@ -1439,5 +1438,20 @@
     "noSemesters": "Set this year's semester dates before marking days without classes.",
     "noYear": "No academic year yet",
     "noYearBody": "Days without classes are marked once the first academic year starts."
+  },
+  "semesters": {
+    "title": "Semesters",
+    "semester": "Semester {{number}}",
+    "edit": "Edit dates",
+    "set": "Set the semester dates",
+    "editTitle": "Edit the semester dates",
+    "hint": "Every date is between {{from}} and {{to}}. Published schedules follow the new dates.",
+    "save": "Save dates",
+    "saved": "Semester dates saved.",
+    "none": "This year has no semester dates yet. Set them to mark days without classes and publish schedules.",
+    "semester1Start": "Semester 1 starts",
+    "semester1End": "Semester 1 ends",
+    "semester2Start": "Semester 2 starts",
+    "semester2End": "Semester 2 ends"
   }
 }

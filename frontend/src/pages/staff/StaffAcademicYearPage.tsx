@@ -1,13 +1,14 @@
-import type { TFunction } from 'i18next';
-import { CalendarOff, CalendarX, Plus, Trash2 } from 'lucide-react';
+import { CalendarOff, CalendarRange, CalendarX, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { addDayOff, getAcademicYears, getDaysOff, removeDayOff } from '../../api/academicYears';
+import { addDayOff, editSemesters, getAcademicYears, getDaysOff, removeDayOff } from '../../api/academicYears';
 import { DataLoadState } from '../../components/feedback/DataLoadState';
 import { useRemoteData } from '../../hooks/useRemoteData';
 import { Banner, Button, Calendar, Card, Dialog, EmptyState, Table, useToast, type TableColumn } from '../../studymatch-ui';
 import type { AcademicYearData, DayOffData, DayOffRequest, SemesterDatesData } from '../../types/academicYears';
 import { DayOffForm } from './DayOffForm';
+import { SemesterDatesForm } from './SemesterDatesForm';
+import { suggestedSemesters } from './semesterDates';
 import './daysOff.css';
 
 // yyyy-mm-dd as a local date, so a day doesn't move with the time zone
@@ -30,7 +31,10 @@ function datesOf(days: DayOffData[]) {
 export function StaffAcademicYearPage() {
   const { t } = useTranslation();
   const years = useRemoteData('academic-years', getAcademicYears);
-  const current = years.data?.[0];
+  // the year with the dates saved here, newer than what was loaded
+  const [edited, setEdited] = useState<AcademicYearData>();
+  const loadedCurrent = years.data?.[0];
+  const current = edited?.startYear === loadedCurrent?.startYear ? edited : loadedCurrent;
 
   return (
     <div className="role-page">
@@ -41,11 +45,61 @@ export function StaffAcademicYearPage() {
       {years.loading || years.error !== undefined ? (
         <DataLoadState error={years.error} retry={years.retry} />
       ) : current ? (
-        <DaysOff year={current} />
+        <>
+          <Semesters year={current} onSaved={setEdited} />
+          <DaysOff year={current} />
+        </>
       ) : (
         <EmptyState icon={CalendarX} title={t('daysOff.noYear')} body={t('daysOff.noYearBody')} />
       )}
     </div>
+  );
+}
+
+// the current year's two semesters, with Edit; a year from before #334 has none yet and asks for them (#335)
+function Semesters({ year, onSaved }: { year: AcademicYearData; onSaved: (year: AcademicYearData) => void }) {
+  const { t, i18n } = useTranslation();
+  const toast = useToast();
+  const [editing, setEditing] = useState(false);
+  const dayFormat = new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'long', year: 'numeric' });
+  const formatDay = (day: string) => dayFormat.format(localDate(day));
+  const semesters = year.semesters;
+
+  async function save(dates: SemesterDatesData) {
+    const saved = await editSemesters(year.startYear, dates);
+    onSaved(saved);
+    setEditing(false);
+    toast.success(t('semesters.saved'));
+  }
+
+  return (
+    <Card className="semesters">
+      <div className="days-off__head">
+        <h2 className="sm-h4">{t('semesters.title')}</h2>
+        <Button variant="secondary" icon={semesters ? Pencil : CalendarRange} onClick={() => setEditing(true)}>
+          {t(semesters ? 'semesters.edit' : 'semesters.set')}
+        </Button>
+      </div>
+      {semesters ? (
+        <dl className="semesters__list">
+          {([1, 2] as const).map(number => (
+            <div key={number} className="semesters__item">
+              <dt>{t('semesters.semester', { number })}</dt>
+              <dd>{dayFormat.formatRange(localDate(semesters[`semester${number}Start`]), localDate(semesters[`semester${number}End`]))}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <Banner tone="warning">{t('semesters.none')}</Banner>
+      )}
+      <Dialog open={editing} onClose={() => setEditing(false)} title={t(semesters ? 'semesters.editTitle' : 'semesters.set')}
+        description={t('semesters.hint', { from: formatDay(`${year.startYear}-09-01`), to: formatDay(`${year.startYear + 1}-08-31`) })}>
+        {editing && (
+          <SemesterDatesForm startYear={year.startYear} initial={semesters ?? suggestedSemesters(year.startYear)} formatDay={formatDay}
+            submitLabel={t('semesters.save')} onSubmit={save} onCancel={() => setEditing(false)} />
+        )}
+      </Dialog>
+    </Card>
   );
 }
 
@@ -113,7 +167,6 @@ function DaysOff({ year }: { year: AcademicYearData }) {
       <div className="days-off__head">
         <div>
           <h2 className="sm-h4">{t('daysOff.title')}</h2>
-          {semesters && <p className="sm-caption">{semesterLine(semesters, dayFormat, t)}</p>}
         </div>
         <Button icon={Plus} disabled={!semesters || loaded.loading} onClick={() => setAdding({})}>{t('daysOff.add')}</Button>
       </div>
@@ -138,15 +191,6 @@ function DaysOff({ year }: { year: AcademicYearData }) {
       </Dialog>
     </Card>
   );
-}
-
-// "Semester 1: 15 September 2026 – 31 January 2027 · Semester 2: ..."
-function semesterLine(semesters: SemesterDatesData, format: Intl.DateTimeFormat, t: TFunction) {
-  const range = (from: string, to: string) => format.formatRange(localDate(from), localDate(to));
-  return [
-    t('daysOff.semester', { number: 1, dates: range(semesters.semester1Start, semesters.semester1End) }),
-    t('daysOff.semester', { number: 2, dates: range(semesters.semester2Start, semesters.semester2End) }),
-  ].join(' · ');
 }
 
 // today's month while classes run, otherwise the first month of classes

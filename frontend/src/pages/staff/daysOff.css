@@ -12,3 +12,15 @@
   .days-off__body, .days-off__dates { grid-template-columns: minmax(0, 1fr); }
   .days-off__calendar { justify-self: center; }
 }
+/* the semester dates above the days without classes (#335) */
+.semesters { display: grid; gap: 16px; }
+.semesters .days-off__head h2 { margin: 0; }
+.semesters__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.semesters__item { padding: 14px 16px; border-radius: 16px; background: var(--sm-gray-25); box-shadow: inset 0 0 0 1px var(--sm-border); }
+.semesters__item dt { margin-bottom: 4px; color: var(--sm-text-2); font-size: 13px; font-weight: 500; }
+.semesters__item dd { margin: 0; font-weight: 600; }
+.semesters__form { display: grid; gap: 16px; }
+.semesters__pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) {
+  .semesters__list, .semesters__pair { grid-template-columns: minmax(0, 1fr); }
+}
