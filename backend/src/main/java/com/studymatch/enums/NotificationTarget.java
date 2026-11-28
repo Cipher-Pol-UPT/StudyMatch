@@ -6,5 +6,6 @@ public enum NotificationTarget {
   STUDYROOM,
   ASSIGNMENT,
   TUTOR_APPLICATION,
-  ACHIEVEMENT
+  ACHIEVEMENT,
+  TICKET
 }

@@ -33,6 +33,11 @@ ALTER TABLE IF EXISTS custom_chat_member DROP CONSTRAINT IF EXISTS uk6mbv7ca5nff
 ALTER TABLE IF EXISTS ticket ALTER COLUMN author_number DROP NOT NULL;
 ALTER TABLE IF EXISTS ticket_reply ALTER COLUMN author_number DROP NOT NULL;
 
+-- the enum checks only list the values from when the table was made, so a new type would fail. the java enum
+-- already says what goes in (#364)
+ALTER TABLE IF EXISTS notification DROP CONSTRAINT IF EXISTS notification_type_check;
+ALTER TABLE IF EXISTS notification DROP CONSTRAINT IF EXISTS notification_target_check;
+
 -- degrees and categories
 
 INSERT INTO degree (name, curricular_years) VALUES
