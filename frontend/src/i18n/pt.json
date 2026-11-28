@@ -29,7 +29,8 @@
       "groups": "Grupos de trabalho",
       "grades": "Classificações",
       "chats": "Conversas",
-      "tutorApplications": "Candidaturas a tutor"
+      "tutorApplications": "Candidaturas a tutor",
+      "help": "Ajuda"
     },
     "descriptions": {
       "createAccount": "Criar contas de funcionários e docentes.",
@@ -51,7 +52,8 @@
       "groups": "Consultar, gerar, editar, importar e exportar grupos de trabalho.",
       "grades": "Registar classificações nas suas unidades curriculares.",
       "chats": "Envie mensagens aos seus estudantes e colegas.",
-      "tutorApplications": "Consultar e decidir candidaturas a tutor nas suas unidades curriculares."
+      "tutorApplications": "Consultar e decidir candidaturas a tutor nas suas unidades curriculares.",
+      "help": "Fale com o apoio e acompanhe as respostas."
     }
   },
   "directory": {
@@ -945,7 +947,8 @@
     "changePassword": "Alterar palavra-passe",
     "logout": "Terminar sessão",
     "accountMenu": "Menu da conta",
-    "comingSoon": "Brevemente"
+    "comingSoon": "Brevemente",
+    "help": "Ajuda"
   },
   "passwordRules": {
     "length": "Pelo menos 8 caracteres",
@@ -1413,5 +1416,53 @@
     "MIND_BLOWN": "Cabeça explodiu",
     "PARTY": "Festa!",
     "LOVE": "Adoro"
+  },
+  "help": {
+    "title": "Ajuda",
+    "intro": "Pergunte ao apoio sobre a sua conta, notas e inscrições, ou algo que não esteja a funcionar.",
+    "new": "Novo pedido",
+    "newHint": "As questões de conta vão para os administradores, as restantes para os Serviços.",
+    "mine": "Os meus pedidos",
+    "category": "Categoria",
+    "pickCategory": "Escolha uma categoria",
+    "accountHint": "Os administradores respondem às questões de conta.",
+    "subject": "Assunto",
+    "subjectPlaceholder": "Numa linha, do que precisa?",
+    "description": "Descrição",
+    "descriptionPlaceholder": "O que aconteceu e o que esperava?",
+    "send": "Enviar pedido",
+    "opened": "Pedido enviado. Verá as respostas aqui.",
+    "status": "Estado",
+    "updated": "Última atualização",
+    "none": "Ainda não tem pedidos",
+    "noneBody": "Se algo não estiver bem, abra um pedido e o apoio responde aqui.",
+    "categories": {
+      "ACCOUNT": "Conta",
+      "GRADES_AND_ENROLMENT": "Notas e inscrições",
+      "TECHNICAL": "Problema técnico",
+      "OTHER": "Outro"
+    },
+    "statuses": {
+      "OPEN": "Aberto",
+      "IN_PROGRESS": "Em curso",
+      "RESOLVED": "Resolvido"
+    },
+    "roles": {
+      "ADMIN": "Administrador",
+      "STAFF": "Serviços",
+      "TEACHER": "Docente",
+      "STUDENT": "Estudante"
+    },
+    "openedOn": "{{category}} · aberto a {{date}}",
+    "thread": "Conversa",
+    "you": "Eu",
+    "guest": "Visitante",
+    "reply": "Resposta",
+    "replyPlaceholder": "Responda ao apoio",
+    "sendReply": "Enviar resposta",
+    "replyReopen": "Responder e reabrir",
+    "reopens": "Este pedido está resolvido. Responder volta a abri-lo.",
+    "needHelp": "Precisa de ajuda? Fale com o apoio",
+    "backToTest": "Voltar ao teste de personalidade"
   }
 }

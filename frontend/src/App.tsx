@@ -6,6 +6,7 @@ import { connectChatSocket, disconnectChatSocket } from './api/chatSocket';
 import { forgetConversations } from './pages/chats/conversations';
 import { LoginPage } from './pages/login/LoginPage';
 import { ChangePasswordPage } from './pages/password/ChangePasswordPage';
+import { HelpBeforeTest, HelpLink } from './pages/help/HelpBeforeTest';
 import { PersonalityTestPage } from './pages/personality/PersonalityTestPage';
 import { StudentArea } from './pages/student/StudentArea';
 import { AdminArea } from './pages/admin/AdminArea';
@@ -79,8 +80,14 @@ function SessionPage({ currentUser, setCurrentUser }: SessionPageProps) {
     return <ChangePasswordPage onPasswordChanged={setCurrentUser} onLoggedOut={onLoggedOut} />;
   }
 
+  // Help works before the test too (#363)
   if (currentUser.role === 'STUDENT' && currentUser.personalityTestRequired) {
-    return <PersonalityTestPage onCompleted={() => setCurrentUser({ ...currentUser, personalityTestRequired: false })} />;
+    return (
+      <Routes>
+        <Route path="/help/*" element={<HelpBeforeTest me={currentUser.number} myName={currentUser.name} />} />
+        <Route path="*" element={<PersonalityTestPage help={<HelpLink />} onCompleted={() => setCurrentUser({ ...currentUser, personalityTestRequired: false })} />} />
+      </Routes>
+    );
   }
 
   switch (currentUser.role) {

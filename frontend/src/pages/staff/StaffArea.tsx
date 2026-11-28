@@ -1,6 +1,8 @@
 import { Route } from 'react-router-dom';
 import { RoleLayout } from '../../components/layout/RoleLayout';
 import type { CurrentUser } from '../../types/currentUser';
+import { MyTicketsPage } from '../help/MyTicketsPage';
+import { TicketPage } from '../help/TicketPage';
 import { RegisterStudentPage } from '../registration/RegisterStudentPage';
 import { STAFF_SECTIONS } from './sections';
 import { StaffAnalyticsPage } from './StaffAnalyticsPage';
@@ -25,6 +27,8 @@ export function StaffArea({ currentUser, onLoggedOut }: StaffAreaProps) {
       <Route path="/attendance" element={<StaffAttendancePage />} />
       <Route path="/categories" element={<StaffCategoriesPage />} />
       <Route path="/analytics" element={<StaffAnalyticsPage />} />
+      <Route path="/help" element={<MyTicketsPage />} />
+      <Route path="/help/:ticketId" element={<TicketPage me={currentUser.number} myName={currentUser.name} />} />
     </RoleLayout>
   );
 }

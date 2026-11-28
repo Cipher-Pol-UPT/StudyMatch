@@ -5,6 +5,8 @@ import { useSignOut } from '../../components/navigation/useSignOut';
 import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry, type NavItem, type NavSection } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { AchievementsPage } from '../achievements/AchievementsPage';
+import { MyTicketsPage } from '../help/MyTicketsPage';
+import { TicketPage } from '../help/TicketPage';
 import { ChatsPage } from '../chats/ChatsPage';
 import { ClassmateProfilePage } from './ClassmateProfilePage';
 import type { ChatContactData } from '../../types/chat';
@@ -67,7 +69,9 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
         <Route path="/classmates/:number" element={<ClassmateProfilePage myNumber={currentUser.number} profilePath={PROFILE_PATH} />} />
         <Route path={CHANGE_PASSWORD_PATH} element={<AccountPasswordPage />} />
         <Route path="/achievements" element={<AchievementsPage profile={profile} failed={failed} />} />
-        {pages.filter((p) => ![PROFILE_PATH, '/study-rooms', '/chats', CHANGE_PASSWORD_PATH].includes(p.path)).map((p) => (
+        <Route path="/help" element={<MyTicketsPage />} />
+        <Route path="/help/:ticketId" element={<TicketPage me={currentUser.number} myName={currentUser.name} />} />
+        {pages.filter((p) => ![PROFILE_PATH, '/study-rooms', '/chats', '/help', CHANGE_PASSWORD_PATH].includes(p.path)).map((p) => (
           <Route key={p.path} path={p.path} element={<EmptyState icon={p.icon} title={t(`nav.${p.key}`)} body={t('placeholder.comingSoon')} />} />
         ))}
         <Route path="*" element={<Navigate to="/" replace />} />

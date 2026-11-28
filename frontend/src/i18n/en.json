@@ -29,7 +29,8 @@
       "groups": "Assignment groups",
       "grades": "Grades",
       "chats": "Chats",
-      "tutorApplications": "Tutor applications"
+      "tutorApplications": "Tutor applications",
+      "help": "Help"
     },
     "descriptions": {
       "createAccount": "Create staff and teacher accounts.",
@@ -51,7 +52,8 @@
       "groups": "View, generate, edit, import and export assignment groups.",
       "grades": "Record student grades for your subjects.",
       "chats": "Message your students and colleagues.",
-      "tutorApplications": "Review and decide tutor applications for your subjects."
+      "tutorApplications": "Review and decide tutor applications for your subjects.",
+      "help": "Ask the helpdesk and follow the answers."
     }
   },
   "directory": {
@@ -945,7 +947,8 @@
     "changePassword": "Change password",
     "logout": "Log out",
     "accountMenu": "Account menu",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "help": "Help"
   },
   "passwordRules": {
     "length": "At least 8 characters",
@@ -1413,5 +1416,53 @@
     "MIND_BLOWN": "Mind blown",
     "PARTY": "Party time",
     "LOVE": "Love it"
+  },
+  "help": {
+    "title": "Help",
+    "intro": "Ask the helpdesk about your account, grades and enrolment, or anything that isn't working.",
+    "new": "New ticket",
+    "newHint": "Account questions go to the administrators, the rest to Staff.",
+    "mine": "My tickets",
+    "category": "Category",
+    "pickCategory": "Choose a category",
+    "accountHint": "The administrators answer account questions.",
+    "subject": "Subject",
+    "subjectPlaceholder": "In a line, what do you need?",
+    "description": "Description",
+    "descriptionPlaceholder": "What happened, and what did you expect?",
+    "send": "Send ticket",
+    "opened": "Ticket sent. You'll see the answers here.",
+    "status": "Status",
+    "updated": "Last update",
+    "none": "No tickets yet",
+    "noneBody": "If something isn't right, open a ticket and the helpdesk will answer here.",
+    "categories": {
+      "ACCOUNT": "Account",
+      "GRADES_AND_ENROLMENT": "Grades and enrolment",
+      "TECHNICAL": "Technical problem",
+      "OTHER": "Other"
+    },
+    "statuses": {
+      "OPEN": "Open",
+      "IN_PROGRESS": "In progress",
+      "RESOLVED": "Resolved"
+    },
+    "roles": {
+      "ADMIN": "Administrator",
+      "STAFF": "Staff",
+      "TEACHER": "Teacher",
+      "STUDENT": "Student"
+    },
+    "openedOn": "{{category}} · opened {{date}}",
+    "thread": "Conversation",
+    "you": "You",
+    "guest": "Guest",
+    "reply": "Reply",
+    "replyPlaceholder": "Write back to the helpdesk",
+    "sendReply": "Send reply",
+    "replyReopen": "Reply and reopen",
+    "reopens": "This ticket is resolved. Replying opens it again.",
+    "needHelp": "Need help? Ask the helpdesk",
+    "backToTest": "Back to the personality test"
   }
 }

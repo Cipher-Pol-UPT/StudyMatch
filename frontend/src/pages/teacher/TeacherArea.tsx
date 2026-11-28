@@ -1,4 +1,6 @@
 import { Route, useLocation } from 'react-router-dom';
+import { MyTicketsPage } from '../help/MyTicketsPage';
+import { TicketPage } from '../help/TicketPage';
 import { RoleLayout } from '../../components/layout/RoleLayout';
 import { ChatsPage } from '../chats/ChatsPage';
 import type { CurrentUser } from '../../types/currentUser';
@@ -27,6 +29,8 @@ export function TeacherArea({ currentUser, onLoggedOut }: TeacherAreaProps) {
       <Route path="/chats/direct/:number" element={<ChatsPage me={currentUser.number} />} />
       <Route path="/chats/group/:chatId" element={<ChatsPage me={currentUser.number} />} />
       <Route path="/chats/blocked" element={<ChatsPage me={currentUser.number} view="blocked" />} />
+      <Route path="/help" element={<MyTicketsPage />} />
+      <Route path="/help/:ticketId" element={<TicketPage me={currentUser.number} myName={currentUser.name} />} />
       {SUBJECT_TABS.map(item => <Route key={item} path={`/${item}`} element={<TeacherSubjectsPage tab={item} />} />)}
       <Route path="/subject-editions/:editionId" element={<TeacherSubjectLayout />}>
         <Route path="students" element={<TeacherStudentsPage />} />

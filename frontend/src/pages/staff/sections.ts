@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, CalendarDays, ClipboardList, GraduationCap, Layers, ListChecks, ShieldCheck, UserPlus, Users } from 'lucide-react';
+import { BarChart3, LifeBuoy, BookOpen, CalendarDays, ClipboardList, GraduationCap, Layers, ListChecks, ShieldCheck, UserPlus, Users } from 'lucide-react';
 import type { NavigationSection } from '../../types/navigation';
 
 export const STAFF_SECTIONS: NavigationSection[] = [
@@ -13,4 +13,5 @@ export const STAFF_SECTIONS: NavigationSection[] = [
   { key: 'categories', path: '/categories', icon: Layers, ready: true },
   { key: 'academicYear', path: '/academic-year', icon: CalendarDays },
   { key: 'analytics', path: '/analytics', icon: BarChart3, ready: true },
+  { key: 'help', path: '/help', icon: LifeBuoy, ready: true },
 ];

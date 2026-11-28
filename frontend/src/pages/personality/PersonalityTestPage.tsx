@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isBackendError, type BackendError } from '../../api/errors';
 import { submitPersonalityTest } from '../../api/personalityTest';
@@ -18,9 +18,11 @@ const QUESTION_COUNT = 20;
 
 export interface PersonalityTestPageProps {
   onCompleted: () => void;
+  // a way to Help while the test isn't done (#363)
+  help?: ReactNode;
 }
 
-export function PersonalityTestPage({ onCompleted }: PersonalityTestPageProps) {
+export function PersonalityTestPage({ onCompleted, help }: PersonalityTestPageProps) {
   const { t } = useTranslation();
   const [profile, setProfile] = useState<PersonalityProfileData | null>(null);
 
@@ -40,6 +42,7 @@ export function PersonalityTestPage({ onCompleted }: PersonalityTestPageProps) {
 
   return (
     <main className="personality-page">
+      {profile === null && help && <p className="personality-page__help">{help}</p>}
       {profile === null
         ? <PersonalityTest questions={questions} onSubmit={submit} />
         : <PersonalityResult profile={profile} onContinue={onCompleted} />}

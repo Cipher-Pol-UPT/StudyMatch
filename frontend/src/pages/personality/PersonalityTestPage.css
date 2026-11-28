@@ -16,3 +16,9 @@
 .personality-page__profile .sm-profile-bars {
   width: 100%;
 }
+
+/* the way to Help before the test is done (#363) */
+.personality-page__help { max-width: 960px; margin: 0 auto 16px; text-align: right; font-size: 14px; }
+.personality-page__help a { display: inline-flex; align-items: center; gap: 6px; color: var(--sm-violet-ink); font-weight: 500; text-decoration: none; }
+.personality-page__help a:hover { text-decoration: underline; }
+.personality-page__help a:focus-visible { outline: none; border-radius: var(--sm-r-sm); box-shadow: var(--sm-focus-ring); }
