@@ -709,7 +709,8 @@
     "NOTE_LIMIT_REACHED": "You can have up to {{max}} notes. Delete one to add another.",
     "ROOM_ALREADY_EXISTS": "A room with this code already exists.",
     "ROOM_OVERLAP": "This position overlaps room {{code}} on the same floor.",
-    "ROOM_OUTSIDE_FLOOR": "The room has to fit inside the floor's {{size}} × {{size}} grid."
+    "ROOM_OUTSIDE_FLOOR": "The room has to fit inside the floor's {{size}} × {{size}} grid.",
+    "TOO_MANY_TICKETS": "You can send up to {{max}} requests an hour. Please try again later."
   },
   "validation": {
     "NOT_BLANK": "This field is required.",

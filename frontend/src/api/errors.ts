@@ -126,6 +126,7 @@ export const ERROR_CODES = [
   "ROOM_ALREADY_EXISTS",
   "ROOM_OVERLAP",
   "ROOM_OUTSIDE_FLOOR",
+  "TOO_MANY_TICKETS",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;
