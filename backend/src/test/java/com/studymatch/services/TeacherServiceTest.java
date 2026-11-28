@@ -115,4 +115,26 @@ class TeacherServiceTest {
     assertEquals(ErrorCode.NOT_FOUND, e.getCode());
   }
 
+  // get one teacher locked
+
+  @Test
+  @DisplayName("Locking a teacher reads them with the lock")
+  void lockedTeacherIsFound() {
+    // Arrange
+    when(teacherRepository.findLockedByNumber(1L)).thenReturn(Optional.of(ana));
+
+    // Act + Assert
+    assertSame(ana, teacherService.getLockedTeacher(1L));
+  }
+
+  @Test
+  @DisplayName("Locking a number with no teacher gets NOT_FOUND")
+  void unknownLockedTeacherIsNotFound() {
+    // Act - findLockedByNumber is empty by default
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> teacherService.getLockedTeacher(99L));
+
+    // Assert
+    assertEquals(ErrorCode.NOT_FOUND, e.getCode());
+  }
+
 }
