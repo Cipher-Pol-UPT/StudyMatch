@@ -11,6 +11,7 @@ vi.mock('../src/api/academicYears', () => ({
   getDaysOff: vi.fn(),
   addDayOff: vi.fn(),
   removeDayOff: vi.fn(),
+  editSemesters: vi.fn(),
 }));
 
 const year: AcademicYearData = { startYear: 2096,
@@ -58,7 +59,8 @@ describe('days without classes', () => {
     await screen.findByText('Christmas break');
     expect(rows()).toEqual([['December 8, 2096', 'Immaculate Conception'], ['December 21, 2096 – January 1, 2097', 'Christmas break']]);
     expect(getDaysOff).toHaveBeenCalledWith(2096);
-    expect(screen.getByText('Semester 1: September 15, 2096 – January 31, 2097 · Semester 2: February 15 – June 30, 2097')).toBeTruthy();
+    expect(screen.getByText(/^September 15, 2096\s–\sJanuary 31, 2097$/)).toBeTruthy();
+    expect(screen.getByText(/^February 15\s–\sJune 30, 2097$/)).toBeTruthy();
   });
 
   it('says when there are no days yet', async () => {
