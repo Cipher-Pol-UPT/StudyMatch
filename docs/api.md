@@ -210,6 +210,17 @@ These work before the personality test too (GR1). Admin answers tickets and does
 | GET | `/support/tickets/{token}` | Anyone with the link | the ticket with its thread, oldest reply first. A wrong token is `NOT_FOUND` |
 | POST | `/support/tickets/{token}/replies` | Anyone with the link | write back with `text` (up to 2000 characters) (201), answers the ticket with its thread. The reply has no author, and a `RESOLVED` ticket goes back to `OPEN` |
 
+## Helpdesk
+
+Staff get the Staff queue and Admin the Admin queue (`ACCOUNT`). A ticket from the other queue is `NOT_FOUND`. The author is told with a notification, or a guest by email with a new link (the old one stops working).
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/helpdesk/tickets/?page=` | Staff, Admin | your queue, 20 a page: `OPEN` first, then `IN_PROGRESS`, then `RESOLVED`, the latest activity first in each. `openCount` is how many in the whole queue are `OPEN`, `tickets` is the page, each row with the author's name or the guest's email |
+| GET | `/helpdesk/tickets/{id}` | Staff, Admin | the ticket with its thread, oldest reply first |
+| POST | `/helpdesk/tickets/{id}/replies` | Staff, Admin | answer with `text` (up to 2000 characters) (201), answers the ticket with its thread. It goes to `IN_PROGRESS`, a `RESOLVED` one too, and the author gets `TICKET_ANSWERED` |
+| PUT | `/helpdesk/tickets/{id}/resolve` | Staff, Admin | set it to `RESOLVED`, answers the queue row. The author gets `TICKET_RESOLVED`. Twice is `TICKET_ALREADY_RESOLVED` |
+
 ## Coming next
 
 The other use cases (tutor applications and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

@@ -37,10 +37,10 @@ export type ChatEventType = typeof ChatEventType[number];
 export const NotificationLevel = ["ALL", "MENTIONS", "NONE"] as const;
 export type NotificationLevel = typeof NotificationLevel[number];
 
-export const NotificationType = ["ACCOUNT_UNBLOCKED", "TUTOR_APPLICATION_SUBMITTED", "TUTOR_APPLICATION_APPROVED", "TUTOR_APPLICATION_REJECTED", "STUDYROOM_LEFT", "STUDYROOM_UPDATED", "STUDYROOM_CANCELLED", "STUDYROOM_RATING_OPEN", "ACHIEVEMENT_EARNED", "GROUP_PUBLISHED", "GROUP_UPDATED"] as const;
+export const NotificationType = ["ACCOUNT_UNBLOCKED", "TUTOR_APPLICATION_SUBMITTED", "TUTOR_APPLICATION_APPROVED", "TUTOR_APPLICATION_REJECTED", "STUDYROOM_LEFT", "STUDYROOM_UPDATED", "STUDYROOM_CANCELLED", "STUDYROOM_RATING_OPEN", "ACHIEVEMENT_EARNED", "GROUP_PUBLISHED", "GROUP_UPDATED", "TICKET_ANSWERED", "TICKET_RESOLVED"] as const;
 export type NotificationType = typeof NotificationType[number];
 
-export const NotificationTarget = ["STUDYROOM", "ASSIGNMENT", "TUTOR_APPLICATION", "ACHIEVEMENT"] as const;
+export const NotificationTarget = ["STUDYROOM", "ASSIGNMENT", "TUTOR_APPLICATION", "ACHIEVEMENT", "TICKET"] as const;
 export type NotificationTarget = typeof NotificationTarget[number];
 
 export const NoteColour = ["YELLOW", "PINK", "BLUE", "GREEN"] as const;

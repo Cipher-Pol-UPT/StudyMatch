@@ -3,9 +3,11 @@ package com.studymatch.models;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.studymatch.enums.Role;
 import com.studymatch.enums.TicketCategory;
 import com.studymatch.enums.TicketStatus;
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.StudyMatchException;
 
 class TicketTest {
 
@@ -128,6 +132,64 @@ class TicketTest {
 
     // Assert
     assertTrue(ticket.getUpdatedAt().isAfter(before));
+  }
+
+  @ParameterizedTest
+  @EnumSource(TicketStatus.class)
+  @DisplayName("The queue answering sets any ticket In progress, a Resolved one too, and moves its last activity")
+  void answered(TicketStatus status) {
+    // Arrange
+    Ticket ticket = ticket(TicketCategory.OTHER);
+    LocalDateTime before = LocalDateTime.of(2026, 1, 1, 9, 0);
+    ReflectionTestUtils.setField(ticket, "status", status);
+    ReflectionTestUtils.setField(ticket, "updatedAt", before);
+
+    // Act
+    ticket.answered();
+
+    // Assert
+    assertEquals(TicketStatus.IN_PROGRESS, ticket.getStatus());
+    assertTrue(ticket.getUpdatedAt().isAfter(before));
+  }
+
+  @ParameterizedTest
+  @EnumSource(value = TicketStatus.class, names = "RESOLVED", mode = EnumSource.Mode.EXCLUDE)
+  @DisplayName("Resolving an Open or In progress ticket sets it Resolved")
+  void resolve(TicketStatus status) {
+    // Arrange
+    Ticket ticket = ticket(TicketCategory.OTHER);
+    ReflectionTestUtils.setField(ticket, "status", status);
+
+    // Act
+    ticket.resolve();
+
+    // Assert
+    assertEquals(TicketStatus.RESOLVED, ticket.getStatus());
+  }
+
+  @Test
+  @DisplayName("Resolving a Resolved ticket is TICKET_ALREADY_RESOLVED")
+  void resolveTwice() {
+    // Arrange
+    Ticket ticket = ticket(TicketCategory.OTHER);
+    ticket.resolve();
+
+    // Act
+    StudyMatchException error = assertThrows(StudyMatchException.class, ticket::resolve);
+
+    // Assert
+    assertEquals(ErrorCode.TICKET_ALREADY_RESOLVED, error.getCode());
+  }
+
+  @Test
+  @DisplayName("The Admin queue is only Account, the Staff queue the other 3, and the other roles answer none")
+  void inQueue() {
+    // Act + Assert
+    assertEquals(List.of(TicketCategory.ACCOUNT), TicketCategory.inQueue(Role.ADMIN));
+    assertEquals(List.of(TicketCategory.GRADES_AND_ENROLMENT, TicketCategory.TECHNICAL, TicketCategory.OTHER),
+        TicketCategory.inQueue(Role.STAFF));
+    assertTrue(TicketCategory.inQueue(Role.STUDENT).isEmpty());
+    assertTrue(TicketCategory.inQueue(Role.TEACHER).isEmpty());
   }
 
 }

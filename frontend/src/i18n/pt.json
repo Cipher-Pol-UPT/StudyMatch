@@ -717,7 +717,8 @@
     "ROOM_OUTSIDE_FLOOR": "A sala tem de caber na grelha de {{size}} × {{size}} do piso.",
     "INVALID_SLOT": "Os blocos são de 30 minutos, de segunda a sexta, das 8:00 às 20:00.",
     "NO_CURRENT_ACADEMIC_YEAR": "Ainda não existe nenhum ano letivo. Os serviços académicos têm de iniciar um primeiro.",
-    "TOO_MANY_TICKETS": "Pode enviar até {{max}} pedidos por hora. Tente novamente mais tarde."
+    "TOO_MANY_TICKETS": "Pode enviar até {{max}} pedidos por hora. Tente novamente mais tarde.",
+    "TICKET_ALREADY_RESOLVED": "Este pedido já está resolvido."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",

@@ -129,6 +129,7 @@ export const ERROR_CODES = [
   "INVALID_SLOT",
   "NO_CURRENT_ACADEMIC_YEAR",
   "TOO_MANY_TICKETS",
+  "TICKET_ALREADY_RESOLVED",
 ] as const;
 export type ErrorCode = typeof ERROR_CODES[number];
 export type ErrorParams = Record<string, unknown>;

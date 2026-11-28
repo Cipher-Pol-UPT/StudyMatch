@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import com.studymatch.enums.Role;
 import com.studymatch.enums.TicketCategory;
 import com.studymatch.enums.TicketStatus;
+import com.studymatch.exceptions.ErrorCode;
+import com.studymatch.exceptions.StudyMatchException;
 
 import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Column;
@@ -169,6 +171,21 @@ public class Ticket {
     if (status == TicketStatus.RESOLVED) {
       status = TicketStatus.OPEN;
     }
+    updatedAt = LocalDateTime.now();
+  }
+
+  // the queue answering means someone is on it, even if it was resolved before (#364)
+  public void answered() {
+    status = TicketStatus.IN_PROGRESS;
+    updatedAt = LocalDateTime.now();
+  }
+
+  // twice would tell the author twice
+  public void resolve() {
+    if (status == TicketStatus.RESOLVED) {
+      throw new StudyMatchException(ErrorCode.TICKET_ALREADY_RESOLVED);
+    }
+    status = TicketStatus.RESOLVED;
     updatedAt = LocalDateTime.now();
   }
 

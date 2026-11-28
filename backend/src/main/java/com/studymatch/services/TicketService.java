@@ -13,12 +13,21 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.GuestTicketRequestDTO;
 import com.studymatch.dtos.OpenTicketRequestDTO;
+import com.studymatch.dtos.PageDTO;
+import com.studymatch.dtos.QueueDTO;
+import com.studymatch.dtos.QueueTicketDTO;
 import com.studymatch.dtos.TicketSummaryDTO;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
+import com.studymatch.enums.Role;
+import com.studymatch.enums.TicketCategory;
+import com.studymatch.enums.TicketStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Ticket;
@@ -26,8 +35,8 @@ import com.studymatch.models.User;
 import com.studymatch.repositories.TicketRepository;
 import com.studymatch.utils.EmailSender;
 
-// the author's side of the helpdesk, logged in or a guest with the link. every call only finds their own tickets
-// (#362, #366, GR15)
+// the helpdesk. the author's side, logged in or a guest with the link, only finds their own tickets (#362, #366).
+// the queue's side only finds its own queue (#364, GR15)
 @Service
 public class TicketService {
 
@@ -35,13 +44,17 @@ public class TicketService {
   private static final int TOKEN_BYTES = 32;
   private static final SecureRandom RANDOM = new SecureRandom();
 
+  private static final int TICKETS_PER_PAGE = 20;
+
   private final TicketRepository ticketRepository;
+  private final NotificationService notificationService;
   private final EmailSender emailSender;
   private final String frontendUrl;
 
-  public TicketService(TicketRepository ticketRepository, EmailSender emailSender,
-      @Value("${studymatch.frontend-url}") String frontendUrl) {
+  public TicketService(TicketRepository ticketRepository, NotificationService notificationService,
+      EmailSender emailSender, @Value("${studymatch.frontend-url}") String frontendUrl) {
     this.ticketRepository = ticketRepository;
+    this.notificationService = notificationService;
     this.emailSender = emailSender;
     this.frontendUrl = frontendUrl;
   }
@@ -100,6 +113,47 @@ public class TicketService {
   public Ticket getGuestLocked(String token) {
     return ticketRepository.findLockedByGuestTokenHash(hash(token))
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  // the queue's side (#364). the role picks the queue, so staff never see the admin's and the other way round
+  @Transactional(readOnly = true)
+  public QueueDTO listQueue(Role role, int page) {
+    List<TicketCategory> categories = TicketCategory.inQueue(role);
+    PageRequest pageRequest = PageRequest.of(Math.max(page, 0), TICKETS_PER_PAGE);
+    return new QueueDTO(ticketRepository.countByCategoryInAndStatus(categories, TicketStatus.OPEN),
+        PageDTO.from(ticketRepository.findQueue(categories, pageRequest), QueueTicketDTO::from));
+  }
+
+  // one from the other queue is NOT_FOUND, as if it didn't exist
+  public Ticket getInQueue(Role role, Long ticketId) {
+    return ticketRepository.findByIdAndCategoryIn(ticketId, TicketCategory.inQueue(role))
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  public Ticket getInQueueLocked(Role role, Long ticketId) {
+    return ticketRepository.findLockedByIdAndCategoryIn(ticketId, TicketCategory.inQueue(role))
+        .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
+  }
+
+  @Transactional
+  public QueueTicketDTO resolve(Role role, Long ticketId) {
+    Ticket ticket = getInQueueLocked(role, ticketId);
+    ticket.resolve();
+    tellAuthor(ticket, NotificationType.TICKET_RESOLVED);
+    return QueueTicketDTO.from(ticket);
+  }
+
+  // a guest has no notifications, so they get the news by email with a new link, the old one stops working
+  public void tellAuthor(Ticket ticket, NotificationType type) {
+    if (ticket.isFromGuest()) {
+      String token = newToken();
+      ticket.replaceGuestToken(hash(token));
+      emailSender.sendSupportTicketUpdate(ticket.getGuestEmail(), ticket.getSubject(),
+          frontendUrl + "/support/" + token, type == NotificationType.TICKET_RESOLVED);
+      return;
+    }
+    notificationService.notify(ticket.getAuthor(), type, NotificationTarget.TICKET, ticket.getId(),
+        Map.of("subject", ticket.getSubject()));
   }
 
   // 256 random bits, so it can't be guessed and a plain hash is enough to look it up
