@@ -12,14 +12,16 @@ import com.studymatch.models.User;
 // a reply with no replyTo is one whose original was deleted, or is hidden from the viewer (GR9)
 public record MessageDTO(Long id, Long chatId, ChatContactDTO author, String text, String gifId, Sticker sticker,
     LocalDateTime sentAt,
-    LocalDateTime editedAt, boolean reply, MessageQuoteDTO replyTo, List<AttachmentDTO> attachments) {
+    LocalDateTime editedAt, boolean reply, MessageQuoteDTO replyTo, List<AttachmentDTO> attachments,
+    List<ChatContactDTO> mentions) {
 
   public static MessageDTO from(Message message, User viewer) {
     Message original = message.getReplyTo();
     MessageQuoteDTO replyTo = original == null || original.isHiddenFrom(viewer) ? null : MessageQuoteDTO.from(original);
     return new MessageDTO(message.getId(), message.getChat().getId(), ChatContactDTO.from(message.getAuthor()),
         message.getText(), message.getGifId(), message.getSticker(), message.getSentAt(), message.getEditedAt(), message.isReply(), replyTo,
-        message.getAttachments().stream().map(AttachmentDTO::from).toList());
+        message.getAttachments().stream().map(AttachmentDTO::from).toList(),
+        message.getMentions().stream().map(ChatContactDTO::from).toList());
   }
 
 }

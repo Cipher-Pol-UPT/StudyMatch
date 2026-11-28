@@ -2,7 +2,10 @@ package com.studymatch.models;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.ColumnDefault;
@@ -19,6 +22,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
@@ -91,6 +96,16 @@ public class Message {
   @OrderBy("id")
   @BatchSize(size = 100)
   private List<Attachment> attachments = new ArrayList<>();
+
+  // members of a group chat it mentions, saved when it's sent and never changed, editing notifies no one (#239).
+  // the database deletes the rows with the message, a chat's messages also go in bulk
+  @ManyToMany
+  @JoinTable(name = "message_mention", joinColumns = @JoinColumn(name = "message_id"),
+      inverseJoinColumns = @JoinColumn(name = "user_number"))
+  @OnDelete(action = OnDeleteAction.CASCADE)
+  @OrderBy("name")
+  @BatchSize(size = 100)
+  private Set<User> mentions = new LinkedHashSet<>();
 
   protected Message() {
   }
@@ -192,6 +207,19 @@ public class Message {
 
   public void addAttachment(Attachment attachment) {
     attachments.add(attachment);
+  }
+
+  public Set<User> getMentions() {
+    return mentions;
+  }
+
+  // the service picked who can be mentioned, before it's saved
+  public void mention(Collection<User> members) {
+    mentions.addAll(members);
+  }
+
+  public boolean mentions(User user) {
+    return mentions.stream().anyMatch(mentioned -> mentioned.getNumber().equals(user.getNumber()));
   }
 
   // the original was hidden from a blocker and this reply isn't, so not everyone may see the quote (GR9)
