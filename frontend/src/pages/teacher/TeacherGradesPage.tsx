@@ -78,7 +78,7 @@ export function TeacherGradesPage() {
   return (
     <>
       <div>
-        <h2 className="sm-title">{t('workspace.sections.grades')}</h2>
+        <h2 className="sm-visually-hidden">{t('workspace.sections.grades')}</h2>
         {!incomplete && <p className="sm-caption">{t('assignments.weightsTotal', { total })}</p>}
       </div>
       {incomplete && (

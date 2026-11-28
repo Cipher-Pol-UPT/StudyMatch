@@ -51,7 +51,8 @@ export function TeacherStudentsPage() {
 
   return (
     <>
-      <h2 className="sm-title">{t('directory.viewStudents')}</h2>
+      {/* the selected tab above says it already, screen readers still get the heading */}
+      <h2 className="sm-visually-hidden">{t('directory.viewStudents')}</h2>
       <form
         key={query}
         className="directory-filters directory-teacher-filters"

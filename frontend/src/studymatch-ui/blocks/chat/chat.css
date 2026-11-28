@@ -324,6 +324,7 @@
 @keyframes sm-upload-in { from { opacity: 0; transform: translateY(6px) scale(.96); } }
 
 .sm-composer__box:has(.sm-composer__attach) { padding-left: 6px; }
+/* the same 36px as the box's text and send button, so they share one line */
 .sm-composer__attach { flex: none; }
 
 /* files dragged over the chat */

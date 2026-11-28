@@ -51,7 +51,7 @@ export function TeacherAssignmentsPage() {
     <>
       <div className="assignments__head">
         <div>
-          <h2 className="sm-title">{t('workspace.sections.assignments')}</h2>
+          <h2 className="sm-visually-hidden">{t('workspace.sections.assignments')}</h2>
           {sheet.data && <p className="sm-caption">{t('assignments.weightsTotal', { total })}</p>}
         </div>
         <Button icon={Plus} disabled={!sheet.data} onClick={() => setCreating(true)}>{t('assignments.new')}</Button>
