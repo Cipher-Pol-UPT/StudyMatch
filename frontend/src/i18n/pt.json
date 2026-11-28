@@ -29,7 +29,8 @@
       "groups": "Grupos de trabalho",
       "grades": "Classificações",
       "chats": "Conversas",
-      "tutorApplications": "Candidaturas a tutor"
+      "tutorApplications": "Candidaturas a tutor",
+      "rooms": "Salas"
     },
     "descriptions": {
       "createAccount": "Criar contas de funcionários e docentes.",
@@ -51,7 +52,8 @@
       "groups": "Consultar, gerar, editar, importar e exportar grupos de trabalho.",
       "grades": "Registar classificações nas suas unidades curriculares.",
       "chats": "Envie mensagens aos seus estudantes e colegas.",
-      "tutorApplications": "Consultar e decidir candidaturas a tutor nas suas unidades curriculares."
+      "tutorApplications": "Consultar e decidir candidaturas a tutor nas suas unidades curriculares.",
+      "rooms": "Registe salas e coloque-as no seu piso."
     }
   },
   "directory": {
@@ -1413,5 +1415,53 @@
     "MIND_BLOWN": "Cabeça explodiu",
     "PARTY": "Festa!",
     "LOVE": "Adoro"
+  },
+  "campusRooms": {
+    "intro": "As salas da universidade por edifício e piso, com o tipo, a capacidade e o lugar no piso.",
+    "new": "Nova sala",
+    "register": "Registar sala",
+    "editTitle": "Editar sala",
+    "formHint": "Cada piso é uma grelha de 100 × 100; o mapa do campus usa a posição.",
+    "code": "Código",
+    "building": "Edifício",
+    "floor": "Piso",
+    "floorHint": "As caves são negativas.",
+    "floorN": "Piso {{floor}}",
+    "type": "Tipo",
+    "capacity": "Capacidade",
+    "position": "Posição",
+    "positionHint": "Célula do canto superior esquerdo e tamanho na grelha de {{size}} × {{size}} do piso.",
+    "width": "Largura",
+    "depth": "Profundidade",
+    "place": "{{x}}, {{y}} · {{width}} × {{depth}}",
+    "types": {
+      "CLASSROOM": "Sala de aula",
+      "LAB": "Laboratório",
+      "AUDITORIUM": "Auditório"
+    },
+    "allBuildings": "Todos os edifícios",
+    "allTypes": "Todos os tipos",
+    "status": "Estado",
+    "all": "Todas",
+    "active": "Ativas",
+    "inactive": "Inativa",
+    "edit": "Editar",
+    "editOf": "Editar {{code}}",
+    "deactivate": "Desativar",
+    "deactivateOf": "Desativar {{code}}",
+    "reactivate": "Reativar",
+    "reactivateOf": "Reativar {{code}}",
+    "registered": "Sala {{code}} registada.",
+    "saved": "Sala {{code}} guardada.",
+    "deactivated": "Sala {{code}} desativada. O que já a usa mantém-na.",
+    "reactivated": "A sala {{code}} está novamente ativa.",
+    "none": "Ainda não há salas",
+    "noneBody": "Registe a primeira sala para a usar nos horários e no mapa do campus.",
+    "noMatch": "Nenhuma sala corresponde",
+    "noMatchBody": "Experimente outro edifício, tipo ou estado.",
+    "x": "X",
+    "y": "Y",
+    "between": "De {{min}} a {{max}}.",
+    "capacityHint": "Lugares, de 1 a 1000."
   }
 }

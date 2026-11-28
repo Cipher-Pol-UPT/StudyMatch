@@ -7,6 +7,7 @@ import { StaffAnalyticsPage } from './StaffAnalyticsPage';
 import { StaffAttendancePage } from './StaffAttendancePage';
 import { StaffCategoriesPage } from './StaffCategoriesPage';
 import { StaffEnrolmentsPage } from './StaffEnrolmentsPage';
+import { StaffRoomsPage } from './StaffRoomsPage';
 import { StaffStudentsPage } from './StaffStudentsPage';
 import { StaffStudentDetailsPage } from './StaffStudentDetailsPage';
 
@@ -24,6 +25,7 @@ export function StaffArea({ currentUser, onLoggedOut }: StaffAreaProps) {
       <Route path="/enrolments" element={<StaffEnrolmentsPage />} />
       <Route path="/attendance" element={<StaffAttendancePage />} />
       <Route path="/categories" element={<StaffCategoriesPage />} />
+      <Route path="/rooms" element={<StaffRoomsPage />} />
       <Route path="/analytics" element={<StaffAnalyticsPage />} />
     </RoleLayout>
   );

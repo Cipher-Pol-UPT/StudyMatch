@@ -29,7 +29,8 @@
       "groups": "Assignment groups",
       "grades": "Grades",
       "chats": "Chats",
-      "tutorApplications": "Tutor applications"
+      "tutorApplications": "Tutor applications",
+      "rooms": "Rooms"
     },
     "descriptions": {
       "createAccount": "Create staff and teacher accounts.",
@@ -51,7 +52,8 @@
       "groups": "View, generate, edit, import and export assignment groups.",
       "grades": "Record student grades for your subjects.",
       "chats": "Message your students and colleagues.",
-      "tutorApplications": "Review and decide tutor applications for your subjects."
+      "tutorApplications": "Review and decide tutor applications for your subjects.",
+      "rooms": "Register rooms and place them on their floor."
     }
   },
   "directory": {
@@ -1413,5 +1415,53 @@
     "MIND_BLOWN": "Mind blown",
     "PARTY": "Party time",
     "LOVE": "Love it"
+  },
+  "campusRooms": {
+    "intro": "The university's rooms by building and floor, with their type, capacity and place on the floor.",
+    "new": "New room",
+    "register": "Register room",
+    "editTitle": "Edit room",
+    "formHint": "Each floor is a 100 × 100 grid; the campus map uses the position.",
+    "code": "Code",
+    "building": "Building",
+    "floor": "Floor",
+    "floorHint": "Basements are negative.",
+    "floorN": "Floor {{floor}}",
+    "type": "Type",
+    "capacity": "Capacity",
+    "position": "Position",
+    "positionHint": "Top-left cell and size on the floor's {{size}} × {{size}} grid.",
+    "width": "Width",
+    "depth": "Depth",
+    "place": "{{x}}, {{y}} · {{width}} × {{depth}}",
+    "types": {
+      "CLASSROOM": "Classroom",
+      "LAB": "Lab",
+      "AUDITORIUM": "Auditorium"
+    },
+    "allBuildings": "All buildings",
+    "allTypes": "All types",
+    "status": "Status",
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive",
+    "edit": "Edit",
+    "editOf": "Edit {{code}}",
+    "deactivate": "Deactivate",
+    "deactivateOf": "Deactivate {{code}}",
+    "reactivate": "Reactivate",
+    "reactivateOf": "Reactivate {{code}}",
+    "registered": "Room {{code}} registered.",
+    "saved": "Room {{code}} saved.",
+    "deactivated": "Room {{code}} deactivated. What already uses it keeps it.",
+    "reactivated": "Room {{code}} is active again.",
+    "none": "No rooms yet",
+    "noneBody": "Register the first room to use it in timetables and on the campus map.",
+    "noMatch": "No rooms match",
+    "noMatchBody": "Try another building, type or status.",
+    "x": "X",
+    "y": "Y",
+    "between": "From {{min}} to {{max}}.",
+    "capacityHint": "Seats, from 1 to 1000."
   }
 }

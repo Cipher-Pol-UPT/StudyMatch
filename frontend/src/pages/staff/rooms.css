@@ -1,0 +1,27 @@
+/* Staff → Rooms (#333) */
+.rooms__filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
+.rooms__filters > * { min-width: 180px; }
+.rooms__building { display: grid; gap: 16px; }
+.rooms__building h2 { margin: 0; }
+.rooms__floor { display: grid; gap: 8px; }
+/* the same widths on every floor, so the columns line up down the page */
+.rooms__floor table { table-layout: fixed; }
+.rooms__floor-title { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--sm-text-3); }
+.rooms__code { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+/* an inactive room's row is greyed out, its Reactivate stays readable */
+.rooms__floor tr:has(.rooms__code[data-active='false']) td:not(:last-child) { color: var(--sm-text-3); }
+.rooms__position { font-variant-numeric: tabular-nums; color: var(--sm-text-2); }
+.rooms__actions { display: inline-flex; gap: 4px; }
+.rooms-form { display: grid; gap: 16px; }
+.rooms-form__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+/* the steppers sit in a box, as in the assignment form */
+.rooms-form__box { padding: 16px; border-radius: 18px; background: var(--sm-gray-25); box-shadow: inset 0 0 0 1px var(--sm-border); }
+.rooms-form__position { display: grid; gap: 8px; margin: 0; padding: 16px; border: 0; border-radius: 18px; background: var(--sm-gray-25); box-shadow: inset 0 0 0 1px var(--sm-border); }
+.rooms-form__legend { float: left; padding: 0; font-weight: 600; }
+.rooms-form__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.rooms-form__error { margin: 4px 0 0; font-size: 14px; color: var(--sm-danger-ink); }
+.rooms-form__actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 760px) {
+  .rooms-form__row { grid-template-columns: minmax(0, 1fr); }
+  .rooms-form__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
