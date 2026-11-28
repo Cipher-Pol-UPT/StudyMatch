@@ -63,6 +63,7 @@ import com.studymatch.repositories.ChatRepository;
 import com.studymatch.repositories.ChatSettingsRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.MessageRepository;
+import com.studymatch.repositories.NotificationRepository;
 import com.studymatch.repositories.StaffRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.UserBlockRepository;
@@ -101,6 +102,9 @@ class ChatWebSocketIntegrationTest {
 
   @Autowired
   private UserBlockRepository userBlockRepository;
+
+  @Autowired
+  private NotificationRepository notificationRepository;
 
   @Autowired
   private ApplicationEventPublisher eventPublisher;
@@ -148,6 +152,11 @@ class ChatWebSocketIntegrationTest {
     chatRepository.deleteAll(chatRepository.findCustomChatsOf(ana.getNumber()));
     userBlockRepository.deleteAll(userBlockRepository.findAll().stream()
         .filter(block -> block.getBlocker().getNumber().equals(rui.getNumber()))
+        .toList());
+    // the messages notified the others, and the notifications point at the students
+    List<Long> students = List.of(ana.getNumber(), rui.getNumber(), eva.getNumber());
+    notificationRepository.deleteAll(notificationRepository.findAll().stream()
+        .filter(notification -> students.contains(notification.getRecipient().getNumber()))
         .toList());
     studentRepository.deleteAll(List.of(ana, rui, eva));
     staffRepository.delete(staff);

@@ -28,6 +28,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import com.studymatch.dtos.MessageDTO;
 import com.studymatch.dtos.SendMessageRequestDTO;
+import com.studymatch.enums.NotificationTarget;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Degree;
@@ -38,6 +39,7 @@ import com.studymatch.models.Student;
 import com.studymatch.repositories.ChatRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.MessageRepository;
+import com.studymatch.repositories.NotificationRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.services.MessageService;
 
@@ -65,6 +67,9 @@ class ReplyMessageConcurrencyIntegrationTest {
   private MessageRepository messageRepository;
 
   @Autowired
+  private NotificationRepository notificationRepository;
+
+  @Autowired
   private PlatformTransactionManager transactionManager;
 
   private final ExecutorService otherThread = Executors.newSingleThreadExecutor();
@@ -89,6 +94,11 @@ class ReplyMessageConcurrencyIntegrationTest {
   void cleanUp() {
     otherThread.shutdownNow();
     transaction.executeWithoutResult(status -> messageRepository.deleteByChat(chat));
+    // the replies notified the other side, and the notifications point at the students
+    notificationRepository.deleteAll(notificationRepository.findAll().stream()
+        .filter(notification -> notification.getTarget() == NotificationTarget.CHAT
+            && notification.getTargetId().equals(chat.getId()))
+        .toList());
     chatRepository.deleteById(chat.getId());
     studentRepository.deleteAll(List.of(ana, rui));
     degreeRepository.delete(degree);

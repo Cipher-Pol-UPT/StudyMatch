@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import com.studymatch.enums.NotificationType;
 import com.studymatch.models.Notification;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
@@ -22,5 +23,16 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
   @Modifying(flushAutomatically = true, clearAutomatically = true)
   @Query("update Notification n set n.read = true where n.recipient.number = :recipientNumber and n.read = false")
   int markAllAsRead(Long recipientNumber);
+
+  // a chat's unread one, there's at most one per member (GR11)
+  Optional<Notification> findByRecipientNumberAndTypeAndTargetIdAndReadFalse(Long recipientNumber,
+      NotificationType type, Long targetId);
+
+  // opening the chat, same clearing as markAllAsRead
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query("""
+      update Notification n set n.read = true
+      where n.recipient.number = :recipientNumber and n.type = :type and n.targetId = :targetId and n.read = false""")
+  int markAsRead(Long recipientNumber, NotificationType type, Long targetId);
 
 }

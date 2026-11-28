@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -27,6 +28,7 @@ import com.studymatch.dtos.ReactionDTO;
 import com.studymatch.dtos.SendAttachmentsRequestDTO;
 import com.studymatch.dtos.SendMessageRequestDTO;
 import com.studymatch.enums.ChatEventType;
+import com.studymatch.enums.NotificationLevel;
 import com.studymatch.enums.Sticker;
 import com.studymatch.events.ChatEvent;
 import com.studymatch.events.MemberChatEvent;
@@ -59,10 +61,13 @@ public class MessageService {
   private final UserBlockService userBlockService;
   private final ReactionService reactionService;
   private final AttachmentService attachmentService;
+  private final ChatSettingsService chatSettingsService;
+  private final NotificationService notificationService;
   private final ApplicationEventPublisher eventPublisher;
 
   public MessageService(MessageRepository messageRepository, ChatService chatService, UserService userService,
       UserBlockService userBlockService, ReactionService reactionService, AttachmentService attachmentService,
+      ChatSettingsService chatSettingsService, NotificationService notificationService,
       ApplicationEventPublisher eventPublisher) {
     this.messageRepository = messageRepository;
     this.chatService = chatService;
@@ -70,6 +75,8 @@ public class MessageService {
     this.userBlockService = userBlockService;
     this.reactionService = reactionService;
     this.attachmentService = attachmentService;
+    this.chatSettingsService = chatSettingsService;
+    this.notificationService = notificationService;
     this.eventPublisher = eventPublisher;
   }
 
@@ -359,6 +366,7 @@ public class MessageService {
   // to someone who blocked the sender it goes through for the sender but never reaches them (GR9)
   private MessageDTO send(Chat chat, User user, String text, String gifId, Sticker sticker, Long replyToId,
       List<MultipartFile> files) {
+    chatService.lockForMessage(chat);
     Message original = replyToId == null ? null : getOriginal(chat, replyToId, user);
     Message saved = sticker == null ? new Message(chat, user, text, original, gifId)
         : new Message(chat, user, original, sticker);
@@ -374,7 +382,25 @@ public class MessageService {
             MessageDTO.from(saved, member)));
       }
     }
+    notifyMembers(saved);
     return MessageDTO.from(saved, user);
+  }
+
+  // everyone else it reaches, as far as their level lets it: ALL every message, MENTIONS none yet, NONE never.
+  // someone who blocked the author isn't told, it doesn't count as unread for them either (GR9, GR11)
+  private void notifyMembers(Message message) {
+    Chat chat = message.getChat();
+    User author = message.getAuthor();
+    Map<Long, NotificationLevel> levels = chatSettingsService.getLevels(chat);
+    Set<Long> blockers = userBlockService.getBlockerNumbers(author);
+    for (User member : chat.getMembers()) {
+      if (member.getNumber().equals(author.getNumber()) || message.isHiddenFrom(member)
+          || blockers.contains(member.getNumber())
+          || levels.getOrDefault(member.getNumber(), NotificationLevel.ALL) != NotificationLevel.ALL) {
+        continue;
+      }
+      notificationService.countChatMessage(member, chat.getId(), chat.getNameFor(member), false);
+    }
   }
 
   // the message being replied to, in this chat and one the user can see. its own code, NOT_FOUND is the chat (#218)

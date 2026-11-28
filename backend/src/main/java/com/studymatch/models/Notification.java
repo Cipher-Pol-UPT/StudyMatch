@@ -66,6 +66,22 @@ public class Notification {
     this.createdAt = LocalDateTime.now();
   }
 
+  // the first message since the chat was last read, the next ones are counted into it (GR11)
+  public static Notification forChatMessage(User recipient, Long chatId, String chatName, boolean mentioned) {
+    return new Notification(recipient, NotificationType.CHAT_MESSAGES, NotificationTarget.CHAT, chatId,
+        Map.of("chat", chatName, "count", 1, "mentions", mentioned ? 1 : 0));
+  }
+
+  // one more, under the chat's current name, and back to the top of the list. a new map so the change is seen
+  public void countChatMessage(String chatName, boolean mentioned) {
+    Map<String, Object> counted = new HashMap<>(params);
+    counted.put("chat", chatName);
+    counted.put("count", ((Number) params.get("count")).intValue() + 1);
+    counted.put("mentions", ((Number) params.get("mentions")).intValue() + (mentioned ? 1 : 0));
+    this.params = counted;
+    this.createdAt = LocalDateTime.now();
+  }
+
   public Long getId() {
     return id;
   }
