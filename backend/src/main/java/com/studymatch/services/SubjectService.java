@@ -13,12 +13,14 @@ import com.studymatch.dtos.SubjectEditionRequestDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.dtos.SubjectRequestDTO;
 import com.studymatch.dtos.UpdateSubjectRequestDTO;
+import com.studymatch.dtos.WeeklySessionDTO;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
 import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
+import com.studymatch.models.WeeklySession;
 import com.studymatch.repositories.SubjectRepository;
 
 @Service
@@ -57,6 +59,9 @@ public class SubjectService {
       }
       subject.addDegree(degree, placement.curricularYear(), placement.semester());
     }
+    if (request.weeklySessions() != null) {
+      subject.setWeeklySessions(toSessions(request.weeklySessions()));
+    }
 
     // two Staff registering the same code at once both pass the check above, the unique column stops the second.
     // The failed insert aborts the transaction, so the other subject's id can't be looked up here
@@ -74,17 +79,24 @@ public class SubjectService {
     return subjectEditionService.createEdition(getSubject(subjectId), request);
   }
 
-  // only name and ECTS: code and category define the students' category levels.
-  // Teachers change in this year's edition only, and only when the request brings them
+  // only name, ECTS and the weekly plan: code and category define the students' category levels.
+  // Teachers change in this year's edition only, and teachers and plan only when the request brings them
   @Transactional
   public Subject updateSubject(Long id, UpdateSubjectRequestDTO request) {
     Subject subject = getSubject(id);
     subject.setName(request.name().trim());
     subject.setEcts(request.ects());
+    if (request.weeklySessions() != null) {
+      subject.setWeeklySessions(toSessions(request.weeklySessions()));
+    }
     if (request.teacherNumbers() != null) {
       subjectEditionService.updateCurrentTeachers(subject, request.teacherNumbers());
     }
     return subject;
+  }
+
+  private static List<WeeklySession> toSessions(List<WeeklySessionDTO> sessions) {
+    return sessions.stream().map(WeeklySessionDTO::toSession).toList();
   }
 
   // mapped here, the edition's teachers and classes are lazy and only load inside the transaction
