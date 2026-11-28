@@ -119,6 +119,29 @@ Each use case gets one integration test class, which logs in through `POST /user
 
 Requests that change something need `.with(csrf())`, the same way the real frontend sends the token.
 
+### The brief's API tests
+
+The brief (section 7) asks for a Postman collection with five automated API tests. We wrote them as MockMvc integration tests instead, for three reasons:
+
+- they run on every build, locally with `./mvnw verify` and on every pull request in CI, so a broken endpoint stops the merge. A Postman collection only runs when someone remembers to
+- they go through the real Spring context, security filters included, and the real PostgreSQL
+- they follow the path the brief describes: HTTP request, controller, service, repository, database, HTTP response. MockMvc only skips the network socket
+
+| Test in the brief | Our test | What it checks |
+| --- | --- | --- |
+| 1. Successful operation | `GradeStudentIntegrationTest.finalGrade` | grading the last assignment returns 200 with the weighted final grade, and the enrolment is Passed in the database |
+| 2. Invalid operation | `GradeStudentIntegrationTest.gradeOverTwenty` | a grade of 20.01 returns 400 with a `DECIMAL_MAX` field error, and nothing is saved |
+| 3. Persistence | `ViewGroupsIntegrationTest.generatedDraftsReadBack` | generates groups with `POST`, reads them back with `GET`, and compares the members with what the first response previewed |
+| 4. Complete business workflow | `StudentJourneyIntegrationTest.registerEnrolGradeAndReadBack` | five requests, each using an id the one before returned: Staff registers a student, enrols that number, the teacher adds an assignment and grades the student on its id, and Staff reads the record with the final grade |
+| 5. Group generation | `GenerateGroupsIntegrationTest.teacherGeneratesDraftGroups` | the teacher generates groups: 201 with two groups of 4, the blocked student left out, saved as drafts |
+
+To run only the integration tests:
+
+```bash
+cd backend
+./mvnw test -Dtest='*IntegrationTest'
+```
+
 ## How we write frontend tests
 
 The tests render a page inside `StudyMatchProvider`, stub `fetch` with the backend answer the case needs, act like a user would (`fireEvent`, typing, clicking), and check what's on screen with Testing Library's `screen` queries. Look things up by role or visible text, not by CSS class, so restyling a page doesn't break its tests.
