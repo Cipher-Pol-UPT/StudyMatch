@@ -55,6 +55,15 @@ public interface StudyRoomRepository extends JpaRepository<StudyRoom, Long>, Jpa
         and r.startsAt > :now""")
   List<StudyRoom> findUpcoming(Long tutorNumber, LocalDateTime now);
 
+  // blocking a tutor: the same rooms with who joined them, so telling them is one select and not one per room
+  @Query("""
+      select distinct r from StudyRoom r
+        left join fetch r.participations p left join fetch p.student
+      where r.tutorRole.student.number = :tutorNumber
+        and r.status = com.studymatch.enums.StudyRoomStatus.SCHEDULED
+        and r.startsAt > :now""")
+  List<StudyRoom> findUpcomingWithParticipants(Long tutorNumber, LocalDateTime now);
+
   // achievements: the tutor's rooms where at least minAttendees were confirmed as attending; cancelled rooms never count
   @Query("""
       select count(r) from StudyRoom r

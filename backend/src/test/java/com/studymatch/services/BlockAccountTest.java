@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ import com.studymatch.dtos.BlockImpactDTO;
 import com.studymatch.dtos.BlockedAccountDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
 import com.studymatch.enums.AccountStatus;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.enums.Role;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -42,6 +44,7 @@ class BlockAccountTest {
   private StudyRoomService studyRoomService;
   private TutorApplicationService tutorApplicationService;
   private SubjectEditionService subjectEditionService;
+  private NotificationService notificationService;
   private UserService userService;
 
   private Student tutor;
@@ -52,8 +55,9 @@ class BlockAccountTest {
     studyRoomService = mock(StudyRoomService.class);
     tutorApplicationService = mock(TutorApplicationService.class);
     subjectEditionService = mock(SubjectEditionService.class);
+    notificationService = mock(NotificationService.class);
     userService = new UserService(userRepository, mock(PasswordEncoder.class), mock(EmailSender.class),
-        studyRoomService, tutorApplicationService, subjectEditionService, "test.com");
+        studyRoomService, tutorApplicationService, subjectEditionService, notificationService, "test.com");
 
     tutor = ModelTestData.student("Test Tutor");
     ReflectionTestUtils.setField(tutor, "number", NUMBER);
@@ -201,6 +205,38 @@ class BlockAccountTest {
 
     // Assert
     assertEquals(ErrorCode.ACCOUNT_ALREADY_BLOCKED, e.getCode());
+  }
+
+  // unblock
+
+  @Test
+  @DisplayName("Unblocking makes the account active again and tells the user")
+  void unblockNotifiesUser() {
+    // Arrange
+    tutor.block("first reason");
+    when(userRepository.findById(NUMBER)).thenReturn(Optional.of(tutor));
+    when(userRepository.save(tutor)).thenReturn(tutor);
+
+    // Act
+    userService.unblockAccount(NUMBER);
+
+    // Assert
+    assertEquals(AccountStatus.ACTIVE, tutor.getAccountStatus());
+    verify(notificationService).notify(tutor, NotificationType.ACCOUNT_UNBLOCKED, null, null, Map.of());
+  }
+
+  @Test
+  @DisplayName("Unblocking an account that isn't blocked tells nobody")
+  void unblockActiveAccountNotifiesNobody() {
+    // Arrange
+    when(userRepository.findById(NUMBER)).thenReturn(Optional.of(tutor));
+
+    // Act
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> userService.unblockAccount(NUMBER));
+
+    // Assert
+    assertEquals(ErrorCode.ACCOUNT_NOT_BLOCKED, e.getCode());
+    verifyNoInteractions(notificationService);
   }
 
 }

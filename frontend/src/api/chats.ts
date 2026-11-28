@@ -31,6 +31,10 @@ export const attachmentUrl = (chatId: number, messageId: number, attachmentId: n
 export const sendSticker = (to: { chatId: number } | { number: number }, sticker: Sticker, replyToId?: number) =>
   request<MessageData>('POST', 'chatId' in to ? `/chats/${to.chatId}/messages` : `/chats/direct/${to.number}/messages`,
     replyToId === undefined ? { sticker } : { sticker, replyToId });
+// a GIPHY GIF by its id, on its own (#212), the same way as a sticker
+export const sendGif = (to: { chatId: number } | { number: number }, gifId: string, replyToId?: number) =>
+  request<MessageData>('POST', 'chatId' in to ? `/chats/${to.chatId}/messages` : `/chats/direct/${to.number}/messages`,
+    replyToId === undefined ? { gifId } : { gifId, replyToId });
 // a chat's 50 newest messages, the 50 before a message when scrolling up, or the 50 after one when scrolling down
 // from an old message you jumped to
 export const getChatMessages = (chatId: number, from?: { before: number } | { after: number }) =>

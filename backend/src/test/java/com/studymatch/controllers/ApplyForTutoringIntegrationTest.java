@@ -1,12 +1,14 @@
 package com.studymatch.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,20 +27,25 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
 import com.studymatch.models.Enrolment;
+import com.studymatch.models.Notification;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Student;
 import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.TutorApplication;
+import com.studymatch.models.User;
 import com.studymatch.repositories.AcademicYearRepository;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.EnrolmentRepository;
+import com.studymatch.repositories.NotificationRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.SubjectEditionRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -74,6 +82,8 @@ class ApplyForTutoringIntegrationTest {
   private EnrolmentRepository enrolmentRepository;
   @Autowired
   private TutorApplicationRepository tutorApplicationRepository;
+  @Autowired
+  private NotificationRepository notificationRepository;
 
   private Teacher teacher;
   private Subject maths;
@@ -204,6 +214,39 @@ class ApplyForTutoringIntegrationTest {
         .contentType(MediaType.APPLICATION_JSON)
         .content("{\"subjectId\":" + maths.getId() + "}"))
         .andExpect(status().isUnauthorized());
+  }
+
+  private List<Notification> notificationsOf(User user) {
+    return notificationRepository.findByRecipientNumber(user.getNumber(), Pageable.unpaged()).getContent();
+  }
+
+  @Test
+  @DisplayName("Applying tells the teacher of the subject's current edition, pointing at the application")
+  void applyingNotifiesTeacher() throws Exception {
+    // Act
+    apply(maths.getId(), topSession).andExpect(status().isCreated());
+
+    // Assert
+    List<Notification> notifications = notificationsOf(teacher);
+    assertEquals(1, notifications.size());
+    Notification notification = notifications.getFirst();
+    assertEquals(NotificationType.TUTOR_APPLICATION_SUBMITTED, notification.getType());
+    assertEquals(NotificationTarget.TUTOR_APPLICATION, notification.getTarget());
+    assertEquals(tutorApplicationRepository.findAll().stream()
+        .filter(application -> application.getStudent().getNumber().equals(topStudent.getNumber()))
+        .findFirst().orElseThrow().getId(), notification.getTargetId());
+    assertEquals("Top Student", notification.getParams().get("student"));
+    assertEquals(maths.getId().intValue(), ((Number) notification.getParams().get("subjectId")).intValue());
+  }
+
+  @Test
+  @DisplayName("An application that's refused tells nobody")
+  void refusedApplicationNotifiesNobody() throws Exception {
+    // Act
+    apply(maths.getId(), belowSession).andExpect(status().isForbidden());
+
+    // Assert
+    assertTrue(notificationsOf(teacher).isEmpty());
   }
 
 }

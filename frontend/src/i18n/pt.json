@@ -1308,6 +1308,18 @@
     "originalGone": "A mensagem original já não existe.",
     "loadingNewer": "A carregar mensagens mais recentes",
     "gif": "GIF",
+    "gifs": {
+      "open": "GIFs",
+      "pick": "Escolher um GIF",
+      "search": "Pesquisar no GIPHY",
+      "poweredBy": "Powered by GIPHY",
+      "none": "Não foram encontrados GIFs. Experimente outras palavras.",
+      "down": "O GIPHY não está a responder neste momento. Pode continuar a enviar texto.",
+      "limit": "Foram feitas demasiadas pesquisas de GIFs. Tente novamente mais tarde, pode continuar a enviar texto.",
+      "noKey": "Os GIFs não estão configurados aqui. Pode continuar a enviar texto.",
+      "retry": "Tentar novamente",
+      "unavailable": "GIF indisponível"
+    },
     "stickers": "Autocolantes",
     "pickSticker": "Escolher um autocolante",
     "stickerHint": "Escolha um para o enviar",

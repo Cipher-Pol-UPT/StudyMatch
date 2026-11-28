@@ -15,6 +15,8 @@ export interface ThreadMessage {
   progress?: number;
   // a sticker instead of the text, which is empty then (#215)
   sticker?: Sticker;
+  // a GIPHY GIF instead of the text (#213)
+  gifId?: string;
 }
 
 // what's typed and sent in one conversation

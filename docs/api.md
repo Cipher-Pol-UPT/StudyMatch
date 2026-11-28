@@ -162,6 +162,15 @@ Errors always come back as `{ "code": ..., "params": ..., "fieldErrors": ... }` 
 
 The live part is the WebSocket at `/ws` (STOMP), open to logged-in Students and Teachers, where the browser subscribes to `/topic/chats/{id}` and `/user/queue/chats/{id}` for a chat it's in and `/user/queue/chats` for its chat list, and sends to `/app/chats/{id}/typing` while the user types. The CONNECT frame needs the `X-XSRF-TOKEN` header. How it works is in [architecture.md](architecture.md#live-updates).
 
+## Notifications
+
+| Method | Path | Who | What it does |
+| --- | --- | --- | --- |
+| GET | `/notifications/?page=` | Logged in | your notifications, newest first, 20 per page. Each has a `type` and `params` to translate, `target` and `targetId` for the page it opens (null when there's none), `createdAt` and `read` |
+| GET | `/notifications/unread-count` | Logged in | how many of your notifications you haven't read, for the navbar |
+| PUT | `/notifications/{id}/read` | Logged in | mark one as read (204), again changes nothing. Someone else's is 404 |
+| PUT | `/notifications/read` | Logged in | mark all yours as read (204) |
+
 ## Analytics
 
 | Method | Path | Who | What it does |
@@ -203,4 +212,4 @@ These work before the personality test too (GR1). Admin answers tickets and does
 
 ## Coming next
 
-The other use cases (tutor applications, notifications, and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.
+The other use cases (tutor applications and the rest of the chat ones) don't have endpoints yet. Each one is an open Backend issue on the [project board](https://github.com/orgs/Cipher-Pol-UPT/projects/1), and its endpoints go in this file and in Swagger as part of its pull request.

@@ -393,3 +393,29 @@
 /* in the chat: bigger than an emoji and without a bubble (#215) */
 .sm-msg__sticker { line-height: 0; }
 .sm-msg__sticker .sm-sticker { width: 132px; height: 132px; }
+
+/* ─── GIFs (#213) ───────────────────────────────── */
+/* the picker: a search on top, the GIFs in two columns in GIPHY's order, and "Powered by GIPHY" at the bottom */
+.sm-gifs { position: absolute; z-index: 6; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: 392px; height: 460px; max-width: calc(100% - 16px); border-radius: var(--sm-r-lg); background: var(--sm-surface); box-shadow: var(--sm-shadow-lg); overflow: hidden; animation: sm-stickers-in var(--sm-dur-2) var(--sm-ease-out) both; transform-origin: 50% 100%; }
+.sm-gifs__head { padding: 10px 10px 8px; }
+.sm-gifs__list { padding: 0 10px 10px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.sm-gifs__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 6px; }
+.sm-gifs__column { display: grid; gap: 6px; }
+.sm-gifs__item { display: block; width: 100%; padding: 0; border: 0; border-radius: var(--sm-r-md); background: var(--sm-fill); overflow: hidden; cursor: pointer; transition: transform var(--sm-dur-1) var(--sm-ease-out); }
+.sm-gifs__item img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sm-gifs__item:hover { transform: scale(1.03); }
+.sm-gifs__item:active { transform: scale(0.96); }
+.sm-gifs__item:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-gifs__empty { display: grid; justify-items: center; gap: 12px; padding: 36px 16px; text-align: center; font-size: 13px; color: var(--sm-text-3); }
+.sm-gifs__foot { padding: 8px 12px; border-top: 1px solid var(--sm-hairline); text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--sm-text-3); }
+/* the button says GIF, in the same circle as the sticker one */
+.sm-composer__tool--gif { color: var(--sm-text-2); font-size: 11px; font-weight: 800; letter-spacing: 0.02em; }
+.sm-composer__tool--gif:hover, .sm-composer__tool--gif[aria-expanded="true"] { color: var(--sm-violet); }
+/* in the chat: a box of one size, so nothing moves when it loads, and the same box says when it can't be shown */
+.sm-msg__gif { line-height: 0; }
+.sm-gif { display: grid; place-items: center; width: 220px; height: 165px; max-width: 100%; border-radius: var(--sm-r-lg); background: var(--sm-fill); object-fit: contain; }
+.sm-gif--unavailable { padding: 12px; line-height: 1.3; text-align: center; font-size: 13px; color: var(--sm-text-3); }
+@media (prefers-reduced-motion: reduce) {
+  .sm-gifs, .sm-gifs__item { animation: none; transition: none; }
+  .sm-gifs__item:hover { transform: none; }
+}

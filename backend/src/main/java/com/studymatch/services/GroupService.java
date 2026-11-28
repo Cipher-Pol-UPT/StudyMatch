@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -39,6 +40,8 @@ import com.studymatch.dtos.MyGroupDTO;
 import com.studymatch.enums.ExportFormat;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.matching.Candidate;
@@ -78,13 +81,14 @@ public class GroupService {
   private final GroupGenerator groupGenerator;
   private final GroupCsvWriter groupCsvWriter;
   private final GroupPdfWriter groupPdfWriter;
+  private final NotificationService notificationService;
   private final Random random = new SecureRandom();
 
   public GroupService(GroupRepository groupRepository, AssignmentService assignmentService,
       EnrolmentService enrolmentService, AcademicYearService academicYearService,
       SubjectEditionService subjectEditionService, LessonService lessonService, AbsenceService absenceService,
       ChatService chatService, MessageService messageService, GroupGenerator groupGenerator,
-      GroupCsvWriter groupCsvWriter, GroupPdfWriter groupPdfWriter) {
+      GroupCsvWriter groupCsvWriter, GroupPdfWriter groupPdfWriter, NotificationService notificationService) {
     this.groupRepository = groupRepository;
     this.assignmentService = assignmentService;
     this.enrolmentService = enrolmentService;
@@ -97,6 +101,7 @@ public class GroupService {
     this.groupGenerator = groupGenerator;
     this.groupCsvWriter = groupCsvWriter;
     this.groupPdfWriter = groupPdfWriter;
+    this.notificationService = notificationService;
   }
 
   // generate groups: the new groups replace the drafts, the published ones stay until the teacher confirms
@@ -306,7 +311,9 @@ public class GroupService {
   @Transactional
   public void publishGroups(Long subjectEditionId, Long assignmentId) {
     Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
-    List<Group> drafts = groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT);
+    // with their members, so telling them is one select and not one per group
+    List<Group> drafts = groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment,
+        GroupStatus.DRAFT);
     if (drafts.isEmpty()) {
       throw new StudyMatchException(ErrorCode.NO_DRAFT_GROUPS);
     }
@@ -316,7 +323,8 @@ public class GroupService {
     groupRepository.flush();
     drafts.forEach(Group::publish);
     chatService.createGroupChats(drafts);
-    // telling the students about their groups comes with notifications (#144)
+    // every member is told, a republish too: their group may have changed
+    drafts.forEach(group -> notifyMembers(group, NotificationType.GROUP_PUBLISHED));
   }
 
   // generate groups, cancel: the published groups, if any, stay as they were
@@ -397,8 +405,11 @@ public class GroupService {
       messageService.groupMembersChanged(before);
       // the name has the number, after the members so it reaches who's in now
       chatService.groupsRenumbered(renumbered);
+      // whose group is new, has other members or another number is told, the rest stay as they were
+      saved.stream().filter(group -> added.contains(group) || renumbered.contains(group)
+              || !numbersOf(before.get(group)).equals(numbersOf(group.getMembers())))
+          .forEach(group -> notifyMembers(group, NotificationType.GROUP_UPDATED));
     }
-    // telling the students of changed published groups comes with notifications (#144)
     Map<Long, String> classOf = classSections(enrolments);
     return saved.stream().sorted(Comparator.comparing(Group::getNumber)).map(group -> toDTO(group, classOf)).toList();
   }
@@ -680,6 +691,19 @@ public class GroupService {
             group.getAssignment().getName(), group.getNumber()))
         .toList();
     return new Filters(years, editions, groupOptions);
+  }
+
+  // it opens the assignment, which stays when publishing again or editing deletes the group
+  private void notifyMembers(Group group, NotificationType type) {
+    Assignment assignment = group.getAssignment();
+    notificationService.notifyAll(group.getMembers(), type, NotificationTarget.ASSIGNMENT, assignment.getId(), Map.of(
+        "subject", assignment.getSubjectEdition().getSubject().getName(),
+        "assignment", assignment.getName(),
+        "number", group.getNumber()));
+  }
+
+  private static Set<Long> numbersOf(Collection<Student> students) {
+    return students.stream().map(Student::getNumber).collect(Collectors.toSet());
   }
 
 }

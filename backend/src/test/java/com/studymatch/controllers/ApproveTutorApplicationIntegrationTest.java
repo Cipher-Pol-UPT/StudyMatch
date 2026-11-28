@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,20 +26,25 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
 import com.studymatch.models.Enrolment;
+import com.studymatch.models.Notification;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Student;
 import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.TutorApplication;
+import com.studymatch.models.User;
 import com.studymatch.repositories.AcademicYearRepository;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.EnrolmentRepository;
+import com.studymatch.repositories.NotificationRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.SubjectEditionRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -77,6 +84,8 @@ class ApproveTutorApplicationIntegrationTest {
   private TutorApplicationRepository tutorApplicationRepository;
   @Autowired
   private TutorRoleRepository tutorRoleRepository;
+  @Autowired
+  private NotificationRepository notificationRepository;
 
   private Teacher teacher;
   private Subject maths;
@@ -210,6 +219,42 @@ class ApproveTutorApplicationIntegrationTest {
     // Act + Assert
     mockMvc.perform(post("/tutor-applications/" + application.getId() + "/approve").with(csrf()).session(studentSession))
         .andExpect(status().isForbidden());
+  }
+
+  private List<Notification> notificationsOf(User user) {
+    return notificationRepository.findByRecipientNumber(user.getNumber(), Pageable.unpaged()).getContent();
+  }
+
+  @Test
+  @DisplayName("Approving tells the student, pointing at the application")
+  void approvingNotifiesStudent() throws Exception {
+    // Act
+    mockMvc.perform(post("/tutor-applications/" + application.getId() + "/approve").with(csrf()).session(teacherSession))
+        .andExpect(status().isOk());
+
+    // Assert
+    List<Notification> notifications = notificationsOf(applicant);
+    assertEquals(1, notifications.size());
+    assertEquals(NotificationType.TUTOR_APPLICATION_APPROVED, notifications.getFirst().getType());
+    assertEquals(NotificationTarget.TUTOR_APPLICATION, notifications.getFirst().getTarget());
+    assertEquals(application.getId(), notifications.getFirst().getTargetId());
+    assertEquals("Test Maths", notifications.getFirst().getParams().get("subject"));
+  }
+
+  @Test
+  @DisplayName("Rejecting tells the student, with the reason")
+  void rejectingNotifiesStudentWithReason() throws Exception {
+    // Act
+    mockMvc.perform(post("/tutor-applications/" + application.getId() + "/reject").with(csrf()).session(teacherSession)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"reason\":\"not good enough\"}"))
+        .andExpect(status().isOk());
+
+    // Assert
+    List<Notification> notifications = notificationsOf(applicant);
+    assertEquals(1, notifications.size());
+    assertEquals(NotificationType.TUTOR_APPLICATION_REJECTED, notifications.getFirst().getType());
+    assertEquals("not good enough", notifications.getFirst().getParams().get("reason"));
   }
 
 }

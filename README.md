@@ -169,6 +169,14 @@ Everything has a default that matches `docker-compose.yml`, so nothing needs to 
 
 Without the three Google variables everything works, but tutors have to paste their own Meet link. To set them up: in a Google Cloud project, enable the Google Meet REST API and create an OAuth client of type "Web application" with `https://developers.google.com/oauthplayground` as a redirect URI. In the [OAuth Playground](https://developers.google.com/oauthplayground), under the settings use your own client id and secret, authorise the `https://www.googleapis.com/auth/meetings.space.created` scope with the StudyMatch Google account and exchange the code for a refresh token. Never commit any of them.
 
+The GIFs in the chat come from GIPHY, which the browser calls with its own key. Without one everything else works and the GIF panel says GIFs aren't set up. To set it, create an API key at [developers.giphy.com](https://developers.giphy.com/dashboard/) and put it in `frontend/.env.local`, which git ignores, then restart `npm run dev`:
+
+```bash
+VITE_GIPHY_API_KEY=your-key
+```
+
+The key ends up in the JavaScript the browser downloads, so anyone using the app can read it. That's how GIPHY expects it to be used, but never commit it.
+
 On a real server, also set `springdoc.api-docs.enabled=false` and `springdoc.swagger-ui.enabled=false` to hide the API docs.
 
 ### Demo accounts

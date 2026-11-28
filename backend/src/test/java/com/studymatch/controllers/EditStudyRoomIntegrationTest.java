@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,9 +30,12 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.enums.StudyRoomStatus;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
+import com.studymatch.models.Notification;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Student;
 import com.studymatch.models.StudyRoom;
@@ -38,8 +43,10 @@ import com.studymatch.models.Subject;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.TutorApplication;
 import com.studymatch.models.TutorRole;
+import com.studymatch.models.User;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
+import com.studymatch.repositories.NotificationRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.StudyRoomRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -77,6 +84,8 @@ class EditStudyRoomIntegrationTest {
   private TutorRoleRepository tutorRoleRepository;
   @Autowired
   private StudyRoomRepository studyRoomRepository;
+  @Autowired
+  private NotificationRepository notificationRepository;
 
   // never Google in tests
   @MockitoBean
@@ -312,6 +321,32 @@ class EditStudyRoomIntegrationTest {
         .content(body(tomorrowAt(15), tomorrowAt(17), 6, LINK)))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+  }
+
+  private List<Notification> notificationsOf(User user) {
+    return notificationRepository.findByRecipientNumber(user.getNumber(), Pageable.unpaged()).getContent();
+  }
+
+  @Test
+  @DisplayName("Editing tells each participant the room's new times")
+  void editingNotifiesParticipants() throws Exception {
+    // Arrange
+    Student ana = saveStudent("it.ed.ana@example.com", "Ana Test");
+    room.join(ana);
+    room = studyRoomRepository.saveAndFlush(room);
+
+    // Act
+    update(room.getId(), body(tomorrowAt(15), tomorrowAt(17), 6, LINK)).andExpect(status().isOk());
+
+    // Assert
+    List<Notification> notifications = notificationsOf(ana);
+    assertEquals(1, notifications.size());
+    Notification notification = notifications.getFirst();
+    assertEquals(NotificationType.STUDYROOM_UPDATED, notification.getType());
+    assertEquals(NotificationTarget.STUDYROOM, notification.getTarget());
+    assertEquals(room.getId(), notification.getTargetId());
+    assertEquals(tomorrowAt(15).toString(), notification.getParams().get("startsAt"));
+    assertEquals(tomorrowAt(17).toString(), notification.getParams().get("endsAt"));
   }
 
 }

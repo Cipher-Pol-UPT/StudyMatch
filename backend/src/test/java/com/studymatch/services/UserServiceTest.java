@@ -63,7 +63,8 @@ class UserServiceTest {
     passwordEncoder = new BCryptPasswordEncoder(4);
     emailSender = mock(EmailSender.class);
     userService = new UserService(userRepository, passwordEncoder, emailSender, mock(StudyRoomService.class),
-        mock(TutorApplicationService.class), mock(SubjectEditionService.class), "test.com");
+        mock(TutorApplicationService.class), mock(SubjectEditionService.class), mock(NotificationService.class),
+        "test.com");
     ana = new Teacher("ana@example.com", "ana@test.com", "Ana Test", passwordEncoder.encode(CURRENT));
   }
 
