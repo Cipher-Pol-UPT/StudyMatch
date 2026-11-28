@@ -10,6 +10,9 @@ export type AssignmentType = typeof AssignmentType[number];
 export const EnrolmentStatus = ["IN_PROGRESS", "PASSED", "FAILED"] as const;
 export type EnrolmentStatus = typeof EnrolmentStatus[number];
 
+export const ExportFormat = ["CSV", "PDF"] as const;
+export type ExportFormat = typeof ExportFormat[number];
+
 export const GroupStatus = ["DRAFT", "PUBLISHED"] as const;
 export type GroupStatus = typeof GroupStatus[number];
 
@@ -39,3 +42,9 @@ export type NotificationType = typeof NotificationType[number];
 
 export const NotificationTarget = ["STUDYROOM", "GROUP", "TUTOR_APPLICATION", "ACHIEVEMENT"] as const;
 export type NotificationTarget = typeof NotificationTarget[number];
+
+export const NoteColour = ["YELLOW", "PINK", "BLUE", "GREEN"] as const;
+export type NoteColour = typeof NoteColour[number];
+
+export const RoomType = ["CLASSROOM", "LAB", "AUDITORIUM"] as const;
+export type RoomType = typeof RoomType[number];

@@ -131,9 +131,15 @@ public final class MatchingProblem {
 
   // the size of each group: the optimal one, with the leftover pushed into as few groups as possible
   public int[] groupSizes() {
+    return groupSizes(size(), minSize, optimalSize, maxSize);
+  }
+
+  // the same without a problem, for import groups' leftover groups; empty when no split fits the sizes
+  public static int[] groupSizes(int students, int minSize, int optimalSize, int maxSize) {
+    int groupCount = Math.max(0, groupCount(students, minSize, optimalSize, maxSize));
     int[] sizes = new int[groupCount];
     Arrays.fill(sizes, optimalSize);
-    int extra = size() - groupCount * optimalSize;
+    int extra = groupCount == 0 ? 0 : students - groupCount * optimalSize;
     int step = extra > 0 ? maxSize - optimalSize : optimalSize - minSize;
     for (int group = 0; extra != 0; group++) {
       int change = Math.min(step, Math.abs(extra)) * Integer.signum(extra);

@@ -23,8 +23,10 @@ export function TeacherArea({ currentUser, onLoggedOut }: TeacherAreaProps) {
   const tab = SUBJECT_TABS.find(item => new RegExp(`^/subject-editions/[^/]+/${item}`).test(pathname));
   return (
     <RoleLayout currentUser={currentUser} sections={TEACHER_SECTIONS} onLoggedOut={onLoggedOut} activePath={tab ? `/${tab}` : pathname}>
-      <Route path="/chats" element={<ChatsPage />} />
-      <Route path="/chats/direct/:number" element={<ChatsPage />} />
+      <Route path="/chats" element={<ChatsPage me={currentUser.number} />} />
+      <Route path="/chats/direct/:number" element={<ChatsPage me={currentUser.number} />} />
+      <Route path="/chats/group/:chatId" element={<ChatsPage me={currentUser.number} />} />
+      <Route path="/chats/blocked" element={<ChatsPage me={currentUser.number} view="blocked" />} />
       {SUBJECT_TABS.map(item => <Route key={item} path={`/${item}`} element={<TeacherSubjectsPage tab={item} />} />)}
       <Route path="/subject-editions/:editionId" element={<TeacherSubjectLayout />}>
         <Route path="students" element={<TeacherStudentsPage />} />

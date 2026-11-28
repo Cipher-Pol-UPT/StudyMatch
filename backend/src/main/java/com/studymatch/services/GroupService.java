@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,9 +31,12 @@ import com.studymatch.dtos.AnalyticsDTO.GroupOption;
 import com.studymatch.dtos.AnalyticsDTO.MonthAttendance;
 import com.studymatch.dtos.AnalyticsDTO.TraitCount;
 import com.studymatch.dtos.AssignmentGroupsDTO;
+import com.studymatch.dtos.EditGroupsRequestDTO;
 import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.GroupGenerationDTO;
+import com.studymatch.dtos.GroupImportDTO;
 import com.studymatch.dtos.MyGroupDTO;
+import com.studymatch.enums.ExportFormat;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
 import com.studymatch.enums.NotificationTarget;
@@ -40,6 +45,7 @@ import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.matching.Candidate;
 import com.studymatch.matching.GroupGenerator;
+import com.studymatch.matching.MatchingProblem;
 import com.studymatch.matching.NoValidSplitException;
 import com.studymatch.matching.UnmetSeparationsException;
 import com.studymatch.models.Absence;
@@ -55,6 +61,9 @@ import com.studymatch.models.Separation;
 import com.studymatch.models.Student;
 import com.studymatch.models.SubjectEdition;
 import com.studymatch.repositories.GroupRepository;
+import com.studymatch.utils.GroupCsvReader;
+import com.studymatch.utils.GroupCsvWriter;
+import com.studymatch.utils.GroupPdfWriter;
 
 @Service
 public class GroupService {
@@ -66,14 +75,19 @@ public class GroupService {
   private final SubjectEditionService subjectEditionService;
   private final LessonService lessonService;
   private final AbsenceService absenceService;
+  private final ChatService chatService;
+  private final MessageService messageService;
   private final GroupGenerator groupGenerator;
+  private final GroupCsvWriter groupCsvWriter;
+  private final GroupPdfWriter groupPdfWriter;
   private final NotificationService notificationService;
   private final Random random = new SecureRandom();
 
   public GroupService(GroupRepository groupRepository, AssignmentService assignmentService,
       EnrolmentService enrolmentService, AcademicYearService academicYearService,
       SubjectEditionService subjectEditionService, LessonService lessonService, AbsenceService absenceService,
-      GroupGenerator groupGenerator, NotificationService notificationService) {
+      ChatService chatService, MessageService messageService, GroupGenerator groupGenerator,
+      GroupCsvWriter groupCsvWriter, GroupPdfWriter groupPdfWriter, NotificationService notificationService) {
     this.groupRepository = groupRepository;
     this.assignmentService = assignmentService;
     this.enrolmentService = enrolmentService;
@@ -81,7 +95,11 @@ public class GroupService {
     this.subjectEditionService = subjectEditionService;
     this.lessonService = lessonService;
     this.absenceService = absenceService;
+    this.chatService = chatService;
+    this.messageService = messageService;
     this.groupGenerator = groupGenerator;
+    this.groupCsvWriter = groupCsvWriter;
+    this.groupPdfWriter = groupPdfWriter;
     this.notificationService = notificationService;
   }
 
@@ -116,6 +134,118 @@ public class GroupService {
     return previews;
   }
 
+  // import groups: the file's groups become drafts, confirming and cancelling are generate's publish and discard.
+  // the matching algorithm doesn't run, the students the file leaves out are grouped among themselves
+  @Transactional
+  public GroupImportDTO importGroups(Long subjectEditionId, Long assignmentId, List<GroupCsvReader.Row> rows,
+      Set<Long> knownStudents, boolean replacePublished) {
+    Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
+    GroupingRule rule = assignment.getGroupingRule();
+    if (rule == null) {
+      throw new StudyMatchException(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK);
+    }
+    if (!replacePublished && groupRepository.existsByAssignmentAndStatus(assignment, GroupStatus.PUBLISHED)) {
+      throw new StudyMatchException(ErrorCode.GROUPS_ALREADY_PUBLISHED);
+    }
+    checkImportRows(rows, knownStudents);
+
+    List<Enrolment> enrolments = enrolmentService.listEnrolments(subjectEditionId);
+    Map<Long, Student> enrolled = enrolments.stream().map(Enrolment::getStudent)
+        .collect(Collectors.toMap(Student::getNumber, Function.identity()));
+    if (rows.stream().noneMatch(row -> enrolled.containsKey(row.studentNumber()))) {
+      throw new StudyMatchException(ErrorCode.GROUP_FILE_NOT_THIS_EDITION);
+    }
+    List<GroupImportDTO.Problem> skipped = new ArrayList<>();
+    Map<Integer, List<Student>> fromFile = new TreeMap<>();
+    Set<Long> seen = new HashSet<>();
+    for (GroupCsvReader.Row row : rows) {
+      Student student = enrolled.get(row.studentNumber());
+      if (student == null) {
+        skipped.add(new GroupImportDTO.Problem(row.row(), row.studentNumber(), GroupImportDTO.Reason.NOT_ENROLLED));
+      } else if (student.isBlocked()) {
+        // blocked accounts aren't placed in new groups (GR5)
+        skipped.add(new GroupImportDTO.Problem(row.row(), row.studentNumber(), GroupImportDTO.Reason.BLOCKED));
+      } else if (seen.add(student.getNumber())) { // twice in the same group counts once
+        fromFile.computeIfAbsent(row.groupNumber(), number -> new ArrayList<>()).add(student);
+      }
+    }
+
+    // a group of one isn't a group, its student joins the leftover ones
+    List<List<Student>> imported = fromFile.values().stream().filter(members -> members.size() > 1).toList();
+    Set<Long> grouped = imported.stream().flatMap(List::stream).map(Student::getNumber).collect(Collectors.toSet());
+    List<Student> leftover = enrolled.values().stream()
+        .filter(student -> !student.isBlocked() && !grouped.contains(student.getNumber()))
+        .sorted(Comparator.comparing(Student::getNumber))
+        .toList();
+
+    // as many leftover students as the sizes allow form groups, the rest go where members are missing
+    int formed = leftover.size();
+    while (formed > 0
+        && MatchingProblem.groupCount(formed, rule.getMinSize(), rule.getOptimalSize(), rule.getMaxSize()) < 1) {
+      formed--;
+    }
+    List<List<Student>> leftoverGroups = new ArrayList<>();
+    int start = 0;
+    for (int size : MatchingProblem.groupSizes(formed, rule.getMinSize(), rule.getOptimalSize(), rule.getMaxSize())) {
+      leftoverGroups.add(new ArrayList<>(leftover.subList(start, start + size)));
+      start += size;
+    }
+    List<Student> placed = leftover.subList(formed, leftover.size());
+    List<List<Student>> needMembers = imported.isEmpty() ? leftoverGroups : imported;
+    if (!placed.isEmpty() && needMembers.isEmpty()) {
+      throw new StudyMatchException(ErrorCode.NOT_ENOUGH_STUDENTS_FOR_GROUPS);
+    }
+    // always the smallest group, the first one on a tie, like generate fills them
+    for (Student student : placed) {
+      needMembers.stream().min(Comparator.comparingInt(List::size)).orElseThrow().add(student);
+    }
+
+    groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.DRAFT);
+    // the old drafts have to be gone before the new ones take their numbers
+    groupRepository.flush();
+    Map<Long, String> classOf = classSections(enrolments);
+    List<GroupImportDTO.ImportedGroup> groups = new ArrayList<>();
+    for (List<Student> members : imported) {
+      groups.add(new GroupImportDTO.ImportedGroup(GroupImportDTO.Origin.IMPORTED,
+          toDTO(saveDraft(assignment, groups.size() + 1, members), classOf)));
+    }
+    for (List<Student> members : leftoverGroups) {
+      groups.add(new GroupImportDTO.ImportedGroup(GroupImportDTO.Origin.LEFTOVER,
+          toDTO(saveDraft(assignment, groups.size() + 1, members), classOf)));
+    }
+    return new GroupImportDTO(grouped.size(), skipped, leftover.size(),
+        placed.stream().map(Student::getNumber).toList(), groups);
+  }
+
+  // every problem at once with its row, so the teacher fixes the file in one go
+  private static void checkImportRows(List<GroupCsvReader.Row> rows, Set<Long> knownStudents) {
+    List<GroupImportDTO.Problem> problems = new ArrayList<>();
+    Map<Long, Integer> groupOf = new HashMap<>();
+    for (GroupCsvReader.Row row : rows) {
+      if (row.groupNumber() == null || row.studentNumber() == null) {
+        problems.add(new GroupImportDTO.Problem(row.row(), row.studentNumber(), GroupImportDTO.Reason.INVALID));
+      } else if (!knownStudents.contains(row.studentNumber())) {
+        problems.add(new GroupImportDTO.Problem(row.row(), row.studentNumber(),
+            GroupImportDTO.Reason.UNKNOWN_STUDENT));
+      } else {
+        Integer group = groupOf.putIfAbsent(row.studentNumber(), row.groupNumber());
+        if (group != null && !group.equals(row.groupNumber())) {
+          problems.add(new GroupImportDTO.Problem(row.row(), row.studentNumber(),
+              GroupImportDTO.Reason.IN_TWO_GROUPS));
+        }
+      }
+    }
+    if (!problems.isEmpty()) {
+      throw new StudyMatchException(ErrorCode.GROUP_IMPORT_INVALID_ROWS, Map.of("rows", problems));
+    }
+  }
+
+  private Group saveDraft(Assignment assignment, int number, List<Student> members) {
+    Group group = new Group(assignment, number);
+    members.forEach(group::addMember);
+    return groupRepository.save(group);
+  }
+
   // view groups: the drafts and the published groups, no groups yet is two empty lists
   @Transactional(readOnly = true)
   public AssignmentGroupsDTO listGroups(Long subjectEditionId, Long assignmentId) {
@@ -129,6 +259,31 @@ public class GroupService {
         .collect(Collectors.groupingBy(GroupDTO::status));
     return new AssignmentGroupsDTO(byStatus.getOrDefault(GroupStatus.DRAFT, List.of()),
         byStatus.getOrDefault(GroupStatus.PUBLISHED, List.of()));
+  }
+
+  // export groups: only the published ones, the drafts can still change. Never the statute (GR7)
+  @Transactional(readOnly = true)
+  public byte[] exportGroups(Long subjectEditionId, Long assignmentId, ExportFormat format, String language) {
+    Assignment assignment = assignmentService.getAssignment(subjectEditionId, assignmentId);
+    if (assignment.getGroupingRule() == null) {
+      throw new StudyMatchException(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK);
+    }
+    List<Group> groups = groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment,
+        GroupStatus.PUBLISHED);
+    if (groups.isEmpty()) {
+      throw new StudyMatchException(ErrorCode.NO_GROUPS_TO_EXPORT);
+    }
+    List<GroupCsvWriter.Row> rows = groups.stream()
+        .flatMap(group -> group.getMembers().stream()
+            .sorted(Comparator.comparing(Student::getName).thenComparing(Student::getNumber))
+            .map(student -> new GroupCsvWriter.Row(group.getNumber(), student.getNumber(), student.getName(),
+                student.getInstitutionalEmail())))
+        .toList();
+    return switch (format) {
+      case CSV -> groupCsvWriter.write(rows);
+      case PDF -> groupPdfWriter.write(assignment.getSubjectEdition().getSubject().getName(), assignment.getName(),
+          rows, Locale.forLanguageTag("pt".equals(language) ? "pt-PT" : "en-GB"));
+    };
   }
 
   // generate groups, before generating: about how many groups and how long the search takes, for the page's loader
@@ -150,7 +305,8 @@ public class GroupService {
     return new GroupGenerationDTO(enrolments.size(), plan.groups(), rule.getOptimalSize(), plan.search().toMillis());
   }
 
-  // generate groups, confirm: the drafts replace whatever was published before
+  // generate groups, confirm: the drafts replace whatever was published before, chats and their history too.
+  // they're new groups with other people, each gets a fresh chat (#236)
   @Transactional
   public void publishGroups(Long subjectEditionId, Long assignmentId) {
     Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
@@ -158,9 +314,12 @@ public class GroupService {
     if (drafts.isEmpty()) {
       throw new StudyMatchException(ErrorCode.NO_DRAFT_GROUPS);
     }
+    messageService.deleteGroupChats(
+        groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.PUBLISHED));
     groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.PUBLISHED);
     groupRepository.flush();
     drafts.forEach(Group::publish);
+    chatService.createGroupChats(drafts);
     // every member is told, a republish too: their group may have changed
     drafts.forEach(group -> notificationService.notifyAll(group.getMembers(), NotificationType.GROUP_PUBLISHED,
         NotificationTarget.GROUP, group.getId(), Map.of(
@@ -174,6 +333,124 @@ public class GroupService {
   public void discardGroups(Long subjectEditionId, Long assignmentId) {
     Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
     groupRepository.deleteByAssignmentAndStatus(assignment, GroupStatus.DRAFT);
+  }
+
+  // edit groups: sizes and constraints only warn on the page. A kept group keeps its row, so its chat stays (#236)
+  @Transactional
+  public List<GroupDTO> editGroups(Long subjectEditionId, Long assignmentId, GroupStatus status,
+      List<EditGroupsRequestDTO.EditedGroup> edited) {
+    Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
+    if (assignment.getGroupingRule() == null) {
+      throw new StudyMatchException(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK);
+    }
+    List<Group> current = groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment, status);
+    if (current.isEmpty()) {
+      throw new StudyMatchException(status == GroupStatus.DRAFT ? ErrorCode.NO_DRAFT_GROUPS
+          : ErrorCode.NO_PUBLISHED_GROUPS);
+    }
+    List<Enrolment> enrolments = enrolmentService.listEnrolments(subjectEditionId);
+    List<List<Student>> members = editedMembers(edited, enrolments, current);
+
+    // what's left in removed at the end is every group the teacher took out
+    Map<Long, Group> removed = current.stream().collect(Collectors.toMap(Group::getId, Function.identity()));
+    List<Group> kept = new ArrayList<>();
+    for (EditGroupsRequestDTO.EditedGroup group : edited) {
+      Group existing = group.id() == null ? null : removed.remove(group.id());
+      if (group.id() != null && existing == null) {
+        throw new StudyMatchException(ErrorCode.NOT_FOUND);
+      }
+      kept.add(existing);
+    }
+    // only published groups have chats (#236)
+    boolean published = status == GroupStatus.PUBLISHED;
+    if (published) {
+      messageService.deleteGroupChats(removed.values());
+    }
+    groupRepository.deleteAll(removed.values());
+    groupRepository.flush();
+
+    // one at a time and only ever down, so two groups never share a number on the way
+    List<Group> survivors = kept.stream().filter(Objects::nonNull).sorted(Comparator.comparing(Group::getNumber))
+        .toList();
+    List<Group> renumbered = new ArrayList<>();
+    for (int i = 0; i < survivors.size(); i++) {
+      if (survivors.get(i).getNumber() != i + 1) {
+        survivors.get(i).renumber(i + 1);
+        groupRepository.flush();
+        renumbered.add(survivors.get(i));
+      }
+    }
+
+    int next = survivors.size();
+    List<Group> saved = new ArrayList<>();
+    List<Group> added = new ArrayList<>();
+    Map<Group, List<Student>> before = new HashMap<>();
+    for (int i = 0; i < edited.size(); i++) {
+      Group group = kept.get(i);
+      if (group == null) {
+        group = new Group(assignment, ++next);
+        if (published) {
+          group.publish();
+        }
+      } else {
+        before.put(group, new ArrayList<>(group.getMembers()));
+      }
+      group.replaceMembers(members.get(i));
+      saved.add(groupRepository.save(group));
+      if (kept.get(i) == null) {
+        added.add(saved.getLast());
+      }
+    }
+    if (published) {
+      chatService.createGroupChats(added);
+      messageService.groupMembersChanged(before);
+      // the name has the number, after the members so it reaches who's in now
+      chatService.groupsRenumbered(renumbered);
+    }
+    // telling the students of changed published groups comes with notifications (#144)
+    Map<Long, String> classOf = classSections(enrolments);
+    return saved.stream().sorted(Comparator.comparing(Group::getNumber)).map(group -> toDTO(group, classOf)).toList();
+  }
+
+  // every enrolled student who isn't blocked in exactly one group, a blocked one can stay or go (GR5)
+  private static List<List<Student>> editedMembers(List<EditGroupsRequestDTO.EditedGroup> edited,
+      List<Enrolment> enrolments, List<Group> current) {
+    Map<Long, Student> enrolled = enrolments.stream().map(Enrolment::getStudent)
+        .collect(Collectors.toMap(Student::getNumber, Function.identity()));
+    Map<Long, Long> blockedIn = new HashMap<>();
+    for (Group group : current) {
+      group.getMembers().stream().filter(Student::isBlocked)
+          .forEach(student -> blockedIn.put(student.getNumber(), group.getId()));
+    }
+    Set<Long> placed = new HashSet<>();
+    List<List<Student>> members = new ArrayList<>();
+    for (EditGroupsRequestDTO.EditedGroup group : edited) {
+      List<Student> students = new ArrayList<>();
+      for (Long number : group.members()) {
+        Student student = enrolled.get(number);
+        if (student == null) {
+          throw new StudyMatchException(ErrorCode.STUDENT_NOT_ENROLLED, Map.of("number", number));
+        }
+        if (!placed.add(number)) {
+          throw new StudyMatchException(ErrorCode.STUDENT_IN_TWO_GROUPS, Map.of("number", number));
+        }
+        // a new group's id is null, so it never matches, not even for a blocked student with no group
+        if (student.isBlocked() && (group.id() == null || !group.id().equals(blockedIn.get(number)))) {
+          throw new StudyMatchException(ErrorCode.BLOCKED_STUDENT_MOVED, Map.of("number", number));
+        }
+        students.add(student);
+      }
+      members.add(students);
+    }
+    List<Long> left = enrolled.values().stream()
+        .filter(student -> !student.isBlocked() && !placed.contains(student.getNumber()))
+        .map(Student::getNumber)
+        .sorted()
+        .toList();
+    if (!left.isEmpty()) {
+      throw new StudyMatchException(ErrorCode.STUDENT_WITHOUT_GROUP, Map.of("numbers", left));
+    }
+    return members;
   }
 
   private List<List<Integer>> generate(List<Candidate> candidates, List<int[]> separations, GroupingRule rule) {

@@ -161,7 +161,7 @@ export function StickyBoard({
                 aria-checked={c === color}
                 aria-label={i18n.t(`colours.${c}`)}
                 onClick={() => setColor(c)}
-                style={{ background: NOTE_HEX[c], boxShadow: c === color ? '0 0 0 2px #fff, 0 0 0 4px var(--sm-black)' : 'inset 0 0 0 1px rgba(0,0,0,.08)' }}
+                style={{ background: NOTE_HEX[c], boxShadow: c === color ? '0 0 0 2px var(--sm-surface), 0 0 0 4px var(--sm-text)' : 'inset 0 0 0 1px rgba(0,0,0,.08)' }}
               />
             ))}
           </div>

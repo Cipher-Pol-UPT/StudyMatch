@@ -78,3 +78,10 @@
   .sm-room-board__grid { grid-template-columns: minmax(0, 1fr); }
   .sm-room-live .sm-meet-btn { width: 100%; }
 }
+
+/* Confirm attendance: one row per participant, the box, their picture and name (#54) */
+.sm-attendance { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.sm-attendance .sm-check { align-items: center; padding: 6px 0; }
+.sm-attendance__person { display: inline-flex; align-items: center; gap: 12px; }
+.sm-attendance__error { margin: 8px 0 0; font-size: 13px; color: var(--sm-danger-ink); }
+.sm-attendance__none { margin: 0; color: var(--sm-text-2); font-size: 14px; }

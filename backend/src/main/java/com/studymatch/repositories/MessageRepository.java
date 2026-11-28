@@ -44,11 +44,17 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
   List<ChatActivity> findActivity(Collection<Chat> chats, Long number);
 
   // a whole chat's messages at once, when the chat goes. replies only point at messages of the same chat
-  // and the database deletes the reactions, attachments (#210) will have to go first.
+  // and the database deletes the reactions and the attachments.
   // a bulk delete skips the loaded entities, so it clears them, one left loaded would point at a deleted chat
   @Modifying(flushAutomatically = true, clearAutomatically = true)
   @Query("delete from Message m where m.chat = :chat")
   void deleteByChat(Chat chat);
+
+  // the same for the chats of removed groups (#236). no clear, editing groups still uses the groups it loaded,
+  // and nothing in there has loaded these messages
+  @Modifying(flushAutomatically = true)
+  @Query("delete from Message m where m.chat in :chats")
+  void deleteByChatIn(Collection<? extends Chat> chats);
 
   // the side menu's total, same unread rule as findActivity
   @Query("""

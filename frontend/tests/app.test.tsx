@@ -6,7 +6,9 @@ import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { CurrentUser } from '../src/types/currentUser';
 import { connectChatSocket } from '../src/api/chatSocket';
 
-vi.mock('../src/api/chatSocket', () => ({ connectChatSocket: vi.fn(), disconnectChatSocket: vi.fn(async () => {}) }));
+vi.mock('../src/api/chatSocket', () => ({ onChatSocketReconnect: () => () => undefined,
+  // the connection is down, so nobody shows as online
+  isChatSocketConnected: () => false, onChatSocketConnection: () => () => undefined, sendTyping: vi.fn(), connectChatSocket: vi.fn(), disconnectChatSocket: vi.fn(async () => {}), subscribeToChatEvents: vi.fn(() => () => undefined) }));
 
 const student: CurrentUser = {
   number: 50001,
@@ -17,8 +19,11 @@ const student: CurrentUser = {
   personalityTestRequired: false,
 };
 
+// the home page's sticky notes ask for /notes/ too, which answers an empty board
 function mockCurrentUserResponse(status: number, body: unknown) {
-  vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(body), { status })));
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => String(url).startsWith('/api/notes/')
+    ? new Response('[]', { status: 200 })
+    : new Response(JSON.stringify(body), { status })));
 }
 
 function renderApp() {

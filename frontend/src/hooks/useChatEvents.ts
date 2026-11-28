@@ -1,24 +1,38 @@
-import { useEffect, useRef } from 'react';
-import { subscribeToChatEvents } from '../api/chatSocket';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { isChatSocketConnected, onChatSocketConnection, onChatSocketReconnect, subscribeToChatEvents } from '../api/chatSocket';
 import type { ChatEvent } from '../types/chat';
 
-// a chat's messages being sent, edited or deleted, while the component is on screen
-export function useChatEvents(chatId: number, onEvent: (event: ChatEvent) => void) {
-  useSocketDestination(`/topic/chats/${chatId}`, onEvent);
+// a chat's messages being sent, edited or deleted, while the component is on screen; nothing while there's no chat yet
+export function useChatEvents(chatId: number | null, onEvent: (event: ChatEvent) => void) {
+  useSocketDestination(chatId === null ? null : `/topic/chats/${chatId}`, onEvent);
   // everything in a group chat, and DM messages only you can see, like one to someone who blocked you
-  useSocketDestination(`/user/queue/chats/${chatId}`, onEvent);
+  useSocketDestination(chatId === null ? null : `/user/queue/chats/${chatId}`, onEvent);
 }
 
-// the user's chat list changing (a new chat, one they left...)
-export function useChatListEvents(onEvent: (event: ChatEvent) => void) {
-  useSocketDestination('/user/queue/chats', onEvent);
+// the user's chat list changing (a new chat, one they left...); off for the roles that have no chats
+export function useChatListEvents(onEvent: (event: ChatEvent) => void, enabled = true) {
+  useSocketDestination(enabled ? '/user/queue/chats' : null, onEvent);
 }
 
 // the latest handler is kept in a ref, so a new function each render doesn't resubscribe
-function useSocketDestination(destination: string, onEvent: (event: ChatEvent) => void) {
+function useSocketDestination(destination: string | null, onEvent: (event: ChatEvent) => void) {
   const handler = useRef(onEvent);
   useEffect(() => {
     handler.current = onEvent;
   });
-  useEffect(() => subscribeToChatEvents(destination, event => handler.current(event)), [destination]);
+  useEffect(() => destination === null ? undefined : subscribeToChatEvents(destination, event => handler.current(event)), [destination]);
+}
+
+// whether the live connection is up right now (#223)
+export function useChatSocketConnected() {
+  return useSyncExternalStore(onChatSocketConnection, isChatSocketConnected);
+}
+
+// the connection came back after dropping: whatever was pushed meanwhile was lost, so it's asked for again (#317)
+export function useChatSocketReconnect(onReconnect: () => void) {
+  const handler = useRef(onReconnect);
+  useEffect(() => {
+    handler.current = onReconnect;
+  });
+  useEffect(() => onChatSocketReconnect(() => handler.current()), []);
 }

@@ -18,8 +18,22 @@
 .sm-chat__new > .sm-btn { flex: 1; }
 .sm-chat__rows { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0 8px 8px; }
 .sm-chat__rows:has(> .sm-empty:only-child) { display: grid; align-content: center; }
+/* a row of the chat list, like the prototype's: picture, name and latest message, then when and how many unread (#201) */
+.sm-chat__row-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.sm-chat__row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; padding: 10px; border-radius: var(--sm-r-lg); color: inherit; text-decoration: none; transition: background var(--sm-dur-1); }
+.sm-chat__row:hover { background: var(--sm-fill); }
+.sm-chat__row[aria-current="page"] { background: var(--sm-violet-a12); }
+.sm-chat__row:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-chat__row-text { display: grid; min-width: 0; }
+.sm-chat__row-name { font-size: 14.5px; font-weight: 500; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-chat__row-last { margin-top: 2px; font-size: 13px; color: var(--sm-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-chat__row--unread .sm-chat__row-last { color: var(--sm-text); font-weight: 500; }
+.sm-chat__row-side { display: grid; justify-items: end; gap: 5px; align-self: start; padding-top: 2px; }
+.sm-chat__row-time { font-size: 12px; color: var(--sm-text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sm-chat__row--unread .sm-chat__row-time { color: var(--sm-violet-ink); font-weight: 500; }
+.sm-chat__badge { display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--sm-r-pill); background: var(--sm-violet); color: var(--sm-on-accent); font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
 
-.sm-chat__thread { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; background: var(--sm-canvas); }
+.sm-chat__thread { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; background: var(--sm-canvas); }
 .sm-chat__head {
   display: flex; align-items: center; gap: 12px; height: 65px; padding: 0 16px;
   background: var(--sm-glass); backdrop-filter: blur(14px); border-bottom: 1px solid var(--sm-hairline);
@@ -32,11 +46,29 @@
 .sm-chat__head-text { flex: 1; min-width: 0; }
 .sm-chat__head-name { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sm-chat__head-sub { font-size: 12.5px; color: var(--sm-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-chat__head-sub--online { color: var(--sm-success-ink); }
 .sm-chat__back { display: none; }
+.sm-chat__head-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.sm-chat__head-search { width: 220px; }
+/* a panel on the right under the head, like the search results (#221) */
+.sm-chat__sheet { grid-area: 2 / 1; justify-self: end; z-index: 5; width: min(340px, 100%); min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); background: var(--sm-surface); border-left: 1px solid var(--sm-hairline); box-shadow: var(--sm-shadow-lg); }
+.sm-chat__sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 12px 12px 18px; border-bottom: 1px solid var(--sm-hairline); }
+.sm-chat__sheet-head h3 { margin: 0; font-size: 16px; font-weight: 500; }
+.sm-chat__sheet-body { display: grid; align-content: start; gap: 8px; overflow-y: auto; padding: 8px; }
+.sm-chat__sheet-body > .sm-btn { justify-self: center; }
+.sm-chat__sheet-hint { margin: 0; padding: 20px 12px; text-align: center; font-size: 13px; color: var(--sm-text-2); }
+.sm-chat__results { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.sm-chat__result { display: grid; gap: 4px; width: 100%; padding: 10px 12px; border: 0; border-radius: var(--sm-r-md); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background var(--sm-dur-1); }
+.sm-chat__result:hover { background: var(--sm-fill); }
+.sm-chat__result:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-chat__result-meta { display: flex; gap: 8px; font-size: 12px; color: var(--sm-text-3); }
+.sm-chat__result-meta b { font-weight: 500; color: var(--sm-text); }
+.sm-chat__result-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 13.5px; line-height: 1.4; color: var(--sm-text-2); overflow-wrap: anywhere; }
+.sm-chat__result-text mark { padding: 0 1px; border-radius: 3px; background: var(--sm-spark); color: var(--sm-on-spark); }
 /* row 2 even without a head, so the body always fills the height */
 /* on a wide screen the conversation keeps a readable width, in the middle */
 .sm-chat { --sm-chat-gutter: max(20px, calc((100% - 880px) / 2)); }
-.sm-chat__scroll { grid-row: 2; display: grid; align-content: start; gap: 12px; overflow-y: auto; padding: 16px var(--sm-chat-gutter) 8px; }
+.sm-chat__scroll { grid-area: 2 / 1; display: grid; align-content: start; gap: 12px; overflow-y: auto; padding: 16px var(--sm-chat-gutter) 8px; }
 .sm-chat__scroll > .sm-btn { justify-self: start; }
 /* an empty conversation, or none open: its content sits in the middle */
 .sm-chat__scroll:has(> .sm-chat__start:only-child, > .sm-empty:only-child) { align-content: center; }
@@ -60,6 +92,76 @@
 .sm-msg--mine .sm-msg__main { grid-column: 1; justify-items: end; }
 .sm-msg--mine .sm-msg__bubble { background: var(--sm-violet); color: var(--sm-on-accent); border-radius: 18px 6px 18px 18px; box-shadow: none; }
 .sm-msg--mine:not(.sm-msg--first) .sm-msg__bubble { border-radius: 18px; }
+.sm-msg__edited { margin-left: 6px; font-size: 11.5px; color: var(--sm-text-3); white-space: nowrap; }
+.sm-msg--mine .sm-msg__edited { color: inherit; opacity: 0.72; }
+.sm-chat__day { display: flex; align-items: center; gap: 12px; margin: 14px 0 10px; }
+.sm-chat__day::before, .sm-chat__day::after { content: ""; flex: 1; height: 1px; background: var(--sm-hairline); }
+.sm-chat__older { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 4px 0 14px; font-size: 12.5px; color: var(--sm-text-3); }
+/* above the message box, in the middle */
+/* at the bottom of the messages, so a taller message box (replying, an error) never covers it */
+.sm-chat__jump { grid-area: 2 / 1; align-self: end; justify-self: center; z-index: 4; margin-bottom: 12px; box-shadow: var(--sm-shadow-md); }
+/* with the search results open beside them, in the middle of what's left of the messages (on a phone the results cover them, and close after a jump) */
+@media (min-width: 721px) { .sm-chat__thread--side .sm-chat__jump { margin-right: 340px; } }
+/* the bubble with Edit and Delete beside it, on the side away from the edge */
+.sm-msg__line { position: relative; max-width: min(560px, 100%); }
+.sm-msg__line .sm-msg__bubble { max-width: 100%; }
+/* hidden but still in the tab order, so the keyboard reaches them and they show while focused */
+.sm-msg__tools { position: absolute; top: 50%; right: calc(100% + 6px); transform: translateY(-50%); display: flex; gap: 2px; padding: 3px; border-radius: var(--sm-r-md); background: var(--sm-surface); box-shadow: var(--sm-shadow-md); z-index: 2; opacity: 0; pointer-events: none; }
+.sm-msg:hover .sm-msg__tools, .sm-msg__tools:focus-within { opacity: 1; pointer-events: auto; }
+.sm-msg__tools .sm-msg__delete:hover { background: var(--sm-danger-50); color: var(--sm-danger-ink); }
+.sm-msg__edit { display: grid; gap: 6px; width: min(560px, 100%); }
+.sm-msg__edit textarea { width: 100%; min-height: 44px; padding: 10px 13px; border: 0; border-radius: 16px; background: var(--sm-surface); color: var(--sm-text); box-shadow: inset 0 0 0 2px var(--sm-violet); font: inherit; line-height: 1.45; resize: none; outline: none; }
+.sm-msg__edit-hint { font-size: 12px; color: var(--sm-text-3); }
+.sm-msg__edit-hint kbd { font-family: var(--sm-mono); font-size: 11px; padding: 1px 5px; border-radius: 5px; background: var(--sm-fill); color: var(--sm-text-2); }
+/* Edit and Delete sit left of your messages, Reply right of someone else's */
+.sm-msg:not(.sm-msg--mine) .sm-msg__tools { right: auto; left: calc(100% + 6px); }
+/* the original a reply quotes, above it (#219) */
+.sm-msg__quote { display: flex; align-items: center; gap: 6px; max-width: min(420px, 100%); padding: 4px 10px 4px 8px; border: 0; border-left: 3px solid var(--sm-violet); border-radius: 4px 10px 10px 4px; background: var(--sm-fill); color: var(--sm-text-2); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; transition: background var(--sm-dur-1); }
+.sm-msg__quote b { flex-shrink: 0; font-weight: 500; color: var(--sm-text); }
+.sm-msg__quote span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-msg__quote svg { flex-shrink: 0; }
+.sm-msg__quote:hover { background: var(--sm-fill-hover); }
+.sm-msg__quote:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-msg__quote--gone, .sm-msg__quote--gone:hover { border-left-color: var(--sm-text-3); background: var(--sm-fill); font-style: italic; cursor: default; }
+/* the reactions under a message (#217): one pill per emoji with its count, yours highlighted */
+.sm-reactions { display: flex; flex-wrap: wrap; gap: 4px; }
+.sm-msg--mine .sm-reactions { justify-content: flex-end; }
+.sm-reaction { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 8px; border: 1px solid var(--sm-border); border-radius: var(--sm-r-pill); background: var(--sm-surface); color: var(--sm-text); font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; transition: transform var(--sm-dur-1) var(--sm-ease-out), border-color var(--sm-dur-1); }
+.sm-reaction:hover { border-color: var(--sm-text-3); }
+.sm-reaction:active { transform: scale(0.92); }
+.sm-reaction:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-reaction--mine { border-color: var(--sm-violet); background: var(--sm-violet-a12); color: var(--sm-violet-ink); font-weight: 500; }
+.sm-reaction--add { width: 26px; padding: 0; justify-content: center; color: var(--sm-text-3); }
+/* the picker is open for this message, so its tools stay */
+.sm-msg--picking .sm-msg__tools { opacity: 1; pointer-events: auto; }
+/* the emoji picker over the conversation, in the theme's colours */
+.sm-emoji { position: absolute; z-index: 6; width: 344px; height: 380px; max-width: calc(100% - 16px); border-radius: var(--sm-r-lg); background: var(--sm-surface); box-shadow: var(--sm-shadow-lg); }
+.sm-emoji__loading { display: grid; place-items: center; height: 100%; }
+.sm-emoji .EmojiPickerReact.EmojiPickerReact {
+  --epr-bg-color: var(--sm-surface); --epr-dark-bg-color: var(--sm-surface);
+  --epr-category-label-bg-color: var(--sm-surface); --epr-dark-category-label-bg-color: var(--sm-surface);
+  --epr-text-color: var(--sm-text); --epr-dark-text-color: var(--sm-text);
+  --epr-category-label-text-color: var(--sm-text-2);
+  --epr-hover-bg-color: var(--sm-fill); --epr-dark-hover-bg-color: var(--sm-fill);
+  --epr-hover-bg-color-reduced-opacity: var(--sm-fill); --epr-dark-hover-bg-color-reduced-opacity: var(--sm-fill);
+  --epr-focus-bg-color: var(--sm-fill-hover); --epr-dark-focus-bg-color: var(--sm-fill-hover);
+  --epr-highlight-color: var(--sm-violet); --epr-dark-highlight-color: var(--sm-violet);
+  --epr-category-icon-active-color: var(--sm-violet); --epr-dark-category-icon-active-color: var(--sm-violet);
+  --epr-search-input-bg-color: var(--sm-fill); --epr-dark-search-input-bg-color: var(--sm-fill);
+  --epr-search-input-bg-color-active: var(--sm-fill); --epr-dark-search-input-bg-color-active: var(--sm-fill);
+  --epr-search-input-text-color: var(--sm-text); --epr-search-input-placeholder-color: var(--sm-text-3);
+  --epr-search-border-color: transparent; --epr-search-border-color-active: var(--sm-violet);
+  --epr-picker-border-color: transparent; --epr-dark-picker-border-color: transparent;
+  --epr-picker-border-radius: var(--sm-r-lg);
+  --epr-emoji-variation-picker-bg-color: var(--sm-surface); --epr-dark-emoji-variation-picker-bg-color: var(--sm-surface);
+  --epr-skin-tone-picker-menu-color: var(--sm-surface); --epr-dark-skin-tone-picker-menu-color: var(--sm-surface);
+  font-family: var(--sm-font);
+}
+/* the message you went to, for a moment */
+.sm-msg--flash { animation: sm-msg-flash 1.4s var(--sm-ease-out); }
+@keyframes sm-msg-flash { from, 30% { background: color-mix(in srgb, var(--sm-spark) 45%, transparent); } }
+/* the message about to be deleted, in the question */
+.sm-chat__preview { margin-top: 12px; padding: 10px 12px; border-radius: var(--sm-r-sm); background: var(--sm-fill); color: var(--sm-text); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 /* greyed out until the backend confirms it */
 .sm-msg--sending .sm-msg__bubble { opacity: 0.5; }
 .sm-msg__status { font-size: 11.5px; color: var(--sm-text-3); }
@@ -68,7 +170,21 @@
 .sm-msg__failed button:focus-visible { outline: none; border-radius: var(--sm-r-sm); box-shadow: var(--sm-focus-ring); }
 
 /* the message box */
-.sm-composer { display: grid; gap: 8px; padding: 6px var(--sm-chat-gutter) 14px; }
+.sm-composer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 6px var(--sm-chat-gutter) 14px; }
+/* someone typing, above the box */
+.sm-chat__typing { display: flex; align-items: center; gap: 8px; min-height: 18px; margin-bottom: -4px; padding: 0 4px; font-size: 12.5px; color: var(--sm-text-2); }
+.sm-dots { display: inline-flex; gap: 3px; }
+.sm-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--sm-violet); animation: sm-dots 1.2s infinite; }
+.sm-dots i:nth-child(2) { animation-delay: .15s; }
+.sm-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes sm-dots { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-4px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sm-dots i { animation: none; opacity: .7; } }
+/* Replying to someone, above the box */
+.sm-composer__bar { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: var(--sm-r-md); background: var(--sm-violet-a12); color: var(--sm-violet-ink); font-size: 13px; }
+.sm-composer__bar > svg { flex-shrink: 0; }
+.sm-composer__bar-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-composer__bar-text b { font-weight: 500; }
+.sm-composer__bar-preview { color: var(--sm-text-2); }
 .sm-composer__box { display: flex; align-items: flex-end; gap: 4px; padding: 6px 6px 6px 14px; border-radius: var(--sm-r-xl); background: var(--sm-surface); box-shadow: var(--sm-shadow-md); transition: box-shadow var(--sm-dur-1); }
 .sm-composer__box:focus-within { box-shadow: 0 0 0 2px var(--sm-violet), var(--sm-shadow-md); }
 .sm-composer__input { flex: 1; min-width: 0; max-height: 160px; min-height: 36px; padding: 8px 4px; border: 0; background: none; resize: none; outline: none; color: var(--sm-text); font: inherit; font-size: 14.5px; line-height: 1.4; }
@@ -87,11 +203,35 @@
 .sm-chat__people { display: grid; gap: 2px; max-height: 320px; overflow-y: auto; margin: 0 -10px; padding: 0; list-style: none; }
 .sm-person { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--sm-r-md); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background var(--sm-dur-1); }
 .sm-person--pick:hover { background: var(--sm-fill); }
+.sm-person--row { cursor: default; }
 .sm-person--pick:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
 .sm-person__text { display: grid; min-width: 0; }
 .sm-person__name { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sm-person__sub { font-size: 12px; color: var(--sm-text-3); }
 .sm-person__tag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: var(--sm-r-pill); background: var(--sm-fill); font-size: 11.5px; font-weight: 500; color: var(--sm-text-2); white-space: nowrap; }
+.sm-person--pick:disabled { opacity: .45; cursor: not-allowed; }
+.sm-person--pick:disabled:hover { background: none; }
+.sm-person__check { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--sm-violet); color: var(--sm-on-accent); }
+/* a group chat's picture, picked in New group chat (#227) */
+.sm-chat__picture { position: relative; flex-shrink: 0; }
+.sm-chat__picture-pick { display: grid; place-items: center; width: 56px; height: 56px; padding: 0; overflow: hidden; border: 1.5px dashed var(--sm-gray-300); border-radius: 28%; background: var(--sm-fill); color: var(--sm-text-3); cursor: pointer; }
+.sm-chat__picture-pick:hover { background: var(--sm-fill-hover); color: var(--sm-text-2); }
+.sm-chat__picture-pick:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+.sm-chat__picture-pick img { width: 100%; height: 100%; object-fit: cover; }
+.sm-chat__picture-pick:has(img) { border-style: solid; border-color: transparent; }
+.sm-chat__picture-remove.sm-icon-btn { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; box-shadow: var(--sm-shadow-sm); background: var(--sm-surface); }
+.sm-chat__group-form { display: grid; gap: 14px; }
+/* a group chat's members (#231): the owner and you are marked, the owner removes the others */
+.sm-chat__members-count { margin: -4px 0 4px; font-size: 13px; color: var(--sm-text-3); }
+.sm-chat__members { max-height: 400px; }
+.sm-chat__member-end { display: inline-flex; align-items: center; gap: 6px; }
+.sm-chat__group-name { display: flex; align-items: flex-start; gap: 12px; }
+.sm-chat__group-field { flex: 1; min-width: 0; }
+.sm-chat__group-error { margin: -6px 0 0; font-size: 12.5px; color: var(--sm-danger-ink); }
+.sm-chat__picked { display: flex; flex-wrap: wrap; gap: 6px; }
+.sm-chat__picked .sm-chip--refused { box-shadow: inset 0 0 0 1.5px var(--sm-danger); }
+.sm-chat__counter { display: flex; justify-content: space-between; align-items: center; margin-bottom: -8px; font-size: 12.5px; color: var(--sm-text-2); }
+.sm-chat__counter b { font-weight: 500; color: var(--sm-text); font-variant-numeric: tabular-nums; }
 
 /* a phone: the list and the conversation are separate screens */
 @media (max-width: 720px) {
@@ -99,4 +239,110 @@
   .sm-chat[data-view="thread"] .sm-chat__list, .sm-chat[data-view="list"] .sm-chat__thread { display: none; }
   .sm-chat__back { display: inline-grid; }
   .sm-chat { --sm-chat-gutter: 12px; }
+  .sm-chat__head-search { width: 140px; }
+  /* a long message fills the width, so there's no room on its left: Edit and Delete sit above its corner */
+  .sm-msg__tools { top: auto; bottom: 100%; right: 0; transform: none; }
+  .sm-msg:not(.sm-msg--mine) .sm-msg__tools { right: auto; left: 0; }
+}
+
+/* the foot of the chat list, with the Blocked users link (#225) */
+.sm-chat__list-foot { padding: 10px 16px 14px; border-top: 1px solid var(--sm-hairline); }
+.sm-chat__link { display: inline-flex; align-items: center; gap: 6px; padding: 4px 0; border-radius: var(--sm-r-sm); color: var(--sm-text-2); font-size: 13px; text-decoration: none; }
+.sm-chat__link:hover { color: var(--sm-text); }
+.sm-chat__link:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+/* the people you blocked */
+.sm-chat__blocked { display: grid; align-content: start; gap: 16px; width: 100%; max-width: 560px; margin: 0 auto; padding: 28px var(--sm-chat-gutter); overflow-y: auto; }
+.sm-chat__blocked-list { display: grid; gap: 2px; margin: 0; padding: 6px; list-style: none; border-radius: var(--sm-r-lg); background: var(--sm-surface); box-shadow: var(--sm-shadow-sm); }
+/* in place of the message box, in a DM with someone you blocked */
+.sm-chat__blocked-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; padding: 14px var(--sm-chat-gutter) 18px; border-top: 1px solid var(--sm-hairline); font-size: 13.5px; color: var(--sm-text-2); }
+/* a message from someone you blocked, until it's shown */
+.sm-msg__hidden { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px dashed var(--sm-gray-300); border-radius: 16px; background: none; color: var(--sm-text-2); font: inherit; font-size: 13px; font-style: italic; cursor: pointer; }
+.sm-msg__hidden:hover { background: var(--sm-fill); }
+.sm-msg__hidden:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
+
+/* files (#211): every file is a little sheet of paper with a folded corner, coloured by what it is */
+.sm-paper { --paper-bg: var(--sm-fill); --paper-ink: var(--sm-text-2); position: relative; flex: none; display: grid; align-content: space-between; width: 34px; height: 42px; padding: 9px 6px 5px; border-radius: 7px; background: var(--paper-bg); color: var(--paper-ink); clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%); transition: transform var(--sm-dur-2) var(--sm-ease-punch); }
+.sm-paper::after { content: ""; position: absolute; top: 0; right: 0; width: 11px; height: 11px; border-bottom-left-radius: 4px; background: var(--paper-ink); opacity: .28; }
+.sm-paper__lines { display: grid; gap: 3px; }
+.sm-paper__lines i { display: block; height: 2px; border-radius: 2px; background: currentColor; opacity: .35; }
+.sm-paper__lines i:nth-child(2) { width: 80%; }
+.sm-paper__lines i:nth-child(3) { width: 55%; }
+.sm-paper__tag { font: 700 8px/1 var(--sm-mono); letter-spacing: .02em; text-align: center; }
+.sm-paper--sm { width: 28px; height: 34px; padding: 7px 5px 4px; clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%); }
+.sm-paper--sm::after { width: 9px; height: 9px; }
+.sm-paper--sm .sm-paper__lines i:nth-child(3) { display: none; }
+.sm-paper--sm .sm-paper__tag { font-size: 7px; }
+.sm-paper--pdf { --paper-bg: var(--sm-tint-rose); --paper-ink: var(--sm-danger-ink); }
+.sm-paper--doc { --paper-bg: var(--sm-tint-sky); --paper-ink: var(--sm-info-ink); }
+.sm-paper--sheet { --paper-bg: var(--sm-tint-mint); --paper-ink: var(--sm-success-ink); }
+.sm-paper--slides { --paper-bg: var(--sm-tint-peach); --paper-ink: var(--sm-warning-ink); }
+.sm-paper--text { --paper-bg: var(--sm-tint-lavender); --paper-ink: var(--sm-violet-ink); }
+.sm-paper--image { --paper-bg: var(--sm-tint-lemon); --paper-ink: var(--sm-warning-ink); }
+
+/* in a message: the text, if any, then the files */
+.sm-msg__stack { display: grid; gap: 6px; justify-items: start; min-width: 0; max-width: min(560px, 100%); }
+.sm-msg--mine .sm-msg__stack { justify-items: end; }
+.sm-msg__files { display: grid; gap: 6px; justify-items: inherit; min-width: 0; max-width: 100%; }
+.sm-msg--sending .sm-msg__files { opacity: .6; }
+
+.sm-file { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 290px; max-width: 100%; padding: 10px 10px 10px 12px; border-radius: 18px; background: var(--sm-surface); box-shadow: var(--sm-shadow-sm); text-align: left; }
+.sm-file:hover .sm-paper { transform: rotate(-7deg) translateY(-1px); }
+.sm-file__text { display: grid; gap: 2px; min-width: 0; }
+.sm-file__name { font-size: 13.5px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-file__size { font-size: 12px; color: var(--sm-text-3); font-variant-numeric: tabular-nums; }
+.sm-file__download { display: grid; place-items: center; width: 34px; height: 34px; border-radius: var(--sm-r-pill); background: var(--sm-fill); color: var(--sm-text); transition: background var(--sm-dur-1), color var(--sm-dur-1), transform var(--sm-dur-2) var(--sm-ease-punch); }
+.sm-file__download:hover { background: var(--sm-violet); color: var(--sm-on-accent); transform: translateY(1px); }
+.sm-file__download:focus-visible { outline: 2px solid var(--sm-violet); outline-offset: 2px; }
+
+/* images: one is a preview, more are a little mosaic. Their shape is set before they load, so the chat doesn't jump */
+.sm-msg__mosaic { display: grid; gap: 4px; width: min(320px, 100%); border-radius: 18px; overflow: hidden; }
+.sm-msg__mosaic--2 { grid-template-columns: 1fr 1fr; }
+.sm-msg__mosaic--3 { grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr 1fr; }
+.sm-msg__mosaic--3 > :first-child { grid-row: span 2; }
+.sm-msg__mosaic--4 { grid-template-columns: 1fr 1fr; }
+.sm-msg__image { position: relative; display: block; min-width: 0; padding: 0; border: 0; background: var(--sm-fill); cursor: zoom-in; overflow: hidden; }
+.sm-msg__image:disabled { cursor: default; }
+.sm-msg__image img { display: block; width: 100%; height: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform var(--sm-dur-3) var(--sm-ease-out); }
+.sm-msg__mosaic:not(.sm-msg__mosaic--1) .sm-msg__image img { aspect-ratio: 1; }
+.sm-msg__image:hover:not(:disabled) img { transform: scale(1.04); }
+.sm-msg__image:focus-visible { outline: 2px solid var(--sm-violet); outline-offset: -2px; }
+.sm-msg__image-zoom { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--sm-r-pill); background: rgb(0 0 0 / 55%); color: #fff; opacity: 0; transition: opacity var(--sm-dur-1); }
+.sm-msg__image:hover .sm-msg__image-zoom, .sm-msg__image:focus-visible .sm-msg__image-zoom { opacity: 1; }
+.sm-msg__image .sm-upload__progress { position: absolute; left: 10px; right: 10px; bottom: 10px; }
+.sm-msg__lightbox { display: block; max-width: 100%; max-height: 70vh; margin: 0 auto; border-radius: var(--sm-r-lg); }
+
+/* added to the message box, before sending */
+.sm-composer__files { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 8px; padding: 4px 2px; }
+.sm-upload { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 30px 8px 8px; border-radius: 16px; background: var(--sm-surface); box-shadow: var(--sm-shadow-sm); animation: sm-upload-in var(--sm-dur-3) var(--sm-ease-punch); }
+.sm-upload__thumb { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 11px; background: var(--sm-fill); }
+.sm-upload__thumb img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.sm-upload__ok { position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center; width: 16px; height: 16px; border: 2px solid var(--sm-surface); border-radius: var(--sm-r-pill); background: var(--sm-success); color: #fff; }
+.sm-upload__text { display: grid; gap: 1px; min-width: 0; }
+.sm-upload__name { font-size: 12.5px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-upload__sub { font-size: 11.5px; color: var(--sm-text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-upload__x { position: absolute; top: 4px; right: 4px; }
+.sm-upload--error { box-shadow: inset 0 0 0 1.5px var(--sm-danger); }
+.sm-upload--error .sm-upload__sub { color: var(--sm-danger-text); white-space: normal; }
+.sm-upload__progress { display: block; height: 4px; margin-top: 4px; border-radius: 4px; background: var(--sm-fill-strong); overflow: hidden; }
+.sm-upload__progress i { display: block; height: 100%; border-radius: inherit; background: var(--sm-violet); transition: width .2s linear; }
+@keyframes sm-upload-in { from { opacity: 0; transform: translateY(6px) scale(.96); } }
+
+.sm-composer__box:has(.sm-composer__attach) { padding-left: 6px; }
+/* the same 36px as the box's text and send button, so they share one line */
+.sm-composer__attach { flex: none; }
+
+/* files dragged over the chat */
+.sm-drop { position: absolute; inset: 10px; z-index: 30; display: grid; place-content: center; justify-items: center; gap: 6px; border: 2px dashed var(--sm-violet); border-radius: var(--sm-r-xl); background: color-mix(in srgb, var(--sm-violet-50) 88%, transparent); backdrop-filter: blur(6px); color: var(--sm-violet-ink); text-align: center; pointer-events: none; animation: sm-drop-in var(--sm-dur-2) var(--sm-ease-out); }
+.sm-drop b { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.sm-drop > span { font-size: 13px; color: var(--sm-text-2); }
+.sm-drop__papers { position: relative; width: 180px; height: 100px; margin-bottom: 10px; }
+.sm-drop__paper { position: absolute; left: 50%; top: 14px; transform-origin: 50% 120%; transform: translateX(calc(-50% + (var(--i) - 1) * 38px)) rotate(calc((var(--i) - 1) * 14deg)) translateY(calc((var(--i) - 1) * (var(--i) - 1) * 6px)); animation: sm-drop-float 1.6s var(--sm-ease-out) calc(var(--i) * .15s) infinite alternate; }
+.sm-drop__paper .sm-paper { width: 44px; height: 54px; padding: 12px 8px 6px; box-shadow: var(--sm-shadow-md); clip-path: none; }
+.sm-drop__paper .sm-paper::after { display: none; }
+.sm-drop__plus { position: absolute; left: 50%; bottom: -6px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: var(--sm-r-pill); background: var(--sm-violet); color: var(--sm-on-accent); box-shadow: var(--sm-shadow-violet); transform: translateX(-50%); }
+@keyframes sm-drop-in { from { opacity: 0; transform: scale(.98); } }
+@keyframes sm-drop-float { to { translate: 0 -6px; } }
+@media (prefers-reduced-motion: reduce) {
+  .sm-drop, .sm-drop__paper, .sm-upload { animation: none; }
+  .sm-paper, .sm-msg__image img, .sm-file__download { transition: none; }
 }

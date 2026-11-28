@@ -6,7 +6,9 @@ import { StudyMatchProvider } from '../src/studymatch-ui';
 import type { CurrentUser } from '../src/types/currentUser';
 import type { Role } from '../src/types/enums';
 
-vi.mock('../src/api/chatSocket', () => ({ connectChatSocket: vi.fn(), disconnectChatSocket: vi.fn(async () => {}) }));
+vi.mock('../src/api/chatSocket', () => ({ onChatSocketReconnect: () => () => undefined,
+  // the connection is down, so nobody shows as online
+  isChatSocketConnected: () => false, onChatSocketConnection: () => () => undefined, sendTyping: vi.fn(), connectChatSocket: vi.fn(), disconnectChatSocket: vi.fn(async () => {}), subscribeToChatEvents: vi.fn(() => () => undefined) }));
 
 const DEGREES = [{ id: 1, name: 'Test Degree', curricularYears: 3 }];
 

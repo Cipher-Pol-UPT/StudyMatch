@@ -1,7 +1,6 @@
-import { CalendarDays } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { EmptyState } from '../../studymatch-ui';
+import { StickyNotes } from '../notes/StickyNotes';
 import type { CurrentUser } from '../../types/currentUser';
 import type { NavigationSection } from '../../types/navigation';
 
@@ -29,7 +28,7 @@ export function RoleHomePage({ currentUser, sections }: RoleHomePageProps) {
           </Link>
         ))}
       </div>
-      <EmptyState compact icon={CalendarDays} title={t('workspace.noActivity')} body={t('workspace.noActivityBody')} />
+      <StickyNotes />
     </div>
   );
 }

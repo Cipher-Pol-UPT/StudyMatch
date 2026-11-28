@@ -102,10 +102,11 @@
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 28px;
-  background-color: #fbfaf6;
-  background-image: radial-gradient(rgba(60, 60, 90, 0.16) 1.2px, transparent 1.3px);
+  /* the theme's surfaces, so the board turns dark with the night themes; the paper keeps its colours */
+  background-color: var(--sm-surface-2);
+  background-image: radial-gradient(color-mix(in srgb, var(--sm-text) 16%, transparent) 1.2px, transparent 1.3px);
   background-size: 22px 22px;
-  box-shadow: inset 0 0 0 1px rgba(60, 60, 90, 0.08);
+  box-shadow: inset 0 0 0 1px var(--sm-hairline);
 }
 
 .sm-note-composer {

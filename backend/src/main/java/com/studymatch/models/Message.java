@@ -1,7 +1,10 @@
 package com.studymatch.models;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -15,8 +18,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -27,6 +31,7 @@ import jakarta.validation.constraints.Size;
 public class Message {
 
   public static final int MAX_TEXT_LENGTH = 2000;
+  public static final int MAX_GIF_ID_LENGTH = 64;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,10 +45,16 @@ public class Message {
   @NotNull
   private User author;
 
-  @NotBlank
+  // empty when it only has attachments (#210) or is a GIF (#212), the service makes sure it has something
+  @NotNull
   @Size(max = MAX_TEXT_LENGTH)
   @Column(length = MAX_TEXT_LENGTH)
   private String text;
+
+  // GIPHY's id, null when it isn't a GIF. only the frontend talks to GIPHY, it doesn't allow a backend in between (#212)
+  @Size(max = MAX_GIF_ID_LENGTH)
+  @Column(length = MAX_GIF_ID_LENGTH, updatable = false)
+  private String gifId;
 
   @NotNull
   private LocalDateTime sentAt;
@@ -66,6 +77,12 @@ public class Message {
   @ColumnDefault("false")
   private boolean reply;
 
+  // the database deletes them with it, so nothing is cascaded here. a list of messages loads theirs in one query
+  @OneToMany(mappedBy = "message")
+  @OrderBy("id")
+  @BatchSize(size = 100)
+  private List<Attachment> attachments = new ArrayList<>();
+
   protected Message() {
   }
 
@@ -83,6 +100,12 @@ public class Message {
     this.reply = replyTo != null;
   }
 
+  // a GIF is a message on its own, without text (GR10). gifId null is a normal one
+  public Message(Chat chat, User author, String text, Message replyTo, String gifId) {
+    this(chat, author, text, replyTo);
+    this.gifId = gifId;
+  }
+
   public Long getId() {
     return id;
   }
@@ -97,6 +120,14 @@ public class Message {
 
   public String getText() {
     return text;
+  }
+
+  public String getGifId() {
+    return gifId;
+  }
+
+  public boolean isGif() {
+    return gifId != null;
   }
 
   public LocalDateTime getSentAt() {
@@ -130,6 +161,14 @@ public class Message {
 
   public boolean isReply() {
     return reply;
+  }
+
+  public List<Attachment> getAttachments() {
+    return attachments;
+  }
+
+  public void addAttachment(Attachment attachment) {
+    attachments.add(attachment);
   }
 
   // the original was hidden from a blocker and this reply isn't, so not everyone may see the quote (GR9)

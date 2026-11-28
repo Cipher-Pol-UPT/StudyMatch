@@ -112,6 +112,7 @@ describe('study rooms', () => {
     fireEvent.click(await screen.findByRole('button', { name: /^Joined/ }));
     const room = await screen.findByRole('article', { name: 'Making sense of probability' });
     fireEvent.click(within(room).getByRole('button', { name: 'Leave' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Leave this StudyRoom?' })).getByRole('button', { name: 'Leave' }));
     await waitFor(() => expect(leaveStudyRoom).toHaveBeenCalledWith(2));
   });
 });

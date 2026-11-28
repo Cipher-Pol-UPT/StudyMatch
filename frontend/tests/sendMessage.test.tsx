@@ -28,8 +28,14 @@ function backend(answer: (text: string) => Promise<Response> = async text => rep
       sends.push({ number: Number(send[1]), text });
       return answer(text);
     }
+    // the first message creates the DM, whose history then loads: what was just sent is all there is
+    if (url.pathname === '/api/chats/7/messages') return reply({ hasMore: false, messages: sends.length ? [sent(sends.at(-1)!.text)] : [] });
+    if (url.pathname === '/api/chats/7/read') return new Response(null, { status: 204 });
     const dm = url.pathname.match(/^\/api\/chats\/direct\/(\d+)$/);
     if (dm) return reply({ chatId: null, contact: Number(dm[1]) === ana.number ? ana : rui });
+    // the chat list and the side menu's count, both empty here
+    if (url.pathname === '/api/chats/') return new Response('[]', { status: 200 });
+    if (url.pathname === '/api/chats/unread-count') return new Response('0', { status: 200 });
     throw new Error(`Unexpected request: ${url.pathname}`);
   }));
   return sends;
@@ -195,11 +201,13 @@ describe('send a message', () => {
     open();
     await type(await box(), 'Half a thought');
 
-    fireEvent.click(screen.getByRole('button', { name: 'New message' }));
+    // the list's own, the empty list has one too
+    fireEvent.click(screen.getAllByRole('button', { name: 'New message' })[0]);
     fireEvent.click(await within(await screen.findByRole('dialog')).findByRole('button', { name: /Test Rui/ }));
     expect(((await box('Test Rui')) as HTMLTextAreaElement).value).toBe('');
 
-    fireEvent.click(screen.getByRole('button', { name: 'New message' }));
+    // the list's own, the empty list has one too
+    fireEvent.click(screen.getAllByRole('button', { name: 'New message' })[0]);
     fireEvent.click(await within(await screen.findByRole('dialog')).findByRole('button', { name: /Test Ana/ }));
 
     expect(((await box()) as HTMLTextAreaElement).value).toBe('Half a thought');

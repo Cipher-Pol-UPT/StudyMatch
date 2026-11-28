@@ -16,6 +16,7 @@ import { ACCOUNT, SECTIONS, type Section } from './sections';
 import '../../styles/appShell.css';
 import './student.css';
 import { useMyProfile } from './useMyProfile';
+import { useUnreadChats } from '../../hooks/useUnreadChats';
 
 const PROFILE_PATH = '/profile';
 const CHANGE_PASSWORD_PATH = '/change-password';
@@ -34,7 +35,11 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
   const pages = [...SECTIONS, ...ACCOUNT];
   // a section's own pages count too, like an open chat under /chats
   const current = pages.find((p) => pathname === p.path || pathname.startsWith(`${p.path}/`));
-  const toItem = (s: Section): NavItem => ({ label: t(`nav.${s.key}`), icon: s.icon, href: s.path, active: pathname.startsWith(s.path) });
+  // the unread messages show on the Chats item (#201)
+  const unread = useUnreadChats(true);
+  const toItem = (s: Section): NavItem => ({
+    label: t(`nav.${s.key}`), icon: s.icon, href: s.path, active: pathname.startsWith(s.path), badge: s.key === 'chats' ? unread : undefined,
+  });
   const comingSoon = SECTIONS.filter((s) => !s.ready);
   const nav: NavSection[] = [
     { items: [{ label: t('nav.home'), icon: House, href: '/', active: pathname === '/' }, ...SECTIONS.filter((s) => s.ready).map(toItem)] },
@@ -55,8 +60,10 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
         <Route path="/" element={<HomePage currentUser={currentUser} profile={profile} failed={failed} />} />
         <Route path={PROFILE_PATH} element={<ProfilePage onSaved={showSavedProfile} />} />
         <Route path="/study-rooms" element={<StudyRoomsPage currentUser={currentUser} />} />
-        <Route path="/chats" element={<ChatsPage profilePath={classmatePath} />} />
-        <Route path="/chats/direct/:number" element={<ChatsPage profilePath={classmatePath} />} />
+        <Route path="/chats" element={<ChatsPage me={currentUser.number} profilePath={classmatePath} />} />
+        <Route path="/chats/direct/:number" element={<ChatsPage me={currentUser.number} profilePath={classmatePath} />} />
+        <Route path="/chats/group/:chatId" element={<ChatsPage me={currentUser.number} profilePath={classmatePath} />} />
+        <Route path="/chats/blocked" element={<ChatsPage me={currentUser.number} profilePath={classmatePath} view="blocked" />} />
         <Route path="/classmates/:number" element={<ClassmateProfilePage myNumber={currentUser.number} profilePath={PROFILE_PATH} />} />
         <Route path={CHANGE_PASSWORD_PATH} element={<AccountPasswordPage />} />
         <Route path="/achievements" element={<AchievementsPage profile={profile} failed={failed} />} />

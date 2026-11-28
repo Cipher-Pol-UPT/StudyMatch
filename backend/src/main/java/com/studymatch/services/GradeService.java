@@ -33,18 +33,20 @@ public class GradeService {
     this.enrolmentService = enrolmentService;
   }
 
-  // grade sheet: all the edition's grades in one query instead of one per student
+  // grade sheet: all the edition's grades in one query instead of one per student. the assignments and enrolments
+  // (with their students and classes) come first, so the grades find them loaded and don't fetch each one
   @Transactional(readOnly = true)
   public GradeSheetDTO getGradeSheet(Long subjectEditionId) {
     SubjectEdition edition = subjectEditionService.getEdition(subjectEditionId);
+    List<GradeSheetDTO.Column> columns = assignmentService.listAssignments(edition).stream()
+        .map(GradeSheetDTO.Column::from)
+        .toList();
+    List<Enrolment> enrolments = enrolmentService.listEnrolments(subjectEditionId);
     Map<Long, List<Grade>> gradesByEnrolment = gradeRepository.findByEnrolment_SubjectEditionId(subjectEditionId)
         .stream()
         .collect(Collectors.groupingBy(grade -> grade.getEnrolment().getId()));
 
-    List<GradeSheetDTO.Column> columns = assignmentService.listAssignments(edition).stream()
-        .map(GradeSheetDTO.Column::from)
-        .toList();
-    List<GradeSheetDTO.Row> rows = enrolmentService.listEnrolments(subjectEditionId).stream()
+    List<GradeSheetDTO.Row> rows = enrolments.stream()
         .map(enrolment -> GradeSheetDTO.Row.from(enrolment,
             gradesByEnrolment.getOrDefault(enrolment.getId(), List.of())))
         .toList();
@@ -61,15 +63,21 @@ public class GradeService {
     Enrolment enrolment = enrolmentService.getEnrolment(subjectEditionId, studentNumber);
 
     Grade grade = gradeRepository.findByEnrolmentAndAssignment(enrolment, assignment)
+        .map(existing -> {
+          existing.setValue(value.doubleValue());
+          return existing;
+        })
         .orElseGet(() -> new Grade(enrolment, assignment, value.doubleValue()));
-    grade.setValue(value.doubleValue());
     gradeRepository.save(grade);
 
-    // a student can only have one grade per assignment, so same count = all graded
+    // a student can only have one grade per assignment, so same count = all graded.
+    // otherwise an old final grade goes, it no longer matches the grades
     List<Grade> grades = gradeRepository.findByEnrolment(enrolment);
     boolean weightsComplete = assignmentService.hasFullWeight(edition);
-    if (weightsComplete && grades.size() == assignmentService.listAssignments(edition).size()) {
+    if (weightsComplete && grades.size() == assignmentService.countAssignments(edition)) {
       enrolment.setFinalGrade(finalGrade(grades));
+    } else if (enrolment.isFinished()) {
+      enrolment.clearFinalGrade();
     }
     return new GradeResponseDTO(GradeSheetDTO.Row.from(enrolment, grades), weightsComplete);
   }

@@ -32,6 +32,7 @@ import com.studymatch.dtos.AttendanceRequestDTO;
 import com.studymatch.dtos.AttendanceSheetDTO;
 import com.studymatch.dtos.ChangeClassRequestDTO;
 import com.studymatch.dtos.CreateAssignmentRequestDTO;
+import com.studymatch.dtos.EditGroupsRequestDTO;
 import com.studymatch.dtos.EditionStudentDTO;
 import com.studymatch.dtos.EnrolStudentsRequestDTO;
 import com.studymatch.dtos.EnrolmentRecordDTO;
@@ -41,7 +42,11 @@ import com.studymatch.dtos.GradeResponseDTO;
 import com.studymatch.dtos.GradeSheetDTO;
 import com.studymatch.dtos.GroupDTO;
 import com.studymatch.dtos.GroupGenerationDTO;
+import com.studymatch.dtos.GroupImportDTO;
+import com.studymatch.dtos.SectionTeacherRequestDTO;
 import com.studymatch.dtos.SubjectEditionResponseDTO;
+import com.studymatch.enums.ExportFormat;
+import com.studymatch.enums.GroupStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.ErrorCodes;
 import com.studymatch.models.Student;
@@ -54,6 +59,7 @@ import com.studymatch.services.StudentService;
 import com.studymatch.services.SubjectEditionService;
 import com.studymatch.services.UserService;
 import com.studymatch.utils.EnrolmentCsvReader;
+import com.studymatch.utils.GroupCsvReader;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -70,18 +76,21 @@ public class SubjectEditionController {
   private final AssignmentService assignmentService;
   private final StudentService studentService;
   private final EnrolmentCsvReader enrolmentCsvReader;
+  private final GroupCsvReader groupCsvReader;
   private final GradeService gradeService;
   private final GroupService groupService;
 
   public SubjectEditionController(SubjectEditionService subjectEditionService, EnrolmentService enrolmentService,
       UserService userService, AssignmentService assignmentService, StudentService studentService,
-      EnrolmentCsvReader enrolmentCsvReader, GradeService gradeService, GroupService groupService) {
+      EnrolmentCsvReader enrolmentCsvReader, GroupCsvReader groupCsvReader, GradeService gradeService,
+      GroupService groupService) {
     this.subjectEditionService = subjectEditionService;
     this.enrolmentService = enrolmentService;
     this.userService = userService;
     this.assignmentService = assignmentService;
     this.studentService = studentService;
     this.enrolmentCsvReader = enrolmentCsvReader;
+    this.groupCsvReader = groupCsvReader;
     this.gradeService = gradeService;
     this.groupService = groupService;
   }
@@ -100,6 +109,17 @@ public class SubjectEditionController {
   @Operation(summary = "Editions of the current academic year (the newest registered), the ones open for enrolment")
   public ResponseEntity<List<SubjectEditionResponseDTO>> listCurrentEditions() {
     return ResponseEntity.ok(subjectEditionService.listCurrent());
+  }
+
+  // PUT since picking the teacher the section already has changes nothing
+  @PutMapping("{id}/class-sections/{classSection}/teacher")
+  @PreAuthorize("hasRole('STAFF')")
+  @Operation(summary = "Pick which of the edition's teachers teaches one of its class sections")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.SUBJECT_EDITION_NOT_CURRENT,
+      ErrorCode.CLASS_SECTION_NOT_IN_SUBJECT_EDITION, ErrorCode.TEACHER_NOT_IN_SUBJECT_EDITION })
+  public ResponseEntity<SubjectEditionResponseDTO> assignSectionTeacher(@PathVariable Long id,
+      @PathVariable String classSection, @Valid @RequestBody SectionTeacherRequestDTO request) {
+    return ResponseEntity.ok(subjectEditionService.assignSectionTeacher(id, classSection, request.teacherNumber()));
   }
 
   // 200 and not 201, some students may just be skipped
@@ -217,6 +237,60 @@ public class SubjectEditionController {
     return ResponseEntity.ok(groupService.listGroups(id, assignmentId));
   }
 
+  // export groups: the language only changes the PDF's headings, the CSV's columns stay what Import Groups reads
+  @GetMapping("{id}/assignments/{assignmentId}/groups/export")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Download the published groups as CSV, one row per student with groupNumber, studentNumber, "
+      + "name and institutionalEmail (the columns Import Groups reads), or as a PDF table per group. "
+      + "Never the statute (GR7)")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, ErrorCode.NO_GROUPS_TO_EXPORT })
+  public ResponseEntity<byte[]> exportGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      @RequestParam ExportFormat format, @RequestParam(defaultValue = "en") String language,
+      Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    byte[] file = groupService.exportGroups(id, assignmentId, format, language);
+    boolean csv = format == ExportFormat.CSV;
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"groups." + (csv ? "csv" : "pdf") + "\"")
+        .contentType(csv ? new MediaType("text", "csv", StandardCharsets.UTF_8) : MediaType.APPLICATION_PDF)
+        .body(file);
+  }
+
+  @GetMapping("groups/import/template")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Empty groups.csv with the export's columns, only groupNumber and studentNumber are read")
+  public ResponseEntity<String> groupsTemplate() {
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"groups.csv\"")
+        .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+        .body(groupCsvReader.template());
+  }
+
+  // import groups: previews them as drafts, confirming and cancelling are generate's publish and discard
+  @PostMapping(value = "{id}/assignments/{assignmentId}/groups/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Import the groups of a CSV as drafts and preview them. Students not enrolled or blocked are "
+      + "skipped, the enrolled ones the file leaves out form leftover groups. An invalid row blocks the whole file. "
+      + "With published groups already, replacePublished=true confirms they'll be replaced once these are confirmed")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, ErrorCode.GROUPS_ALREADY_PUBLISHED,
+      ErrorCode.GROUP_IMPORT_INVALID_ROWS, ErrorCode.GROUP_FILE_NOT_THIS_EDITION,
+      ErrorCode.NOT_ENOUGH_STUDENTS_FOR_GROUPS, ErrorCode.CSV_EMPTY, ErrorCode.CSV_MISSING_COLUMNS,
+      ErrorCode.CSV_TOO_MANY_ROWS, ErrorCode.CSV_WRONG_ENCODING, ErrorCode.CSV_INVALID, ErrorCode.FILE_TOO_LARGE })
+  public ResponseEntity<GroupImportDTO> importGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      @RequestPart("file") MultipartFile file, @RequestParam(defaultValue = "false") boolean replacePublished,
+      Authentication authentication) throws IOException {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    List<GroupCsvReader.Row> rows = groupCsvReader.read(file.getBytes());
+    Map<Long, Student> students = studentService.findByNumbers(rows.stream()
+        .map(GroupCsvReader.Row::studentNumber)
+        .filter(Objects::nonNull)
+        .toList());
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(groupService.importGroups(id, assignmentId, rows, students.keySet(), replacePublished));
+  }
+
   // generate groups: regenerating is the same call, the new drafts replace the old ones
   @PostMapping("{id}/assignments/{assignmentId}/groups")
   @PreAuthorize("hasRole('TEACHER')")
@@ -248,7 +322,8 @@ public class SubjectEditionController {
   // generate groups, confirm
   @PostMapping("{id}/assignments/{assignmentId}/groups/publish")
   @PreAuthorize("hasRole('TEACHER')")
-  @Operation(summary = "Publish the draft groups, replacing the ones published before")
+  @Operation(summary = "Publish the draft groups, replacing the ones published before. Each group gets its own chat, "
+      + "the old groups' chats go with their messages")
   @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.NO_DRAFT_GROUPS })
   public ResponseEntity<Void> publishGroups(@PathVariable Long id, @PathVariable Long assignmentId,
       Authentication authentication) {
@@ -269,6 +344,37 @@ public class SubjectEditionController {
     subjectEditionService.checkTaughtBy(id, teacher.getNumber());
     groupService.discardGroups(id, assignmentId);
     return ResponseEntity.noContent().build();
+  }
+
+  // edit groups, from the generate preview
+  @PutMapping("{id}/assignments/{assignmentId}/groups/draft")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Save the edited draft groups: every group after the edit, a group left out is removed and "
+      + "an id of null is a new one. Sizes and constraints only warn on the page, but every enrolled student who "
+      + "isn't blocked has to be in exactly one group")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.VALIDATION_FAILED, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK,
+      ErrorCode.NO_DRAFT_GROUPS, ErrorCode.STUDENT_NOT_ENROLLED, ErrorCode.STUDENT_IN_TWO_GROUPS,
+      ErrorCode.STUDENT_WITHOUT_GROUP, ErrorCode.BLOCKED_STUDENT_MOVED })
+  public ResponseEntity<List<GroupDTO>> editDraftGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      @Valid @RequestBody EditGroupsRequestDTO request, Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    return ResponseEntity.ok(groupService.editGroups(id, assignmentId, GroupStatus.DRAFT, request.groups()));
+  }
+
+  // edit groups, after publishing
+  @PutMapping("{id}/assignments/{assignmentId}/groups/published")
+  @PreAuthorize("hasRole('TEACHER')")
+  @Operation(summary = "Save the edited published groups, the same way as the drafts. A kept group stays the same "
+      + "group, a new one is published straight away")
+  @ErrorCodes({ ErrorCode.NOT_FOUND, ErrorCode.VALIDATION_FAILED, ErrorCode.ASSIGNMENT_NOT_GROUP_WORK,
+      ErrorCode.NO_PUBLISHED_GROUPS, ErrorCode.STUDENT_NOT_ENROLLED, ErrorCode.STUDENT_IN_TWO_GROUPS,
+      ErrorCode.STUDENT_WITHOUT_GROUP, ErrorCode.BLOCKED_STUDENT_MOVED })
+  public ResponseEntity<List<GroupDTO>> editPublishedGroups(@PathVariable Long id, @PathVariable Long assignmentId,
+      @Valid @RequestBody EditGroupsRequestDTO request, Authentication authentication) {
+    User teacher = userService.getByInstitutionalEmail(authentication.getName());
+    subjectEditionService.checkTaughtBy(id, teacher.getNumber());
+    return ResponseEntity.ok(groupService.editGroups(id, assignmentId, GroupStatus.PUBLISHED, request.groups()));
   }
 
   // register attendance: the class's students for one lesson, with the record if it was registered before

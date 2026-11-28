@@ -292,6 +292,23 @@ class UpdateSubjectIntegrationTest {
   }
 
   @Test
+  @DisplayName("Removing a teacher who still teaches a class is 409 TEACHER_STILL_TEACHES_SECTION naming it, and nothing changes")
+  void removingTeacherOfClassIsRefused() throws Exception {
+    // Arrange
+    MockHttpSession staff = loginAsStaff();
+    currentEdition.assignTeacher("T1", ana);
+
+    // Act
+    updateSubject(staff, subject.getId(), update("IT Updated Name", 7, "[" + rui.getNumber() + "]"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("TEACHER_STILL_TEACHES_SECTION"))
+        .andExpect(jsonPath("$.params.classSections").value("T1"));
+
+    // Assert
+    assertEquals(Set.of("IT Update Ana"), teacherNames(currentEdition));
+  }
+
+  @Test
   @DisplayName("Changing teachers of a subject without an edition this year is 404 NOT_FOUND")
   void teachersWithoutCurrentEdition() throws Exception {
     // Arrange

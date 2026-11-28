@@ -11,6 +11,11 @@
 .sm-banner__body { flex: 1; min-width: 0; }
 .sm-banner__title { display: block; font-weight: 500; }
 .sm-banner__action { flex-shrink: 0; align-self: center; }
+/* on a phone the action goes under the text, lined up with it, so the text keeps the width */
+@media (max-width: 640px) {
+  .sm-banner:has(.sm-banner__action) { flex-wrap: wrap; }
+  .sm-banner__action { flex-basis: 100%; padding-left: 32px; }
+}
 .sm-banner__close { flex-shrink: 0; margin: -4px -6px -4px 0; width: 28px; height: 28px; border: 0; border-radius: 50%; background: transparent; color: inherit; display: grid; place-items: center; cursor: pointer; opacity: 0.7; }
 .sm-banner__close:hover { opacity: 1; background: rgba(0, 0, 0, 0.06); }
 .sm-banner__close:focus-visible { outline: none; box-shadow: var(--sm-focus-ring); }
@@ -90,11 +95,13 @@
 .sm-dialog__desc { margin: 8px 0 0; font-size: 16px; line-height: 1.45; color: var(--sm-text-2); }
 .sm-dialog__body { margin-top: 20px; }
 .sm-dialog__footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 28px; flex-wrap: wrap; }
+/* the same buttons at the end of a form inside the dialog, which already spaces its rows */
+.sm-dialog__actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
 .sm-dialog__icon { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; margin-bottom: 18px; }
 @media (max-width: 520px) {
   .sm-dialog { padding: 24px 20px 20px; border-radius: 24px; }
-  .sm-dialog__footer { flex-direction: column-reverse; }
-  .sm-dialog__footer > * { width: 100%; }
+  .sm-dialog__footer, .sm-dialog__actions { flex-direction: column-reverse; }
+  .sm-dialog__footer > *, .sm-dialog__actions > * { width: 100%; }
 }
 
 .sm-sheet {

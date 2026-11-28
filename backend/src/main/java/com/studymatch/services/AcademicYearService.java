@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.dtos.SemesterDatesDTO;
 import com.studymatch.events.AcademicYearStartedEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -56,20 +57,40 @@ public class AcademicYearService {
   // Staff confirms the year they saw, so confirming twice or two Staff at once can't skip a year.
   // the listeners (profile wipe) run in this same transaction, if one fails the year isn't created
   @Transactional
-  public AcademicYear startNext(int confirmedStartYear) {
+  public AcademicYear startNext(int confirmedStartYear, SemesterDatesDTO semesters) {
     if (confirmedStartYear != nextStartYear()) {
       throw new StudyMatchException(ErrorCode.ACADEMIC_YEAR_NOT_NEXT);
     }
+    AcademicYear next = new AcademicYear(confirmedStartYear);
+    setSemesters(next, semesters);
+
     // two confirmations at the same time both pass the check above, the primary key stops the second.
     // flushed here so it fails before the profiles are wiped, not at commit
     AcademicYear academicYear;
     try {
-      academicYear = academicYearRepository.saveAndFlush(new AcademicYear(confirmedStartYear));
+      academicYear = academicYearRepository.saveAndFlush(next);
     } catch (DataIntegrityViolationException e) {
       throw new StudyMatchException(ErrorCode.ACADEMIC_YEAR_NOT_NEXT);
     }
     eventPublisher.publishEvent(new AcademicYearStartedEvent(academicYear));
     return academicYear;
+  }
+
+  // older years are done, changing their dates would only move lessons that already happened.
+  // published schedules (#347) will follow the new dates here
+  @Transactional
+  public AcademicYear editSemesters(int startYear, SemesterDatesDTO semesters) {
+    AcademicYear academicYear = getAcademicYear(startYear);
+    if (!isCurrent(academicYear)) {
+      throw new StudyMatchException(ErrorCode.ACADEMIC_YEAR_NOT_CURRENT);
+    }
+    setSemesters(academicYear, semesters);
+    return academicYearRepository.save(academicYear);
+  }
+
+  private static void setSemesters(AcademicYear academicYear, SemesterDatesDTO semesters) {
+    academicYear.setSemesters(semesters.semester1Start(), semesters.semester1End(), semesters.semester2Start(),
+        semesters.semester2End());
   }
 
 }

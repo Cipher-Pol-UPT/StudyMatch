@@ -45,6 +45,19 @@ INSERT INTO category (name) VALUES
   ('Design')
 ON CONFLICT (name) DO NOTHING;
 
+-- rooms: every type on two buildings, positions on each floor's 100 x 100 grid. B.102 is inactive
+INSERT INTO room (code, building, floor, type, capacity, x, y, width, depth, active) VALUES
+  ('A.001', 'Building A', 0, 'AUDITORIUM', 120, 0, 0, 40, 30, true),
+  ('A.002', 'Building A', 0, 'CLASSROOM', 30, 40, 0, 20, 20, true),
+  ('A.101', 'Building A', 1, 'CLASSROOM', 30, 0, 0, 20, 20, true),
+  ('A.102', 'Building A', 1, 'CLASSROOM', 30, 20, 0, 20, 20, true),
+  ('A.103', 'Building A', 1, 'LAB', 24, 40, 0, 25, 20, true),
+  ('B.001', 'Building B', 0, 'LAB', 20, 0, 0, 20, 20, true),
+  ('B.002', 'Building B', 0, 'CLASSROOM', 40, 20, 0, 25, 20, true),
+  ('B.101', 'Building B', 1, 'LAB', 20, 0, 0, 20, 20, true),
+  ('B.102', 'Building B', 1, 'CLASSROOM', 25, 20, 0, 20, 20, false)
+ON CONFLICT (code) DO NOTHING;
+
 -- subjects and where they are in each degree
 
 INSERT INTO subject (code, name, ects, category_id)
@@ -223,6 +236,16 @@ WHERE s.number = p.number;
 INSERT INTO academic_year (start_year) VALUES (2025), (2026)
 ON CONFLICT (start_year) DO NOTHING;
 
+-- semester dates (#334): an update so a database that already has the years gets them too, and dates Staff
+-- changed stay
+UPDATE academic_year y
+SET semester1_start = v.s1_start, semester1_end = v.s1_end, semester2_start = v.s2_start, semester2_end = v.s2_end
+FROM (VALUES
+  (2025, DATE '2025-09-15', DATE '2026-01-31', DATE '2026-02-16', DATE '2026-06-30'),
+  (2026, DATE '2026-09-14', DATE '2027-01-30', DATE '2027-02-15', DATE '2027-06-30')
+) AS v(start_year, s1_start, s1_end, s2_start, s2_end)
+WHERE y.start_year = v.start_year AND y.semester1_start IS NULL;
+
 INSERT INTO subject_edition (subject_id, academic_year)
 SELECT s.id, v.academic_year
 FROM (VALUES
@@ -285,6 +308,26 @@ FROM (VALUES
 JOIN subject s ON s.code = v.code
 JOIN subject_edition e ON e.subject_id = s.id AND e.academic_year = v.academic_year
 ON CONFLICT (subject_edition_id, code) DO NOTHING;
+
+-- teachers of this year's classes, only where Staff hasn't picked one yet
+UPDATE class_section cs
+SET teacher_number = u.number
+FROM (VALUES
+  ('PROG1', 'T1', 'tiago.teacher@example.com'),
+  ('PROG1', 'T2', 'tiago.teacher@example.com'),
+  ('MATH1', 'T1', 'marta.teacher@example.com'),
+  ('DB', 'T1', 'tiago.teacher@example.com'),
+  ('DB', 'T2', 'tiago.teacher@example.com'),
+  ('STAT', 'T1', 'marta.teacher@example.com'),
+  ('SE', 'T1', 'rui.teacher@example.com'),
+  ('SQ', 'T1', 'tiago.teacher@example.com'),
+  ('UX', 'T1', 'rui.teacher@example.com'),
+  ('PM', 'T1', 'marta.teacher@example.com')
+) AS v(code, section, teacher_email)
+JOIN subject s ON s.code = v.code
+JOIN subject_edition e ON e.subject_id = s.id AND e.academic_year = 2026
+JOIN users u ON u.personal_email = v.teacher_email
+WHERE cs.subject_edition_id = e.id AND cs.code = v.section AND cs.teacher_number IS NULL;
 
 -- enrolments: the 2025 ones are finished with a final grade, the 2026 ones are in progress
 

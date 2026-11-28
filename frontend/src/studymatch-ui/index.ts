@@ -104,7 +104,10 @@ export { LoginForm,type LoginFormProps } from './blocks/auth/LoginForm';
 export { ChangePasswordForm,ForgotPasswordForm,ResetPasswordForm,type ChangePasswordFormProps,type ForgotPasswordFormProps,type ResetPasswordFormProps } from './blocks/auth/PasswordForms';
 export { AuthStatus,BlockedNotice,CheckEmail,VerifyEmail,type AuthStatusProps,type BlockedNoticeProps,type CheckEmailProps,type VerifyEmailProps } from './blocks/auth/StatusScreens';
 export { CategoryDialog,type CategoryDialogProps } from './blocks/catalogue/CatalogueForms';
-export { ChatComposer,ChatHead,ChatLayout,ChatListPane,ChatMessage,ChatMessages,ChatPeople,ChatPerson,ChatStart,ChatThread,type ChatComposerProps,type ChatHeadProps,type ChatLayoutProps,type ChatListPaneProps,type ChatMessageProps,type ChatMessagesProps,type ChatPersonProps,type ChatStartProps,type ChatThreadProps } from './blocks/chat/ChatLayout';
+export { ChatComposer,ChatDay,ChatPersonRow,ChatReplyBar,ChatTyping,ChatResult,ChatSheet,type ChatQuote,type ChatReaction,type ChatResultProps,type ChatSheetProps,type ChatReplyBarProps,ChatHead,ChatJump,ChatLayout,ChatListPane,ChatMessage,ChatMessageEditor,ChatMessages,ChatOlder,ChatPeople,ChatPerson,ChatPicture,ChatRow,ChatRows,ChatStart,ChatThread,type ChatComposerProps,type ChatHeadProps,type ChatLayoutProps,type ChatListPaneProps,type ChatMessageEditorProps,type ChatMessageProps,type ChatMessagesProps,type ChatPersonProps,type ChatPictureProps,type ChatRowProps,type ChatStartProps,type ChatThreadProps } from './blocks/chat/ChatLayout';
+export { flashMessage } from './blocks/chat/flash';
+export { ChatEmojiPicker,type ChatEmojiPickerProps } from './blocks/chat/ChatEmojiPicker';
+export { EMOJI_CATEGORIES } from './blocks/chat/emojiCategories';
 export { PersonalityTest,type PersonalityQuestion,type PersonalityTestProps } from './blocks/personality/PersonalityTest';
 export { EditProfileForm,type EditProfileFormProps,type ProfileEdits } from './blocks/profile/EditProfileForm';
 export { ImageCropper,type CroppedImage,type ImageCropperProps } from './blocks/profile/ImageCropper';
@@ -124,3 +127,6 @@ type StudyRoomDetailsProps,
 type StudyRoomDraft
 } from './blocks/studyroom/StudyRoomBoard';
 export { MeetButton,StudyRoomCard,StudyRoomStatusPill,type MeetButtonProps,type StudyRoomCardProps } from './blocks/studyroom/StudyRoomCard';
+export { ChatFile,ChatFilePaper,ChatFiles,ChatImage,ChatUpload,ChatUploads,type ChatFileProps,type ChatImageProps,type ChatUploadProps } from './blocks/chat/ChatFiles';
+export { chatFileKind,chatFileTag,type ChatFileKind } from './blocks/chat/fileKinds';
+export type { ChatDropProps } from './blocks/chat/useChatDrop';
