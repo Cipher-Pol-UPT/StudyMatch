@@ -3,6 +3,7 @@ package com.studymatch.controllers;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -13,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,12 +35,14 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.enums.AccountStatus;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.enums.StudyRoomStatus;
 import com.studymatch.enums.TutorApplicationStatus;
 import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Admin;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
+import com.studymatch.models.Notification;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Staff;
 import com.studymatch.models.Student;
@@ -52,6 +57,7 @@ import com.studymatch.repositories.AcademicYearRepository;
 import com.studymatch.repositories.AdminRepository;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
+import com.studymatch.repositories.NotificationRepository;
 import com.studymatch.repositories.StaffRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.StudyRoomRepository;
@@ -116,6 +122,9 @@ class BlockAccountIntegrationTest {
 
   @Autowired
   private StudyRoomRepository studyRoomRepository;
+
+  @Autowired
+  private NotificationRepository notificationRepository;
 
   private Admin admin;
   private Staff staff;
@@ -527,6 +536,50 @@ class BlockAccountIntegrationTest {
     unblock(tutor.getNumber(), staffSession)
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+  }
+
+  private List<Notification> notificationsOf(User user) {
+    return notificationRepository.findByRecipientNumber(user.getNumber(), Pageable.unpaged()).getContent();
+  }
+
+  @Test
+  @DisplayName("Blocking a tutor tells the participants of the cancelled room, without the block reason")
+  void blockingNotifiesParticipants() throws Exception {
+    // Arrange
+    Degree degree = degreeRepository.save(new Degree("IT Block Participant Degree", 3));
+    Student ana = new Student("it.block.ana@example.com", "Block Test Ana", passwordEncoder.encode(PASSWORD), degree, 1);
+    ana = studentRepository.save(ana);
+    ana.generateInstitutionalEmail("studymatch.com");
+    ana = studentRepository.saveAndFlush(ana);
+    upcomingRoom.join(ana);
+    upcomingRoom = studyRoomRepository.saveAndFlush(upcomingRoom);
+
+    // Act
+    block(tutor.getNumber(), adminSession, "{\"reason\":\"test reason\"}").andExpect(status().isOk());
+
+    // Assert
+    List<Notification> notifications = notificationsOf(ana);
+    assertEquals(1, notifications.size());
+    assertEquals(NotificationType.STUDYROOM_CANCELLED, notifications.getFirst().getType());
+    assertEquals(upcomingRoom.getId(), notifications.getFirst().getTargetId());
+    assertFalse(notifications.getFirst().getParams().containsKey("reason"));
+  }
+
+  @Test
+  @DisplayName("Unblocking tells the user, who sees it after logging in again")
+  void unblockingNotifiesUser() throws Exception {
+    // Arrange
+    block(tutor.getNumber(), adminSession, "{\"reason\":\"test reason\"}").andExpect(status().isOk());
+
+    // Act
+    unblock(tutor.getNumber(), adminSession).andExpect(status().isOk());
+
+    // Assert
+    mockMvc.perform(get("/notifications/").session(loginAndGetSession(tutor.getInstitutionalEmail())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content[0].type").value("ACCOUNT_UNBLOCKED"))
+        .andExpect(jsonPath("$.content[0].read").value(false));
+    assertEquals(1, notificationsOf(tutor).size());
   }
 
 }

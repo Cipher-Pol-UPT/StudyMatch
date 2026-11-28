@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,10 +21,13 @@ import com.studymatch.dtos.StudyRoomDTO;
 import com.studymatch.dtos.StudyRoomDetailDTO;
 import com.studymatch.dtos.UpdateStudyRoomRequestDTO;
 import com.studymatch.enums.Achievement;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.enums.StudyRoomStatus;
 import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
+import com.studymatch.models.Participation;
 import com.studymatch.models.Student;
 import com.studymatch.models.StudyRoom;
 import com.studymatch.models.Subject;
@@ -41,16 +45,18 @@ public class StudyRoomService {
   private final EnrolmentService enrolmentService;
   private final ApplicationEventPublisher eventPublisher;
   private final MeetLinkGenerator meetLinkGenerator;
+  private final NotificationService notificationService;
 
   public StudyRoomService(StudyRoomRepository studyRoomRepository, TutorRoleService tutorRoleService,
       RatingService ratingService, EnrolmentService enrolmentService, ApplicationEventPublisher eventPublisher,
-      MeetLinkGenerator meetLinkGenerator) {
+      MeetLinkGenerator meetLinkGenerator, NotificationService notificationService) {
     this.studyRoomRepository = studyRoomRepository;
     this.tutorRoleService = tutorRoleService;
     this.ratingService = ratingService;
     this.enrolmentService = enrolmentService;
     this.eventPublisher = eventPublisher;
     this.meetLinkGenerator = meetLinkGenerator;
+    this.notificationService = notificationService;
   }
 
   @Transactional
@@ -109,8 +115,12 @@ public class StudyRoomService {
     if (request.link() == null) {
       room.useGeneratedLink(meetLinkGenerator.createLink());
     }
-    // notifying the participants comes with notifications (#144)
-    return StudyRoomDTO.from(studyRoomRepository.save(room));
+    StudyRoom saved = studyRoomRepository.save(room);
+    Map<String, Object> params = roomParams(saved);
+    params.put("endsAt", saved.getEndsAt().toString());
+    notificationService.notifyAll(participantsOf(saved), NotificationType.STUDYROOM_UPDATED,
+        NotificationTarget.STUDYROOM, saved.getId(), params);
+    return StudyRoomDTO.from(saved);
   }
 
   // view StudyRooms (#43): the calendar only shows rooms that aren't cancelled and aren't completed,
@@ -192,9 +202,11 @@ public class StudyRoomService {
   // block account: the tutor's rooms that haven't started are cancelled, the block reason stays private
   @Transactional
   public int cancelUpcoming(Long tutorNumber) {
-    List<StudyRoom> rooms = studyRoomRepository.findUpcoming(tutorNumber, LocalDateTime.now());
+    List<StudyRoom> rooms = studyRoomRepository.findUpcomingWithParticipants(tutorNumber, LocalDateTime.now());
     rooms.forEach(room -> room.cancel(null));
     studyRoomRepository.saveAll(rooms);
+    rooms.forEach(room -> notificationService.notifyAll(participantsOf(room), NotificationType.STUDYROOM_CANCELLED,
+        NotificationTarget.STUDYROOM, room.getId(), roomParams(room)));
     return rooms.size();
   }
 
@@ -210,8 +222,15 @@ public class StudyRoomService {
   public StudyRoomDTO confirmAttendance(Long tutorNumber, Long roomId, Set<Long> attendeeNumbers) {
     StudyRoom room = getHostedRoom(tutorNumber, roomId);
     room.confirmAttendance(attendeeNumbers);
-    // telling the attendees they can rate comes with notifications (#144)
     StudyRoom saved = studyRoomRepository.save(room);
+    List<Student> attendees = saved.getParticipations().stream()
+        .filter(Participation::isAttended)
+        .map(Participation::getStudent)
+        .toList();
+    Map<String, Object> params = roomParams(saved);
+    params.put("tutor", saved.getTutorRole().getStudent().getName());
+    notificationService.notifyAll(attendees, NotificationType.STUDYROOM_RATING_OPEN, NotificationTarget.STUDYROOM,
+        saved.getId(), params);
     eventPublisher.publishEvent(new TutorActivityEvent(saved.getTutorRole().getStudent()));
     return StudyRoomDTO.from(saved);
   }
@@ -254,9 +273,14 @@ public class StudyRoomService {
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
     // the model checks it's still open, not started, and the student is a participant
     room.leave(student);
-    // notifying the tutor comes with notifications (#144)
+    StudyRoom saved = studyRoomRepository.save(room);
+    Map<String, Object> params = roomParams(saved);
+    params.put("student", student.getName());
+    params.put("number", student.getNumber());
+    notificationService.notify(saved.getTutorRole().getStudent(), NotificationType.STUDYROOM_LEFT,
+        NotificationTarget.STUDYROOM, saved.getId(), params);
     // the link is null now: the student isn't in the room anymore
-    return StudyRoomDTO.from(studyRoomRepository.save(room), false);
+    return StudyRoomDTO.from(saved, false);
   }
 
   // cancel StudyRoom (#53): a tutor cancels their room before it starts, with an optional reason
@@ -265,8 +289,27 @@ public class StudyRoomService {
     StudyRoom room = getHostedRoom(tutorNumber, roomId);
     // the model checks it's still open and not started
     room.cancel(reason);
-    // notifying the participants, with the reason if given, comes with notifications (#144)
-    return StudyRoomDTO.from(studyRoomRepository.save(room));
+    StudyRoom saved = studyRoomRepository.save(room);
+    // the reason only when the tutor gave one
+    Map<String, Object> params = roomParams(saved);
+    if (saved.getCancellationReason() != null) {
+      params.put("reason", saved.getCancellationReason());
+    }
+    notificationService.notifyAll(participantsOf(saved), NotificationType.STUDYROOM_CANCELLED,
+        NotificationTarget.STUDYROOM, saved.getId(), params);
+    return StudyRoomDTO.from(saved);
+  }
+
+  private static List<Student> participantsOf(StudyRoom room) {
+    return room.getParticipations().stream().map(Participation::getStudent).toList();
+  }
+
+  // what every notification about a room says, a new map so each use case can add its own
+  private static Map<String, Object> roomParams(StudyRoom room) {
+    Map<String, Object> params = new HashMap<>();
+    params.put("subject", room.getTutorRole().getSubject().getName());
+    params.put("startsAt", room.getStartsAt().toString());
+    return params;
   }
 
   // only the tutor who hosts the room can see who joined and confirm it

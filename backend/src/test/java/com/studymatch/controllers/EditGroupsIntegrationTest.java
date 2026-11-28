@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.enums.AssignmentType;
 import com.studymatch.enums.GroupStatus;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.models.AcademicYear;
 import com.studymatch.models.Assignment;
 import com.studymatch.models.Category;
@@ -40,6 +44,7 @@ import com.studymatch.models.Degree;
 import com.studymatch.models.Enrolment;
 import com.studymatch.models.Group;
 import com.studymatch.models.GroupingRule;
+import com.studymatch.models.Notification;
 import com.studymatch.models.Student;
 import com.studymatch.models.Subject;
 import com.studymatch.models.SubjectEdition;
@@ -51,6 +56,7 @@ import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.EnrolmentRepository;
 import com.studymatch.repositories.GroupRepository;
+import com.studymatch.repositories.NotificationRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.SubjectEditionRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -78,6 +84,7 @@ class EditGroupsIntegrationTest {
   @Autowired private EnrolmentRepository enrolmentRepository;
   @Autowired private AssignmentRepository assignmentRepository;
   @Autowired private GroupRepository groupRepository;
+  @Autowired private NotificationRepository notificationRepository;
 
   private SubjectEdition edition;
   private Assignment assignment;
@@ -171,6 +178,64 @@ class EditGroupsIntegrationTest {
 
   private Set<Student> members(Group group) {
     return groupRepository.findById(group.getId()).orElseThrow().getMembers();
+  }
+
+  private List<Notification> notificationsOf(Student student) {
+    return notificationRepository.findByRecipientNumber(student.getNumber(), Pageable.unpaged()).getContent();
+  }
+
+  // the group number each student was told, in the order of the students; null when they weren't told
+  private List<Object> toldNumbers() {
+    return students.stream().map(student -> {
+      List<Notification> notifications = notificationsOf(student);
+      if (notifications.isEmpty()) {
+        return null;
+      }
+      Notification notification = notifications.getFirst();
+      assertEquals(1, notifications.size());
+      assertEquals(NotificationType.GROUP_UPDATED, notification.getType());
+      assertEquals(NotificationTarget.ASSIGNMENT, notification.getTarget());
+      assertEquals(assignment.getId(), notification.getTargetId());
+      return notification.getParams().get("number");
+    }).toList();
+  }
+
+  @Test
+  @DisplayName("Editing published groups tells the members of a changed or new group, the rest and draft edits nobody")
+  void editPublishedNotifiesChangedGroups() throws Exception {
+    // Arrange
+    List<Group> published = saveGroups(GroupStatus.PUBLISHED, new int[] { 0, 1 }, new int[] { 2, 3 },
+        new int[] { 4, 5 });
+    List<Group> drafts = saveGroups(GroupStatus.DRAFT, new int[] { 0, 1, 2 }, new int[] { 3, 4, 5 });
+    edit("draft", group(drafts.get(0).getId(), student(0), student(1)),
+        group(drafts.get(1).getId(), student(2), student(3), student(4), student(5)))
+        .andExpect(status().isOk());
+
+    // Act - group 1 stays, student 4 moves to group 2 and student 5 is alone in group 3
+    edit("published", group(published.get(0).getId(), student(0), student(1)),
+        group(published.get(1).getId(), student(2), student(3), student(4)),
+        group(published.get(2).getId(), student(5)))
+        .andExpect(status().isOk());
+
+    // Assert
+    assertEquals(Arrays.asList(null, null, 2, 2, 2, 3), toldNumbers());
+    assertTrue(notificationsOf(blocked).isEmpty());
+  }
+
+  @Test
+  @DisplayName("A published group that only moves down a number tells its members the new one")
+  void renumberedGroupNotifiesMembers() throws Exception {
+    // Arrange
+    List<Group> published = saveGroups(GroupStatus.PUBLISHED, new int[] { 0, 1 }, new int[] { 2, 3 },
+        new int[] { 4, 5 });
+
+    // Act - group 2 goes, its students join group 1, and group 3 becomes group 2 with the same members
+    edit("published", group(published.get(0).getId(), student(0), student(1), student(2), student(3)),
+        group(published.get(2).getId(), student(4), student(5)))
+        .andExpect(status().isOk());
+
+    // Assert
+    assertEquals(Arrays.asList(1, 1, 1, 1, 2, 2), toldNumbers());
   }
 
   @Test

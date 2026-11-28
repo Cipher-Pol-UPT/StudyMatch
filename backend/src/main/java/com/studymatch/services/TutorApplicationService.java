@@ -1,7 +1,9 @@
 package com.studymatch.services;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,6 +17,8 @@ import com.studymatch.dtos.TutorApplicationDTO;
 import com.studymatch.dtos.TutorEligibleSubjectDTO;
 import com.studymatch.dtos.TutorRankingDTO;
 import com.studymatch.dtos.TutorSubjectDTO;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.enums.TutorApplicationStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -36,15 +40,18 @@ public class TutorApplicationService {
   private final TutorRoleService tutorRoleService;
   private final SubjectEditionService subjectEditionService;
   private final SubjectService subjectService;
+  private final NotificationService notificationService;
 
   public TutorApplicationService(TutorApplicationRepository tutorApplicationRepository,
       EnrolmentService enrolmentService, TutorRoleService tutorRoleService,
-      SubjectEditionService subjectEditionService, SubjectService subjectService) {
+      SubjectEditionService subjectEditionService, SubjectService subjectService,
+      NotificationService notificationService) {
     this.tutorApplicationRepository = tutorApplicationRepository;
     this.enrolmentService = enrolmentService;
     this.tutorRoleService = tutorRoleService;
     this.subjectEditionService = subjectEditionService;
     this.subjectService = subjectService;
+    this.notificationService = notificationService;
   }
 
   public int countPending(Long studentNumber) {
@@ -100,13 +107,21 @@ public class TutorApplicationService {
     if (tutorRoleService.hasTutorRole(student.getNumber(), subject.getId())) {
       throw new StudyMatchException(ErrorCode.TUTOR_ROLE_ALREADY_EXISTS);
     }
-    if (subjectEditionService.findCurrentEdition(subject).isEmpty()) {
+    Optional<SubjectEdition> edition = subjectEditionService.findCurrentEdition(subject);
+    if (edition.isEmpty()) {
       throw new StudyMatchException(ErrorCode.SUBJECT_NOT_TAUGHT_THIS_YEAR);
     }
 
-    // notifying the subject's teacher comes with notifications (#144)
-    TutorApplication application = new TutorApplication(student, subject, request.motivation());
-    return TutorApplicationDTO.from(tutorApplicationRepository.save(application));
+    TutorApplication application = tutorApplicationRepository
+        .save(new TutorApplication(student, subject, request.motivation()));
+    // every teacher of the current edition can decide it, so they're all told
+    notificationService.notifyAll(edition.get().getTeachers(), NotificationType.TUTOR_APPLICATION_SUBMITTED,
+        NotificationTarget.TUTOR_APPLICATION, application.getId(), Map.of(
+            "subject", subject.getName(),
+            "subjectId", subject.getId(),
+            "student", student.getName(),
+            "number", student.getNumber()));
+    return TutorApplicationDTO.from(application);
   }
 
   // approve tutor application (#81): the pending applications for a subject, with the applicant's grade, rank and ratings
@@ -127,7 +142,7 @@ public class TutorApplicationService {
 
     TutorRole role = application.approve(teacher);
     tutorRoleService.save(role);
-    // notifying the student comes with notifications (#144)
+    notifyDecision(application, NotificationType.TUTOR_APPLICATION_APPROVED);
     return TutorApplicationDTO.from(tutorApplicationRepository.save(application));
   }
 
@@ -138,8 +153,21 @@ public class TutorApplicationService {
     checkCanDecide(application.getSubject(), teacher.getNumber());
 
     application.reject(teacher, reason);
-    // notifying the student, with the reason if given, comes with notifications (#144)
+    notifyDecision(application, NotificationType.TUTOR_APPLICATION_REJECTED);
     return TutorApplicationDTO.from(tutorApplicationRepository.save(application));
+  }
+
+  // the reason only when the teacher gave one
+  private void notifyDecision(TutorApplication application, NotificationType type) {
+    Subject subject = application.getSubject();
+    Map<String, Object> params = new HashMap<>();
+    params.put("subject", subject.getName());
+    params.put("subjectId", subject.getId());
+    if (application.getRejectionReason() != null) {
+      params.put("reason", application.getRejectionReason());
+    }
+    notificationService.notify(application.getStudent(), type, NotificationTarget.TUTOR_APPLICATION,
+        application.getId(), params);
   }
 
   // only the teacher of the subject's current edition decides

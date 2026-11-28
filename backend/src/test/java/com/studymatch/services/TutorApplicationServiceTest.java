@@ -9,9 +9,11 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +26,8 @@ import com.studymatch.dtos.PendingTutorApplicationDTO;
 import com.studymatch.dtos.TutorApplicationDTO;
 import com.studymatch.dtos.TutorEligibleSubjectDTO;
 import com.studymatch.dtos.TutorRankingDTO;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.enums.TutorApplicationStatus;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
@@ -48,6 +52,7 @@ class TutorApplicationServiceTest {
   private TutorRoleService tutorRoleService;
   private SubjectEditionService subjectEditionService;
   private SubjectService subjectService;
+  private NotificationService notificationService;
   private TutorApplicationService tutorApplicationService;
 
   private Student student;
@@ -59,8 +64,9 @@ class TutorApplicationServiceTest {
     tutorRoleService = mock(TutorRoleService.class);
     subjectEditionService = mock(SubjectEditionService.class);
     subjectService = mock(SubjectService.class);
+    notificationService = mock(NotificationService.class);
     tutorApplicationService = new TutorApplicationService(tutorApplicationRepository, enrolmentService, tutorRoleService,
-        subjectEditionService, subjectService);
+        subjectEditionService, subjectService, notificationService);
     student = ModelTestData.student("Test Student");
     ReflectionTestUtils.setField(student, "number", STUDENT_NUMBER);
   }
@@ -175,6 +181,30 @@ class TutorApplicationServiceTest {
   }
 
   @Test
+  @DisplayName("Applying tells every teacher of the subject's current edition")
+  void applyNotifiesTeachers() {
+    // Arrange
+    Enrolment maths = passedEnrolment();
+    SubjectEdition edition = maths.getSubjectEdition();
+    when(enrolmentService.getPassedEnrolment(student, SUBJECT_ID)).thenReturn(maths);
+    when(enrolmentService.getTutorRanking(maths)).thenReturn(new TutorRankingDTO(1, 10, true));
+    when(subjectEditionService.findCurrentEdition(edition.getSubject())).thenReturn(Optional.of(edition));
+    when(tutorApplicationRepository.save(any(TutorApplication.class))).thenAnswer(invocation -> {
+      TutorApplication application = invocation.getArgument(0);
+      ReflectionTestUtils.setField(application, "id", 7L);
+      return application;
+    });
+
+    // Act
+    tutorApplicationService.apply(student, new ApplyTutorRequestDTO(SUBJECT_ID, "test motivation"));
+
+    // Assert
+    verify(notificationService).notifyAll(edition.getTeachers(), NotificationType.TUTOR_APPLICATION_SUBMITTED,
+        NotificationTarget.TUTOR_APPLICATION, 7L, Map.of("subject", "Test Subject", "subjectId", SUBJECT_ID,
+            "student", "Test Student", "number", STUDENT_NUMBER));
+  }
+
+  @Test
   @DisplayName("A student outside the top 5% can't apply")
   void notEligibleCannotApply() {
     // Arrange
@@ -264,6 +294,7 @@ class TutorApplicationServiceTest {
 
     // Assert
     assertEquals(ErrorCode.SUBJECT_NOT_TAUGHT_THIS_YEAR, e.getCode());
+    verifyNoInteractions(notificationService);
   }
 
   // approve tutor application (#81)
@@ -319,6 +350,7 @@ class TutorApplicationServiceTest {
     // Arrange
     Subject subject = taughtSubject();
     TutorApplication application = new TutorApplication(student, subject, "test motivation");
+    ReflectionTestUtils.setField(application, "id", 7L);
     when(tutorApplicationRepository.findLockedById(7L)).thenReturn(Optional.of(application));
     when(tutorApplicationRepository.save(application)).thenReturn(application);
     when(tutorRoleService.save(any(TutorRole.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -329,6 +361,8 @@ class TutorApplicationServiceTest {
     // Assert
     assertEquals(TutorApplicationStatus.APPROVED, result.status());
     verify(tutorRoleService).save(any(TutorRole.class));
+    verify(notificationService).notify(student, NotificationType.TUTOR_APPLICATION_APPROVED,
+        NotificationTarget.TUTOR_APPLICATION, 7L, Map.of("subject", "Test Subject", "subjectId", SUBJECT_ID));
   }
 
   @Test
@@ -349,6 +383,25 @@ class TutorApplicationServiceTest {
   }
 
   @Test
+  @DisplayName("Rejecting tells the student, with the reason when there is one")
+  void rejectNotifiesStudent() {
+    // Arrange
+    Subject subject = taughtSubject();
+    TutorApplication application = new TutorApplication(student, subject, "test motivation");
+    ReflectionTestUtils.setField(application, "id", 7L);
+    when(tutorApplicationRepository.findLockedById(7L)).thenReturn(Optional.of(application));
+    when(tutorApplicationRepository.save(application)).thenReturn(application);
+
+    // Act
+    tutorApplicationService.reject(teacher(), 7L, "not good enough");
+
+    // Assert
+    verify(notificationService).notify(student, NotificationType.TUTOR_APPLICATION_REJECTED,
+        NotificationTarget.TUTOR_APPLICATION, 7L,
+        Map.of("subject", "Test Subject", "subjectId", SUBJECT_ID, "reason", "not good enough"));
+  }
+
+  @Test
   @DisplayName("A teacher who doesn't teach the subject's current edition can't decide")
   void notTeacherCannotDecide() {
     // Arrange
@@ -365,6 +418,7 @@ class TutorApplicationServiceTest {
     // Assert
     assertEquals(ErrorCode.ACCESS_DENIED, e.getCode());
     verify(tutorRoleService, never()).save(any());
+    verifyNoInteractions(notificationService);
   }
 
   @Test

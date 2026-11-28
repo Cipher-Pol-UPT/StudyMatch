@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,9 +31,12 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.enums.Achievement;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
 import com.studymatch.models.EarnedAchievement;
+import com.studymatch.models.Notification;
 import com.studymatch.models.Participation;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Student;
@@ -41,9 +45,11 @@ import com.studymatch.models.Subject;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.TutorApplication;
 import com.studymatch.models.TutorRole;
+import com.studymatch.models.User;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
 import com.studymatch.repositories.EarnedAchievementRepository;
+import com.studymatch.repositories.NotificationRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.StudyRoomRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -92,6 +98,9 @@ class ConfirmAttendanceIntegrationTest {
 
   @Autowired
   private EarnedAchievementRepository earnedAchievementRepository;
+
+  @Autowired
+  private NotificationRepository notificationRepository;
 
   private Student tutor;
   private Student ana;
@@ -331,6 +340,40 @@ class ConfirmAttendanceIntegrationTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("attendeeNumbers"));
+  }
+
+  private List<Notification> notificationsOf(User user) {
+    return notificationRepository.findByRecipientNumber(user.getNumber(), Pageable.unpaged()).getContent();
+  }
+
+  @Test
+  @DisplayName("Confirming tells ana she can rate the tutor, and not bruno who was absent")
+  void confirmingNotifiesAttendees() throws Exception {
+    // Act
+    confirm(room.getId(), "{\"attendeeNumbers\": [" + ana.getNumber() + "]}").andExpect(status().isOk());
+
+    // Assert
+    List<Notification> notifications = notificationsOf(ana);
+    assertEquals(1, notifications.size());
+    assertEquals(NotificationType.STUDYROOM_RATING_OPEN, notifications.getFirst().getType());
+    assertEquals(room.getId(), notifications.getFirst().getTargetId());
+    assertEquals("Tutor Test", notifications.getFirst().getParams().get("tutor"));
+    assertTrue(notificationsOf(bruno).isEmpty());
+  }
+
+  @Test
+  @DisplayName("Earning First StudyRoom tells the tutor which achievement it was")
+  void earningAchievementNotifiesTutor() throws Exception {
+    // Act
+    confirm(room.getId(), "{\"attendeeNumbers\": [" + ana.getNumber() + ", " + bruno.getNumber() + "]}")
+        .andExpect(status().isOk());
+
+    // Assert
+    List<Notification> notifications = notificationsOf(tutor);
+    assertEquals(1, notifications.size());
+    assertEquals(NotificationType.ACHIEVEMENT_EARNED, notifications.getFirst().getType());
+    assertEquals(NotificationTarget.ACHIEVEMENT, notifications.getFirst().getTarget());
+    assertEquals("FIRST_STUDYROOM", notifications.getFirst().getParams().get("achievement"));
   }
 
 }

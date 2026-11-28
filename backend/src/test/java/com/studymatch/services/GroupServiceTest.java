@@ -40,6 +40,8 @@ import com.studymatch.enums.ExportFormat;
 import com.studymatch.enums.GroupStatus;
 import com.studymatch.enums.Language;
 import com.studymatch.enums.StatuteType;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 import com.studymatch.matching.GroupGenerator;
@@ -64,6 +66,7 @@ class GroupServiceTest {
   private GroupPdfWriter groupPdfWriter;
   private ChatService chatService;
   private MessageService messageService;
+  private NotificationService notificationService;
   private GroupService groupService;
   private SubjectEdition edition;
   private Student ana;
@@ -77,10 +80,11 @@ class GroupServiceTest {
     groupPdfWriter = mock(GroupPdfWriter.class);
     chatService = mock(ChatService.class);
     messageService = mock(MessageService.class);
+    notificationService = mock(NotificationService.class);
     groupService = new GroupService(groupRepository, assignmentService, enrolmentService,
         mock(AcademicYearService.class), mock(SubjectEditionService.class), mock(LessonService.class),
         mock(AbsenceService.class), chatService, messageService, mock(GroupGenerator.class), new GroupCsvWriter(),
-        groupPdfWriter);
+        groupPdfWriter, notificationService);
     edition = ModelTestData.subjectEdition();
     ana = student("Ana", ANA);
     rui = student("Rui", 1002L);
@@ -515,7 +519,7 @@ class GroupServiceTest {
     Group old = draft(assignment, 1, ana, rui);
     old.publish();
     List<Group> drafts = List.of(draft(assignment, 1, ana), draft(assignment, 2, rui));
-    when(groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT)).thenReturn(drafts);
+    when(groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT)).thenReturn(drafts);
     when(groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.PUBLISHED))
         .thenReturn(List.of(old));
 
@@ -930,6 +934,47 @@ class GroupServiceTest {
 
     // Assert
     assertEquals(ErrorCode.ASSIGNMENT_NOT_GROUP_WORK, e.getCode());
+  }
+
+  @Test
+  @DisplayName("Publishing tells each member their group, pointing at the assignment")
+  void publishNotifiesMembers() {
+    // Arrange
+    Assignment assignment = project("Project", LocalDate.of(2026, 1, 10));
+    Group first = draft(assignment, 1, ana);
+    Group second = draft(assignment, 2, rui);
+    ReflectionTestUtils.setField(first, "id", 11L);
+    ReflectionTestUtils.setField(second, "id", 12L);
+    // the groups' ids change when publishing again, the assignment's doesn't
+    ReflectionTestUtils.setField(assignment, "id", 2L);
+    when(assignmentService.getLockedAssignment(1L, 2L)).thenReturn(assignment);
+    when(groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT))
+        .thenReturn(List.of(first, second));
+
+    // Act
+    groupService.publishGroups(1L, 2L);
+
+    // Assert
+    verify(notificationService).notifyAll(Set.of(ana), NotificationType.GROUP_PUBLISHED, NotificationTarget.ASSIGNMENT,
+        2L, Map.of("subject", "Test Subject", "assignment", "Project", "number", 1));
+    verify(notificationService).notifyAll(Set.of(rui), NotificationType.GROUP_PUBLISHED, NotificationTarget.ASSIGNMENT,
+        2L, Map.of("subject", "Test Subject", "assignment", "Project", "number", 2));
+  }
+
+  @Test
+  @DisplayName("Publishing without drafts is NO_DRAFT_GROUPS and tells nobody")
+  void publishWithoutDraftsNotifiesNobody() {
+    // Arrange
+    Assignment assignment = project("Project", LocalDate.of(2026, 1, 10));
+    when(assignmentService.getLockedAssignment(1L, 2L)).thenReturn(assignment);
+    when(groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT)).thenReturn(List.of());
+
+    // Act
+    StudyMatchException exception = assertThrows(StudyMatchException.class, () -> groupService.publishGroups(1L, 2L));
+
+    // Assert
+    assertEquals(ErrorCode.NO_DRAFT_GROUPS, exception.getCode());
+    verifyNoInteractions(notificationService);
   }
 
 }

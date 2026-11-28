@@ -1,6 +1,8 @@
 package com.studymatch.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -9,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,8 +30,11 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.models.Category;
 import com.studymatch.models.Degree;
+import com.studymatch.models.Notification;
 import com.studymatch.models.PersonalityProfile;
 import com.studymatch.models.Student;
 import com.studymatch.models.StudyRoom;
@@ -35,8 +42,10 @@ import com.studymatch.models.Subject;
 import com.studymatch.models.Teacher;
 import com.studymatch.models.TutorApplication;
 import com.studymatch.models.TutorRole;
+import com.studymatch.models.User;
 import com.studymatch.repositories.CategoryRepository;
 import com.studymatch.repositories.DegreeRepository;
+import com.studymatch.repositories.NotificationRepository;
 import com.studymatch.repositories.StudentRepository;
 import com.studymatch.repositories.StudyRoomRepository;
 import com.studymatch.repositories.SubjectRepository;
@@ -73,6 +82,8 @@ class CancelStudyRoomIntegrationTest {
   private TutorRoleRepository tutorRoleRepository;
   @Autowired
   private StudyRoomRepository studyRoomRepository;
+  @Autowired
+  private NotificationRepository notificationRepository;
 
   private Teacher teacher;
   private Student tutor;
@@ -212,6 +223,48 @@ class CancelStudyRoomIntegrationTest {
     cancel(room.getId(), teacherSession, "{}")
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+  }
+
+  private List<Notification> notificationsOf(User user) {
+    return notificationRepository.findByRecipientNumber(user.getNumber(), Pageable.unpaged()).getContent();
+  }
+
+  @Test
+  @DisplayName("Cancelling tells each participant, with the reason")
+  void cancellingNotifiesParticipants() throws Exception {
+    // Arrange
+    Student ana = saveStudent("it.cancel.ana@example.com", "Ana Test");
+    room.join(ana);
+    room = studyRoomRepository.saveAndFlush(room);
+
+    // Act
+    cancel(room.getId(), session, "{\"reason\":\"tutor is sick\"}").andExpect(status().isOk());
+
+    // Assert
+    List<Notification> notifications = notificationsOf(ana);
+    assertEquals(1, notifications.size());
+    Notification notification = notifications.getFirst();
+    assertEquals(NotificationType.STUDYROOM_CANCELLED, notification.getType());
+    assertEquals(NotificationTarget.STUDYROOM, notification.getTarget());
+    assertEquals(room.getId(), notification.getTargetId());
+    assertEquals("Test Maths", notification.getParams().get("subject"));
+    assertEquals("tutor is sick", notification.getParams().get("reason"));
+    assertTrue(notificationsOf(tutor).isEmpty());
+  }
+
+  @Test
+  @DisplayName("Cancelling without a reason sends no reason")
+  void cancellingWithoutReasonSendsNone() throws Exception {
+    // Arrange
+    Student ana = saveStudent("it.cancel.ana@example.com", "Ana Test");
+    room.join(ana);
+    room = studyRoomRepository.saveAndFlush(room);
+
+    // Act
+    cancel(room.getId(), session, "{}").andExpect(status().isOk());
+
+    // Assert
+    assertFalse(notificationsOf(ana).getFirst().getParams().containsKey("reason"));
   }
 
 }

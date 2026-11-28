@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -32,6 +33,8 @@ import com.studymatch.dtos.ParticipantDTO;
 import com.studymatch.dtos.StudyRoomDTO;
 import com.studymatch.dtos.StudyRoomDetailDTO;
 import com.studymatch.dtos.UpdateStudyRoomRequestDTO;
+import com.studymatch.enums.NotificationTarget;
+import com.studymatch.enums.NotificationType;
 import com.studymatch.enums.StudyRoomStatus;
 import com.studymatch.events.TutorActivityEvent;
 import com.studymatch.exceptions.ErrorCode;
@@ -57,6 +60,7 @@ class StudyRoomServiceTest {
   private EnrolmentService enrolmentService;
   private ApplicationEventPublisher eventPublisher;
   private MeetLinkGenerator meetLinkGenerator;
+  private NotificationService notificationService;
   private StudyRoomService studyRoomService;
 
   private TutorRole tutorRole;
@@ -69,8 +73,9 @@ class StudyRoomServiceTest {
     enrolmentService = mock(EnrolmentService.class);
     eventPublisher = mock(ApplicationEventPublisher.class);
     meetLinkGenerator = mock(MeetLinkGenerator.class);
+    notificationService = mock(NotificationService.class);
     studyRoomService = new StudyRoomService(studyRoomRepository, tutorRoleService, ratingService, enrolmentService,
-        eventPublisher, meetLinkGenerator);
+        eventPublisher, meetLinkGenerator, notificationService);
 
     Student tutor = ModelTestData.student("Test Tutor");
     ReflectionTestUtils.setField(tutor, "number", TUTOR_NUMBER);
@@ -427,7 +432,7 @@ class StudyRoomServiceTest {
     // Arrange
     StudyRoom first = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
     StudyRoom second = new StudyRoom(tutorRole, tomorrowAt(18), tomorrowAt(19), 5, "test room", LINK);
-    when(studyRoomRepository.findUpcoming(eq(TUTOR_NUMBER), any())).thenReturn(List.of(first, second));
+    when(studyRoomRepository.findUpcomingWithParticipants(eq(TUTOR_NUMBER), any())).thenReturn(List.of(first, second));
 
     // Act
     int cancelled = studyRoomService.cancelUpcoming(TUTOR_NUMBER);
@@ -441,9 +446,25 @@ class StudyRoomServiceTest {
   }
 
   @Test
+  @DisplayName("Blocking a tutor tells each cancelled room's participants, without the block reason")
+  void cancelUpcomingNotifiesParticipants() {
+    // Arrange
+    Student ana = student("Ana Test", 2L);
+    StudyRoom room = roomWithId(openRoomWith(ana));
+    when(studyRoomRepository.findUpcomingWithParticipants(eq(TUTOR_NUMBER), any())).thenReturn(List.of(room));
+
+    // Act
+    studyRoomService.cancelUpcoming(TUTOR_NUMBER);
+
+    // Assert
+    verify(notificationService).notifyAll(List.of(ana), NotificationType.STUDYROOM_CANCELLED,
+        NotificationTarget.STUDYROOM, ROOM_ID, Map.of("subject", "Test Subject", "startsAt", tomorrowAt(14).toString()));
+  }
+
+  @Test
   @DisplayName("A tutor without upcoming rooms has nothing cancelled")
   void noUpcomingRooms() {
-    // Act - findUpcoming is empty by default
+    // Act - findUpcomingWithParticipants is empty by default
     int cancelled = studyRoomService.cancelUpcoming(TUTOR_NUMBER);
 
     // Assert
@@ -498,6 +519,24 @@ class StudyRoomServiceTest {
   }
 
   @Test
+  @DisplayName("Confirming tells only the attendees that they can rate the tutor")
+  void confirmNotifiesAttendees() {
+    // Arrange
+    Student ana = student("Ana Test", 2L);
+    StudyRoom room = roomWithId(endedRoomWith(ana, student("Bruno Test", 3L)));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    studyRoomService.confirmAttendance(TUTOR_NUMBER, ROOM_ID, Set.of(2L));
+
+    // Assert
+    verify(notificationService).notifyAll(List.of(ana), NotificationType.STUDYROOM_RATING_OPEN,
+        NotificationTarget.STUDYROOM, ROOM_ID, Map.of("subject", "Test Subject",
+            "startsAt", room.getStartsAt().toString(), "tutor", "Test Tutor"));
+  }
+
+  @Test
   @DisplayName("A student who doesn't host the room gets ACCESS_DENIED and nothing is saved")
   void notHostCannotConfirm() {
     // Arrange
@@ -512,7 +551,7 @@ class StudyRoomServiceTest {
     assertEquals(ErrorCode.ACCESS_DENIED, e.getCode());
     assertEquals(StudyRoomStatus.SCHEDULED, room.getStatus());
     verify(studyRoomRepository, never()).save(any());
-    verifyNoInteractions(eventPublisher);
+    verifyNoInteractions(eventPublisher, notificationService);
   }
 
   @Test
@@ -685,6 +724,24 @@ class StudyRoomServiceTest {
   }
 
   @Test
+  @DisplayName("Leaving tells the tutor who left")
+  void leaveNotifiesTutor() {
+    // Arrange
+    Student participant = student("Ana Test", 2L);
+    StudyRoom room = roomWithId(openRoomWith(participant));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    studyRoomService.leave(participant, ROOM_ID);
+
+    // Assert
+    verify(notificationService).notify(tutorRole.getStudent(), NotificationType.STUDYROOM_LEFT,
+        NotificationTarget.STUDYROOM, ROOM_ID, Map.of("subject", "Test Subject",
+            "startsAt", tomorrowAt(14).toString(), "student", "Ana Test", "number", 2L));
+  }
+
+  @Test
   @DisplayName("A student who never joined can't leave")
   void notAParticipantCannotLeave() {
     // Arrange
@@ -698,6 +755,7 @@ class StudyRoomServiceTest {
     // Assert
     assertEquals(ErrorCode.NOT_A_PARTICIPANT, e.getCode());
     verify(studyRoomRepository, never()).save(any());
+    verifyNoInteractions(notificationService);
   }
 
   @Test
@@ -732,6 +790,24 @@ class StudyRoomServiceTest {
     assertEquals(6, result.capacity());
     assertEquals(LINK, result.link());
     verify(studyRoomRepository).save(room);
+  }
+
+  @Test
+  @DisplayName("Editing tells the participants the room's new times")
+  void updateNotifiesParticipants() {
+    // Arrange
+    Student ana = student("Ana Test", 2L);
+    StudyRoom room = roomWithId(openRoomWith(ana));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    studyRoomService.update(TUTOR_NUMBER, ROOM_ID, updateRequest(tomorrowAt(15), tomorrowAt(17), 6, LINK));
+
+    // Assert
+    verify(notificationService).notifyAll(List.of(ana), NotificationType.STUDYROOM_UPDATED,
+        NotificationTarget.STUDYROOM, ROOM_ID, Map.of("subject", "Test Subject",
+            "startsAt", tomorrowAt(15).toString(), "endsAt", tomorrowAt(17).toString()));
   }
 
   @Test
@@ -917,6 +993,24 @@ class StudyRoomServiceTest {
   }
 
   @Test
+  @DisplayName("Cancelling tells the participants, with the reason")
+  void cancelNotifiesParticipantsWithReason() {
+    // Arrange
+    Student ana = student("Ana Test", 2L);
+    StudyRoom room = roomWithId(openRoomWith(ana));
+    when(studyRoomRepository.findById(ROOM_ID)).thenReturn(Optional.of(room));
+    when(studyRoomRepository.save(room)).thenReturn(room);
+
+    // Act
+    studyRoomService.cancel(TUTOR_NUMBER, ROOM_ID, "tutor is sick");
+
+    // Assert
+    verify(notificationService).notifyAll(List.of(ana), NotificationType.STUDYROOM_CANCELLED,
+        NotificationTarget.STUDYROOM, ROOM_ID, Map.of("subject", "Test Subject",
+            "startsAt", tomorrowAt(14).toString(), "reason", "tutor is sick"));
+  }
+
+  @Test
   @DisplayName("Cancelling without a reason still works")
   void cancelsWithoutReason() {
     // Arrange
@@ -946,6 +1040,7 @@ class StudyRoomServiceTest {
     // Assert
     assertEquals(ErrorCode.ACCESS_DENIED, e.getCode());
     verify(studyRoomRepository, never()).save(any());
+    verifyNoInteractions(notificationService);
   }
 
   @Test
@@ -976,6 +1071,12 @@ class StudyRoomServiceTest {
     }
     ReflectionTestUtils.setField(room, "startsAt", LocalDateTime.now().minusHours(3));
     ReflectionTestUtils.setField(room, "endsAt", LocalDateTime.now().minusHours(1));
+    return room;
+  }
+
+  // the id the notifications point at
+  private static StudyRoom roomWithId(StudyRoom room) {
+    ReflectionTestUtils.setField(room, "id", ROOM_ID);
     return room;
   }
 
