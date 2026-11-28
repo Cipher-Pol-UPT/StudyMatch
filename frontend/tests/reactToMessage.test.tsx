@@ -152,11 +152,13 @@ describe('react to a message', () => {
     backend([]);
     open();
     await screen.findByRole('log', { name: 'Messages' });
-    const line = row().querySelector('.sm-msg__line')!;
+    // the message and the listener on its line come after the log, the listener once the page is done updating
+    const line = () => row().querySelector('.sm-msg__line')!;
+    await waitFor(() => expect(fireEvent.mouseDown(line(), { detail: 2 })).toBe(false));
 
     // the first press of a double click selects as usual, the second one doesn't
-    expect(fireEvent.mouseDown(line, { detail: 1 })).toBe(true);
-    expect(fireEvent.mouseDown(line, { detail: 2 })).toBe(false);
+    expect(fireEvent.mouseDown(line(), { detail: 1 })).toBe(true);
+    expect(fireEvent.mouseDown(line(), { detail: 2 })).toBe(false);
   });
 
   it('reacts with a heart on two quick taps on a touch screen', async () => {
