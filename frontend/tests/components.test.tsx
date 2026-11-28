@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
-import { LoginForm, PersonalityTest, StudentPass, StudyMatchProvider, StudyRoomCard } from '../src/studymatch-ui';
+import { LoginForm, PersonalityTest, StudentPass, StudyMatchProvider, StudyRoomCard, useToast } from '../src/studymatch-ui';
 import type { StudyRoom } from '../src/studymatch-ui';
 import { ComponentPreview } from '../src/ComponentPreview';
 
@@ -9,6 +9,26 @@ afterEach(cleanup);
 beforeEach(async () => { await i18n.changeLanguage('en'); });
 
 describe('presentational components', () => {
+  // a toast closes itself after a few seconds; if the page goes first, its timer goes with it
+  it("stops a toast's timer when the page goes, so it never fires after", () => {
+    const setTimer = vi.spyOn(window, 'setTimeout');
+    const clearTimer = vi.spyOn(window, 'clearTimeout');
+    function Save() {
+      const toast = useToast();
+      return <button type="button" onClick={() => toast.success('Saved')}>Save</button>;
+    }
+    const { unmount } = render(<StudyMatchProvider><Save /></StudyMatchProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    const call = setTimer.mock.calls.findIndex(([, delay]) => delay === 4000);
+    expect(call).toBeGreaterThanOrEqual(0);
+
+    unmount();
+
+    expect(clearTimer).toHaveBeenCalledWith(setTimer.mock.results[call].value);
+    setTimer.mockRestore();
+    clearTimer.mockRestore();
+  });
+
   it('translates backend field errors and retains entered values when language changes', async () => {
     const submit = vi.fn(async () => {
       throw { code: 'VALIDATION_FAILED', fieldErrors: [
