@@ -3,6 +3,7 @@ import { RoleLayout } from '../../components/layout/RoleLayout';
 import type { CurrentUser } from '../../types/currentUser';
 import { RegisterStudentPage } from '../registration/RegisterStudentPage';
 import { STAFF_SECTIONS } from './sections';
+import { StaffAcademicYearPage } from './StaffAcademicYearPage';
 import { StaffAnalyticsPage } from './StaffAnalyticsPage';
 import { StaffAttendancePage } from './StaffAttendancePage';
 import { StaffCategoriesPage } from './StaffCategoriesPage';
@@ -24,6 +25,7 @@ export function StaffArea({ currentUser, onLoggedOut }: StaffAreaProps) {
       <Route path="/enrolments" element={<StaffEnrolmentsPage />} />
       <Route path="/attendance" element={<StaffAttendancePage />} />
       <Route path="/categories" element={<StaffCategoriesPage />} />
+      <Route path="/academic-year" element={<StaffAcademicYearPage />} />
       <Route path="/analytics" element={<StaffAnalyticsPage />} />
     </RoleLayout>
   );

@@ -1417,5 +1417,28 @@
     "MIND_BLOWN": "Cabeça explodiu",
     "PARTY": "Festa!",
     "LOVE": "Adoro"
+  },
+  "daysOff": {
+    "title": "Dias sem aulas",
+    "year": "{{from}}/{{to}}",
+    "semester": "{{number}}.º semestre: {{dates}}",
+    "add": "Marcar dias",
+    "addHint": "Um dia, ou um intervalo com um último dia. Os horários publicados ignoram-nos.",
+    "firstDay": "Primeiro dia",
+    "lastDay": "Último dia",
+    "lastDayHint": "Deixe vazio para um só dia.",
+    "reason": "Motivo",
+    "reasonPlaceholder": "Feriado, época de exames…",
+    "save": "Marcar sem aulas",
+    "days": "Dias",
+    "remove": "Remover",
+    "removeOf": "Remover {{days}}",
+    "added": "{{days}} marcado sem aulas.",
+    "removed": "{{days}} volta a ter aulas.",
+    "none": "Ainda não há dias sem aulas",
+    "noneBody": "Marque os feriados e as épocas de exames, ou escolha um dia no calendário.",
+    "noSemesters": "Defina as datas dos semestres deste ano antes de marcar dias sem aulas.",
+    "noYear": "Ainda não há ano letivo",
+    "noYearBody": "Os dias sem aulas são marcados depois de começar o primeiro ano letivo."
   }
 }
