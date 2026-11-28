@@ -679,6 +679,9 @@
     "SEMESTER_OUTSIDE_YEAR": "Every date has to be between {{from}} and {{to}}.",
     "SEMESTER_ENDS_BEFORE_START": "Semester {{semester}} has to end after it starts.",
     "SEMESTERS_OVERLAP": "Semester 2 has to start after semester 1 ends.",
+    "DAY_OFF_ENDS_BEFORE_START": "The last day has to be on or after the first day.",
+    "DAY_OFF_OUTSIDE_SEMESTERS": "Every day has to be inside the same semester.",
+    "DAY_OFF_OVERLAPS": "It falls on {{reason}}, from {{firstDay}} to {{lastDay}}, which is already marked.",
     "ATTENDEE_NOT_A_PARTICIPANT": "Student {{number}} didn't join this StudyRoom.",
     "ROOM_ALREADY_RATED": "You have already rated this StudyRoom.",
     "NOT_ELIGIBLE_FOR_STUDYROOM": "Only Students enrolled in this Subject who haven't passed it can join.",
@@ -1414,5 +1417,96 @@
     "MIND_BLOWN": "Mind blown",
     "PARTY": "Party time",
     "LOVE": "Love it"
+  },
+  "daysOff": {
+    "title": "Days without classes",
+    "year": "{{from}}/{{to}}",
+    "semester": "Semester {{number}}: {{dates}}",
+    "add": "Mark days",
+    "addHint": "One day, or a range with a last day. Published schedules skip them.",
+    "firstDay": "First day",
+    "lastDay": "Last day",
+    "lastDayHint": "Leave it empty for one day.",
+    "reason": "Reason",
+    "reasonPlaceholder": "Holiday, exam season…",
+    "save": "Mark without classes",
+    "days": "Days",
+    "remove": "Remove",
+    "removeOf": "Remove {{days}}",
+    "added": "{{days}} marked without classes.",
+    "removed": "{{days}} has classes again.",
+    "none": "No days without classes yet",
+    "noneBody": "Mark the holidays and exam seasons, or pick a day on the calendar.",
+    "noSemesters": "Set this year's semester dates before marking days without classes.",
+    "noYear": "No academic year yet",
+    "noYearBody": "Days without classes are marked once the first academic year starts."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "intro": "What changed in your StudyRooms, groups, applications and achievements.",
+    "show": "Show",
+    "all": "All",
+    "unread": "Unread",
+    "unreadCount": "Unread ({{count}})",
+    "noUnread": "No unread notifications.",
+    "empty": "You're all caught up.",
+    "seeAll": "See all notifications",
+    "older": "Show older",
+    "newAchievement": "New achievement: {{name}}",
+    "reason": "Reason: {{reason}}",
+    "types": {
+      "ACCOUNT_UNBLOCKED": {
+        "title": "Your account is active again",
+        "body": "You can use StudyMatch as before. Anything sent to you meanwhile is here."
+      },
+      "TUTOR_APPLICATION_SUBMITTED": {
+        "title": "New tutor application",
+        "body": "{{student}} ({{number}}) wants to tutor {{subject}}."
+      },
+      "TUTOR_APPLICATION_APPROVED": {
+        "title": "You're a tutor now",
+        "body": "Your application to tutor {{subject}} was approved."
+      },
+      "TUTOR_APPLICATION_REJECTED": {
+        "title": "Tutor application not approved",
+        "body": "Your application to tutor {{subject}} wasn't approved."
+      },
+      "STUDYROOM_LEFT": {
+        "title": "Someone left your StudyRoom",
+        "body": "{{student}} left {{subject}} on {{startsAt}}."
+      },
+      "STUDYROOM_UPDATED": {
+        "title": "A StudyRoom changed",
+        "body": "{{subject}} is now on {{startsAt}} until {{endsAt}}."
+      },
+      "STUDYROOM_CANCELLED": {
+        "title": "A StudyRoom was cancelled",
+        "body": "{{subject}} on {{startsAt}} won't happen."
+      },
+      "STUDYROOM_RATING_OPEN": {
+        "title": "Rate your tutor",
+        "body": "How was {{tutor}}'s {{subject}} StudyRoom on {{startsAt}}?"
+      },
+      "ACHIEVEMENT_EARNED": {
+        "title": "New achievement: {{achievement}}",
+        "body": "It's on your achievements page, with its certificate."
+      },
+      "GROUP_PUBLISHED": {
+        "title": "Your group is ready",
+        "body": "You're in group {{number}} for {{assignment}} in {{subject}}."
+      },
+      "GROUP_UPDATED": {
+        "title": "Your group changed",
+        "body": "You're now in group {{number}} for {{assignment}} in {{subject}}."
+      },
+      "TICKET_ANSWERED": {
+        "title": "Support answered you",
+        "body": "There's a new answer on \"{{subject}}\"."
+      },
+      "TICKET_RESOLVED": {
+        "title": "Your request is resolved",
+        "body": "Support resolved \"{{subject}}\". Write back if you still need help."
+      }
+    }
   }
 }

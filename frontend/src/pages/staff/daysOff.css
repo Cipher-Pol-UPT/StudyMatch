@@ -1,0 +1,14 @@
+/* Staff → Academic year → Days without classes (#337) */
+.days-off { display: grid; gap: 16px; }
+.days-off__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.days-off__head h2 { margin: 0 0 4px; }
+/* the month next to the list, the list under it on a narrow screen */
+.days-off__body { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); align-items: start; gap: 24px; }
+.days-off__days { white-space: nowrap; }
+.days-off__form { display: grid; gap: 16px; }
+.days-off__dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.days-off__actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 760px) {
+  .days-off__body, .days-off__dates { grid-template-columns: minmax(0, 1fr); }
+  .days-off__calendar { justify-self: center; }
+}

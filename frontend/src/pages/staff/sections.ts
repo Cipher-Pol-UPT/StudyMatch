@@ -11,6 +11,6 @@ export const STAFF_SECTIONS: NavigationSection[] = [
   { key: 'subjects', path: '/subjects', icon: BookOpen },
   { key: 'degrees', path: '/degrees', icon: GraduationCap },
   { key: 'categories', path: '/categories', icon: Layers, ready: true },
-  { key: 'academicYear', path: '/academic-year', icon: CalendarDays },
+  { key: 'academicYear', path: '/academic-year', icon: CalendarDays, ready: true },
   { key: 'analytics', path: '/analytics', icon: BarChart3, ready: true },
 ];

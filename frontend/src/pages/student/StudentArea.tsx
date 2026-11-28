@@ -5,6 +5,10 @@ import { useSignOut } from '../../components/navigation/useSignOut';
 import { AppShell, Avatar, EmptyState, Logo, Menu, ThemeSwitcher, type MenuEntry, type NavItem, type NavSection } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import { AchievementsPage } from '../achievements/AchievementsPage';
+import { NewAchievement } from '../notifications/NewAchievement';
+import { NotificationsBell } from '../notifications/NotificationsBell';
+import { NotificationsPage } from '../notifications/NotificationsPage';
+import { NotificationsProvider } from '../notifications/NotificationsProvider';
 import { ChatsPage } from '../chats/ChatsPage';
 import { ClassmateProfilePage } from './ClassmateProfilePage';
 import type { ChatContactData } from '../../types/chat';
@@ -47,11 +51,12 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
   ];
 
   return (
+    <NotificationsProvider role={currentUser.role}>
     <AppShell
       brand={<Logo size={28} />}
       nav={nav}
       title={t(current ? `nav.${current.key}` : pathname === '/achievements' ? 'achievements.title' : pathname.startsWith('/classmates/') ? 'classmate.title' : 'nav.home')}
-      actions={<><ThemeSwitcher /><ProfileMenu user={currentUser} avatarUrl={profile?.avatarUrl ?? undefined} onLoggedOut={onLoggedOut} /></>}
+      actions={<><NotificationsBell /><ThemeSwitcher /><ProfileMenu user={currentUser} avatarUrl={profile?.avatarUrl ?? undefined} onLoggedOut={onLoggedOut} /></>}
       linkAs={Link}
       className="app-shell"
       routeKey={pathname}
@@ -67,12 +72,15 @@ export function StudentArea({ currentUser, onLoggedOut }: StudentAreaProps) {
         <Route path="/classmates/:number" element={<ClassmateProfilePage myNumber={currentUser.number} profilePath={PROFILE_PATH} />} />
         <Route path={CHANGE_PASSWORD_PATH} element={<AccountPasswordPage />} />
         <Route path="/achievements" element={<AchievementsPage profile={profile} failed={failed} />} />
-        {pages.filter((p) => ![PROFILE_PATH, '/study-rooms', '/chats', CHANGE_PASSWORD_PATH].includes(p.path)).map((p) => (
+        <Route path="/notifications" element={<NotificationsPage />} />
+        {pages.filter((p) => ![PROFILE_PATH, '/study-rooms', '/chats', CHANGE_PASSWORD_PATH, '/notifications'].includes(p.path)).map((p) => (
           <Route key={p.path} path={p.path} element={<EmptyState icon={p.icon} title={t(`nav.${p.key}`)} body={t('placeholder.comingSoon')} />} />
         ))}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <NewAchievement />
     </AppShell>
+    </NotificationsProvider>
   );
 }
 

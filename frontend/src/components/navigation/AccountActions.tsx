@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Avatar, Menu, ThemeSwitcher, useToast } from '../../studymatch-ui';
 import type { CurrentUser } from '../../types/currentUser';
 import './accountActions.css';
+import { NotificationsBell } from '../../pages/notifications/NotificationsBell';
 import { useSignOut } from './useSignOut';
 
 interface AccountActionsProps {
@@ -24,6 +25,7 @@ export function AccountActions({ user, onLoggedOut }: AccountActionsProps) {
 
   return (
     <div className="account-actions">
+      <NotificationsBell />
       <ThemeSwitcher />
       <Menu
         label={t('nav.accountMenu')}
