@@ -1416,5 +1416,28 @@
     "MIND_BLOWN": "Mind blown",
     "PARTY": "Party time",
     "LOVE": "Love it"
+  },
+  "daysOff": {
+    "title": "Days without classes",
+    "year": "{{from}}/{{to}}",
+    "semester": "Semester {{number}}: {{dates}}",
+    "add": "Mark days",
+    "addHint": "One day, or a range with a last day. Published schedules skip them.",
+    "firstDay": "First day",
+    "lastDay": "Last day",
+    "lastDayHint": "Leave it empty for one day.",
+    "reason": "Reason",
+    "reasonPlaceholder": "Holiday, exam season…",
+    "save": "Mark without classes",
+    "days": "Days",
+    "remove": "Remove",
+    "removeOf": "Remove {{days}}",
+    "added": "{{days}} marked without classes.",
+    "removed": "{{days}} has classes again.",
+    "none": "No days without classes yet",
+    "noneBody": "Mark the holidays and exam seasons, or pick a day on the calendar.",
+    "noSemesters": "Set this year's semester dates before marking days without classes.",
+    "noYear": "No academic year yet",
+    "noYearBody": "Days without classes are marked once the first academic year starts."
   }
 }
