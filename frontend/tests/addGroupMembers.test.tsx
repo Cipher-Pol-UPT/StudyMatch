@@ -130,6 +130,8 @@ describe('add members to a group chat', () => {
     open();
     await screen.findByText('3 members');
 
-    expect(screen.queryByRole('button', { name: 'Chat options' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Chat options' }));
+    expect(await screen.findByRole('menuitem', { name: 'Members' })).toBeTruthy();
+    expect(screen.queryByRole('menuitem', { name: 'Add members' })).toBeNull();
   });
 });
