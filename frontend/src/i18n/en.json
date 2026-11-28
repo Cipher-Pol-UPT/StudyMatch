@@ -620,6 +620,8 @@
     "CATEGORY_ALREADY_EXISTS": "A category with this name already exists.",
     "SUBJECT_ALREADY_EXISTS": "A subject with this code already exists.",
     "CURRICULAR_YEAR_OUT_OF_RANGE": "The curricular year is beyond the degree's duration.",
+    "INVALID_SESSION_LENGTH": "A session lasts 60, 90, 120, 150 or 180 minutes.",
+    "TOO_MANY_WEEKLY_SESSIONS": "A subject can have at most {{max}} sessions a week.",
     "SUBJECT_EDITION_ALREADY_EXISTS": "This subject already has an edition for that academic year.",
     "AT_LEAST_ONE_TEACHER_REQUIRED": "Select at least one teacher.",
     "CLASS_SECTION_ALREADY_EXISTS": "This class section already exists.",
