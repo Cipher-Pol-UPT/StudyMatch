@@ -70,6 +70,12 @@ public class ChatService {
         .orElseThrow(() -> new StudyMatchException(ErrorCode.NOT_FOUND));
   }
 
+  // held until the message's notifications are saved, one message per chat at a time
+  @Transactional
+  public void lockForMessage(Chat chat) {
+    chatRepository.lockForMessage(chat.getId());
+  }
+
   private boolean blockedDirectChat(Chat chat, User user) {
     return chat instanceof DirectChat direct && userBlockService.hasBlocked(user, direct.getOtherUser(user));
   }

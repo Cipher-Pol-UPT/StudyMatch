@@ -32,6 +32,11 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
   @Query("select c from CustomChat c where c.id = :id")
   Optional<CustomChat> findLockedCustomChat(Long id);
 
+  // sending: two messages at once would both find no unread notification and make two (GR11), so the second
+  // waits. native for the same reason as above, no key so it doesn't hold up what only points at the chat
+  @Query(nativeQuery = true, value = "select id from chat where id = :id for no key update")
+  Long lockForMessage(Long id);
+
   // the group chats the user is a member of, the owner included
   @Query("select c from CustomChat c join c.members m where m.number = :number")
   List<CustomChat> findCustomChatsOf(Long number);
