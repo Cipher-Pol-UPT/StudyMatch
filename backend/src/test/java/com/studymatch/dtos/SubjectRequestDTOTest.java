@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.studymatch.enums.RoomType;
+
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 
@@ -37,19 +39,19 @@ class SubjectRequestDTOTest {
   }
 
   private SubjectRequestDTO withCode(String code) {
-    return new SubjectRequestDTO(code, "Mathematics I", 6, 1L, ONE_DEGREE, EDITION);
+    return new SubjectRequestDTO(code, "Mathematics I", 6, 1L, ONE_DEGREE, EDITION, null);
   }
 
   private SubjectRequestDTO withName(String name) {
-    return new SubjectRequestDTO("MAT1", name, 6, 1L, ONE_DEGREE, EDITION);
+    return new SubjectRequestDTO("MAT1", name, 6, 1L, ONE_DEGREE, EDITION, null);
   }
 
   private SubjectRequestDTO withEcts(Integer ects) {
-    return new SubjectRequestDTO("MAT1", "Mathematics I", ects, 1L, ONE_DEGREE, EDITION);
+    return new SubjectRequestDTO("MAT1", "Mathematics I", ects, 1L, ONE_DEGREE, EDITION, null);
   }
 
   private SubjectRequestDTO withDegree(DegreePlacementDTO placement) {
-    return new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, List.of(placement), EDITION);
+    return new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, List.of(placement), EDITION, null);
   }
 
   @Test
@@ -119,7 +121,7 @@ class SubjectRequestDTOTest {
   @DisplayName("A missing category is NOT_NULL")
   void missingCategory() {
     assertEquals(Set.of("categoryId=NotNull"),
-        failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, null, ONE_DEGREE, EDITION)));
+        failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, null, ONE_DEGREE, EDITION, null)));
   }
 
   // degrees
@@ -127,8 +129,8 @@ class SubjectRequestDTOTest {
   @Test
   @DisplayName("A subject with no degrees is NOT_EMPTY")
   void noDegrees() {
-    assertEquals(Set.of("degrees=NotEmpty"), failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, List.of(), EDITION)));
-    assertEquals(Set.of("degrees=NotEmpty"), failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, null, EDITION)));
+    assertEquals(Set.of("degrees=NotEmpty"), failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, List.of(), EDITION, null)));
+    assertEquals(Set.of("degrees=NotEmpty"), failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, null, EDITION, null)));
   }
 
   @Test
@@ -137,7 +139,7 @@ class SubjectRequestDTOTest {
     List<DegreePlacementDTO> degrees = new ArrayList<>();
     degrees.add(null);
     assertEquals(Set.of("degrees[0].<list element>=NotNull"),
-        failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, degrees, EDITION)));
+        failures(new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, degrees, EDITION, null)));
   }
 
   @Test
@@ -165,7 +167,7 @@ class SubjectRequestDTOTest {
   // edition
 
   private SubjectRequestDTO withEdition(SubjectEditionRequestDTO edition) {
-    return new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, ONE_DEGREE, edition);
+    return new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, ONE_DEGREE, edition, null);
   }
 
   @Test
@@ -204,6 +206,40 @@ class SubjectRequestDTOTest {
     assertTrue(failures(withEdition(new SubjectEditionRequestDTO(2026, List.of(1L), List.of("a".repeat(20))))).isEmpty());
     assertEquals(Set.of("edition.classSections[0].<list element>=Size"),
         failures(withEdition(new SubjectEditionRequestDTO(2026, List.of(1L), List.of("a".repeat(21))))));
+  }
+
+  // weekly plan
+
+  private SubjectRequestDTO withSessions(List<WeeklySessionDTO> sessions) {
+    return new SubjectRequestDTO("MAT1", "Mathematics I", 6, 1L, ONE_DEGREE, EDITION, sessions);
+  }
+
+  @Test
+  @DisplayName("The weekly plan is optional: none or a missing list are both accepted")
+  void sessionsOptional() {
+    assertTrue(failures(withSessions(List.of())).isEmpty());
+    assertTrue(failures(withSessions(null)).isEmpty());
+  }
+
+  @Test
+  @DisplayName("A session with its minutes and room type is accepted, the length is left to the model")
+  void validSession() {
+    assertTrue(failures(withSessions(List.of(new WeeklySessionDTO(45, RoomType.LAB)))).isEmpty());
+  }
+
+  @Test
+  @DisplayName("A null entry in the sessions is NOT_NULL")
+  void nullSession() {
+    List<WeeklySessionDTO> sessions = new ArrayList<>();
+    sessions.add(null);
+    assertEquals(Set.of("weeklySessions[0].<list element>=NotNull"), failures(withSessions(sessions)));
+  }
+
+  @Test
+  @DisplayName("Each session is checked: minutes and room type are required")
+  void sessionMissingFields() {
+    assertEquals(Set.of("weeklySessions[0].minutes=NotNull", "weeklySessions[0].roomType=NotNull"),
+        failures(withSessions(List.of(new WeeklySessionDTO(null, null)))));
   }
 
 }

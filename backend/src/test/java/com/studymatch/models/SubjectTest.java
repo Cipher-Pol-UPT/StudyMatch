@@ -3,11 +3,17 @@ package com.studymatch.models;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.studymatch.enums.RoomType;
 import com.studymatch.exceptions.ErrorCode;
 import com.studymatch.exceptions.StudyMatchException;
 
@@ -87,6 +93,78 @@ class SubjectTest {
 
     // Act + Assert - read-only view
     assertThrows(UnsupportedOperationException.class, () -> subject.getDegreeSubjects().clear());
+  }
+
+  // weekly plan
+
+  private static List<WeeklySession> sessions(int count) {
+    return Collections.nCopies(count, new WeeklySession(120, RoomType.CLASSROOM));
+  }
+
+  @Test
+  @DisplayName("A new subject has no weekly plan")
+  void noPlanAtFirst() {
+    assertTrue(subject.getWeeklySessions().isEmpty());
+  }
+
+  @Test
+  @DisplayName("Setting the plan replaces the old one and keeps the order given")
+  void setPlanReplaces() {
+    // Arrange
+    subject.setWeeklySessions(sessions(3));
+    WeeklySession lab = new WeeklySession(180, RoomType.LAB);
+    WeeklySession lecture = new WeeklySession(60, RoomType.AUDITORIUM);
+
+    // Act
+    subject.setWeeklySessions(List.of(lab, lecture));
+
+    // Assert
+    assertEquals(List.of(lab, lecture), subject.getWeeklySessions());
+  }
+
+  @Test
+  @DisplayName("An empty plan clears it")
+  void emptyPlanClears() {
+    // Arrange
+    subject.setWeeklySessions(sessions(2));
+
+    // Act
+    subject.setWeeklySessions(List.of());
+
+    // Assert
+    assertTrue(subject.getWeeklySessions().isEmpty());
+  }
+
+  @Test
+  @DisplayName("At most 5 sessions a week (boundary: 5 ok, 6 is TOO_MANY_WEEKLY_SESSIONS)")
+  void atMostFiveSessions() {
+    // Act
+    subject.setWeeklySessions(sessions(5));
+
+    // Assert
+    assertEquals(5, subject.getWeeklySessions().size());
+    StudyMatchException e = assertThrows(StudyMatchException.class, () -> subject.setWeeklySessions(sessions(6)));
+    assertEquals(ErrorCode.TOO_MANY_WEEKLY_SESSIONS, e.getCode());
+    assertEquals(Map.of("max", 5), e.getParams());
+  }
+
+  @Test
+  @DisplayName("A refused plan leaves the old one as it was")
+  void refusedPlanKeepsOld() {
+    // Arrange
+    subject.setWeeklySessions(sessions(2));
+
+    // Act
+    assertThrows(StudyMatchException.class, () -> subject.setWeeklySessions(sessions(6)));
+
+    // Assert
+    assertEquals(2, subject.getWeeklySessions().size());
+  }
+
+  @Test
+  @DisplayName("The plan can only change through setWeeklySessions")
+  void planCannotBeModifiedDirectly() {
+    assertThrows(UnsupportedOperationException.class, () -> subject.getWeeklySessions().clear());
   }
 
 }
