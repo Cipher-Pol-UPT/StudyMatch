@@ -432,7 +432,7 @@ class StudyRoomServiceTest {
     // Arrange
     StudyRoom first = new StudyRoom(tutorRole, tomorrowAt(14), tomorrowAt(16), 5, "test room", LINK);
     StudyRoom second = new StudyRoom(tutorRole, tomorrowAt(18), tomorrowAt(19), 5, "test room", LINK);
-    when(studyRoomRepository.findUpcoming(eq(TUTOR_NUMBER), any())).thenReturn(List.of(first, second));
+    when(studyRoomRepository.findUpcomingWithParticipants(eq(TUTOR_NUMBER), any())).thenReturn(List.of(first, second));
 
     // Act
     int cancelled = studyRoomService.cancelUpcoming(TUTOR_NUMBER);
@@ -451,7 +451,7 @@ class StudyRoomServiceTest {
     // Arrange
     Student ana = student("Ana Test", 2L);
     StudyRoom room = roomWithId(openRoomWith(ana));
-    when(studyRoomRepository.findUpcoming(eq(TUTOR_NUMBER), any())).thenReturn(List.of(room));
+    when(studyRoomRepository.findUpcomingWithParticipants(eq(TUTOR_NUMBER), any())).thenReturn(List.of(room));
 
     // Act
     studyRoomService.cancelUpcoming(TUTOR_NUMBER);
@@ -464,7 +464,7 @@ class StudyRoomServiceTest {
   @Test
   @DisplayName("A tutor without upcoming rooms has nothing cancelled")
   void noUpcomingRooms() {
-    // Act - findUpcoming is empty by default
+    // Act - findUpcomingWithParticipants is empty by default
     int cancelled = studyRoomService.cancelUpcoming(TUTOR_NUMBER);
 
     // Assert

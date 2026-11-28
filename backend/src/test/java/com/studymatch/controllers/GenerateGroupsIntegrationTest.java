@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,6 +19,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hamcrest.Matchers;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -71,7 +74,7 @@ import com.studymatch.repositories.SubjectEditionRepository;
 import com.studymatch.repositories.SubjectRepository;
 import com.studymatch.repositories.TeacherRepository;
 
-@SpringBootTest
+@SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
@@ -93,6 +96,7 @@ class GenerateGroupsIntegrationTest {
   @Autowired private EnrolmentRepository enrolmentRepository;
   @Autowired private AssignmentRepository assignmentRepository;
   @Autowired private GroupRepository groupRepository;
+  @Autowired private EntityManager entityManager;
   @Autowired private LessonRepository lessonRepository;
   @Autowired private AbsenceRepository absenceRepository;
   @Autowired private NotificationRepository notificationRepository;
@@ -328,6 +332,37 @@ class GenerateGroupsIntegrationTest {
   }
 
   @Test
+  @DisplayName("Confirming loads the members with their groups, not one select per group")
+  void confirmLoadsMembersOnce() throws Exception {
+    // Arrange - the same eight students as one group and as four
+    Assignment oneGroup = project(8, 8, 8);
+    Assignment fourGroups = project(2, 2, 2);
+    generate(oneGroup).andExpect(status().isCreated());
+    generate(fourGroups).andExpect(status().isCreated());
+    assertEquals(1, groups(oneGroup, GroupStatus.DRAFT).size());
+    assertEquals(4, groups(fourGroups, GroupStatus.DRAFT).size());
+
+    // Act
+    long one = collectionsFetchedPublishing(oneGroup);
+    long four = collectionsFetchedPublishing(fourGroups);
+
+    // Assert
+    assertEquals(one, four);
+  }
+
+  // the collections loaded on their own, a lazy one read later: one per group when the members aren't fetched
+  private long collectionsFetchedPublishing(Assignment assignment) throws Exception {
+    MockHttpSession session = loginAs(TEACHER);
+    entityManager.flush();
+    entityManager.clear();
+    Statistics statistics = entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics();
+    statistics.clear();
+    mockMvc.perform(post(groupsUrl(assignment) + "/publish").with(csrf()).session(session))
+        .andExpect(status().isNoContent());
+    return statistics.getCollectionFetchCount();
+  }
+
+  @Test
   @DisplayName("Confirming tells every member their group, and generating or cancelling tells nobody")
   void confirmNotifiesMembers() throws Exception {
     // Arrange
@@ -345,8 +380,8 @@ class GenerateGroupsIntegrationTest {
         assertEquals(1, notifications.size());
         Notification notification = notifications.getFirst();
         assertEquals(NotificationType.GROUP_PUBLISHED, notification.getType());
-        assertEquals(NotificationTarget.GROUP, notification.getTarget());
-        assertEquals(group.getId(), notification.getTargetId());
+        assertEquals(NotificationTarget.ASSIGNMENT, notification.getTarget());
+        assertEquals(assignment.getId(), notification.getTargetId());
         assertEquals(assignment.getName(), notification.getParams().get("assignment"));
         assertEquals(group.getNumber(), notification.getParams().get("number"));
       }

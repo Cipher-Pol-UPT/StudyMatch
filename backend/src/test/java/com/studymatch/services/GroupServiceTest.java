@@ -519,7 +519,7 @@ class GroupServiceTest {
     Group old = draft(assignment, 1, ana, rui);
     old.publish();
     List<Group> drafts = List.of(draft(assignment, 1, ana), draft(assignment, 2, rui));
-    when(groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT)).thenReturn(drafts);
+    when(groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT)).thenReturn(drafts);
     when(groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.PUBLISHED))
         .thenReturn(List.of(old));
 
@@ -937,7 +937,7 @@ class GroupServiceTest {
   }
 
   @Test
-  @DisplayName("Publishing tells each member their group, pointing at it")
+  @DisplayName("Publishing tells each member their group, pointing at the assignment")
   void publishNotifiesMembers() {
     // Arrange
     Assignment assignment = project("Project", LocalDate.of(2026, 1, 10));
@@ -945,18 +945,20 @@ class GroupServiceTest {
     Group second = draft(assignment, 2, rui);
     ReflectionTestUtils.setField(first, "id", 11L);
     ReflectionTestUtils.setField(second, "id", 12L);
+    // the groups' ids change when publishing again, the assignment's doesn't
+    ReflectionTestUtils.setField(assignment, "id", 2L);
     when(assignmentService.getLockedAssignment(1L, 2L)).thenReturn(assignment);
-    when(groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT))
+    when(groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT))
         .thenReturn(List.of(first, second));
 
     // Act
     groupService.publishGroups(1L, 2L);
 
     // Assert
-    verify(notificationService).notifyAll(Set.of(ana), NotificationType.GROUP_PUBLISHED, NotificationTarget.GROUP,
-        11L, Map.of("subject", "Test Subject", "assignment", "Project", "number", 1));
-    verify(notificationService).notifyAll(Set.of(rui), NotificationType.GROUP_PUBLISHED, NotificationTarget.GROUP,
-        12L, Map.of("subject", "Test Subject", "assignment", "Project", "number", 2));
+    verify(notificationService).notifyAll(Set.of(ana), NotificationType.GROUP_PUBLISHED, NotificationTarget.ASSIGNMENT,
+        2L, Map.of("subject", "Test Subject", "assignment", "Project", "number", 1));
+    verify(notificationService).notifyAll(Set.of(rui), NotificationType.GROUP_PUBLISHED, NotificationTarget.ASSIGNMENT,
+        2L, Map.of("subject", "Test Subject", "assignment", "Project", "number", 2));
   }
 
   @Test
@@ -965,7 +967,7 @@ class GroupServiceTest {
     // Arrange
     Assignment assignment = project("Project", LocalDate.of(2026, 1, 10));
     when(assignmentService.getLockedAssignment(1L, 2L)).thenReturn(assignment);
-    when(groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT)).thenReturn(List.of());
+    when(groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT)).thenReturn(List.of());
 
     // Act
     StudyMatchException exception = assertThrows(StudyMatchException.class, () -> groupService.publishGroups(1L, 2L));
