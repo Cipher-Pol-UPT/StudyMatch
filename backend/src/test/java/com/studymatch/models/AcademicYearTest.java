@@ -174,4 +174,28 @@ class AcademicYearTest {
     assertEquals(date("2027-07-07"), year.getSemester2End());
   }
 
+  @ParameterizedTest
+  @CsvSource({ "2026-09-15, 1", "2027-01-31, 1", "2027-02-10, 0", "2027-02-15, 2", "2027-06-30, 2", "2027-07-01, 0",
+      "2026-09-14, 0" })
+  @DisplayName("A date is in semester 1, semester 2, or neither, both ends included")
+  void semesterOf(LocalDate date, int semester) {
+    // Arrange
+    AcademicYear year = new AcademicYear(2026);
+    year.setSemesters(LocalDate.of(2026, 9, 15), LocalDate.of(2027, 1, 31), LocalDate.of(2027, 2, 15),
+        LocalDate.of(2027, 6, 30));
+
+    // Act + Assert
+    assertEquals(semester, year.semesterOf(date));
+  }
+
+  @Test
+  @DisplayName("A year without dates has no date in a semester")
+  void semesterOfWithoutDates() {
+    // Arrange
+    AcademicYear year = new AcademicYear(2026);
+
+    // Act + Assert
+    assertEquals(0, year.semesterOf(LocalDate.of(2026, 10, 1)));
+  }
+
 }

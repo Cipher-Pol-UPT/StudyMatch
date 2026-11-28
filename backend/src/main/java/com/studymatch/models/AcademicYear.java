@@ -109,6 +109,20 @@ public class AcademicYear implements Persistable<Integer> {
     this.semester2End = semester2End;
   }
 
+  // 1 or 2, or 0 when the date is in neither, like a holiday between them or a year with no dates
+  public int semesterOf(LocalDate date) {
+    if (!hasSemesters()) {
+      return 0;
+    }
+    if (!date.isBefore(semester1Start) && !date.isAfter(semester1End)) {
+      return 1;
+    }
+    if (!date.isBefore(semester2Start) && !date.isAfter(semester2End)) {
+      return 2;
+    }
+    return 0;
+  }
+
   private boolean outside(LocalDate date) {
     return date.isBefore(firstDay()) || date.isAfter(lastDay());
   }
