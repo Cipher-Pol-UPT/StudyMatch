@@ -202,7 +202,7 @@ public class StudyRoomService {
   // block account: the tutor's rooms that haven't started are cancelled, the block reason stays private
   @Transactional
   public int cancelUpcoming(Long tutorNumber) {
-    List<StudyRoom> rooms = studyRoomRepository.findUpcoming(tutorNumber, LocalDateTime.now());
+    List<StudyRoom> rooms = studyRoomRepository.findUpcomingWithParticipants(tutorNumber, LocalDateTime.now());
     rooms.forEach(room -> room.cancel(null));
     studyRoomRepository.saveAll(rooms);
     rooms.forEach(room -> notificationService.notifyAll(participantsOf(room), NotificationType.STUDYROOM_CANCELLED,

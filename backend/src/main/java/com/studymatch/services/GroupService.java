@@ -310,7 +310,9 @@ public class GroupService {
   @Transactional
   public void publishGroups(Long subjectEditionId, Long assignmentId) {
     Assignment assignment = assignmentService.getLockedAssignment(subjectEditionId, assignmentId);
-    List<Group> drafts = groupRepository.findByAssignmentAndStatusOrderByNumber(assignment, GroupStatus.DRAFT);
+    // with their members, so telling them is one select and not one per group
+    List<Group> drafts = groupRepository.findWithMembersByAssignmentAndStatusOrderByNumber(assignment,
+        GroupStatus.DRAFT);
     if (drafts.isEmpty()) {
       throw new StudyMatchException(ErrorCode.NO_DRAFT_GROUPS);
     }
