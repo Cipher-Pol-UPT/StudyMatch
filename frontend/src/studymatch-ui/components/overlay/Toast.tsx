@@ -1,6 +1,6 @@
 import { AnimatePresence,motion } from 'framer-motion';
 import { AlertTriangle,CheckCircle2,Info,XCircle } from 'lucide-react';
-import { useCallback,useMemo,useRef,useState,type ReactNode } from 'react';
+import { useCallback,useEffect,useMemo,useRef,useState,type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../../i18n';
@@ -82,7 +82,18 @@ export function ToastProvider({ children, max = 3 }: { children: ReactNode; max?
   const mounted = useMounted();
   const seq = useRef(0);
 
+  // each toast's timer to close it, cleared when the provider goes so none fires after the page is gone
+  const timers = useRef(new Set<number>());
+
   const dismiss = useCallback((id: number) => setItems((xs) => xs.filter((x) => x.id !== id)), []);
+
+  useEffect(() => {
+    const pending = timers.current;
+    return () => {
+      pending.forEach((timer) => window.clearTimeout(timer));
+      pending.clear();
+    };
+  }, []);
 
   const toast = useMemo(() => {
     const push = (input: ReactNode | ToastOptions) => {
@@ -90,7 +101,13 @@ export function ToastProvider({ children, max = 3 }: { children: ReactNode; max?
       const id = ++seq.current;
       setItems((xs) => [...xs.slice(-(max - 1)), { ...opts, id }]);
       const duration = opts.duration ?? (opts.action ? 6000 : 4000);
-      if (duration !== Infinity) window.setTimeout(() => dismiss(id), duration);
+      if (duration !== Infinity) {
+        const timer = window.setTimeout(() => {
+          timers.current.delete(timer);
+          dismiss(id);
+        }, duration);
+        timers.current.add(timer);
+      }
       return id;
     };
     const fn = push as ToastFn;
