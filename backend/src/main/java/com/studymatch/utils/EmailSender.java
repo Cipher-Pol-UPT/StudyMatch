@@ -84,6 +84,38 @@ public class EmailSender {
     }
   }
 
+  // a guest has no notifications, so the queue answering or resolving comes by email. the old link can't be sent
+  // again, so it's a new one (#364)
+  @Async
+  public void sendSupportTicketUpdate(String to, String ticketSubject, String link, boolean resolved) {
+    SimpleMailMessage message = new SimpleMailMessage();
+    message.setFrom(from);
+    message.setTo(to);
+    message.setSubject("StudyMatch - O seu pedido de apoio / Your support request");
+    message.setText("""
+        Olá,
+
+        %1$s "%2$s". Pode vê-lo e responder aqui:
+        %3$s
+        As ligações anteriores deixaram de funcionar. Não partilhe esta, quem a tiver pode ver o pedido.
+
+        ---
+
+        Hello,
+
+        %4$s "%2$s". You can see it and reply here:
+        %3$s
+        Earlier links don't work anymore. Don't share this one, anyone who has it can see the request.
+        """.formatted(resolved ? "Foi resolvido o seu pedido" : "Responderam ao seu pedido", ticketSubject, link,
+        resolved ? "We resolved your request" : "There's a new answer on your request"));
+
+    try {
+      mailSender.send(message);
+    } catch (MailException e) {
+      log.error("Could not send the support ticket update", e);
+    }
+  }
+
   // not async and not silent: the admin is waiting and has to know if it failed
   public void sendAccountCredentials(String to, String name, String institutionalEmail, String oneTimePassword) {
     SimpleMailMessage message = new SimpleMailMessage();

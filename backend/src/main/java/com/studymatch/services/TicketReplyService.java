@@ -5,13 +5,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.studymatch.dtos.ReplyTicketRequestDTO;
 import com.studymatch.dtos.TicketDTO;
+import com.studymatch.enums.NotificationType;
+import com.studymatch.enums.Role;
 import com.studymatch.models.Ticket;
 import com.studymatch.models.TicketReply;
 import com.studymatch.models.User;
 import com.studymatch.repositories.TicketReplyRepository;
 
-// a ticket's thread. the author, or the guest with the link, reads it and writes back. the queue's side comes
-// with #364
+// a ticket's thread. the author, or the guest with the link, reads it and writes back, and the queue answers it
+// (#364)
 @Service
 public class TicketReplyService {
 
@@ -48,6 +50,21 @@ public class TicketReplyService {
     Ticket ticket = ticketService.getGuestLocked(token);
     ticketReplyRepository.save(new TicketReply(ticket, null, request.text()));
     ticket.authorReplied();
+    return withThread(ticket);
+  }
+
+  @Transactional(readOnly = true)
+  public TicketDTO viewInQueue(Role role, Long ticketId) {
+    return withThread(ticketService.getInQueue(role, ticketId));
+  }
+
+  // the queue answering sets it to In progress and tells the author (#364, GR15)
+  @Transactional
+  public TicketDTO answer(User answerer, Long ticketId, ReplyTicketRequestDTO request) {
+    Ticket ticket = ticketService.getInQueueLocked(answerer.getRole(), ticketId);
+    ticketReplyRepository.save(new TicketReply(ticket, answerer, request.text()));
+    ticket.answered();
+    ticketService.tellAuthor(ticket, NotificationType.TICKET_ANSWERED);
     return withThread(ticket);
   }
 
