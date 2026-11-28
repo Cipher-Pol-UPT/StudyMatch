@@ -125,26 +125,31 @@
     "openness": {
       "label": "Openness",
       "short": "Open",
+      "initial": "O",
       "description": "Curious and open to new ideas, experiences and ways of doing things."
     },
     "conscientiousness": {
       "label": "Conscientiousness",
       "short": "Conscientious",
+      "initial": "C",
       "description": "Organised, reliable and careful with plans and deadlines."
     },
     "extraversion": {
       "label": "Extraversion",
       "short": "Extravert",
+      "initial": "E",
       "description": "Gets energy from other people, speaks up and enjoys working in a group."
     },
     "agreeableness": {
       "label": "Agreeableness",
       "short": "Agreeable",
+      "initial": "A",
       "description": "Cooperative, considerate and looks for agreement in the group."
     },
     "neuroticism": {
       "label": "Neuroticism",
       "short": "Neurotic",
+      "initial": "N",
       "description": "How strongly stress and worry are felt. A higher score means more."
     }
   },

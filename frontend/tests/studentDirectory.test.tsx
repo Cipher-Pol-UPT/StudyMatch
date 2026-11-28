@@ -66,6 +66,33 @@ describe('staff student directory', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/students/?page=0', expect.objectContaining({ credentials: 'include', method: 'GET' }));
   });
 
+  it('shows the personality profile as one bar per trait, each value in the hover and as text', async () => {
+    backend();
+    open();
+    const row = (await screen.findByRole('link', { name: 'Ana Silva' })).closest('tr')!;
+    const summary = row.querySelector('.student-personality')!;
+    expect(summary.getAttribute('title')).toBe('Openness 40%\nConscientiousness 70%\nExtraversion 80%\nAgreeableness 60%\nNeuroticism 30%');
+    const bars = [...summary.querySelectorAll<HTMLElement>('.student-personality__track > i')];
+    expect(bars.map(bar => bar.style.height)).toEqual(['40%', '70%', '80%', '60%', '30%']);
+    expect(within(row).getByText('Conscientiousness').closest('dl')!.className).toBe('sm-visually-hidden');
+    const empty = (await screen.findByRole('link', { name: 'Rui Costa' })).closest('tr')!;
+    expect(within(empty).getByText('Not taken yet')).toBeTruthy();
+    expect(empty.querySelector('.student-personality__track')).toBeNull();
+  });
+
+  it('gives each trait its own initial under its bar, in Portuguese too', async () => {
+    backend();
+    open();
+    const initials = async () => [...(await screen.findByRole('link', { name: 'Ana Silva' })).closest('tr')!
+      .querySelectorAll('.student-personality__bar > b')].map(initial => initial.textContent);
+    expect(await initials()).toEqual(['O', 'C', 'E', 'A', 'N']);
+
+    cleanup();
+    await i18n.changeLanguage('pt');
+    open();
+    expect(await initials()).toEqual(['Ab', 'C', 'E', 'Am', 'N']);
+  });
+
   it('sends combined filters to the backend, resets the page and offers clearing on no matches', async () => {
     const fetchMock = backend();
     open('/students?page=1');
