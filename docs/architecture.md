@@ -98,7 +98,7 @@ Swagger UI does the same thing (`springdoc.swagger-ui.csrf.enabled=true`), so "T
 | --- | --- | --- |
 | Account blocked | nothing, the session is ended | 403 `ACCOUNT_BLOCKED` |
 | First login, password not changed yet | `GET /users/me`, `PUT /users/change-password` | 403 `PASSWORD_CHANGE_REQUIRED` |
-| Student without this year's personality test (GR1) | the two above and `POST /students/personality-test` | 403 `PERSONALITY_TEST_REQUIRED` |
+| Student without this year's personality test (GR1) | the two above, `POST /students/personality-test` and everything under `/tickets/`, so a student stuck on the test can still ask for help (#362) | 403 `PERSONALITY_TEST_REQUIRED` |
 
 `GET /users/me` returns `mustChangePassword` and `personalityTestRequired`, and the frontend uses them to send the user to the right page.
 
