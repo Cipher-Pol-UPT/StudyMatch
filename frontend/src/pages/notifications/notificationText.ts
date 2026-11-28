@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { Award, CalendarClock, CalendarX, CircleCheck, ClipboardCheck, LogOut, MessageSquareReply, Star, UserCheck, UserRoundCheck, UserRoundX, Users, UsersRound } from 'lucide-react';
+import { Award, CalendarClock, CalendarX, CircleCheck, ClipboardCheck, LogOut, MessageCircle, MessageSquareReply, Star, UserCheck, UserRoundCheck, UserRoundX, Users, UsersRound } from 'lucide-react';
 import type { IconComponent, NotificationItem } from '../../studymatch-ui';
 import type { NotificationType, Role } from '../../types/enums';
 import type { NotificationData } from '../../types/notifications';
@@ -18,6 +18,7 @@ const LOOK: Record<NotificationType, { icon: IconComponent; tone: NonNullable<No
   GROUP_UPDATED: { icon: UsersRound, tone: 'info' },
   TICKET_ANSWERED: { icon: MessageSquareReply, tone: 'info' },
   TICKET_RESOLVED: { icon: CircleCheck, tone: 'success' },
+  CHAT_MESSAGES: { icon: MessageCircle, tone: 'info' },
 };
 
 // the params the backend sends as dates, shown in the user's language
@@ -64,6 +65,7 @@ export function pathOf(notification: NotificationData, role: Role): string | nul
     case 'ASSIGNMENT': return '/groups';
     case 'TUTOR_APPLICATION': return role === 'TEACHER' ? '/tutor-applications' : '/study-rooms';
     case 'ACHIEVEMENT': return '/achievements';
+    case 'CHAT': return '/chats';
     default: return null;
   }
 }

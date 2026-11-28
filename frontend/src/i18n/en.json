@@ -1506,6 +1506,12 @@
       "TICKET_RESOLVED": {
         "title": "Your request is resolved",
         "body": "Support resolved \"{{subject}}\". Write back if you still need help."
+      },
+      "CHAT_MESSAGES": {
+        "title_one": "New message in {{chat}}",
+        "title_other": "{{count}} new messages in {{chat}}",
+        "body_one": "Open the chat to read it.",
+        "body_other": "Open the chat to read them."
       }
     }
   }
