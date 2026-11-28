@@ -707,7 +707,9 @@
     "NOTE_LIMIT_REACHED": "Pode ter até {{max}} notas. Apague uma para adicionar outra.",
     "ROOM_ALREADY_EXISTS": "Já existe uma sala com este código.",
     "ROOM_OVERLAP": "Esta posição sobrepõe-se à sala {{code}} no mesmo piso.",
-    "ROOM_OUTSIDE_FLOOR": "A sala tem de caber na grelha de {{size}} × {{size}} do piso."
+    "ROOM_OUTSIDE_FLOOR": "A sala tem de caber na grelha de {{size}} × {{size}} do piso.",
+    "INVALID_SLOT": "Os blocos são de 30 minutos, de segunda a sexta, das 8:00 às 20:00.",
+    "NO_CURRENT_ACADEMIC_YEAR": "Ainda não existe nenhum ano letivo. Os serviços académicos têm de iniciar um primeiro."
   },
   "validation": {
     "NOT_BLANK": "Este campo é obrigatório.",
